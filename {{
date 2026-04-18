@@ -1,0 +1,30 @@
+SemearJovens/public/css/style.css:344:.badge-role,
+SemearJovens/public/css/style.css:356:.badge-role {
+SemearJovens/public/css/style.css:554::root[data-theme="dark"] .badge-role {
+SemearJovens/views/listaMestre.html:778:                                                    <span class="badge-role">{{ h.papel }}</span>
+SemearJovens/views/listaMestre.html:1516:                    return funcoes.filter(f => (f.papel_base || 'Membro') === papelSelecionado);
+SemearJovens/views/tios.html:351:                                                <span class="badge-role">Tios</span>
+SemearJovens/views/jovens-outro-ejc.html:260:                                                    <span class="badge-role">{{ h.papel }}</span>
+SemearJovens/views/jovens-outro-ejc.html:408:                    return funcoes.filter(f => (f.papel_base || 'Membro') === papelSelecionado);
+SemearJovens/views/historico-equipes.html:295:                                            <span class="badge bg-primary">{{ jovem.papel || 'Membro' }}</span>
+SemearJovens/views/historico-equipes.html:769:                                            papel: f.papel_base || 'Membro',
+SemearJovens/views/equipes.html:90:        #modalEquipe .badge-role {
+SemearJovens/views/equipes.html:259:                                            <span class="badge-role">{{ funcao.papel_base || 'Membro' }}</span>
+SemearJovens/views/equipes.html:341:                                    <span class="badge bg-soft-info text-info me-2">{{ fp.papel_base || 'Membro' }}</span>
+SemearJovens/routes/equipes.js:203:                comPapelBase ? [tenantId, equipeId, p.nome, p.papel_base || 'Membro'] : [tenantId, equipeId, p.nome]
+SemearJovens/routes/equipes.js:211:                [tenantId, equipeId, p.nome, p.papel_base || 'Membro', p.id]
+SemearJovens/routes/equipes.js:216:                [tenantId, equipeId, p.nome, p.papel_base || 'Membro']
+SemearJovens/routes/montar-encontro.js:513:        SELECT m.numero_ejc, e.nome as equipe_nome, ef.nome as funcao_nome, ${papelBaseSelect} as papel_base
+SemearJovens/routes/montar-encontro.js:575:        SELECT m.numero_ejc, e.nome as equipe_nome, ef.nome as funcao_nome, ${papelBaseSelect} as papel_base
+SemearJovens/routes/montar-encontro.js:1506:                   ef.id as funcao_id, ef.nome as funcao_nome, ${papelBaseSelect} as papel_base
+SemearJovens/routes/montar-encontro.js:1542:                    papel_base: row.papel_base || 'Membro',
+SemearJovens/routes/montar-encontro.js:1675:            if (ehFuncaoCoordenador(row.funcao_nome, row.papel_base)) {
+SemearJovens/routes/montar-encontro.js:2042:                   ef.id as funcao_id, ef.nome as funcao_nome, ${papelBaseSelect} as papel_base
+SemearJovens/routes/montar-encontro.js:2066:                    papel_base: row.papel_base || 'Membro'
+SemearJovens/routes/montar-encontro.js:2340:                   ef.id as funcao_id, ef.nome as funcao_nome, ${papelBaseSelect} as papel_base
+SemearJovens/routes/montar-encontro.js:2356:                    papel_base: row.papel_base || 'Membro'
+SemearJovens/routes/montar-encontro.js:2457:                   ef.id as funcao_id, ef.nome as funcao_nome, ${papelBaseSelect} as papel_base
+SemearJovens/routes/montar-encontro.js:2479:                    papel_base: row.papel_base || 'Membro'
+SemearJovens/routes/montar-encontro.js:3396:                   ef.nome AS funcao_nome, COALESCE(ef.papel_base, 'Membro') AS papel_base,
+SemearJovens/routes/montar-encontro.js:3718:                    e.nome AS equipe_nome, ef.nome AS funcao_nome, ${papelBaseSelect} AS papel_base
+SemearJovens/routes/montar-encontro.js:4132:                   ef.nome AS funcao_nome, COALESCE(ef.papel_base, 'Membro') AS papel_base

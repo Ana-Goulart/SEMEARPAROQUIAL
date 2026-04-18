@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usuários - Semear Catequese</title>
+    <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        [v-cloak] { display: none; }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <main v-cloak>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="mb-0">Gerenciar Usuários</h3>
+                <button class="btn btn-primary" @click="abrirModalNovo">Novo Usuário</button>
+            </div>
+
+            <div v-if="loading" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+            </div>
+
+            <div v-else class="card shadow-sm">
+                <div class="card-body p-0">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Nome</th>
+                                <th>Usuário</th>
+                                <th>Grupo</th>
+                                <th>Status</th>
+                                <th class="text-end">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-if="usuarios.length === 0">
+                                <td colspan="5" class="text-center py-4 text-muted">Nenhum usuário cadastrado.</td>
+                            </tr>
+                            <tr v-for="u in usuarios" :key="u.id">
+                                <td>{{ u.nome_completo }}</td>
+                                <td>{{ u.username }}</td>
+                                <td>{{ u.grupo }}</td>
+                                <td>
+                                    <span class="badge" :class="u.ativo ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'">
+                                        {{ u.ativo ? 'Ativo' : 'Inativo' }}
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    <button class="btn btn-sm btn-outline-primary me-1" @click="abrirModalEdicao(u)">Editar</button>
+                                    <button class="btn btn-sm btn-outline-danger" @click="deletar(u)">Excluir</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="modal fade" id="userModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">{{ editando ? 'Editar usuário' : 'Novo usuário' }}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form @submit.prevent="salvar">
+                                <div class="mb-3">
+                                    <label class="form-label">Nome completo *</label>
+                                    <input class="form-control" v-model="form.nome_completo" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Usuário (login) *</label>
+                                    <input class="form-control" v-model="form.username" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Senha {{ editando ? '(deixe em branco para manter)' : '*' }}</label>
+                                    <input class="form-control" type="password" v-model="form.senha" :required="!editando">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Grupo *</label>
+                                    <select class="form-select" v-model="form.grupo" required>
+                                        <option value="" disabled>Selecione...</option>
+                                        <option value="Administração">Administração</option>
+                                        <option value="Coordenação">Coordenação</option>
+                                        <option value="Catequista">Catequista</option>
+                                        <option value="Apoio">Apoio</option>
+                                    </select>
+                                </div>
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="ativoCheck" v-model="form.ativo">
+                                    <label class="form-check-label" for="ativoCheck">Usuário ativo</label>
+                                </div>
+
+                                <div class="d-flex justify-content-end gap-2">
+                                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="submit" class="btn btn-primary">Salvar</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/menu.js"></script>
+    <script>
+        const { createApp } = Vue;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            injetarMenu('#app');
+            ativarMenu('/usuarios');
+
+            createApp({
+                data() {
+                    return {
+                        loading: false,
+                        usuarios: [],
+                        modal: null,
+                        editando: false,
+                        form: {
+                            id: null,
+                            nome_completo: '',
+                            username: '',
+                            senha: '',
+                            grupo: '',
+                            ativo: true
+                        }
+                    };
+                },
+                async mounted() {
+                    this.modal = new bootstrap.Modal(document.getElementById('userModal'));
+                    await this.carregar();
+                },
+                methods: {
+                    limparForm() {
+                        this.form = {
+                            id: null,
+                            nome_completo: '',
+                            username: '',
+                            senha: '',
+                            grupo: '',
+                            ativo: true
+                        };
+                    },
+                    async carregar() {
+                        this.loading = true;
+                        try {
+                            const res = await fetch('/api/usuarios');
+                            const data = await res.json();
+                            if (!res.ok) throw new Error(data.error || 'Erro ao carregar usuários.');
+                            this.usuarios = data;
+                        } catch (err) {
+                            console.error(err);
+                            alert(err.message || 'Erro ao carregar usuários.');
+                        } finally {
+                            this.loading = false;
+                        }
+                    },
+                    abrirModalNovo() {
+                        this.editando = false;
+                        this.limparForm();
+                        this.modal.show();
+                    },
+                    abrirModalEdicao(user) {
+                        this.editando = true;
+                        this.form = {
+                            id: user.id,
+                            nome_completo: user.nome_completo,
+                            username: user.username,
+                            senha: '',
+                            grupo: user.grupo,
+                            ativo: !!user.ativo
+                        };
+                        this.modal.show();
+                    },
+                    async salvar() {
+                        try {
+                            const method = this.editando ? 'PUT' : 'POST';
+                            const url = this.editando ? `/api/usuarios/${this.form.id}` : '/api/usuarios';
+                            const payload = {
+                                nome_completo: this.form.nome_completo,
+                                username: this.form.username,
+                                senha: this.form.senha,
+                                grupo: this.form.grupo,
+                                ativo: !!this.form.ativo
+                            };
+
+                            const res = await fetch(url, {
+                                method,
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(payload)
+                            });
+                            const data = await res.json();
+                            if (!res.ok) throw new Error(data.error || 'Erro ao salvar usuário.');
+
+                            this.modal.hide();
+                            await this.carregar();
+                        } catch (err) {
+                            console.error(err);
+                            alert(err.message || 'Erro ao salvar usuário.');
+                        }
+                    },
+                    async deletar(user) {
+                        const confirmar = confirm(`Deseja excluir o usuário ${user.nome_completo}?`);
+                        if (!confirmar) return;
+
+                        try {
+                            const res = await fetch(`/api/usuarios/${user.id}`, { method: 'DELETE' });
+                            const data = await res.json();
+                            if (!res.ok) throw new Error(data.error || 'Erro ao excluir usuário.');
+                            await this.carregar();
+                        } catch (err) {
+                            console.error(err);
+                            alert(err.message || 'Erro ao excluir usuário.');
+                        }
+                    }
+                }
+            }).mount('main');
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,1638 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SemearAdmin - Painel Paroquial</title>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Source+Sans+3:wght@400;500;600;700&display=swap');
+
+        :root {
+            --bg-ivory: #f6f1e7;
+            --bg-soft: #fffaf1;
+            --surface: rgba(255, 255, 255, 0.94);
+            --surface-strong: #ffffff;
+            --line: rgba(126, 96, 43, 0.14);
+            --line-strong: rgba(126, 96, 43, 0.24);
+            --gold: #a37a2c;
+            --gold-deep: #7a5720;
+            --navy: #1d2f45;
+            --navy-soft: #42566f;
+            --green: #4d7450;
+            --danger-soft: #8b4b42;
+            --shadow: 0 24px 60px rgba(39, 28, 10, 0.10);
+            --shadow-soft: 0 14px 34px rgba(39, 28, 10, 0.08);
+            --radius-xl: 28px;
+            --radius-lg: 22px;
+            --radius-md: 18px;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            margin: 0;
+            font-family: 'Source Sans 3', sans-serif;
+            color: var(--navy);
+            background:
+                radial-gradient(circle at top left, rgba(186, 145, 74, 0.18), transparent 24%),
+                radial-gradient(circle at top right, rgba(61, 92, 121, 0.10), transparent 22%),
+                linear-gradient(180deg, #fbf7ef 0%, #f3ecdf 100%);
+        }
+
+        .admin-shell {
+            max-width: 1340px;
+        }
+
+        .layout-grid {
+            display: grid;
+            grid-template-columns: 280px minmax(0, 1fr);
+            gap: 22px;
+            align-items: start;
+        }
+
+        .sidebar-card {
+            position: sticky;
+            top: 24px;
+            border-radius: 30px;
+            padding: 24px 20px;
+            border: 1px solid var(--line);
+            background: rgba(255, 252, 246, 0.94);
+            box-shadow: var(--shadow-soft);
+        }
+
+        .sidebar-logo {
+            font-family: 'Libre Baskerville', serif;
+            font-size: 1.35rem;
+            color: #16263b;
+            margin: 8px 0 4px;
+        }
+
+        .sidebar-copy {
+            color: var(--navy-soft);
+            line-height: 1.5;
+            font-size: 0.95rem;
+            margin-bottom: 18px;
+        }
+
+        .nav-menu {
+            display: grid;
+            gap: 10px;
+        }
+
+        .nav-btn {
+            width: 100%;
+            text-align: left;
+            border: 1px solid rgba(29, 47, 69, 0.08);
+            background: rgba(255,255,255,0.82);
+            color: var(--navy);
+            border-radius: 18px;
+            padding: 14px 16px;
+            transition: all 0.2s ease;
+        }
+
+        .nav-btn:hover {
+            border-color: rgba(163, 122, 44, 0.24);
+            transform: translateY(-1px);
+        }
+
+        .nav-btn.active {
+            background: linear-gradient(135deg, #1f3855 0%, #355b84 100%);
+            color: #fff;
+            border-color: transparent;
+            box-shadow: 0 16px 28px rgba(31, 56, 85, 0.18);
+        }
+
+        .nav-btn small {
+            display: block;
+            margin-top: 4px;
+            opacity: 0.78;
+        }
+
+        .content-stack {
+            display: grid;
+            gap: 22px;
+        }
+
+        .topbar,
+        .dashboard-card,
+        .panel-card,
+        .module-card,
+        .insight-card,
+        .user-row-card {
+            border: 1px solid var(--line);
+            background: var(--surface);
+            box-shadow: var(--shadow-soft);
+        }
+
+        .topbar {
+            border-radius: 30px;
+            padding: 28px 32px;
+            background:
+                linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(255,249,238,0.96) 100%);
+            box-shadow: var(--shadow);
+        }
+
+        .brand-kicker {
+            font-size: 0.84rem;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: var(--gold);
+            font-weight: 700;
+        }
+
+        .headline {
+            font-family: 'Libre Baskerville', serif;
+            font-size: clamp(2rem, 3vw, 3rem);
+            line-height: 1.1;
+            margin: 10px 0 14px;
+            color: #16263b;
+        }
+
+        .subhead {
+            max-width: 760px;
+            font-size: 1.08rem;
+            line-height: 1.55;
+            color: var(--navy-soft);
+        }
+
+        .topbar-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.4fr) minmax(320px, 0.9fr);
+            gap: 26px;
+            align-items: stretch;
+        }
+
+        .identity-chip-wrap {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 18px;
+        }
+
+        .identity-chip,
+        .status-pill,
+        .module-tag,
+        .section-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border-radius: 999px;
+            padding: 8px 14px;
+            font-size: 0.92rem;
+            font-weight: 600;
+        }
+
+        .identity-chip {
+            background: rgba(163, 122, 44, 0.10);
+            color: var(--gold-deep);
+            border: 1px solid rgba(163, 122, 44, 0.12);
+        }
+
+        .status-pill {
+            background: rgba(77, 116, 80, 0.10);
+            color: var(--green);
+            border: 1px solid rgba(77, 116, 80, 0.18);
+        }
+
+        .hero-side {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .insight-card {
+            border-radius: 22px;
+            padding: 18px 18px 16px;
+            background: linear-gradient(180deg, #fffdf9 0%, #fffaf2 100%);
+        }
+
+        .insight-label {
+            text-transform: uppercase;
+            letter-spacing: 0.16em;
+            font-size: 0.76rem;
+            color: var(--gold);
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .insight-value {
+            font-size: 2rem;
+            line-height: 1;
+            font-weight: 700;
+            color: #18283d;
+        }
+
+        .insight-note {
+            margin-top: 10px;
+            font-size: 0.95rem;
+            color: var(--navy-soft);
+            line-height: 1.45;
+        }
+
+        .logout-btn {
+            border-radius: 14px;
+            padding: 10px 18px;
+            border-color: rgba(29, 47, 69, 0.24);
+            color: var(--navy);
+            background: rgba(255,255,255,0.9);
+        }
+
+        .content-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.45fr);
+            gap: 22px;
+            margin-top: 22px;
+        }
+
+        .dashboard-card,
+        .panel-card {
+            border-radius: var(--radius-xl);
+            padding: 24px;
+        }
+
+        .section-kicker {
+            background: rgba(66, 86, 111, 0.08);
+            color: var(--navy-soft);
+            padding: 6px 12px;
+            font-size: 0.78rem;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+        }
+
+        .section-title {
+            font-family: 'Libre Baskerville', serif;
+            font-size: 1.52rem;
+            margin: 14px 0 10px;
+            color: #18283d;
+        }
+
+        .section-copy {
+            color: var(--navy-soft);
+            line-height: 1.55;
+            margin-bottom: 0;
+        }
+
+        .modules-grid {
+            display: grid;
+            gap: 14px;
+            margin-top: 18px;
+        }
+
+        .module-card {
+            border-radius: 20px;
+            padding: 18px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(251,247,238,0.98) 100%);
+        }
+
+        .module-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .module-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #17263b;
+        }
+
+        .module-code {
+            font-size: 0.88rem;
+            color: var(--navy-soft);
+        }
+
+        .module-tag {
+            background: rgba(163, 122, 44, 0.10);
+            color: var(--gold-deep);
+            border: 1px solid rgba(163, 122, 44, 0.14);
+            padding: 6px 12px;
+            font-size: 0.82rem;
+        }
+
+        .module-summary {
+            margin-top: 12px;
+            color: var(--navy-soft);
+            line-height: 1.5;
+        }
+
+        .module-foot {
+            margin-top: 14px;
+            font-size: 0.92rem;
+            color: var(--navy-soft);
+        }
+
+        .module-empty {
+            border-radius: 20px;
+            border: 1px dashed var(--line-strong);
+            padding: 22px;
+            background: rgba(255,255,255,0.68);
+            color: var(--navy-soft);
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(12, minmax(0, 1fr));
+            gap: 14px;
+            margin-top: 18px;
+        }
+
+        .field-span-4 { grid-column: span 4; }
+        .field-span-3 { grid-column: span 3; }
+        .field-span-2 { grid-column: span 2; }
+
+        .form-label {
+            font-weight: 700;
+            color: #23374d;
+            margin-bottom: 8px;
+        }
+
+        .form-control,
+        .form-select {
+            min-height: 50px;
+            border-radius: 16px;
+            border-color: rgba(29, 47, 69, 0.14);
+            box-shadow: none;
+            background: rgba(255,255,255,0.92);
+            padding: 12px 14px;
+        }
+
+        .form-control:focus,
+        .form-select:focus {
+            border-color: rgba(163, 122, 44, 0.48);
+            box-shadow: 0 0 0 0.22rem rgba(163, 122, 44, 0.12);
+        }
+
+        .field-note {
+            margin-top: 8px;
+            color: var(--navy-soft);
+            font-size: 0.92rem;
+            line-height: 1.45;
+        }
+
+        .panel-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-top: 18px;
+            padding-top: 18px;
+            border-top: 1px solid rgba(29, 47, 69, 0.08);
+        }
+
+        .primary-btn {
+            border: 0;
+            border-radius: 16px;
+            padding: 13px 22px;
+            background: linear-gradient(135deg, #214261 0%, #355b84 100%);
+            color: #fff;
+            font-weight: 700;
+            box-shadow: 0 14px 30px rgba(33, 66, 97, 0.20);
+        }
+
+        .primary-btn:disabled {
+            opacity: 0.68;
+            cursor: wait;
+            box-shadow: none;
+        }
+
+        .secondary-btn {
+            border-radius: 14px;
+            padding: 10px 16px;
+        }
+
+        .btn-edit-standard {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.35rem;
+            min-width: 82px;
+            min-height: 40px;
+            padding: 0.45rem 0.95rem;
+            border-radius: 10px;
+            background: #d9a650;
+            border: 1px solid #d9a650;
+            color: #fff;
+            font-weight: 700;
+            box-shadow: 0 8px 18px rgba(217, 166, 80, 0.28);
+        }
+
+        .btn-edit-standard:hover {
+            background: #c8933f;
+            border-color: #c8933f;
+            color: #fff;
+        }
+
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1050;
+            padding: 16px;
+        }
+
+        .dialog-card {
+            width: 100%;
+            max-width: 720px;
+            background: #fff;
+            border-radius: 24px;
+            box-shadow: 0 24px 60px rgba(39, 28, 10, 0.18);
+            border: 1px solid rgba(126, 96, 43, 0.12);
+        }
+
+        .roster-wrap {
+            margin-top: 18px;
+            display: grid;
+            gap: 14px;
+        }
+
+        .user-row-card {
+            border-radius: 20px;
+            padding: 18px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(252,248,240,0.96) 100%);
+        }
+
+        .user-row-head {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            align-items: start;
+        }
+
+        .user-name {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #17263b;
+        }
+
+        .user-meta {
+            color: var(--navy-soft);
+            line-height: 1.5;
+            margin-top: 6px;
+        }
+
+        .user-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .user-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 7px 11px;
+            border-radius: 999px;
+            font-size: 0.84rem;
+            font-weight: 700;
+            background: rgba(29, 47, 69, 0.07);
+            color: var(--navy);
+        }
+
+        .empty-state {
+            border-radius: 22px;
+            border: 1px dashed var(--line-strong);
+            background: rgba(255,255,255,0.72);
+            padding: 26px;
+            color: var(--navy-soft);
+            text-align: center;
+        }
+
+        .empty-state strong {
+            display: block;
+            color: #17263b;
+            margin-bottom: 8px;
+            font-size: 1.05rem;
+        }
+
+        .page-alert {
+            border-radius: 18px;
+            border: 0;
+            box-shadow: var(--shadow-soft);
+        }
+
+        @media (max-width: 1100px) {
+            .layout-grid,
+            .content-grid,
+            .topbar-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar-card {
+                position: static;
+            }
+        }
+
+        @media (max-width: 860px) {
+            .hero-side,
+            .form-grid {
+                grid-template-columns: repeat(1, minmax(0, 1fr));
+            }
+
+            .field-span-4,
+            .field-span-3,
+            .field-span-2 {
+                grid-column: span 1;
+            }
+
+            .topbar,
+            .dashboard-card,
+            .panel-card {
+                padding: 20px;
+            }
+
+            .panel-actions,
+            .user-row-head,
+            .module-card-header {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .primary-btn,
+            .secondary-btn,
+            .logout-btn {
+                width: 100%;
+            }
+        }
+
+        .app-shell {
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 276px minmax(0, 1fr);
+            background: rgba(247, 241, 228, 0.85);
+        }
+
+        .sidebar-panel {
+            background: rgba(255, 252, 246, 0.92);
+            border-right: 1px solid rgba(163, 122, 44, 0.12);
+            padding: 24px 12px;
+        }
+
+        .sidebar-panel .sidebar-copy {
+            margin-bottom: 26px;
+        }
+
+        .sidebar-section-title {
+            color: var(--gold);
+            font-size: 0.75rem;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            font-weight: 700;
+            margin: 18px 12px 10px;
+        }
+
+        .sidebar-nav {
+            display: grid;
+            gap: 12px;
+        }
+
+        .sidebar-menu-btn {
+            width: 100%;
+            border: 1px solid rgba(163, 122, 44, 0.12);
+            background: rgba(255,255,255,0.72);
+            color: #4b5563;
+            border-radius: 18px;
+            padding: 14px 18px;
+            text-align: left;
+            font-weight: 700;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: 0.18s ease;
+        }
+
+        .sidebar-menu-btn:hover {
+            border-color: rgba(163, 122, 44, 0.24);
+            transform: translateY(-1px);
+        }
+
+        .sidebar-menu-btn.active {
+            background: linear-gradient(180deg, rgba(255,249,238,0.95), rgba(244,236,220,0.92));
+            color: #1d2f45;
+            box-shadow: inset 3px 0 0 #c79d45, 0 12px 24px rgba(163, 122, 44, 0.08);
+        }
+
+        .sidebar-menu-icon {
+            display: inline-flex;
+            width: 26px;
+            justify-content: center;
+            margin-right: 10px;
+        }
+
+        .sidebar-menu-label {
+            display: flex;
+            align-items: center;
+        }
+
+        .sidebar-chevron {
+            color: #8a6a36;
+        }
+
+        .workspace {
+            display: grid;
+            grid-template-rows: auto 1fr;
+            min-width: 0;
+        }
+
+        .topbar-shell {
+            height: 74px;
+            background: rgba(255,255,255,0.88);
+            border-bottom: 1px solid rgba(163, 122, 44, 0.12);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 22px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+            backdrop-filter: blur(10px);
+        }
+
+        .topbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .topbar-square,
+        .topbar-icon-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 14px;
+            border: 1px solid rgba(163, 122, 44, 0.22);
+            background: rgba(255,255,255,0.72);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--gold-deep);
+        }
+
+        .topbar-logo-wrap {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .topbar-logo-mark {
+            width: 34px;
+            height: 34px;
+            object-fit: contain;
+            display: block;
+        }
+
+        .topbar-logo-text {
+            font-family: 'Libre Baskerville', serif;
+            font-size: 1.55rem;
+            line-height: 1.1;
+            color: #1f2937;
+            letter-spacing: 0.08em;
+        }
+
+        .topbar-logo-text small {
+            display: block;
+            font-family: 'Source Sans 3', sans-serif;
+            letter-spacing: 0.18em;
+            text-transform: uppercase;
+            font-size: 0.82rem;
+            color: var(--gold);
+        }
+
+        .topbar-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .log-grid-wrap {
+            border: 1px solid rgba(126, 96, 43, 0.14);
+            border-radius: 22px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .log-grid-head,
+        .log-grid-row {
+            display: grid;
+            grid-template-columns: minmax(180px, 1.3fr) minmax(250px, 2fr) minmax(130px, 1fr) minmax(110px, 0.8fr) minmax(140px, 1fr);
+            gap: 16px;
+            align-items: center;
+            padding: 14px 18px;
+        }
+
+        .log-grid-head {
+            background: rgba(243, 235, 220, 0.9);
+            border-bottom: 1px solid rgba(126, 96, 43, 0.14);
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #7a5a2a;
+        }
+
+        .log-grid-row {
+            border-bottom: 1px solid rgba(126, 96, 43, 0.1);
+        }
+
+        .log-grid-row:last-child {
+            border-bottom: 0;
+        }
+
+        .log-grid-head,
+        .log-grid-row {
+            min-width: 860px;
+        }
+
+        .log-cell-user {
+            min-width: 0;
+        }
+
+        .log-cell-title {
+            font-weight: 700;
+            color: #1c2d43;
+            line-height: 1.3;
+        }
+
+        .log-cell-subtitle {
+            color: #6c7788;
+            font-size: 0.92rem;
+            margin-top: 3px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .log-cell-value {
+            color: #33475f;
+            font-weight: 600;
+            line-height: 1.35;
+        }
+
+        .log-filters {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(180px, 1fr));
+            gap: 14px;
+            margin: 18px 0;
+        }
+
+        .user-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(255,255,255,0.86);
+            border: 1px solid rgba(163, 122, 44, 0.16);
+            border-radius: 999px;
+            padding: 6px 12px 6px 6px;
+            color: #4b5563;
+            font-weight: 700;
+        }
+
+        .user-pill-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 999px;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(135deg, #c79d45, #d8bb6f);
+            color: #fff;
+            font-size: 0.9rem;
+        }
+
+        .page-content {
+            padding: 30px 34px 34px;
+            min-width: 0;
+        }
+
+        .hero-grid {
+            display: grid;
+            grid-template-columns: minmax(0, 1.45fr) minmax(320px, 1fr);
+            gap: 18px;
+            margin-bottom: 22px;
+        }
+
+        .hero-card,
+        .action-card,
+        .summary-card {
+            border-radius: 28px;
+            background: rgba(255,255,255,0.84);
+            border: 1px solid rgba(163, 122, 44, 0.12);
+            box-shadow: 0 22px 50px rgba(39, 28, 10, 0.08);
+        }
+
+        .hero-card {
+            padding: 24px 26px;
+            background:
+                radial-gradient(circle at top left, rgba(226, 198, 131, 0.14), transparent 32%),
+                rgba(255,255,255,0.84);
+        }
+
+        .hero-kicker {
+            color: var(--gold);
+            font-size: 0.84rem;
+            letter-spacing: 0.16em;
+            text-transform: uppercase;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .hero-title {
+            font-family: 'Libre Baskerville', serif;
+            font-size: clamp(2.2rem, 4vw, 3.2rem);
+            line-height: 1.08;
+            margin-bottom: 12px;
+            color: #1d1b18;
+        }
+
+        .hero-description {
+            color: #7a5720;
+            font-size: 1rem;
+            line-height: 1.5;
+            max-width: 760px;
+        }
+
+        .hero-badges {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-top: 22px;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            border-radius: 999px;
+            background: rgba(255,255,255,0.82);
+            border: 1px solid rgba(163, 122, 44, 0.14);
+            color: #344256;
+            font-weight: 600;
+        }
+
+        .action-card {
+            padding: 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .action-card-title {
+            color: var(--gold);
+            font-size: 0.82rem;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            font-weight: 700;
+        }
+
+        .action-card strong {
+            font-family: 'Libre Baskerville', serif;
+            font-size: 1.02rem;
+            color: #241f17;
+        }
+
+        .action-card p {
+            margin: 0;
+            color: #7a5720;
+            line-height: 1.45;
+        }
+
+        .action-button-primary,
+        .action-button-secondary {
+            width: 100%;
+            min-height: 44px;
+            border-radius: 14px;
+            border: 0;
+            font-weight: 700;
+        }
+
+        .action-button-primary {
+            background: #23476b;
+            color: #fff;
+        }
+
+        .action-button-secondary {
+            background: rgba(244, 236, 220, 0.78);
+            color: #7a5720;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 18px;
+            margin-bottom: 22px;
+        }
+
+        .summary-card {
+            padding: 18px 18px 16px;
+        }
+
+        .summary-card-label {
+            color: var(--gold);
+            font-size: 0.88rem;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .summary-card-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            line-height: 1;
+            color: #1d1b18;
+        }
+
+        .summary-card-copy {
+            color: #7a5720;
+            margin-top: 8px;
+        }
+
+        .summary-card-link {
+            margin-top: 14px;
+            color: #9a6e22;
+            font-weight: 700;
+        }
+
+        .surface-card {
+            border-radius: 28px;
+            border: 1px solid rgba(163, 122, 44, 0.12);
+            background: rgba(255,255,255,0.84);
+            box-shadow: 0 22px 50px rgba(39, 28, 10, 0.08);
+        }
+
+        @media (max-width: 1100px) {
+            .app-shell,
+            .hero-grid,
+            .summary-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar-panel {
+                display: none;
+            }
+
+            .page-content {
+                padding: 22px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="app-shell">
+        <aside class="sidebar-panel">
+            <div class="sidebar-section-title">Navegação</div>
+            <div class="sidebar-copy">Acesso rápido aos módulos e áreas administrativas da paróquia.</div>
+
+            <nav class="sidebar-nav">
+                <button class="sidebar-menu-btn" :class="{ active: abaAtiva === 'dashboard' }" @click="abaAtiva = 'dashboard'">
+                    <span class="sidebar-menu-label"><span class="sidebar-menu-icon">📊</span>Visão Geral</span>
+                    <span class="sidebar-chevron">›</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-section-title">Administrativo</div>
+            <nav class="sidebar-nav">
+                <button class="sidebar-menu-btn" :class="{ active: abaAtiva === 'modulos' }" @click="abaAtiva = 'modulos'">
+                    <span class="sidebar-menu-label"><span class="sidebar-menu-icon">🧩</span>Módulos</span>
+                    <span class="sidebar-chevron">›</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-section-title">Sistema</div>
+            <nav class="sidebar-nav">
+                <button class="sidebar-menu-btn" :class="{ active: abaAtiva === 'usuarios-sistema' }" @click="abaAtiva = 'usuarios-sistema'">
+                    <span class="sidebar-menu-label"><span class="sidebar-menu-icon">👥</span>Usuários do sistema</span>
+                    <span class="sidebar-chevron">›</span>
+                </button>
+                <button class="sidebar-menu-btn" :class="{ active: abaAtiva === 'logs' }" @click="abrirLogs">
+                    <span class="sidebar-menu-label"><span class="sidebar-menu-icon">🕘</span>Log</span>
+                    <span class="sidebar-chevron">›</span>
+                </button>
+            </nav>
+        </aside>
+
+        <div class="workspace">
+            <header class="topbar-shell">
+                <div class="topbar-brand">
+                    <button type="button" class="topbar-square" aria-label="Menu">☰</button>
+                    <div class="topbar-logo-wrap">
+                        <img src="/assets/logo-oficial.png" alt="Semear Paroquial" class="topbar-logo-mark">
+                        <div class="topbar-logo-text">SEMEAR <small>PAROQUIAL</small></div>
+                    </div>
+                </div>
+                <div class="topbar-actions">
+                    <button type="button" class="topbar-icon-btn" aria-label="Notificações">🔔</button>
+                    <div class="user-pill">
+                        <span class="user-pill-avatar">{{ adminIniciais }}</span>
+                        <span>{{ adminLabel }}</span>
+                    </div>
+                    <button class="btn logout-btn" @click="sair">Sair</button>
+                </div>
+            </header>
+
+            <main class="page-content">
+                <div v-if="mensagem" class="alert page-alert mb-4" :class="erro ? 'alert-danger' : 'alert-success'">{{ mensagem }}</div>
+
+                <section class="hero-grid">
+                    <article class="hero-card">
+                        <div class="hero-kicker">Painel Principal</div>
+                        <h1 class="hero-title">Boas-vindas ao Semear Paroquial</h1>
+                        <div class="hero-description">{{ descricaoAbaAtual }}</div>
+                        <div class="hero-badges">
+                            <span class="hero-badge">{{ tenant.paroquia || 'Paróquia' }}</span>
+                            <span class="hero-badge">🧩 {{ enabledModules.length }} módulos contratados</span>
+                            <span class="hero-badge">👥 {{ usuarios.length }} responsáveis ativos</span>
+                        </div>
+                    </article>
+
+                    <article class="action-card">
+                        <div class="action-card-title">Acesso Rápido</div>
+                        <div>
+                            <strong>{{ tituloAbaAtual }}</strong>
+                            <p>{{ abaAtiva === 'dashboard' ? 'Use os atalhos para ver seus módulos, configurar acessos por módulo e administrar quem entra no painel.' : 'Você está navegando por uma área administrativa da paróquia.' }}</p>
+                        </div>
+                        <div class="d-grid gap-2 mt-auto">
+                            <button class="action-button-primary" @click="abaAtiva = 'modulos'">Abrir módulos</button>
+                            <button class="action-button-secondary" @click="abaAtiva = 'usuarios-sistema'">Ir para usuários do sistema</button>
+                        </div>
+                    </article>
+                </section>
+
+                <template v-if="abaAtiva === 'dashboard'">
+                    <section class="summary-grid">
+                        <article class="summary-card">
+                            <div class="summary-card-label">Módulos</div>
+                            <div class="summary-card-value">{{ enabledModules.length }}</div>
+                            <div class="summary-card-copy">Serviços liberados para esta paróquia.</div>
+                            <div class="summary-card-link">Abrir módulo</div>
+                        </article>
+                        <article class="summary-card">
+                            <div class="summary-card-label">Usuários</div>
+                            <div class="summary-card-value">{{ usuarios.length }}</div>
+                            <div class="summary-card-copy">Acessos já vinculados aos módulos.</div>
+                            <div class="summary-card-link">Abrir módulo</div>
+                        </article>
+                        <article class="summary-card">
+                            <div class="summary-card-label">Módulo principal</div>
+                            <div class="summary-card-value" style="font-size:1.35rem;">{{ moduloPrincipalNome }}</div>
+                            <div class="summary-card-copy">Primeiro serviço disponível para gestão.</div>
+                            <div class="summary-card-link">Abrir módulo</div>
+                        </article>
+                    </section>
+
+                    <section class="dashboard-card surface-card">
+                        <span class="section-kicker">Dashboard</span>
+                        <h2 class="section-title">Módulos contratados</h2>
+                        <p class="section-copy">
+                            Este painel resume apenas os módulos já contratados pela paróquia. A gestão detalhada de
+                            responsáveis e acessos fica nos menus laterais.
+                        </p>
+
+                        <div class="modules-grid" v-if="enabledModules.length">
+                            <article class="module-card" v-for="mod in enabledModules" :key="mod.code">
+                                <div class="module-card-header">
+                                    <div>
+                                        <div class="module-name">{{ mod.nome }}</div>
+                                        <div class="module-code">{{ mod.code }}</div>
+                                    </div>
+                                    <span class="module-tag">Contratado</span>
+                                </div>
+                                <div class="module-summary">
+                                    Módulo disponível para esta paróquia dentro da plataforma Semear Paroquial.
+                                </div>
+                            </article>
+                        </div>
+
+                        <div v-else class="module-empty mt-3">
+                            Nenhum módulo foi liberado para esta paróquia até o momento.
+                        </div>
+                    </section>
+                </template>
+
+                <template v-if="abaAtiva === 'modulos'">
+                    <section class="panel-card">
+                        <span class="section-kicker">Gestão de acesso</span>
+                        <h2 class="section-title">Usuário de cada módulo</h2>
+                        <p class="section-copy">
+                            Abra cada módulo contratado e defina o usuário e a senha que irão administrá-lo.
+                            O padrão continua o mesmo, apenas separado da gestão de usuários do painel.
+                        </p>
+
+                        <div v-if="mensagem" class="alert page-alert mt-3 mb-0" :class="erro ? 'alert-danger' : 'alert-success'">{{ mensagem }}</div>
+
+                        <div class="form-grid">
+                            <div class="field-span-4">
+                                <label class="form-label">Módulo</label>
+                                <select class="form-select" v-model="form.module_code" @change="onModuleChange">
+                                    <option v-for="m in enabledModules" :key="m.code" :value="m.code">{{ m.nome }}</option>
+                                </select>
+                                <div class="field-note">Somente os módulos adquiridos pela paróquia aparecem aqui.</div>
+                            </div>
+
+                            <div class="field-span-4">
+                                <label class="form-label">Nome do EJC</label>
+                                <input class="form-control" v-model.trim="form.nome_completo" placeholder="Ex.: Secretaria Paroquial / Coordenação do EJC">
+                            </div>
+
+                            <div class="field-span-4">
+                                <label class="form-label">E-mail de acesso</label>
+                                <input class="form-control" type="email" v-model.trim="form.email" placeholder="responsavel@paroquia.com.br">
+                            </div>
+
+                            <div class="field-span-3">
+                                <label class="form-label">Senha provisória</label>
+                                <input class="form-control" type="password" v-model="form.senha" placeholder="Defina uma senha segura">
+                            </div>
+
+                            <div class="field-span-3">
+                                <label class="form-label">Perfil</label>
+                                <select class="form-select" v-model="form.grupo">
+                                    <option v-for="g in grupos" :key="g" :value="g">{{ g }}</option>
+                                </select>
+                            </div>
+
+                            <div class="field-span-6">
+                                <label class="form-label">Diretriz desta área</label>
+                                <input class="form-control" :value="mensagemDiretrizModulo" disabled>
+                                <div class="field-note">Essa leitura ajuda a secretaria ou o padre a entender a finalidade do acesso que está sendo criado.</div>
+                            </div>
+                        </div>
+
+                        <div class="panel-actions">
+                            <div class="field-note mb-0">
+                                Hoje o fluxo já está preparado para crescer por módulo. Com o tempo, este mesmo painel poderá
+                                administrar EJC, catequese, dízimo e outras frentes da paróquia.
+                            </div>
+                            <button class="primary-btn" @click="salvar" :disabled="saving || !enabledModules.length">
+                                {{ saving ? 'Salvando responsável...' : 'Salvar responsável do módulo' }}
+                            </button>
+                        </div>
+                    </section>
+
+                    <section class="panel-card">
+                        <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                            <div>
+                                <span class="section-kicker">Acessos ativos</span>
+                                <h2 class="section-title mb-2">Usuários por módulo</h2>
+                                <p class="section-copy mb-0">
+                                    Aqui ficam os acessos já configurados para cada módulo da sua paróquia.
+                                </p>
+                            </div>
+                            <button class="btn btn-outline-primary secondary-btn" @click="carregarUsuarios">Atualizar painel</button>
+                        </div>
+
+                        <div class="roster-wrap" v-if="usuarios.length">
+                            <article class="user-row-card" v-for="u in usuarios" :key="u.id">
+                                <div class="user-row-head">
+                                    <div>
+                                        <div class="user-name">{{ u.nome_completo }}</div>
+                                        <div class="user-meta">{{ u.email }}</div>
+                                    </div>
+                                    <div class="text-md-end">
+                                        <div class="module-name">{{ moduloNome(u.module_code) }}</div>
+                                        <div class="module-code">Acesso principal do módulo</div>
+                                    </div>
+                                </div>
+                                <div class="user-badges">
+                                    <span class="user-badge">Perfil: {{ u.grupo }}</span>
+                                    <span class="user-badge">Módulo: {{ moduloNome(u.module_code) }}</span>
+                                    <span class="user-badge">Status: ativo</span>
+                                </div>
+                            </article>
+                        </div>
+
+                        <div v-else class="empty-state mt-3">
+                            <strong>Nenhum responsável cadastrado ainda.</strong>
+                            Assim que você registrar o responsável de um módulo, ele aparecerá aqui com o resumo do acesso.
+                        </div>
+                    </section>
+                </template>
+
+                <template v-if="abaAtiva === 'usuarios-sistema'">
+                    <section class="panel-card">
+                        <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                            <div>
+                                <span class="section-kicker">Sistema</span>
+                                <h2 class="section-title mb-2">Usuários do admin.semearparoquial</h2>
+                                <p class="section-copy mb-0">
+                                    Cadastre aqui os usuários que poderão entrar no painel administrativo da sua paróquia.
+                                    Esses acessos são independentes dos usuários de cada módulo.
+                                </p>
+                            </div>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <button class="btn btn-outline-primary secondary-btn" @click="carregarUsuariosSistema">Atualizar painel</button>
+                                <button class="primary-btn" @click="abrirModalUsuarioSistema()">Criar usuário</button>
+                            </div>
+                        </div>
+
+                        <div class="roster-wrap" v-if="usuariosSistema.length">
+                            <article class="user-row-card" v-for="u in usuariosSistema" :key="`sys-${u.id}`">
+                                <div class="user-row-head">
+                                    <div>
+                                        <div class="user-name">{{ u.nome_completo }}</div>
+                                        <div class="user-meta">{{ u.username }}</div>
+                                    </div>
+                                    <div class="d-flex gap-2 flex-wrap">
+                                        <button class="btn btn-edit-standard secondary-btn" @click="editarUsuarioSistema(u)">Editar</button>
+                                        <button class="btn btn-outline-danger secondary-btn" @click="excluirUsuarioSistema(u)">Excluir</button>
+                                    </div>
+                                </div>
+                                <div class="user-badges">
+                                    <span class="user-badge">Área: admin.semearparoquial</span>
+                                    <span class="user-badge">Status: {{ Number(u.ativo) === 1 ? 'ativo' : 'inativo' }}</span>
+                                </div>
+                            </article>
+                        </div>
+
+                        <div v-else class="empty-state mt-3">
+                            <strong>Nenhum usuário do sistema cadastrado ainda.</strong>
+                            Assim que você criar um acesso para o painel administrativo, ele aparecerá aqui.
+                        </div>
+                    </section>
+                </template>
+
+                <template v-if="abaAtiva === 'logs'">
+                    <section class="panel-card">
+                        <span class="section-kicker">Log</span>
+                        <h2 class="section-title">Últimos dois meses</h2>
+                        <p class="section-copy">
+                            Veja quem fez cada ação, em qual menu, com data e horário dentro do admin da sua paróquia.
+                        </p>
+
+                        <div class="log-filters">
+                            <div>
+                                <label class="form-label">Pesquisar usuário</label>
+                                <input class="form-control" v-model.trim="filtrosLog.usuario" placeholder="Nome ou e-mail">
+                            </div>
+                            <div>
+                                <label class="form-label">Pesquisar ação</label>
+                                <input class="form-control" v-model.trim="filtrosLog.acao" placeholder="Ex.: criou, editou, excluiu">
+                            </div>
+                            <div>
+                                <label class="form-label">Data</label>
+                                <input class="form-control" type="date" v-model="filtrosLog.data">
+                            </div>
+                        </div>
+
+                        <div class="log-grid-wrap" v-if="logsFiltrados.length">
+                            <div class="log-grid-head">
+                                <div>Usuário</div>
+                                <div>Ação</div>
+                                <div>Menu</div>
+                                <div>Data</div>
+                                <div>Horário</div>
+                            </div>
+                            <article class="log-grid-row" v-for="log in logsFiltrados" :key="`log-${log.id}`">
+                                <div class="log-cell-user">
+                                    <div class="log-cell-title">{{ log.actor_name || 'Usuário do sistema' }}</div>
+                                    <div class="log-cell-subtitle">{{ log.actor_identifier || '-' }}</div>
+                                </div>
+                                <div class="log-cell-value">{{ log.action_label }}</div>
+                                <div class="log-cell-value">{{ log.menu_label }}</div>
+                                <div class="log-cell-value">{{ formatarData(log.created_at) }}</div>
+                                <div class="log-cell-value">{{ formatarHora(log.created_at) }}</div>
+                            </article>
+                        </div>
+
+                        <div v-else-if="logs.length" class="empty-state mt-3">
+                            <strong>Nenhum log encontrado com esses filtros.</strong>
+                            Tente pesquisar outro usuário, outra ação ou escolher outra data.
+                        </div>
+
+                        <div v-else class="empty-state mt-3">
+                            <strong>Nenhum log encontrado.</strong>
+                            As ações realizadas nos últimos dois meses aparecerão aqui.
+                        </div>
+                    </section>
+                </template>
+            </main>
+        </div>
+
+        <div v-if="modalUsuarioSistema.aberto" class="overlay">
+            <div class="dialog-card p-4">
+                <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                    <div>
+                        <span class="section-kicker">Sistema</span>
+                        <h2 class="section-title mb-2">{{ systemUserForm.id ? 'Editar usuário do sistema' : 'Criar usuário do sistema' }}</h2>
+                        <p class="section-copy mb-0">Esse acesso terá permissão apenas dentro do `admin.semearparoquial` da sua paróquia.</p>
+                    </div>
+                    <button class="btn btn-light secondary-btn" @click="fecharModalUsuarioSistema">Fechar</button>
+                </div>
+
+                <div class="form-grid">
+                    <div class="field-span-4">
+                        <label class="form-label">Nome completo</label>
+                        <input class="form-control" v-model.trim="systemUserForm.nome_completo" placeholder="Ex.: Secretaria Paroquial">
+                    </div>
+
+                    <div class="field-span-4">
+                        <label class="form-label">Login</label>
+                        <input class="form-control" type="email" v-model.trim="systemUserForm.username" placeholder="admin@paroquia.com.br">
+                    </div>
+
+                    <div class="field-span-2">
+                        <label class="form-label">{{ systemUserForm.id ? 'Nova senha' : 'Senha' }}</label>
+                        <input class="form-control" type="password" v-model="systemUserForm.senha" :placeholder="systemUserForm.id ? 'Preencha para alterar' : 'Defina uma senha'">
+                    </div>
+
+                    <div class="field-span-2">
+                        <label class="form-label">Ativo</label>
+                        <select class="form-select" v-model="systemUserForm.ativo">
+                            <option :value="true">Sim</option>
+                            <option :value="false">Não</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="panel-actions">
+                    <div class="field-note mb-0">
+                        Use esse cadastro para padre, secretária ou outro responsável administrativo da paróquia.
+                    </div>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button class="btn btn-light secondary-btn" @click="fecharModalUsuarioSistema">Cancelar</button>
+                        <button class="primary-btn" @click="salvarUsuarioSistema" :disabled="saving">
+                            {{ saving ? 'Salvando usuário...' : (systemUserForm.id ? 'Salvar alterações' : 'Criar usuário') }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+        createApp({
+            data() {
+                return {
+                    saving: false,
+                    mensagem: '',
+                    erro: false,
+                    abaAtiva: 'dashboard',
+                    tenant: {},
+                    modules: [],
+                    enabledModules: [],
+                    usuarios: [],
+                    usuariosSistema: [],
+                    logs: [],
+                    filtrosLog: { usuario: '', acao: '', data: '' },
+                    modalUsuarioSistema: { aberto: false },
+                    grupos: ['Tios', 'Jovens', 'Diretor Espiritual', 'Padre'],
+                    form: { module_code: 'semear-jovens', nome_completo: '', email: '', senha: '', grupo: 'Tios' },
+                    systemUserForm: { id: null, nome_completo: '', username: '', senha: '', ativo: true }
+                };
+            },
+            computed: {
+                tituloAbaAtual() {
+                    return {
+                        dashboard: 'Dashboard da Paróquia',
+                        modulos: 'Módulos da Paróquia',
+                        'usuarios-sistema': 'Usuários do Sistema',
+                        logs: 'Log do Sistema'
+                    }[this.abaAtiva] || 'Painel Administrativo da Paróquia';
+                },
+                descricaoAbaAtual() {
+                    return {
+                        dashboard: 'Veja os módulos contratados pela paróquia e acompanhe rapidamente a estrutura liberada para uso.',
+                        modulos: 'Abra os módulos contratados e defina o usuário e a senha de administração de cada um.',
+                        'usuarios-sistema': 'Cadastre quem pode entrar no admin.semearparoquial da sua paróquia.',
+                        logs: 'Consulte o histórico recente de ações realizadas dentro do painel administrativo.'
+                    }[this.abaAtiva] || '';
+                },
+                adminLabel() {
+                    return this.tenant.paroquia || 'Admin';
+                },
+                adminIniciais() {
+                    return String(this.adminLabel || 'AD')
+                        .split(/\s+/)
+                        .filter(Boolean)
+                        .slice(0, 2)
+                        .map((parte) => parte[0])
+                        .join('')
+                        .toUpperCase() || 'AD';
+                },
+                moduloPrincipalNome() {
+                    return this.enabledModules[0]?.nome || 'Nenhum módulo';
+                },
+                resumoUsuariosPorModulo() {
+                    return (this.usuarios || []).reduce((acc, item) => {
+                        if (!item || !item.module_code) return acc;
+                        acc[item.module_code] = item.nome_completo || 'Responsável cadastrado';
+                        return acc;
+                    }, {});
+                },
+                mensagemDiretrizModulo() {
+                    if (this.form.module_code === 'semear-jovens') {
+                        return 'Responsável pelo acesso pastoral e administrativo do EJC.';
+                    }
+                    return 'Responsável pelo acesso administrativo deste módulo paroquial.';
+                },
+                logsFiltrados() {
+                    const usuario = String(this.filtrosLog.usuario || '').trim().toLowerCase();
+                    const acao = String(this.filtrosLog.acao || '').trim().toLowerCase();
+                    const data = String(this.filtrosLog.data || '').trim();
+                    return (this.logs || []).filter((log) => {
+                        const nomeUsuario = `${log.actor_name || ''} ${log.actor_identifier || ''}`.toLowerCase();
+                        const textoAcao = `${log.action_label || ''} ${log.menu_label || ''}`.toLowerCase();
+                        const dataLog = this.formatarDataInput(log.created_at);
+                        if (usuario && !nomeUsuario.includes(usuario)) return false;
+                        if (acao && !textoAcao.includes(acao)) return false;
+                        if (data && dataLog !== data) return false;
+                        return true;
+                    });
+                }
+            },
+            async mounted() {
+                const me = await fetch('/api/auth/me').then(r => r.json()).catch(() => ({}));
+                if (!me.logged) { window.location.href = '/login'; return; }
+                await this.carregarTenant();
+                await this.carregarModulos();
+                await this.carregarUsuarios();
+                await this.carregarUsuariosSistema();
+            },
+            methods: {
+                ok(msg) { this.mensagem = msg; this.erro = false; },
+                fail(msg) { this.mensagem = msg; this.erro = true; },
+                resetSystemUserForm() {
+                    this.systemUserForm = { id: null, nome_completo: '', username: '', senha: '', ativo: true };
+                },
+                abrirModalUsuarioSistema(usuario = null) {
+                    this.resetSystemUserForm();
+                    if (usuario) {
+                        this.systemUserForm = {
+                            id: usuario.id,
+                            nome_completo: usuario.nome_completo || '',
+                            username: usuario.username || '',
+                            senha: '',
+                            ativo: Number(usuario.ativo) === 1
+                        };
+                    }
+                    this.modalUsuarioSistema = { aberto: true };
+                },
+                fecharModalUsuarioSistema() {
+                    this.modalUsuarioSistema = { aberto: false };
+                    this.resetSystemUserForm();
+                },
+                formatarData(valor) {
+                    return new Date(valor).toLocaleDateString('pt-BR');
+                },
+                formatarHora(valor) {
+                    return new Date(valor).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                },
+                formatarDataInput(valor) {
+                    const data = new Date(valor);
+                    if (Number.isNaN(data.getTime())) return '';
+                    const ano = data.getFullYear();
+                    const mes = String(data.getMonth() + 1).padStart(2, '0');
+                    const dia = String(data.getDate()).padStart(2, '0');
+                    return `${ano}-${mes}-${dia}`;
+                },
+                async abrirLogs() {
+                    this.abaAtiva = 'logs';
+                    await this.carregarLogs();
+                },
+                onModuleChange() {
+                    const usuarioExistente = (this.usuarios || []).find((item) => item.module_code === this.form.module_code);
+                    if (usuarioExistente) {
+                        this.form.nome_completo = usuarioExistente.nome_completo || '';
+                        this.form.email = usuarioExistente.email || '';
+                        this.form.grupo = usuarioExistente.grupo || 'Tios';
+                        this.form.senha = '';
+                        return;
+                    }
+                    if (!this.form.nome_completo) {
+                        this.form.nome_completo = String(this.tenant.nome_ejc || '').trim();
+                    }
+                    this.form.email = '';
+                    this.form.senha = '';
+                    this.form.grupo = 'Tios';
+                },
+                moduloNome(code) {
+                    return this.modules.find((m) => m.code === code)?.nome || code;
+                },
+                async carregarTenant() {
+                    const res = await fetch('/api/auth/tenant');
+                    const data = res.ok ? await res.json() : null;
+                    if (!res.ok) { this.fail((data && data.error) || 'Erro ao carregar paróquia.'); return; }
+                    this.tenant = data || {};
+                },
+                async carregarModulos() {
+                    const res = await fetch('/api/module-users/modules');
+                    this.modules = res.ok ? await res.json() : [];
+                    const allowed = new Set(Array.isArray(this.tenant.modules) ? this.tenant.modules : []);
+                    this.enabledModules = this.modules.filter((m) => allowed.has(m.code));
+                    this.form.module_code = this.enabledModules[0]?.code || 'semear-jovens';
+                    this.onModuleChange();
+                },
+                async carregarUsuarios() {
+                    const res = await fetch('/api/module-users');
+                    this.usuarios = res.ok ? await res.json() : [];
+                    this.onModuleChange();
+                },
+                async carregarUsuariosSistema() {
+                    const res = await fetch('/api/admin-users');
+                    this.usuariosSistema = res.ok ? await res.json() : [];
+                },
+                async carregarLogs() {
+                    const res = await fetch('/api/logs');
+                    this.logs = res.ok ? await res.json() : [];
+                },
+                editarUsuarioSistema(usuario) {
+                    this.abrirModalUsuarioSistema(usuario);
+                },
+                async salvar() {
+                    this.mensagem = '';
+                    if (!this.form.module_code || !this.form.nome_completo || !this.form.email || !this.form.senha) {
+                        this.fail('Preencha o responsável, o e-mail e a senha do módulo.');
+                        return;
+                    }
+                    this.saving = true;
+                    try {
+                        const res = await fetch('/api/module-users', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(this.form)
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) { this.fail(data.error || 'Erro ao salvar usuário.'); return; }
+                        this.form = {
+                            module_code: this.form.module_code,
+                            nome_completo: this.form.nome_completo,
+                            email: this.form.email,
+                            senha: '',
+                            grupo: this.form.grupo || 'Tios'
+                        };
+                        await this.carregarUsuarios();
+                        this.ok('Responsável do módulo salvo com sucesso.');
+                    } catch (_) {
+                        this.fail('Erro ao conectar com o servidor.');
+                    } finally {
+                        this.saving = false;
+                    }
+                },
+                async salvarUsuarioSistema() {
+                    this.mensagem = '';
+                    if (!this.systemUserForm.nome_completo || !this.systemUserForm.username || (!this.systemUserForm.id && !this.systemUserForm.senha)) {
+                        this.fail('Preencha nome, login e senha do usuário do sistema.');
+                        return;
+                    }
+                    this.saving = true;
+                    try {
+                        const url = this.systemUserForm.id ? `/api/admin-users/${this.systemUserForm.id}` : '/api/admin-users';
+                        const method = this.systemUserForm.id ? 'PUT' : 'POST';
+                        const res = await fetch(url, {
+                            method,
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(this.systemUserForm)
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            this.fail(data.error || 'Erro ao salvar usuário do sistema.');
+                            return;
+                        }
+                        this.ok(data.message || 'Usuário do sistema salvo com sucesso.');
+                        this.fecharModalUsuarioSistema();
+                        await this.carregarUsuariosSistema();
+                    } catch (_) {
+                        this.fail('Erro ao conectar com o servidor.');
+                    } finally {
+                        this.saving = false;
+                    }
+                },
+                async excluirUsuarioSistema(usuario) {
+                    if (!usuario || !usuario.id) return;
+                    if (!window.confirm(`Deseja excluir o usuário "${usuario.nome_completo}"?`)) return;
+                    this.saving = true;
+                    try {
+                        const res = await fetch(`/api/admin-users/${usuario.id}`, { method: 'DELETE' });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            this.fail(data.error || 'Erro ao excluir usuário do sistema.');
+                            return;
+                        }
+                        this.ok(data.message || 'Usuário do sistema removido com sucesso.');
+                        if (this.systemUserForm.id === usuario.id) this.resetSystemUserForm();
+                        await this.carregarUsuariosSistema();
+                    } catch (_) {
+                        this.fail('Erro ao conectar com o servidor.');
+                    } finally {
+                        this.saving = false;
+                    }
+                },
+                async sair() {
+                    await fetch('/api/auth/logout', { method: 'POST' }).catch(() => {});
+                    window.location.href = '/login';
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
