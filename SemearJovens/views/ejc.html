@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>EJC - Gerenciar EJC</title>
+    <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
+    <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/velzon-theme.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/ui-kit.js"></script>
+    <script src="/js/menu.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <div id="app">
+            <!-- Menu injetado via JS -->
+
+
+            <main class="container-fluid">
+                <div class="d-flex justify-content-between mb-4 align-items-center">
+                    <h3>Gerenciar EJCs</h3>
+                    <button class="btn btn-primary" @click="abrirModalAdicionar"><i class="fa-solid fa-plus icon-accent"></i> Novo EJC</button>
+                </div>
+
+                <!-- Tabela de EJCs -->
+                <div class="card shadow-sm border-0">
+                    <table class="table table-hover mb-0 text-center align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Nº</th>
+                                <th>Paróquia</th>
+                                <th>Ano</th>
+                                <th>Data Início</th>
+                                <th>Data Fim</th>
+                                <th>Música tema</th>
+                                <th>Encontristas</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-if="ejcs.length === 0">
+                                <td colspan="8" class="text-muted py-4">Nenhum EJC cadastrado</td>
+                            </tr>
+                            <tr v-for="e in ejcsOrdenados" :key="e.id">
+                                <td><strong>{{ numeroParaRomano(e.numero) }}</strong></td>
+                                <td>{{ e.paroquia }}</td>
+                                <td>{{ e.ano }}</td>
+                                <td>{{ formatarData(e.data_inicio) }}</td>
+                                <td>{{ formatarData(e.data_fim) }}</td>
+                                <td>{{ e.musica_tema || '-' }}</td>
+                                <td>
+                                    <button class="btn btn-corporate-view btn-sm"
+                                        @click="abrirModalEncontristas(e)"><i class="fas fa-eye me-1"></i>Ver</button>
+                                </td>
+                                <td>
+                                    <button class="btn btn-edit-standard btn-sm" @click="abrirModalEditar(e)">Editar</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </main>
+
+            <!-- Modal Encontristas -->
+            <div class="modal fade" id="modalEncontristas" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content border-0 shadow">
+                        <div class="modal-header bg-info text-white">
+                            <h5 class="modal-title"><i class="fas fa-eye me-2"></i>Encontristas <span v-if="ejcSelecionado">({{
+                                    numeroParaRomano(ejcSelecionado.numero) }} EJC)</span></h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body p-0">
+                            <div v-if="carregandoEncontristas" class="text-center py-5">
+                                <div class="spinner-border text-info" role="status"></div>
+                                <div class="mt-2 text-muted">Carregando encontristas...</div>
+                            </div>
+                            <div v-else-if="encontristas.length === 0" class="text-center text-muted py-5">
+                                <i class="fas fa-users fa-3x mb-3 text-light"></i>
+                                <p>Nenhum encontrista registrado para este EJC.</p>
+                            </div>
+                            <div v-else class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                <table class="table table-hover table-sm text-center align-middle mb-0">
+                                    <thead class="table-light sticky-top shadow-sm">
+                                        <tr>
+                                            <th class="text-start ps-3">Nome</th>
+                                            <th>Círculo</th>
+                                            <th>Moita</th>
+                                            <th>Função de Moita</th>
+                                            <th>Telefone</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="enc in encontristas" :key="enc.id">
+                                            <td class="text-start ps-3 fw-medium">{{ enc.nome_completo }}</td>
+                                            <td><span class="badge bg-secondary">{{ enc.circulo || '-' }}</span></td>
+                                            <td>
+                                                <span class="badge" :class="enc.foi_moita ? 'bg-success' : 'bg-light text-dark'">
+                                                    {{ enc.foi_moita ? 'Foi Moita' : '-' }}
+                                                </span>
+                                            </td>
+                                            <td>{{ enc.moita_funcao || '-' }}</td>
+                                            <td>{{ enc.telefone || '-' }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="modal-footer d-flex justify-content-between bg-light">
+                            <span class="text-muted fw-bold">Total: <span class="text-primary">{{ encontristas.length
+                                    }}</span></span>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Adicionar/Editar EJC -->
+            <div class="modal fade" id="modalEJC" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content border-0 shadow">
+                        <div class="modal-header bg-primary text-white">
+                            <h5 class="modal-title"><i :class="editando ? 'fas fa-pen-to-square me-2' : 'fas fa-plus me-2'"></i>{{ editando ? 'Editar EJC' : 'Novo EJC' }}</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form @submit.prevent="salvar">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Número do EJC *</label>
+                                        <input type="number" v-model.number="formulario.numero" class="form-control"
+                                            required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Paróquia *</label>
+                                        <select v-model="formulario.paroquia" class="form-select" required>
+                                            <option value="">Selecione a paróquia</option>
+                                            <option :value="nomeMeuEJC">{{ nomeMeuEJC }}</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Ano</label>
+                                        <input type="number" v-model.number="formulario.ano" class="form-control">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Música Tema</label>
+                                        <input type="text" v-model="formulario.musica_tema" class="form-control" placeholder="Ex: Nome da música">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Data Início</label>
+                                        <input type="text" v-model="formulario.data_inicio" class="form-control date-br" placeholder="dd/mm/aaaa">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Data Fim</label>
+                                        <input type="text" v-model="formulario.data_fim" class="form-control date-br" placeholder="dd/mm/aaaa">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Data do Encontro</label>
+                                        <input type="text" v-model="formulario.data_encontro" class="form-control date-br" placeholder="dd/mm/aaaa">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Data da Tarde de Revelação</label>
+                                        <input type="text" v-model="formulario.data_tarde_revelacao" class="form-control date-br" placeholder="dd/mm/aaaa">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Início das Reuniões</label>
+                                        <input type="text" v-model="formulario.data_inicio_reunioes" class="form-control date-br" placeholder="dd/mm/aaaa">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Fim das Reuniões</label>
+                                        <input type="text" v-model="formulario.data_fim_reunioes" class="form-control date-br" placeholder="dd/mm/aaaa">
+                                    </div>
+                                    <div class="col-md-12">
+                                        <label class="form-label">Descrição</label>
+                                        <textarea v-model="formulario.descricao" class="form-control"
+                                            rows="3"></textarea>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-soft-secondary"
+                                data-bs-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-danger me-auto" v-if="editando"
+                                @click="deletarEJCModal"><i class="fa-solid fa-trash icon-accent"></i> Deletar</button>
+                            <button type="button" class="btn btn-primary" @click="salvar">{{ editando ? 'Atualizar' :
+                                'Criar' }}</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // Injetar menu lateral
+            document.addEventListener('DOMContentLoaded', () => {
+                injetarMenu('#app');
+                ativarMenu('/ejc');
+            });
+
+            const { createApp } = Vue;
+            createApp({
+                data() {
+                    return {
+                        ejcs: [],
+                        editando: false,
+                        nomeMeuEJC: (window.__NOME_EJC_ATUAL && String(window.__NOME_EJC_ATUAL).trim()) || 'Inconfidentes',
+                        formulario: {
+                            id: null,
+                            numero: null,
+                            paroquia: '',
+                            ano: new Date().getFullYear(),
+                            musica_tema: '',
+                            data_inicio: '',
+                            data_fim: '',
+                            data_encontro: '',
+                            data_tarde_revelacao: '',
+                            data_inicio_reunioes: '',
+                            data_fim_reunioes: '',
+                            descricao: ''
+                        },
+                        encontristas: [],
+                        ejcSelecionado: null,
+                        carregandoEncontristas: false
+                    }
+                },
+                computed: {
+                    ejcsOrdenados() {
+                        return [...this.ejcs].sort((a, b) => a.numero - b.numero);
+                    }
+                },
+                methods: {
+                    async buscarEJCs() {
+                        try {
+                            const res = await fetch('/api/ejc');
+                            this.ejcs = await res.json();
+                        } catch (err) {
+                            console.error("Erro ao buscar EJCs:", err);
+                            alert("Erro ao buscar EJCs");
+                        }
+                    },
+                    async abrirModalEncontristas(ejc) {
+                        this.ejcSelecionado = ejc;
+                        this.encontristas = [];
+                        this.carregandoEncontristas = true;
+                        new bootstrap.Modal(document.getElementById('modalEncontristas')).show();
+
+                        try {
+                            const res = await fetch(`/api/ejc/${ejc.id}/encontristas`);
+                            if (res.ok) {
+                                this.encontristas = await res.json();
+                            } else {
+                                alert("Erro ao carregar encontristas");
+                            }
+                        } catch (err) {
+                            console.error(err);
+                            alert("Erro de conexão ao buscar encontristas");
+                        } finally {
+                            this.carregandoEncontristas = false;
+                        }
+                    },
+                    abrirModalAdicionar() {
+                        this.editando = false;
+                        this.formulario = {
+                            id: null,
+                            numero: null,
+                            paroquia: this.nomeMeuEJC,
+                            ano: new Date().getFullYear(),
+                            musica_tema: '',
+                            data_inicio: '',
+                            data_fim: '',
+                            data_encontro: '',
+                            data_tarde_revelacao: '',
+                            data_inicio_reunioes: '',
+                            data_fim_reunioes: '',
+                            descricao: ''
+                        };
+                        new bootstrap.Modal(document.getElementById('modalEJC')).show();
+                    },
+                    abrirModalEditar(ejc) {
+                        this.editando = true;
+                        this.formulario = { ...ejc };
+                        new bootstrap.Modal(document.getElementById('modalEJC')).show();
+                    },
+                    async salvar() {
+                        try {
+                            const url = this.editando ? `/api/ejc/${this.formulario.id}` : '/api/ejc';
+                            const metodo = this.editando ? 'PUT' : 'POST';
+
+                            const res = await fetch(url, {
+                                method: metodo,
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(this.formulario)
+                            });
+
+                            if (!res.ok) {
+                                const erro = await res.json();
+                                alert(erro.error || "Erro ao salvar EJC");
+                                return;
+                            }
+
+                            alert(this.editando ? "EJC atualizado com sucesso!" : "EJC criado com sucesso!");
+                            bootstrap.Modal.getInstance(document.getElementById('modalEJC')).hide();
+                            this.buscarEJCs();
+                        } catch (err) {
+                            console.error("Erro ao salvar:", err);
+                            alert("Erro ao salvar EJC");
+                        }
+                    },
+                    async deletarEJC(id, numero) {
+                        if (!(await window.showFloatingConfirm(`Tem certeza que deseja deletar o EJC ${this.numeroParaRomano(numero)}?`))) return;
+
+                        try {
+                            const res = await fetch(`/api/ejc/${id}`, { method: 'DELETE' });
+
+                            if (!res.ok) {
+                                const erro = await res.json();
+                                alert(erro.error || "Erro ao deletar EJC");
+                                return;
+                            }
+
+                            alert("EJC deletado com sucesso!");
+                            this.buscarEJCs();
+                        } catch (err) {
+                            console.error("Erro ao deletar:", err);
+                            alert("Erro ao deletar EJC");
+                        }
+                    },
+                    async deletarEJCModal() {
+                        if (!(await window.showFloatingConfirm(`Tem certeza que deseja deletar o EJC ${this.numeroParaRomano(this.formulario.numero)}? Esta ação não pode ser desfeita.`))) return;
+
+                        try {
+                            const res = await fetch(`/api/ejc/${this.formulario.id}`, { method: 'DELETE' });
+
+                            if (!res.ok) {
+                                const erro = await res.json();
+                                alert(erro.error || "Erro ao deletar EJC");
+                                return;
+                            }
+
+                            alert("EJC deletado com sucesso!");
+                            bootstrap.Modal.getInstance(document.getElementById('modalEJC')).hide();
+                            this.buscarEJCs();
+                        } catch (err) {
+                            console.error("Erro ao deletar:", err);
+                            alert("Erro ao deletar EJC");
+                        }
+                    },
+                    formatarData(d) {
+                        if (!d) return '--/--/----';
+                        const data = new Date(d);
+                        if (isNaN(data.getTime())) return '--/--/----';
+                        return data.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+                    },
+                    numeroParaRomano(num) {
+                        if (!num) return '';
+                        const roman = [
+                            { value: 1000, numeral: 'M' },
+                            { value: 900, numeral: 'CM' },
+                            { value: 500, numeral: 'D' },
+                            { value: 400, numeral: 'CD' },
+                            { value: 100, numeral: 'C' },
+                            { value: 90, numeral: 'XC' },
+                            { value: 50, numeral: 'L' },
+                            { value: 40, numeral: 'XL' },
+                            { value: 10, numeral: 'X' },
+                            { value: 9, numeral: 'IX' },
+                            { value: 5, numeral: 'V' },
+                            { value: 4, numeral: 'IV' },
+                            { value: 1, numeral: 'I' }
+                        ];
+                        let result = '';
+                        let n = parseInt(num);
+                        for (let i = 0; i < roman.length; i++) {
+                            while (n >= roman[i].value) {
+                                result += roman[i].numeral;
+                                n -= roman[i].value;
+                            }
+                        }
+                        return result;
+                    }
+                    ,
+                    async carregarNomeMeuEJC() {
+                        try {
+                            const res = await fetch('/api/meu-ejc');
+                            if (!res.ok) return;
+                            const data = await res.json().catch(() => ({}));
+                            const nome = data && data.nome ? String(data.nome).trim() : '';
+                            if (nome) {
+                                this.nomeMeuEJC = nome;
+                                if (!this.formulario.paroquia || this.formulario.paroquia === 'Inconfidentes') {
+                                    this.formulario.paroquia = nome;
+                                }
+                            }
+                        } catch (_) { }
+                    }
+                },
+                mounted() {
+                    this.buscarEJCs();
+                    this.carregarNomeMeuEJC();
+                }
+            }).mount('#app');
+        </script>
+</body>
+
+</html>

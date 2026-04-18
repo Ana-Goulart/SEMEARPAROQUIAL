@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Outros EJCs - EJC</title>
+    <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
+    <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
+
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Theme CSS -->
+    <link rel="stylesheet" href="/css/velzon-theme.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/ui-kit.js"></script>
+
+    <!-- Vue -->
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="/js/excel-utils.js"></script>
+
+    <style>
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <main class="container-fluid py-4">
+            <div class="row mb-4">
+                <div class="col-12 px-2">
+                    <div
+                        class="page-header d-flex justify-content-between align-items-center bg-white p-3 rounded shadow-sm">
+                        <h2 class="h4 mb-0 text-gray-800">
+                            <i class="fas fa-globe text-primary me-2"></i>Outros EJCs
+                        </h2>
+                        <div class="d-flex gap-2">
+                            <button class="btn btn-outline-success" onclick="window.OutrosEjcsApp.exportarExcel()">
+                                Exportar Excel
+                            </button>
+                            <label class="btn btn-outline-primary mb-0">
+                                Importar Excel
+                                <input type="file" class="d-none" accept=".xlsx" onchange="window.OutrosEjcsApp.importarExcel(event)">
+                            </label>
+                            <button class="btn btn-primary" onclick="window.OutrosEjcsApp.openCreateModal()">
+                                <i class="fas fa-plus me-1"></i> Cadastrar Novo
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista de Outros EJCs -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="card shadow mb-4">
+                        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                            <h6 class="m-0 font-weight-bold text-primary">EJCs Cadastrados</h6>
+                            <div class="text-muted small">
+                                Total: <span id="outrosEjcsTotal">0</span>
+                                • Filtrados: <span id="outrosEjcsFiltrados">0</span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-2 mb-3">
+                                <div class="col-md-6">
+                                    <input id="outrosEjcsFiltro" class="form-control" placeholder="Filtrar por nome, paróquia ou bairro">
+                                </div>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover" id="dataTable" width="100%"
+                                    cellspacing="0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Nome do EJC</th>
+                                            <th>Paróquia</th>
+                                            <th>Bairro</th>
+                                            <th class="text-center" style="width: 150px;">Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="outrosEjcsTableBody">
+                                        <tr>
+                                            <td colspan="5" class="text-center">Carregando...</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Modal Form -->
+        <div class="modal fade" id="formModal" tabindex="-1" aria-labelledby="formModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="formModalLabel">Cadastrar Outro EJC</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form id="outrosEjcsForm" onsubmit="window.OutrosEjcsApp.saveRecord(event)">
+                        <div class="modal-body">
+                            <input type="hidden" id="recordId">
+
+                            <div class="mb-3">
+                                <label for="nome" class="form-label">Nome do EJC <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="nome" required
+                                    placeholder="Ex: 1º EJC de São Paulo">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="paroquia" class="form-label">Paróquia</label>
+                                <input type="text" class="form-control" id="paroquia"
+                                    placeholder="Ex: Paróquia São José">
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="bairro" class="form-label">Bairro</label>
+                                <input type="text" class="form-control" id="bairro" placeholder="Ex: Centro">
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary" id="btnSalvar">Salvar</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Detalhes -->
+        <div class="modal fade" id="detailsModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="detailsModalTitle">Detalhes do EJC</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-4">
+                            <h6 class="text-muted mb-3">Informações básicas</h6>
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Nome do EJC</label>
+                                    <input type="text" id="detailNome" class="form-control" maxlength="160">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Paróquia</label>
+                                    <input type="text" id="detailParoquia" class="form-control" maxlength="255">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Bairro</label>
+                                    <input type="text" id="detailBairro" class="form-control" maxlength="255">
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-end mt-3">
+                                <button type="button" class="btn btn-primary" id="btnSalvarDetalhes" onclick="window.OutrosEjcsApp.saveDetails()">Salvar alterações</button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="text-muted mb-0">Jovens cadastrados deste EJC</h6>
+                                <span id="jovensOutroEjcResumo" class="small text-muted">Total: 0</span>
+                            </div>
+                            <div id="jovensOutroEjcLoading" class="text-muted d-none mb-2">Carregando jovens...</div>
+                            <div id="jovensOutroEjcContainer"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Scripts -->
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Menu Component -->
+    <script src="/js/menu.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            injetarMenu('#app');
+            ativarMenu('/outros-ejcs');
+
+            // Inicializar a aplicação
+            window.OutrosEjcsApp.loadData();
+        });
+    </script>
+
+    <!-- Lógica da Página -->
+    <script>
+        window.OutrosEjcsApp = (() => {
+            let createModalInstance = null;
+            let detailsModalInstance = null;
+            let currentEjcs = [];
+            let selectedId = null;
+
+            // Inicializar o modal do Bootstrap quando disparado o carregamento das functions
+            document.addEventListener('DOMContentLoaded', () => {
+                const createModalEl = document.getElementById('formModal');
+                if (createModalEl) {
+                    createModalInstance = new bootstrap.Modal(createModalEl);
+                }
+                const detailsModalEl = document.getElementById('detailsModal');
+                if (detailsModalEl) {
+                    detailsModalInstance = new bootstrap.Modal(detailsModalEl);
+                }
+                const filtroEl = document.getElementById('outrosEjcsFiltro');
+                if (filtroEl) {
+                    filtroEl.addEventListener('input', () => aplicarFiltro());
+                }
+            });
+
+            async function loadData() {
+                const tbody = document.getElementById('outrosEjcsTableBody');
+                try {
+                    const response = await fetch('/api/outros-ejcs');
+                    if (!response.ok) throw new Error('Falha ao carregar dados');
+
+                    currentEjcs = await response.json();
+                    aplicarFiltro();
+                } catch (error) {
+                    console.error(error);
+                    tbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger">Erro ao carregar dados.</td></tr>`;
+                    Swal.fire('Erro', 'Não foi possível carregar a lista de EJCs.', 'error');
+                }
+            }
+
+            function renderTable(data) {
+                const tbody = document.getElementById('outrosEjcsTableBody');
+                const totalEl = document.getElementById('outrosEjcsTotal');
+                const filtradosEl = document.getElementById('outrosEjcsFiltrados');
+                if (totalEl) totalEl.textContent = String((currentEjcs || []).length);
+                if (filtradosEl) filtradosEl.textContent = String((data || []).length);
+
+                if (data.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Nenhum registro encontrado.</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = data.map(registro => `
+                    <tr style="cursor: pointer;" onclick="window.OutrosEjcsApp.openDetailsModal(${registro.id})">
+                        <td class="align-middle fw-medium">${registro.nome || '-'}</td>
+                        <td class="align-middle">${registro.paroquia || '-'}</td>
+                        <td class="align-middle">${registro.bairro || '-'}</td>
+                        <td class="align-middle text-center">
+                            <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); window.OutrosEjcsApp.deleteRecord(${registro.id})" title="Excluir">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+            function aplicarFiltro() {
+                const filtroEl = document.getElementById('outrosEjcsFiltro');
+                const termo = String(filtroEl ? filtroEl.value : '').trim().toLowerCase();
+                if (!termo) {
+                    renderTable(currentEjcs);
+                    return;
+                }
+                const filtrados = (currentEjcs || []).filter((r) => {
+                    const nome = String(r.nome || '').toLowerCase();
+                    const paroquia = String(r.paroquia || '').toLowerCase();
+                    const bairro = String(r.bairro || '').toLowerCase();
+                    return nome.includes(termo) || paroquia.includes(termo) || bairro.includes(termo);
+                });
+                renderTable(filtrados);
+            }
+
+            function openCreateModal() {
+                document.getElementById('outrosEjcsForm').reset();
+                document.getElementById('recordId').value = '';
+                document.getElementById('formModalLabel').textContent = 'Cadastrar Outro EJC';
+                document.getElementById('btnSalvar').textContent = 'Cadastrar';
+
+                if (createModalInstance) {
+                    createModalInstance.show();
+                } else {
+                    // Fallback
+                    createModalInstance = new bootstrap.Modal(document.getElementById('formModal'));
+                    createModalInstance.show();
+                }
+            }
+
+            async function openDetailsModal(id) {
+                const registro = currentEjcs.find(e => e.id === id);
+                if (!registro) return;
+                selectedId = id;
+
+                document.getElementById('detailsModalTitle').textContent = `Outro EJC: ${registro.nome || 'Sem nome'}`;
+                document.getElementById('detailNome').value = registro.nome || '';
+                document.getElementById('detailParoquia').value = registro.paroquia || '';
+                document.getElementById('detailBairro').value = registro.bairro || '';
+                document.getElementById('jovensOutroEjcContainer').innerHTML = '<div class="text-muted text-center p-3 bg-light border rounded">Carregando jovens vinculados...</div>';
+                document.getElementById('jovensOutroEjcResumo').textContent = 'Total: 0';
+                document.getElementById('jovensOutroEjcLoading').classList.add('d-none');
+
+                if (detailsModalInstance) {
+                    detailsModalInstance.show();
+                } else {
+                    detailsModalInstance = new bootstrap.Modal(document.getElementById('detailsModal'));
+                    detailsModalInstance.show();
+                }
+                await loadJovensOutroEjc();
+            }
+
+            async function loadJovensOutroEjc() {
+                if (!selectedId) return;
+                const loadingEl = document.getElementById('jovensOutroEjcLoading');
+                const container = document.getElementById('jovensOutroEjcContainer');
+                const resumo = document.getElementById('jovensOutroEjcResumo');
+                loadingEl.classList.remove('d-none');
+                container.innerHTML = '';
+
+                try {
+                    const response = await fetch(`/api/outros-ejcs/${selectedId}/jovens`);
+                    const data = await response.json().catch(() => []);
+                    if (!response.ok) throw new Error(data.error || 'Erro ao carregar jovens');
+
+                    if (!Array.isArray(data) || data.length === 0) {
+                        if (resumo) resumo.textContent = 'Total: 0';
+                        container.innerHTML = `<div class="text-muted text-center p-3 bg-light border rounded">Nenhum jovem deste outro EJC cadastrado no sistema.</div>`;
+                        return;
+                    }
+                    if (resumo) resumo.textContent = `Total: ${data.length}`;
+                    container.innerHTML = `
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Nome</th>
+                                        <th>Telefone</th>
+                                        <th>Nº do EJC</th>
+                                        <th>Estado civil</th>
+                                        <th>Sexo</th>
+                                        <th>Círculo</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${data.map((j) => `
+                                        <tr>
+                                            <td>${j.nome_completo || '-'}</td>
+                                            <td>${j.telefone || '-'}</td>
+                                            <td>${j.outro_ejc_numero || '-'}</td>
+                                            <td>${j.estado_civil || '-'}</td>
+                                            <td>${j.sexo || '-'}</td>
+                                            <td>${j.circulo || '-'}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
+                        </div>
+                    `;
+                } catch (error) {
+                    console.error(error);
+                    container.innerHTML = `<div class="text-danger">Erro ao carregar jovens deste outro EJC.</div>`;
+                } finally {
+                    loadingEl.classList.add('d-none');
+                }
+            }
+
+            async function exportarExcel() {
+                const filtroEl = document.getElementById('outrosEjcsFiltro');
+                const termo = String(filtroEl ? filtroEl.value : '').trim().toLowerCase();
+                const fonte = termo
+                    ? (currentEjcs || []).filter((r) => {
+                        const nome = String(r.nome || '').toLowerCase();
+                        const paroquia = String(r.paroquia || '').toLowerCase();
+                        const bairro = String(r.bairro || '').toLowerCase();
+                        return nome.includes(termo) || paroquia.includes(termo) || bairro.includes(termo);
+                    })
+                    : (currentEjcs || []);
+                if (!fonte.length) {
+                    Swal.fire('Aviso', 'Não há dados para exportar.', 'warning');
+                    return;
+                }
+                const rows = fonte.map(r => ({
+                    Nome: r.nome || '',
+                    Paroquia: r.paroquia || '',
+                    Bairro: r.bairro || ''
+                }));
+                ExcelUtils.exportJsonToXlsx({
+                    filename: 'outros_ejcs.xlsx',
+                    sheetName: 'Outros EJCs',
+                    rows
+                });
+            }
+
+            async function importarExcel(evt) {
+                const file = evt.target.files && evt.target.files[0] ? evt.target.files[0] : null;
+                evt.target.value = '';
+                if (!file) return;
+                if (!String(file.name || '').toLowerCase().endsWith('.xlsx')) {
+                    Swal.fire('Aviso', 'Selecione um arquivo Excel (.xlsx).', 'warning');
+                    return;
+                }
+                try {
+                    const rows = await ExcelUtils.readXlsxFile(file);
+                    if (!rows.length) {
+                        Swal.fire('Aviso', 'Arquivo vazio.', 'warning');
+                        return;
+                    }
+                    await loadData();
+                    const norm = (v) => String(v || '').trim().toLowerCase();
+                    for (const r of rows) {
+                        const nome = String(r.Nome || r.nome || '').trim();
+                        if (!nome) continue;
+                        const paroquia = String(r.Paroquia || r.paroquia || '').trim();
+                        const bairro = String(r.Bairro || r.bairro || '').trim();
+                        const existente = (currentEjcs || []).find(e =>
+                            norm(e.nome) === norm(nome) && norm(e.paroquia) === norm(paroquia)
+                        );
+                        const url = existente ? `/api/outros-ejcs/${existente.id}` : '/api/outros-ejcs';
+                        const method = existente ? 'PUT' : 'POST';
+                        // eslint-disable-next-line no-await-in-loop
+                        await fetch(url, {
+                            method,
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ nome, paroquia, bairro })
+                        });
+                    }
+                    await loadData();
+                    Swal.fire('Sucesso', 'Importação concluída.', 'success');
+                } catch (err) {
+                    console.error(err);
+                    Swal.fire('Erro', 'Não foi possível importar o Excel.', 'error');
+                }
+            }
+
+            async function saveDetails() {
+                if (!selectedId) return;
+                const nome = document.getElementById('detailNome').value.trim();
+                const paroquia = document.getElementById('detailParoquia').value.trim();
+                const bairro = document.getElementById('detailBairro').value.trim();
+                if (!nome) {
+                    Swal.fire('Atenção', 'O nome do EJC é obrigatório.', 'warning');
+                    return;
+                }
+
+                const btn = document.getElementById('btnSalvarDetalhes');
+                const original = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+                btn.disabled = true;
+
+                try {
+                    const response = await fetch(`/api/outros-ejcs/${selectedId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ nome, paroquia, bairro })
+                    });
+                    const payload = await response.json().catch(() => ({}));
+                    if (!response.ok) throw new Error(payload.error || 'Erro ao salvar');
+
+                    await loadData();
+                    const updated = currentEjcs.find(e => e.id === selectedId);
+                    if (updated) {
+                        document.getElementById('detailsModalTitle').textContent = `Outro EJC: ${updated.nome || 'Sem nome'}`;
+                    }
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Sucesso',
+                        text: 'Informações atualizadas.',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                } catch (error) {
+                    console.error(error);
+                    Swal.fire('Erro', error.message, 'error');
+                } finally {
+                    btn.innerHTML = original;
+                    btn.disabled = false;
+                }
+            }
+
+            async function saveRecord(event) {
+                event.preventDefault();
+
+                const id = document.getElementById('recordId').value;
+                const nome = document.getElementById('nome').value;
+                const paroquia = document.getElementById('paroquia').value;
+                const bairro = document.getElementById('bairro').value;
+
+                const isEdit = id !== '';
+                const url = isEdit ? `/api/outros-ejcs/${id}` : '/api/outros-ejcs';
+                const method = isEdit ? 'PUT' : 'POST';
+                const payload = { nome, paroquia, bairro, observacoes: null };
+
+                try {
+                    const btn = document.getElementById('btnSalvar');
+                    const originalText = btn.innerHTML;
+                    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Salvando...';
+                    btn.disabled = true;
+
+                    const response = await fetch(url, {
+                        method: method,
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (!response.ok) {
+                        const err = await response.json();
+                        throw new Error(err.error || 'Erro ao salvar');
+                    }
+
+                    if (createModalInstance) createModalInstance.hide();
+                    await loadData();
+
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Sucesso!',
+                        text: isEdit ? 'Registro atualizado.' : 'EJC cadastrado com sucesso!',
+                        timer: 2000,
+                        showConfirmButton: false
+                    });
+
+                } catch (error) {
+                    console.error(error);
+                    Swal.fire('Erro', error.message, 'error');
+                } finally {
+                    const btn = document.getElementById('btnSalvar');
+                    if (btn) {
+                        btn.innerHTML = id ? 'Salvar Alterações' : 'Cadastrar';
+                        btn.disabled = false;
+                    }
+                }
+            }
+
+            async function deleteRecord(id) {
+                const result = await Swal.fire({
+                    title: 'Tem certeza?',
+                    text: 'Esta ação não pode ser desfeita!',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Sim, excluir!',
+                    cancelButtonText: 'Cancelar'
+                });
+
+                if (result.isConfirmed) {
+                    try {
+                        const response = await fetch(`/api/outros-ejcs/${id}`, { method: 'DELETE' });
+                        if (!response.ok) throw new Error('Erro ao excluir');
+
+                        await loadData();
+                        Swal.fire('Excluído!', 'O registro foi removido.', 'success');
+                    } catch (error) {
+                        console.error(error);
+                        Swal.fire('Erro', 'Não foi possível excluir o EJC.', 'error');
+                    }
+                }
+            }
+
+            return {
+                loadData,
+                exportarExcel,
+                importarExcel,
+                openCreateModal,
+                openDetailsModal,
+                saveDetails,
+                saveRecord,
+                deleteRecord
+            };
+        })();
+    </script>
+</body>
+
+</html>

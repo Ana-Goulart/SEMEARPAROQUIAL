@@ -1,0 +1,927 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EJC - Ata Reuniões</title>
+    <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
+    <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <link rel="stylesheet" href="/css/velzon-theme.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/ui-kit.js"></script>
+    <script src="/js/menu.js"></script>
+    <style>
+        .folder-item,
+        .ata-item {
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .folder-item:hover,
+        .ata-item:hover {
+            background-color: #e9ecef;
+            border-color: #dee2e6;
+        }
+
+        .item-icon {
+            font-size: 2.5rem;
+            margin-bottom: 5px;
+        }
+
+        .item-name {
+            font-size: 0.9rem;
+            word-break: break-word;
+            text-align: center;
+            line-height: 1.3;
+        }
+
+        .breadcrumb-item {
+            cursor: pointer;
+        }
+
+        .breadcrumb-item.active {
+            cursor: default;
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            display: none;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #ddd;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            text-align: center;
+            line-height: 22px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .folder-item:hover .delete-btn,
+        .ata-item:hover .delete-btn {
+            display: block;
+        }
+
+        .delete-btn:hover {
+            background-color: #ffcccc;
+            border-color: #ff9999;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <main class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h3><i class="fa-solid fa-note-sticky icon-accent"></i> Ata Reuniões</h3>
+                    <p class="text-muted mb-0">Estruture por ano e mês, igual aos anexos.</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-primary" @click="criarPasta" :disabled="!podeCriarPasta"><i class="fa-solid fa-plus icon-accent"></i> Nova Pasta</button>
+                    <button class="btn btn-success" @click="abrirModalNovaAta" :disabled="!estaNoMes"><i class="fa-solid fa-plus icon-accent"></i> Nova Ata</button>
+                </div>
+            </div>
+
+            <ul class="nav nav-tabs mb-3">
+                <li class="nav-item">
+                    <button class="nav-link" :class="{ active: abaAtiva === 'atas' }" @click="abaAtiva = 'atas'">Atas</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" :class="{ active: abaAtiva === 'tarefas' }" @click="abrirAbaTarefas">Tarefas</button>
+                </li>
+            </ul>
+
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body">
+                    <label class="form-label mb-1">Pesquisar em todas as atas</label>
+                    <div class="input-group">
+                        <input type="text" class="form-control" v-model="buscaTexto"
+                            placeholder="Ex: planejamento, reunião..." @keyup.enter="buscarAtasPorTexto">
+                        <button class="btn btn-primary" @click="buscarAtasPorTexto">Buscar</button>
+                        <button class="btn btn-outline-secondary" @click="limparBuscaAtas">Limpar</button>
+                    </div>
+                    <small class="text-muted">Busca em pautas, decisões, tarefas e observações gerais.</small>
+                </div>
+            </div>
+
+            <div v-if="buscaAtiva" class="card border-0 shadow-sm mb-3">
+                <div class="card-header bg-light fw-semibold">Resultados da busca</div>
+                <div v-if="buscandoAtas" class="card-body text-center py-4">
+                    <div class="spinner-border text-primary" role="status"></div>
+                </div>
+                <div v-else-if="!resultadosBuscaAtas.length" class="card-body text-muted">
+                    Nenhuma ata encontrada para "{{ buscaTexto }}".
+                </div>
+                <div v-else class="list-group list-group-flush">
+                    <div class="list-group-item d-flex justify-content-between align-items-start"
+                        v-for="r in resultadosBuscaAtas" :key="`busca-ata-${r.id}`">
+                        <div>
+                            <div class="fw-semibold">{{ formatarData(r.data_reuniao) }} {{ formatarHorario(r.horario) }}</div>
+                            <small class="text-muted">{{ resumoBusca(r.trecho) }}</small>
+                        </div>
+                        <button class="btn btn-sm btn-outline-primary" @click="abrirAtaPorId(r.id)">Ver Ata</button>
+                    </div>
+                </div>
+            </div>
+
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb p-3 bg-light rounded-3">
+                    <li class="breadcrumb-item" :class="{ active: currentPath.length === 0 }" @click="navegarPara(null)"><i class="fa-solid fa-house icon-accent"></i> Início</li>
+                    <li v-for="(folder, index) in currentPath" :key="folder.id" class="breadcrumb-item"
+                        :class="{ active: index === currentPath.length - 1 }" @click="navegarPara(folder, index)">
+                        {{ folder.nome }}
+                    </li>
+                </ol>
+            </nav>
+
+            <div class="mb-3">
+                <small class="text-muted">Regra: na raiz crie pasta de <strong>ano</strong>, dentro do ano crie pasta de <strong>mês</strong>.</small>
+            </div>
+
+            <div v-if="loading" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Carregando...</span>
+                </div>
+            </div>
+
+            <div v-else-if="abaAtiva === 'atas'" class="row g-3">
+                <div v-if="pastas.length === 0 && atas.length === 0" class="col-12 text-center py-5 text-muted">
+                    <p class="fs-4"><i class="fa-regular fa-folder-open icon-accent"></i> Pasta vazia</p>
+                    <p>Crie uma pasta ou adicione uma ata.</p>
+                </div>
+
+                <div v-for="pasta in pastas" :key="'p'+pasta.id" class="col-6 col-md-4 col-lg-2">
+                    <div class="folder-item h-100 d-flex flex-column align-items-center position-relative" @click="entrarPasta(pasta)">
+                        <span class="delete-btn" @click.stop="deletarPasta(pasta)" title="Apagar Pasta"><i class="fa-solid fa-trash icon-accent"></i></span>
+                        <span class="item-icon"><i class="fa-solid fa-folder icon-accent"></i></span>
+                        <span class="item-name">{{ pasta.nome }}</span>
+                    </div>
+                </div>
+
+                <div v-for="ata in atas" :key="'a'+ata.id" class="col-6 col-md-4 col-lg-2">
+                    <div class="ata-item h-100 d-flex flex-column align-items-center position-relative" @click="abrirModalVisualizar(ata)">
+                        <span class="delete-btn" @click.stop="removerAta(ata.id)" title="Apagar Ata"><i class="fa-solid fa-trash icon-accent"></i></span>
+                        <span class="item-icon"><i class="fa-solid fa-note-sticky icon-accent"></i></span>
+                        <span class="item-name">{{ tituloAta(ata) }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div v-else class="card border-0 shadow-sm">
+                <div v-if="!tarefasGerais.length" class="card-body text-muted">
+                    Nenhuma tarefa encontrada.
+                </div>
+                <div v-else class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Tarefa</th>
+                                <th>Pauta</th>
+                                <th>Responsável</th>
+                                <th>Data Limite</th>
+                                <th>Status</th>
+                                <th class="text-end">Ação</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="t in tarefasGerais" :key="`tg-${t.id}`">
+                                <td>
+                                    <div class="fw-semibold">{{ t.descricao }}</div>
+                                    <small class="text-muted">
+                                        Ata: {{ formatarData(t.data_reuniao) }} {{ formatarHorario(t.horario) }}
+                                    </small>
+                                </td>
+                                <td>
+                                    {{ t.pauta_titulo || '-' }}
+                                    <small class="text-muted d-block">
+                                        Nº pauta: {{ t.pauta_ordem || '-' }}
+                                    </small>
+                                </td>
+                                <td>
+                                    {{ t.responsavel_nome || '-' }}
+                                    <small class="text-muted d-block">{{ t.responsavel_tipo === 'FUNCAO' ? 'Função' : (t.responsavel_tipo === 'USUARIO' ? 'Usuário' : '-') }}</small>
+                                </td>
+                                <td>{{ formatarData(t.prazo) || '-' }}</td>
+                                <td>
+                                    <span class="badge" :class="t.status === 'CONCLUIDA' ? 'text-bg-success' : 'text-bg-warning'">
+                                        {{ t.status === 'CONCLUIDA' ? 'Concluída' : 'Pendente' }}
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    <button class="btn btn-sm btn-outline-primary me-1"
+                                        @click="verAtaOrigemDaTarefa(t)">Ver Ata</button>
+                                    <button v-if="t.status === 'PENDENTE'" class="btn btn-sm btn-outline-success"
+                                        @click="alterarStatusTarefa(t, 'CONCLUIDA')">Marcar Concluída</button>
+                                    <button v-else class="btn btn-sm btn-outline-warning"
+                                        @click="alterarStatusTarefa(t, 'PENDENTE')">Voltar Pendente</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+
+        <div class="modal fade" id="modalNovaAta" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title"><i class="fa-solid fa-plus icon-accent"></i> Nova Ata de Reunião</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Horário</label>
+                                <input type="time" class="form-control" v-model="formAta.horario">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Presentes</label>
+                                <div class="form-control bg-light">{{ formAta.presencas.length }} selecionado(s)</div>
+                            </div>
+                            <div class="col-12">
+                                <small class="text-muted">A data da ata será registrada automaticamente ao salvar.</small>
+                            </div>
+                        </div>
+
+                        <hr>
+                        <h6><i class="fa-solid fa-users icon-accent"></i> Lista de Presença (Usuários/Dirigentes)</h6>
+                        <div class="row g-2 mt-1">
+                            <div class="col-md-4" v-for="u in usuarios" :key="u.id">
+                                <div class="form-check border rounded px-2 py-1">
+                                    <input class="form-check-input" type="checkbox" :id="`presenca-${u.id}`"
+                                        :checked="formAta.presencas.includes(u.id)" @change="togglePresenca(u.id)">
+                                    <label class="form-check-label" :for="`presenca-${u.id}`">{{ u.nome_completo }}</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0"><i class="fa-solid fa-thumbtack icon-accent me-2"></i>Pautas e Decisões</h6>
+                            <button class="btn btn-sm btn-outline-primary" @click="adicionarPauta"><i class="fa-solid fa-plus icon-accent"></i> Pauta</button>
+                        </div>
+                        <div class="d-flex flex-column gap-2 mt-2">
+                            <div class="card border" v-for="(pauta, idx) in formAta.pautas" :key="idx">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <strong>Pauta {{ idx + 1 }}</strong>
+                                        <button class="btn btn-sm btn-outline-danger" @click="removerPauta(idx)"
+                                            :disabled="formAta.pautas.length === 1">Remover</button>
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label">Título da pauta *</label>
+                                        <input type="text" class="form-control" v-model="pauta.titulo">
+                                    </div>
+                                    <div>
+                                        <label class="form-label">Decisões tomadas</label>
+                                        <textarea class="form-control" rows="3" v-model="pauta.decisoes"></textarea>
+                                    </div>
+                                    <div class="mt-3">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <strong class="small">Lista de Tarefas da Pauta</strong>
+                                            <button class="btn btn-sm btn-outline-primary" @click="adicionarTarefaPauta(idx)"><i class="fa-solid fa-plus icon-accent"></i> Tarefa</button>
+                                        </div>
+                                        <div v-if="!pauta.tarefas || pauta.tarefas.length === 0" class="small text-muted">
+                                            Nenhuma tarefa nesta pauta.
+                                        </div>
+                                        <div v-else class="d-flex flex-column gap-2">
+                                            <div class="border rounded p-2" v-for="(tarefa, tIdx) in pauta.tarefas" :key="`pt-${idx}-${tIdx}`">
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <strong class="small">Tarefa {{ tIdx + 1 }}</strong>
+                                                    <button class="btn btn-sm btn-outline-danger" @click="removerTarefaPauta(idx, tIdx)">Remover</button>
+                                                </div>
+                                                <div class="row g-2">
+                                                    <div class="col-md-5">
+                                                        <label class="form-label">Descrição *</label>
+                                                        <input type="text" class="form-control" v-model="tarefa.descricao">
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <label class="form-label">Tipo de Responsável</label>
+                                                        <select class="form-select" v-model="tarefa.responsavel_tipo"
+                                                            @change="onTipoResponsavelTarefaChange(tarefa)">
+                                                            <option value="USUARIO">Usuário</option>
+                                                            <option value="FUNCAO">Função Dirigência</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-3">
+                                                        <label class="form-label">Responsável</label>
+                                                        <select v-if="tarefa.responsavel_tipo === 'FUNCAO'" class="form-select" v-model="tarefa.responsavel_funcao_id">
+                                                            <option :value="null">(Sem função)</option>
+                                                            <option v-for="f in funcoesDirigencia" :key="`tf-${idx}-${f.id}`" :value="f.id">{{ f.nome }}</option>
+                                                        </select>
+                                                        <select v-else class="form-select" v-model="tarefa.responsavel_usuario_id">
+                                                            <option :value="null">(Sem usuário)</option>
+                                                            <option v-for="u in usuarios" :key="`tu-${idx}-${u.id}`" :value="u.id">{{ u.nome_completo }}</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-2">
+                                                        <label class="form-label">Data Limite</label>
+                                                        <input type="text" class="form-control date-br" v-model="tarefa.prazo" placeholder="dd/mm/aaaa">
+                                                    </div>
+                                                    <div class="col-md-2">
+                                                        <label class="form-label">Status</label>
+                                                        <select class="form-select" v-model="tarefa.status">
+                                                            <option value="PENDENTE">Pendente</option>
+                                                            <option value="CONCLUIDA">Concluída</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+                        <label class="form-label">Observações Gerais</label>
+                        <textarea class="form-control" rows="3" v-model="formAta.observacoes_gerais"></textarea>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button class="btn btn-primary" @click="salvarAta" :disabled="salvando">{{ salvando ? 'Salvando...' : 'Salvar Ata' }}</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="modalVisualizarAta" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                <div class="modal-content border-0 shadow" v-if="ataVisualizando">
+                    <div class="modal-header bg-info text-white">
+                        <h5 class="modal-title">Ata - {{ formatarData(ataVisualizando.data_reuniao) }} {{ formatarHorario(ataVisualizando.horario) }}</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <h6><i class="fa-solid fa-users icon-accent"></i> Presentes</h6>
+                        <div v-if="!ataVisualizando.presencas.length" class="text-muted">Sem presença registrada.</div>
+                        <ul v-else>
+                            <li v-for="p in ataVisualizando.presencas" :key="`vp-${p.usuario_id}`">{{ p.nome_completo }}</li>
+                        </ul>
+
+                        <h6 class="mt-3"><i class="fa-solid fa-thumbtack icon-accent me-2"></i>Pautas e Decisões</h6>
+                        <div v-if="!ataVisualizando.pautas.length" class="text-muted">Sem pautas registradas.</div>
+                        <div v-else class="d-flex flex-column gap-2">
+                            <div class="card border" v-for="p in ataVisualizando.pautas" :key="`vpauta-${p.id}`">
+                                <div class="card-body">
+                                    <strong>{{ p.ordem }}. {{ p.titulo }}</strong>
+                                    <p class="mb-0 mt-2">{{ p.decisoes || 'Sem decisões registradas.' }}</p>
+                                    <div class="mt-2">
+                                        <small class="fw-semibold">Tarefas da pauta</small>
+                                        <div v-if="!p.tarefas || p.tarefas.length === 0" class="text-muted small">Nenhuma tarefa nesta pauta.</div>
+                                        <ul v-else class="list-group list-group-flush mt-1">
+                                            <li class="list-group-item px-0" v-for="t in p.tarefas" :key="`tp-${t.id}`">
+                                                <div class="fw-semibold">{{ t.descricao }}</div>
+                                                <small class="text-muted">
+                                                    Responsável: {{ t.responsavel_nome || '-' }} •
+                                                    Data limite: {{ formatarData(t.prazo) || '-' }} •
+                                                    Status: {{ t.status === 'CONCLUIDA' ? 'Concluída' : 'Pendente' }}
+                                                </small>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h6 class="mt-3"><i class="fa-solid fa-note-sticky icon-accent me-2"></i>Observações Gerais</h6>
+                        <p class="mb-0">{{ ataVisualizando.observacoes_gerais || 'Sem observações.' }}</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-outline-danger" @click="baixarAtaPdf(ataVisualizando)"><i class="fa-solid fa-file-lines icon-accent"></i> Baixar PDF</button>
+                        <button class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            injetarMenu('#app');
+            ativarMenu('/ata-reunioes');
+        });
+
+        const { createApp } = Vue;
+        createApp({
+            data() {
+                return {
+                    loading: false,
+                    salvando: false,
+                    abaAtiva: 'atas',
+                    buscaTexto: '',
+                    buscaAtiva: false,
+                    buscandoAtas: false,
+                    resultadosBuscaAtas: [],
+                    currentFolderId: null,
+                    currentPath: [],
+                    pastas: [],
+                    atas: [],
+                    tarefasGerais: [],
+                    usuarios: [],
+                    funcoesDirigencia: [],
+                    modalNovaAta: null,
+                    modalVisualizarAta: null,
+                    ataVisualizando: null,
+                    formAta: {
+                        horario: '',
+                        presencas: [],
+                        pautas: [{ titulo: '', decisoes: '', tarefas: [] }],
+                        observacoes_gerais: ''
+                    }
+                }
+            },
+            computed: {
+                folderAtual() {
+                    return this.currentPath.length ? this.currentPath[this.currentPath.length - 1] : null;
+                },
+                estaNoMes() {
+                    return !!(this.folderAtual && this.folderAtual.tipo === 'MES');
+                },
+                podeCriarPasta() {
+                    return this.currentPath.length < 2;
+                }
+            },
+            async mounted() {
+                await this.carregarUsuarios();
+                await this.carregarFuncoesDirigencia();
+                await this.carregarConteudo();
+            },
+            methods: {
+                formatarData(data) {
+                    if (!data) return '';
+                    const d = new Date(data);
+                    if (Number.isNaN(d.getTime())) return '';
+                    return d.toLocaleDateString('pt-BR');
+                },
+                formatarHorario(horario) {
+                    if (!horario) return '';
+                    const txt = String(horario).substring(0, 5);
+                    return txt ? `às ${txt}` : '';
+                },
+                tituloAta(ata) {
+                    return `${this.formatarData(ata.data_reuniao)} ${this.formatarHorario(ata.horario)}`.trim();
+                },
+                resumoBusca(texto) {
+                    if (!texto) return 'Ata com ocorrência do termo pesquisado.';
+                    const limpo = String(texto).replace(/\s+/g, ' ').trim();
+                    return limpo.length > 180 ? `${limpo.slice(0, 180)}...` : limpo;
+                },
+                async carregarUsuarios() {
+                    try {
+                        const res = await fetch('/api/ata-reunioes/usuarios');
+                        this.usuarios = res.ok ? await res.json() : [];
+                    } catch (_) {
+                        this.usuarios = [];
+                    }
+                },
+                async carregarFuncoesDirigencia() {
+                    try {
+                        const res = await fetch('/api/funcoes-dirigencia');
+                        this.funcoesDirigencia = res.ok ? await res.json() : [];
+                    } catch (_) {
+                        this.funcoesDirigencia = [];
+                    }
+                },
+                async carregarConteudo() {
+                    this.loading = true;
+                    try {
+                        const queryPastas = this.currentFolderId ? `?parentId=${this.currentFolderId}` : '';
+                        const resPastas = await fetch(`/api/ata-reunioes/pastas${queryPastas}`);
+                        this.pastas = resPastas.ok ? await resPastas.json() : [];
+
+                        if (this.estaNoMes) {
+                            const resAtas = await fetch(`/api/ata-reunioes/atas?pasta_id=${this.currentFolderId}`);
+                            this.atas = resAtas.ok ? await resAtas.json() : [];
+                        } else {
+                            this.atas = [];
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao carregar conteúdo.');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                async carregarTarefasGerais() {
+                    try {
+                        const res = await fetch('/api/ata-reunioes/tarefas');
+                        this.tarefasGerais = res.ok ? await res.json() : [];
+                    } catch (err) {
+                        console.error(err);
+                        this.tarefasGerais = [];
+                    }
+                },
+                async abrirAbaTarefas() {
+                    this.abaAtiva = 'tarefas';
+                    await this.carregarTarefasGerais();
+                },
+                async buscarAtasPorTexto() {
+                    const termo = String(this.buscaTexto || '').trim();
+                    if (!termo) {
+                        this.buscaAtiva = false;
+                        this.resultadosBuscaAtas = [];
+                        return;
+                    }
+                    this.buscaAtiva = true;
+                    this.buscandoAtas = true;
+                    try {
+                        const res = await fetch(`/api/ata-reunioes/busca?q=${encodeURIComponent(termo)}`);
+                        this.resultadosBuscaAtas = res.ok ? await res.json() : [];
+                    } catch (err) {
+                        console.error(err);
+                        this.resultadosBuscaAtas = [];
+                    } finally {
+                        this.buscandoAtas = false;
+                    }
+                },
+                limparBuscaAtas() {
+                    this.buscaTexto = '';
+                    this.buscaAtiva = false;
+                    this.buscandoAtas = false;
+                    this.resultadosBuscaAtas = [];
+                },
+                async abrirAtaPorId(ataId) {
+                    if (!ataId) return;
+                    try {
+                        const res = await fetch(`/api/ata-reunioes/atas/${ataId}`);
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Não foi possível carregar a ata.');
+                            return;
+                        }
+                        this.ataVisualizando = data;
+                        if (!this.modalVisualizarAta) this.modalVisualizarAta = new bootstrap.Modal(document.getElementById('modalVisualizarAta'));
+                        this.modalVisualizarAta.show();
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao abrir ata.');
+                    }
+                },
+                entrarPasta(pasta) {
+                    this.currentPath.push(pasta);
+                    this.currentFolderId = pasta.id;
+                    this.carregarConteudo();
+                },
+                navegarPara(folder, index) {
+                    if (folder === null) {
+                        this.currentPath = [];
+                        this.currentFolderId = null;
+                    } else {
+                        this.currentPath = this.currentPath.slice(0, index + 1);
+                        this.currentFolderId = folder.id;
+                    }
+                    this.carregarConteudo();
+                },
+                async criarPasta() {
+                    const depth = this.currentPath.length;
+                    let tipo = null;
+                    let placeholder = '';
+
+                    if (depth === 0) {
+                        tipo = 'ANO';
+                        placeholder = 'Nome da pasta de ano (ex: 2026)';
+                    } else if (depth === 1 && this.folderAtual && this.folderAtual.tipo === 'ANO') {
+                        tipo = 'MES';
+                        placeholder = 'Nome da pasta de mês (ex: Janeiro)';
+                    } else {
+                        alert('Você só pode criar pastas de mês dentro de um ano.');
+                        return;
+                    }
+
+                    const nome = await window.showFloatingPrompt(placeholder, { title: 'Nova pasta', placeholder });
+                    if (!nome || !String(nome).trim()) return;
+
+                    try {
+                        const res = await fetch('/api/ata-reunioes/pastas', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                nome: String(nome).trim(),
+                                tipo,
+                                parent_id: this.currentFolderId
+                            })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao criar pasta.');
+                            return;
+                        }
+                        await this.carregarConteudo();
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao criar pasta.');
+                    }
+                },
+                async deletarPasta(pasta) {
+                    if (!(await window.showFloatingConfirm(`Apagar pasta "${pasta.nome}"?`))) return;
+                    try {
+                        const res = await fetch(`/api/ata-reunioes/pastas/${pasta.id}`, { method: 'DELETE' });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            const msg = data.error
+                                || (res.status === 409
+                                    ? 'Esta pasta possui documentos. Exclua as atas/subpastas primeiro.'
+                                    : 'Erro ao remover pasta.');
+                            if (window.showFloatingAlert) {
+                                window.showFloatingAlert(msg, 'Aviso');
+                            } else {
+                                alert(msg);
+                            }
+                            return;
+                        }
+                        await this.carregarConteudo();
+                    } catch (err) {
+                        console.error(err);
+                        const msg = 'Erro ao remover pasta.';
+                        if (window.showFloatingAlert) {
+                            window.showFloatingAlert(msg, 'Aviso');
+                        } else {
+                            alert(msg);
+                        }
+                    }
+                },
+                resetFormAta() {
+                    this.formAta = {
+                        horario: '',
+                        presencas: [],
+                        pautas: [{ titulo: '', decisoes: '', tarefas: [] }],
+                        observacoes_gerais: ''
+                    };
+                },
+                abrirModalNovaAta() {
+                    if (!this.estaNoMes) {
+                        alert('Abra uma pasta de mês para criar a ata.');
+                        return;
+                    }
+                    this.resetFormAta();
+                    if (!this.modalNovaAta) this.modalNovaAta = new bootstrap.Modal(document.getElementById('modalNovaAta'));
+                    this.modalNovaAta.show();
+                },
+                abrirModalVisualizar(ata) {
+                    this.ataVisualizando = ata;
+                    if (!this.modalVisualizarAta) this.modalVisualizarAta = new bootstrap.Modal(document.getElementById('modalVisualizarAta'));
+                    this.modalVisualizarAta.show();
+                },
+                togglePresenca(usuarioId) {
+                    if (this.formAta.presencas.includes(usuarioId)) {
+                        this.formAta.presencas = this.formAta.presencas.filter(id => id !== usuarioId);
+                    } else {
+                        this.formAta.presencas.push(usuarioId);
+                    }
+                },
+                adicionarPauta() {
+                    this.formAta.pautas.push({ titulo: '', decisoes: '', tarefas: [] });
+                },
+                removerPauta(idx) {
+                    if (this.formAta.pautas.length === 1) return;
+                    this.formAta.pautas.splice(idx, 1);
+                },
+                adicionarTarefaPauta(pautaIdx) {
+                    if (!this.formAta.pautas[pautaIdx].tarefas) this.formAta.pautas[pautaIdx].tarefas = [];
+                    this.formAta.pautas[pautaIdx].tarefas.push({
+                        descricao: '',
+                        responsavel_tipo: 'USUARIO',
+                        responsavel_usuario_id: null,
+                        responsavel_funcao_id: null,
+                        prazo: null,
+                        status: 'PENDENTE'
+                    });
+                },
+                onTipoResponsavelTarefaChange(tarefa) {
+                    if (!tarefa) return;
+                    if (tarefa.responsavel_tipo === 'FUNCAO') {
+                        tarefa.responsavel_usuario_id = null;
+                    } else {
+                        tarefa.responsavel_funcao_id = null;
+                    }
+                },
+                removerTarefaPauta(pautaIdx, tarefaIdx) {
+                    if (!this.formAta.pautas[pautaIdx] || !Array.isArray(this.formAta.pautas[pautaIdx].tarefas)) return;
+                    this.formAta.pautas[pautaIdx].tarefas.splice(tarefaIdx, 1);
+                },
+                async salvarAta() {
+                    if (!this.formAta.pautas.some(p => String(p.titulo || '').trim())) {
+                        alert('Adicione pelo menos uma pauta com título.');
+                        return;
+                    }
+
+                    this.salvando = true;
+                    try {
+                        const payload = {
+                            horario: this.formAta.horario || null,
+                            pasta_id: this.currentFolderId,
+                            presencas: this.formAta.presencas,
+                            pautas: this.formAta.pautas.map((p, idx) => ({
+                                ordem: idx + 1,
+                                titulo: p.titulo,
+                                decisoes: p.decisoes,
+                                tarefas: Array.isArray(p.tarefas) ? p.tarefas.map(t => ({
+                                    descricao: t.descricao,
+                                    responsavel_tipo: t.responsavel_tipo || 'USUARIO',
+                                    responsavel_usuario_id: t.responsavel_usuario_id || null,
+                                    responsavel_funcao_id: t.responsavel_funcao_id || null,
+                                    prazo: t.prazo || null,
+                                    status: t.status || 'PENDENTE'
+                                })) : []
+                            })),
+                            observacoes_gerais: this.formAta.observacoes_gerais
+                        };
+
+                        const res = await fetch('/api/ata-reunioes/atas', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao salvar ata.');
+                            return;
+                        }
+                        if (this.modalNovaAta) this.modalNovaAta.hide();
+                        await this.carregarConteudo();
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao salvar ata.');
+                    } finally {
+                        this.salvando = false;
+                    }
+                },
+                async removerAta(id) {
+                    if (!(await window.showFloatingConfirm('Excluir esta ata?'))) return;
+                    try {
+                        const res = await fetch(`/api/ata-reunioes/atas/${id}`, { method: 'DELETE' });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao excluir ata.');
+                            return;
+                        }
+                        await this.carregarConteudo();
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao excluir ata.');
+                    }
+                },
+                async alterarStatusTarefa(tarefa, novoStatus) {
+                    if (!tarefa || !tarefa.id) return;
+                    try {
+                        const res = await fetch(`/api/ata-reunioes/tarefas/${tarefa.id}/status`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ status: novoStatus })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao atualizar status da tarefa.');
+                            return;
+                        }
+                        tarefa.status = novoStatus;
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao atualizar status da tarefa.');
+                    }
+                },
+                async verAtaOrigemDaTarefa(tarefa) {
+                    if (!tarefa || !tarefa.ata_id) return;
+                    await this.abrirAtaPorId(tarefa.ata_id);
+                },
+                baixarAtaPdf(ata) {
+                    try {
+                        if (!ata) return;
+                        if (!window.jspdf || !window.jspdf.jsPDF) {
+                            alert('Não foi possível carregar o gerador de PDF.');
+                            return;
+                        }
+
+                        const { jsPDF } = window.jspdf;
+                        const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+                        const pageWidth = doc.internal.pageSize.getWidth();
+                        const pageHeight = doc.internal.pageSize.getHeight();
+                        const margem = 12;
+                        const larguraUtil = pageWidth - margem * 2;
+                        let y = 36;
+
+                        const desenharCabecalho = () => {
+                            doc.setFillColor(33, 37, 41);
+                            doc.rect(0, 0, pageWidth, 24, 'F');
+                            doc.setTextColor(255, 255, 255);
+                            doc.setFont('helvetica', 'bold');
+                            doc.setFontSize(16);
+                            doc.text('ATA DE REUNIAO', margem, 11);
+                            doc.setFontSize(10);
+                            doc.setFont('helvetica', 'normal');
+                            const dataInfo = this.formatarData(ata.data_reuniao) || '-';
+                            const horaInfo = ata.horario ? String(ata.horario).substring(0, 5) : '-';
+                            doc.text(`Data: ${dataInfo}   Horario: ${horaInfo}`, margem, 18);
+                            doc.setTextColor(0, 0, 0);
+                            y = 36;
+                        };
+
+                        const desenharRodape = () => {
+                            const pagina = doc.internal.getNumberOfPages();
+                            doc.setFont('helvetica', 'normal');
+                            doc.setFontSize(9);
+                            doc.setTextColor(120, 120, 120);
+                            doc.text(
+                                `EJC - Gerado em ${new Date().toLocaleDateString('pt-BR')} - Pagina ${pagina}`,
+                                margem,
+                                pageHeight - 6
+                            );
+                            doc.setTextColor(0, 0, 0);
+                        };
+
+                        const novaPagina = () => {
+                            desenharRodape();
+                            doc.addPage();
+                            desenharCabecalho();
+                        };
+
+                        const garantirEspaco = (alturaNecessaria = 8) => {
+                            if (y + alturaNecessaria > pageHeight - 12) novaPagina();
+                        };
+
+                        const tituloSecao = (texto) => {
+                            garantirEspaco(10);
+                            doc.setFillColor(240, 242, 245);
+                            doc.rect(margem, y - 4, larguraUtil, 8, 'F');
+                            doc.setFont('helvetica', 'bold');
+                            doc.setFontSize(12);
+                            doc.text(texto, margem + 2, y + 1);
+                            y += 8;
+                        };
+
+                        const paragrafo = (texto, tamanho = 11, negrito = false) => {
+                            if (!texto) return;
+                            doc.setFont('helvetica', negrito ? 'bold' : 'normal');
+                            doc.setFontSize(tamanho);
+                            const linhas = doc.splitTextToSize(String(texto), larguraUtil);
+                            const h = linhas.length * 5 + 1;
+                            garantirEspaco(h);
+                            doc.text(linhas, margem, y);
+                            y += h;
+                        };
+
+                        desenharCabecalho();
+
+                        tituloSecao('1. Lista de Presenca');
+                        if (!ata.presencas || !ata.presencas.length) {
+                            paragrafo('Nenhuma presenca registrada.');
+                        } else {
+                            ata.presencas.forEach((p, idx) => paragrafo(`${idx + 1}. ${p.nome_completo}`));
+                        }
+                        y += 2;
+
+                        tituloSecao('2. Pautas, Decisoes e Tarefas');
+                        if (!ata.pautas || !ata.pautas.length) {
+                            paragrafo('Nenhuma pauta registrada.');
+                        } else {
+                            ata.pautas.forEach((pauta, idx) => {
+                                paragrafo(`Pauta ${idx + 1}: ${pauta.titulo || 'Sem titulo'}`, 11, true);
+                                paragrafo(`Decisoes: ${pauta.decisoes || 'Sem decisoes registradas.'}`);
+
+                                const tarefas = Array.isArray(pauta.tarefas) ? pauta.tarefas : [];
+                                if (!tarefas.length) {
+                                    paragrafo('Tarefas: nenhuma.');
+                                } else {
+                                    paragrafo('Tarefas:', 11, true);
+                                    tarefas.forEach((t, tIdx) => {
+                                        const prazo = this.formatarData(t.prazo) || '-';
+                                        const resp = t.responsavel_nome || '-';
+                                        const status = t.status === 'CONCLUIDA' ? 'Concluida' : 'Pendente';
+                                        paragrafo(`${tIdx + 1}) ${t.descricao || '-'}\nResponsavel: ${resp} | Data limite: ${prazo} | Status: ${status}`);
+                                    });
+                                }
+                                y += 2;
+                            });
+                        }
+
+                        tituloSecao('3. Observacoes Gerais');
+                        paragrafo(ata.observacoes_gerais || 'Sem observacoes.');
+
+                        desenharRodape();
+                        const dataArquivo = (this.formatarData(ata.data_reuniao) || '').replaceAll('/', '-');
+                        doc.save(`ata-${dataArquivo || ata.id}.pdf`);
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao gerar PDF da ata.');
+                    }
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

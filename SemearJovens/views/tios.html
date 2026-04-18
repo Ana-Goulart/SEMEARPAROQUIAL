@@ -1,0 +1,2284 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>EJC - Tios</title>
+    <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
+    <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="/css/velzon-theme.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/ui-kit.js"></script>
+    <script src="/js/menu.js"></script>
+    <script src="/js/excel-utils.js"></script>
+    <style>
+        .ficha-subtabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            margin-bottom: 1rem;
+            padding: 0.85rem;
+            border: 1px solid rgba(31, 53, 88, 0.08);
+            border-radius: 16px;
+            background: linear-gradient(180deg, #fffdf9 0%, #fff8ef 100%);
+        }
+
+        .ficha-subtab {
+            border: 1px solid rgba(31, 53, 88, 0.12);
+            border-radius: 999px;
+            background: #fff;
+            color: #4d596c;
+            font-size: 0.92rem;
+            font-weight: 600;
+            padding: 0.5rem 0.95rem;
+            transition: all 0.18s ease;
+        }
+
+        .ficha-subtab:hover {
+            border-color: rgba(197, 139, 42, 0.28);
+            background: #fff8ed;
+            color: #8b5b16;
+        }
+
+        .ficha-subtab.active {
+            border-color: transparent;
+            background: linear-gradient(180deg, #355173 0%, #223750 100%);
+            color: #fff;
+            box-shadow: 0 10px 22px rgba(34, 55, 80, 0.18);
+        }
+
+        .ficha-subpane {
+            border: 1px solid rgba(31, 53, 88, 0.08);
+            border-radius: 18px;
+            background: #fff;
+            padding: 1rem;
+            margin-bottom: 0.9rem;
+        }
+
+        .ficha-pane-title {
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid rgba(31, 53, 88, 0.08);
+        }
+
+        .ficha-pane-title h6 {
+            margin: 0;
+            color: #223750;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .ficha-pane-title p {
+            margin: 0.25rem 0 0;
+            color: #7b8797;
+            font-size: 0.9rem;
+        }
+
+        .ficha-aside-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .ficha-aside-item label {
+            display: block;
+            margin-bottom: 0.2rem;
+            color: #6c757d;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .ficha-aside-item div {
+            min-height: 2.2rem;
+            padding: 0.45rem 0.65rem;
+            border: 1px solid rgba(31, 53, 88, 0.08);
+            border-radius: 8px;
+            background: #f7f2e8;
+            color: #3d4451;
+        }
+
+        .ficha-avatar-card {
+            width: 110px;
+            height: 110px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 1px solid rgba(31, 53, 88, 0.08);
+            background: #f8f9fa;
+        }
+
+        .ficha-dados-shell {
+            border: 1px solid rgba(31, 53, 88, 0.08);
+            border-radius: 20px;
+            background: #fff;
+            padding: 0.85rem;
+        }
+
+        .ficha-aside-shell {
+            padding: 0.25rem 0.5rem 0.25rem 0.25rem;
+        }
+
+        .ficha-avatar-trigger {
+            cursor: pointer;
+        }
+
+        #modalCasal fieldset[disabled] .form-control,
+        #modalCasal fieldset[disabled] .form-select,
+        #modalCasal fieldset[disabled] .form-control.date-br {
+            background: #f7f2e8;
+            border-color: rgba(31, 53, 88, 0.08);
+            color: #3d4451;
+            opacity: 1;
+            box-shadow: none;
+            pointer-events: none;
+        }
+
+        #modalCasal .nav-tabs .nav-link i {
+            margin-right: 0.35rem;
+        }
+
+        #modalCasal .nav-tabs {
+            border-bottom: 0;
+        }
+
+        #modalCasal .list-group-item-action {
+            cursor: pointer;
+        }
+
+        .casal-modal .modal-content {
+            border-radius: 24px;
+            overflow: hidden;
+        }
+
+        .casal-modal-header {
+            background: linear-gradient(135deg, #234462 0%, #172f45 100%);
+            color: #fff;
+            padding: 1.1rem 1.4rem;
+            border-bottom: 0;
+        }
+
+        .casal-modal-header .modal-title {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            font-size: 1.35rem;
+            font-weight: 700;
+        }
+
+        .casal-modal-badge {
+            width: 40px;
+            height: 40px;
+            border-radius: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.16);
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+        }
+
+        .casal-modal-body {
+            background: linear-gradient(180deg, #fffdf9 0%, #fff8ee 100%);
+            padding: 1.35rem;
+        }
+
+        .casal-helper-box {
+            border: 1px solid rgba(197, 139, 42, 0.22);
+            border-radius: 18px;
+            background: linear-gradient(180deg, #fffaf1 0%, #fff3df 100%);
+            padding: 1rem 1.05rem;
+            margin-bottom: 1rem;
+        }
+
+        .casal-helper-box strong {
+            color: #223750;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .casal-helper-box span {
+            color: #8b6d33;
+            font-size: 0.92rem;
+        }
+
+        .casal-modal-footer {
+            background: #eef3f8;
+            border-top: 1px solid rgba(34, 55, 80, 0.08);
+            padding: 1.1rem 1.4rem;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <main class="container-fluid">
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+                <div>
+                    <h3 class="mb-1">Tios</h3>
+                    <p class="text-muted mb-0">Cadastro de casais (tio e tia), ECC/ECNA e histórico de serviço no EJC.</p>
+                </div>
+                <div class="d-flex flex-wrap gap-2">
+                    <button v-if="aba==='casais'" class="btn btn-success d-flex align-items-center gap-1" @click="abrirNovoCasal">
+                        <span><i class="fa-solid fa-plus icon-accent"></i></span> Novo
+                    </button>
+                    <button v-else-if="aba==='ecc'" class="btn btn-success d-flex align-items-center gap-1" @click="abrirNovoEcc">
+                        <span><i class="fa-solid fa-plus icon-accent"></i></span> Novo
+                    </button>
+                    <button class="btn btn-soft-secondary d-flex align-items-center gap-1" @click="exportarExcel">
+                        <span><i class="fa-solid fa-folder-open icon-accent"></i></span> Exportar
+                    </button>
+                    <button v-if="aba==='casais'" class="btn btn-soft-primary d-flex align-items-center gap-1 text-nowrap" @click="abrirModalImportacaoTios">
+                        <span><i class="fa-solid fa-file-import icon-accent"></i></span> Importar
+                    </button>
+                    <label v-else-if="aba==='ecc'" class="btn btn-soft-primary d-flex align-items-center gap-1 text-nowrap mb-0">
+                        <span><i class="fa-solid fa-file-import icon-accent"></i></span> Importar
+                        <input type="file" class="d-none" accept=".xlsx" @change="importarExcel">
+                    </label>
+                    <div class="vr mx-1" v-if="aba==='casais'"></div>
+                    <div class="btn-group" v-if="aba==='casais'">
+                        <button class="btn btn-soft-secondary dropdown-toggle" data-bs-toggle="dropdown"><i class="fa-solid fa-gear icon-accent"></i> Colunas</button>
+                        <ul class="dropdown-menu p-3" style="min-width: 280px;">
+                            <li v-for="(val, col) in colunasConfiguraveisCasais" :key="col" class="mb-1">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" v-model="colunasVisiveisCasais[col]">
+                                    <label class="form-check-label">{{ labelColunaTios(col) }}</label>
+                                </div>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li class="d-flex gap-2">
+                                <button type="button" class="btn btn-sm btn-primary" @click.stop="salvarPreferenciasColunasTios">Salvar</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" @click.stop="restaurarPreferenciasColunasTios">Restaurar padrão</button>
+                            </li>
+                        </ul>
+                    </div>
+                    <button v-if="aba==='casais'" class="btn" :class="mostrarFiltrosCasais ? 'btn-primary' : 'btn-soft-primary'" @click="mostrarFiltrosCasais = !mostrarFiltrosCasais">
+                        <i class="fa-solid fa-magnifying-glass icon-accent"></i> Filtros
+                    </button>
+                </div>
+            </div>
+            <div class="mb-2 text-muted small" v-if="aba==='casais'">
+                Total: <strong class="text-dark">{{ casaisLocais.length }}</strong>
+                • Filtrados: <strong class="text-dark">{{ casaisFiltrados.length }}</strong>
+            </div>
+            <div class="mb-2 text-muted small" v-else>
+                Total: <strong class="text-dark">{{ eccs.length }}</strong>
+                • Filtrados: <strong class="text-dark">{{ eccsFiltrados.length }}</strong>
+            </div>
+
+            <ul class="nav nav-tabs mb-3">
+                <li class="nav-item"><button class="nav-link" :class="{active: aba==='casais'}" @click="aba='casais'">Casais</button></li>
+                <li class="nav-item"><button class="nav-link" :class="{active: aba==='ecc'}" @click="aba='ecc'">Encontros</button></li>
+            </ul>
+
+            <div v-if="aba==='casais'">
+                <div v-if="mostrarFiltrosCasais" class="filtro-panel shadow-sm mb-3">
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted">Buscar casal</label>
+                            <input class="form-control" v-model.trim="filtroNome" placeholder="Nome do tio ou tia">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted">Buscar telefone</label>
+                            <input class="form-control" v-model.trim="filtroTelefone" placeholder="Telefone do tio ou tia">
+                        </div>
+                    </div>
+                </div>
+                <div class="card border-0 shadow-sm">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th v-if="colunasVisiveisCasais.Casal">Casal</th>
+                                <th v-if="colunasVisiveisCasais.Telefones">Telefones</th>
+                                <th v-if="colunasVisiveisCasais.Encontro">Encontro</th>
+                                <th v-if="colunasVisiveisCasais.TermosUso">Termos de uso</th>
+                                <th style="width: 180px;">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="c in casaisFiltrados" :key="c.id">
+                                <td v-if="colunasVisiveisCasais.Casal">
+                                    <div class="fw-semibold">{{ c.nome_tio }}</div>
+                                    <div class="fw-semibold">{{ c.nome_tia }}</div>
+                                </td>
+                                <td v-if="colunasVisiveisCasais.Telefones">
+                                    <div>{{ c.telefone_tio || '-' }}</div>
+                                    <div class="text-muted">{{ c.telefone_tia || '-' }}</div>
+                                </td>
+                                <td v-if="colunasVisiveisCasais.Encontro">{{ c.ecc_numero ? `${c.ecc_numero} ${c.ecc_tipo || 'ECC'}` : '-' }}</td>
+                                <td v-if="colunasVisiveisCasais.TermosUso">{{ c.termos_aceitos_em ? 'Aceito' : 'Não' }}</td>
+                                <td>
+                                    <button class="btn btn-edit-standard btn-sm" @click="abrirEditarCasal(c)">Editar</button>
+                                </td>
+                            </tr>
+                            <tr v-if="loadingCasais">
+                                <td :colspan="totalColunasVisiveisCasais" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Carregando...</td>
+                            </tr>
+                            <tr v-else-if="!casaisFiltrados.length">
+                                <td :colspan="totalColunasVisiveisCasais" class="text-center text-muted py-4">Nenhum casal encontrado.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                </div>
+            </div>
+
+            <div v-if="aba==='ecc'" class="card border-0 shadow-sm">
+                <div class="card-body border-bottom">
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted">Buscar número</label>
+                            <input class="form-control" v-model.trim="filtroEccNumero" placeholder="Número do Encontro">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted">Buscar descrição</label>
+                            <input class="form-control" v-model.trim="filtroEccDescricao" placeholder="Descrição">
+                        </div>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Número</th>
+                                <th>Tipo</th>
+                                <th>Descrição</th>
+                                <th style="width: 180px;">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="e in eccsFiltrados" :key="e.id">
+                                <td class="fw-semibold">{{ e.numero }}</td>
+                                <td>{{ e.tipo || 'ECC' }}</td>
+                                <td>{{ e.descricao || '-' }}</td>
+                                <td>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-edit-standard btn-sm" @click="abrirEditarEcc(e)">Editar</button>
+                                        <button class="btn btn-sm btn-danger" @click="excluirEcc(e)">Excluir</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr v-if="loadingEcc">
+                                <td colspan="3" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Carregando...</td>
+                            </tr>
+                            <tr v-else-if="!eccs.length">
+                                <td colspan="4" class="text-center text-muted py-4">Nenhum encontro cadastrado.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+
+        <div class="modal fade" id="modalImportacaoTios" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-soft-primary">
+                        <h5 class="modal-title">Importar Excel (Modelo esperado)</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-2"><strong>1) Cabeçalho recomendado da planilha</strong></p>
+                        <div class="border rounded p-2 bg-light small" style="white-space: pre-wrap;">nome_tio, telefone_tio, data_nascimento_tio, restricao_alimentar_tio, detalhes_restricao_tio, deficiencia_tio, qual_deficiencia_tio, nome_tia, telefone_tia, data_nascimento_tia, restricao_alimentar_tia, detalhes_restricao_tia, deficiencia_tia, qual_deficiencia_tia, origem_tipo, ecc_numero, ecc_tipo, ecc_descricao, outro_ejc_paroquia, outro_ejc_nome, observacoes
+
+Use origem_tipo como:
+EJC ou OUTRO_EJC</div>
+
+                        <p class="mt-3 mb-2"><strong>2) Importar histórico de equipes do casal (opcional)</strong></p>
+                        <div class="border rounded p-2 bg-light small" style="white-space: pre-wrap;">Para cada edição do EJC, adicione uma coluna no formato:
+I EJC, II EJC, III EJC... (romano)
+
+Exemplos de cabeçalho:
+IX EJC, X EJC, XI EJC
+
+Também aceitamos o formato antigo:
+Team_IXEJC, Team_XEJC, Team_XIEJC</div>
+
+                        <p class="mt-3 mb-2"><strong>3) Como preencher o valor da célula da equipe</strong></p>
+                        <div class="border rounded p-2 bg-light small" style="white-space: pre-wrap;">Formato simples: nome da equipe
+Exemplo: Liturgia
+
+Se quiser, você também pode usar só o nome principal da equipe que o sistema tenta localizar automaticamente.</div>
+
+                        <p class="mt-3 mb-2"><strong>4) Padrões obrigatórios (validação rígida)</strong></p>
+                        <div class="border rounded p-2 bg-light small" style="white-space: pre-wrap;">telefones: texto livre no formato que você usa no sistema
+data_nascimento_tio/data_nascimento_tia: AAAA-MM-DD
+origem_tipo: EJC ou OUTRO_EJC
+restricao_alimentar_tio, restricao_alimentar_tia, deficiencia_tio, deficiencia_tia:
+use Sim/Não, True/False ou 1/0
+
+Se origem_tipo = EJC:
+preencha ecc_numero e, se quiser, ecc_tipo
+
+Se origem_tipo = OUTRO_EJC:
+preencha outro_ejc_paroquia</div>
+
+                        <p class="text-muted mt-3 mb-2">Importante: use arquivo Excel (.xlsx).</p>
+
+                        <button type="button" class="btn btn-outline-primary" @click="baixarModeloImportacaoExcelTios">
+                            Baixar modelo Excel
+                        </button>
+
+                        <div class="mt-3">
+                            <label class="form-label">Selecione o arquivo Excel</label>
+                            <input id="importExcelInputTios" type="file" class="form-control" accept=".xlsx" @change="onImportFileChangeTios">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-soft-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" @click="confirmarImportacaoTios">Importar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="modalCasal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable casal-modal">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header casal-modal-header align-items-center">
+                        <h5 class="modal-title">
+                            <span class="casal-modal-badge">{{ formCasal.id ? 'C' : '+' }}</span>
+                            <span>{{ formCasal.id ? ((formCasal.nome_tio || 'Tio') + ' e ' + (formCasal.nome_tia || 'Tia')) : (formCasal.origem_tipo === 'OUTRO_EJC' ? 'Novo casal de outro EJC' : 'Novo casal') }}</span>
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body casal-modal-body">
+                        <div v-if="!formCasal.id" class="casal-helper-box">
+                            <strong>{{ formCasal.origem_tipo === 'OUTRO_EJC' ? 'Cadastro de tios de outro EJC' : 'Cadastro de novo casal de tios' }}</strong>
+                            <span>Preencha os dados principais do tio e da tia, depois complemente saúde, família e histórico de serviço conforme necessário.</span>
+                        </div>
+                        <div class="d-flex justify-content-between border-bottom mb-3">
+                            <ul class="nav nav-tabs border-bottom-0 mb-0">
+                                <li class="nav-item"><button class="nav-link" :class="{active: abaCasal==='dados'}" @click="abaCasal='dados'; subAbaCasalDados='cadastro'"><i class="fa-solid fa-user icon-accent"></i> Dados Pessoais</button></li>
+                                <li class="nav-item"><button class="nav-link" :class="{active: abaCasal==='historico'}" @click="carregarComissoesCasal"><i class="fa-solid fa-scroll icon-accent"></i> Histórico / Comissões</button></li>
+                                <li class="nav-item"><button class="nav-link" :class="{active: abaCasal==='observacoes'}" @click="abaCasal='observacoes'; carregarObservacoesCasalExtras()"><i class="fa-solid fa-note-sticky icon-accent"></i> Observações</button></li>
+                                <li class="nav-item"><button class="nav-link" :class="{active: abaCasal==='jovens'}" @click="abaCasal='jovens'; carregarJovensCasal()"><i class="fa-solid fa-people-roof icon-accent"></i> Jovens</button></li>
+                                <li class="nav-item"><button class="nav-link" :class="{active: abaCasal==='presencas'}" @click="abaCasal='presencas'; carregarPresencasCasal()"><i class="fa-solid fa-square-check icon-accent"></i> Presença</button></li>
+                            </ul>
+                            <div class="pb-1 align-self-end" v-if="formCasal.id && abaCasal === 'dados'">
+                                <button v-if="!isEditingCasal" type="button" class="btn btn-edit-standard btn-sm" @click="iniciarEdicaoCasal">Editar</button>
+                            </div>
+                        </div>
+                        <div v-if="abaCasal==='dados'" class="ficha-dados-shell">
+                            <div class="row g-3">
+                            <div class="col-md-3">
+                                <div class="ficha-aside-shell">
+                                    <div class="d-flex flex-column align-items-center">
+                                        <div class="position-relative mb-3">
+                                            <img :src="formCasal.foto_url || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(((formCasal.nome_tio || 'Tio') + ' e ' + (formCasal.nome_tia || 'Tia')).trim()) + '&background=e9ecef&color=6c757d&size=160')"
+                                                alt="Foto do casal"
+                                                class="ficha-avatar-card shadow-sm"
+                                                :class="{ 'ficha-avatar-trigger': !isEditingCasal }"
+                                                :data-bs-toggle="!isEditingCasal ? 'modal' : null"
+                                                :data-bs-target="!isEditingCasal ? '#modalVerFotoCasal' : null"
+                                                :title="!isEditingCasal ? 'Ver foto ampliada' : ''">
+                                            <label v-if="isEditingCasal"
+                                                class="position-absolute bottom-0 end-0 bg-primary text-white rounded-circle d-flex justify-content-center align-items-center shadow cursor-pointer"
+                                                style="width: 32px; height: 32px; cursor: pointer; transform: translate(15%, 15%);"
+                                                title="Trocar foto">
+                                                <span style="font-size: 14px;"><i class="fa-solid fa-camera icon-accent"></i></span>
+                                                <input type="file" class="d-none" accept="image/*" @change="uploadFotoCasal" :disabled="!formCasal.id">
+                                            </label>
+                                        </div>
+                                        <div v-if="isEditingCasal" class="small text-muted mt-1 text-center px-1">
+                                            Clique no ícone de câmera<br>para alterar a foto.
+                                        </div>
+                                        <div class="small text-muted mt-1 text-center" v-if="isEditingCasal && !formCasal.id">Salve o casal antes de enviar a foto.</div>
+                                    </div>
+                                    <div class="ficha-aside-list mt-4">
+                                        <div class="ficha-aside-item">
+                                            <label>Origem</label>
+                                            <div>{{ formCasal.origem_tipo === 'OUTRO_EJC' ? 'Tios de outro EJC' : 'Tios do EJC' }}</div>
+                                        </div>
+                                        <div class="ficha-aside-item">
+                                            <label>Casal</label>
+                                            <div>{{ formCasal.nome_tio || '-' }} e {{ formCasal.nome_tia || '-' }}</div>
+                                        </div>
+                                        <div class="ficha-aside-item">
+                                            <label>Contato</label>
+                                            <div>{{ formCasal.telefone_tio || '-' }} / {{ formCasal.telefone_tia || '-' }}</div>
+                                        </div>
+                                        <div class="ficha-aside-item">
+                                            <label>Encontro</label>
+                                            <div v-if="formCasal.origem_tipo !== 'OUTRO_EJC'">{{ eccLabelAtualCasal }}</div>
+                                            <div v-else>{{ outroEjcLabelAtualCasal }}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-9">
+                                <div class="ficha-subtabs">
+                                    <button type="button" class="ficha-subtab" :class="{ active: subAbaCasalDados === 'cadastro' }" @click="subAbaCasalDados = 'cadastro'">Cadastro</button>
+                                    <button type="button" class="ficha-subtab" :class="{ active: subAbaCasalDados === 'participacao' }" @click="subAbaCasalDados = 'participacao'">Participação no EJC</button>
+                                    <button type="button" class="ficha-subtab" :class="{ active: subAbaCasalDados === 'familia' }" @click="subAbaCasalDados = 'familia'">Família</button>
+                                    <button type="button" class="ficha-subtab" :class="{ active: subAbaCasalDados === 'saude' }" @click="subAbaCasalDados = 'saude'">Saúde e Apoio</button>
+                                </div>
+                                <fieldset :disabled="!isEditingCasal" class="border-0 p-0 m-0">
+
+                                <div class="ficha-subpane" v-show="subAbaCasalDados === 'cadastro'">
+                                    <div class="ficha-pane-title">
+                                        <h6>Cadastro do casal</h6>
+                                        <p>Identificação e contato do tio e da tia em um só lugar.</p>
+                                    </div>
+                                    <div class="row g-3">
+                                        <div class="col-12"><h6 class="text-muted mb-0">Dados do Tio</h6></div>
+                                        <div class="col-md-6"><label class="form-label">Nome do tio</label><input class="form-control" v-model.trim="formCasal.nome_tio" maxlength="180"></div>
+                                        <div class="col-md-3"><label class="form-label">Telefone</label><input class="form-control" v-model.trim="formCasal.telefone_tio" maxlength="30"></div>
+                                        <div class="col-md-3"><label class="form-label">Nascimento</label><input type="text" class="form-control date-br" v-model="formCasal.data_nascimento_tio" placeholder="dd/mm/aaaa"></div>
+
+                                        <div class="col-12 pt-2"><h6 class="text-muted mb-0">Dados da Tia</h6></div>
+                                        <div class="col-md-6"><label class="form-label">Nome da tia</label><input class="form-control" v-model.trim="formCasal.nome_tia" maxlength="180"></div>
+                                        <div class="col-md-3"><label class="form-label">Telefone</label><input class="form-control" v-model.trim="formCasal.telefone_tia" maxlength="30"></div>
+                                        <div class="col-md-3"><label class="form-label">Nascimento</label><input type="text" class="form-control date-br" v-model="formCasal.data_nascimento_tia" placeholder="dd/mm/aaaa"></div>
+                                        <div class="col-md-6">
+                                            <label class="text-muted small mb-0">Termos de uso</label>
+                                            <div class="py-1 px-2 bg-light border rounded" v-if="formCasal.termos_aceitos_em">
+                                                Aceito em {{ formatarDataHora(formCasal.termos_aceitos_em) }}
+                                            </div>
+                                            <div class="py-1 px-2 bg-light border rounded" v-else>
+                                                Não
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="ficha-subpane" v-show="subAbaCasalDados === 'participacao'">
+                                    <div class="ficha-pane-title">
+                                        <h6>Participação no EJC</h6>
+                                        <p>Encontro realizado e equipes em que o casal já serviu.</p>
+                                    </div>
+                                    <div class="row g-3">
+                                        <div class="col-md-6" v-if="formCasal.origem_tipo !== 'OUTRO_EJC'">
+                                            <label class="form-label">Encontro (ECC/ECNA)</label>
+                                            <select class="form-select" v-model="formCasal.ecc_id">
+                                                <option :value="null">Selecione...</option>
+                                                <option v-for="e in eccs" :key="`ecc-${e.id}`" :value="e.id">
+                                                    {{ e.numero }} {{ (e.tipo || 'ECC') }}{{ e.descricao ? ` - ${e.descricao}` : '' }}
+                                                </option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-6" v-else>
+                                            <label class="form-label">Paróquia</label>
+                                            <select class="form-select" v-model="formCasal.outro_ejc_id">
+                                                <option :value="null">Selecione...</option>
+                                                <option v-for="o in outrosEjcs" :key="`outro-ejc-${o.id}`" :value="o.id">
+                                                    {{ o.paroquia }}{{ o.nome ? ` - ${o.nome}` : '' }}
+                                                </option>
+                                            </select>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="section-label-corporate"><i class="fas fa-briefcase"></i> Equipes de Trabalho (EJC {{ nomeMeuEJC }})</label>
+                                            <div class="history-panel">
+                                                <div v-if="!servicosRegistradosCasalComIndice().length" class="text-muted small">Nenhuma equipe registrada.</div>
+                                                <ul v-else class="history-list">
+                                                    <li v-for="item in servicosRegistradosCasalComIndice()" :key="`srv-casal-dados-${item.idx}`" class="history-item">
+                                                        <div class="history-entry-main">
+                                                            <span class="history-entry-icon"><i class="fa-solid fa-users icon-accent"></i></span>
+                                                            <div class="history-entry-content">
+                                                                <span class="history-entry-title">{{ obterNomeEquipeServico(item.srv) }}</span>
+                                                                <span class="history-entry-subtitle">{{ formatarEdicaoServico(item.srv) }}</span>
+                                                            </div>
+                                                        </div>
+                                                        <div class="history-entry-meta">
+                                                            <span class="badge-role">Tios</span>
+                                                            <span class="badge-role">{{ obterNomeEquipeServico(item.srv) }}</span>
+                                                        </div>
+                                                        <button v-if="isEditingCasal" class="btn btn-icon-delete" @click="removerServicoCasal(item.idx)" title="Remover equipe"><i class="fa-solid fa-trash icon-accent"></i></button>
+                                                    </li>
+                                                </ul>
+                                                <div class="history-add-row" v-if="isEditingCasal">
+                                                    <small class="text-muted d-block mb-1">Adicionar Equipe:</small>
+                                                    <div class="history-add-grid">
+                                                        <select v-model="novoServicoCasal.ejc_id" class="form-select form-select-sm">
+                                                            <option :value="null">EJC...</option>
+                                                            <option v-for="ejc in ejcs" :key="`ejc-casal-add-${ejc.id}`" :value="ejc.id">{{ formatarEjcOption(ejc) }}</option>
+                                                        </select>
+                                                        <select v-model="novoServicoCasal.equipe_id" class="form-select form-select-sm">
+                                                            <option :value="null">Equipe...</option>
+                                                            <option v-for="eq in equipes" :key="`eq-casal-add-${eq.id}`" :value="eq.id">{{ eq.nome }}</option>
+                                                        </select>
+                                                        <button type="button" class="btn btn-success btn-sm" @click="adicionarServicoCasal" :disabled="!novoServicoCasal.equipe_id || !novoServicoCasal.ejc_id" title="Adicionar equipe"><i class="fa-solid fa-plus icon-accent"></i></button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="ficha-subpane" v-show="subAbaCasalDados === 'familia'">
+                                    <div class="ficha-pane-title">
+                                        <h6>Família e relacionamentos</h6>
+                                        <p>Parentes do casal que já fizeram EJC.</p>
+                                    </div>
+                                    <div class="row g-3">
+                                        <div class="col-12">
+                                            <div class="p-2 bg-light border rounded">
+                                                <div v-if="!familiaresCasal.length" class="text-muted small">Nenhum parentesco informado.</div>
+                                                <div v-else class="d-flex flex-column gap-2">
+                                                    <div v-for="rel in familiaresCasal" :key="`rel-casal-${rel.id}`" class="d-flex justify-content-between align-items-start gap-2 p-2 bg-white border rounded">
+                                                        <div>
+                                                            <div class="fw-semibold">{{ rel.nome_exibicao || '-' }}</div>
+                                                            <div class="small text-muted">{{ rel.relation_label || '-' }} <span v-if="rel.descricao">• {{ rel.descricao }}</span></div>
+                                                            <div v-if="rel.telefone" class="small text-muted">{{ rel.telefone }}</div>
+                                                        </div>
+                                                        <button v-if="formCasal.id" type="button" class="btn btn-outline-danger btn-sm" @click="removerRelacaoFamiliarCasal(rel.id)">Remover</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="p-2 bg-light border rounded">
+                                                <div v-if="sugestoesFamiliaCasal.length" class="mb-3">
+                                                    <div class="small fw-semibold text-muted mb-2">Possíveis parentes por sobrenome</div>
+                                                    <div class="d-flex flex-column gap-2">
+                                                        <div v-for="item in sugestoesFamiliaCasal" :key="`sug-familia-casal-${item.entity_type}-${item.entity_id}`" class="p-2 bg-white border rounded d-flex justify-content-between align-items-start gap-2">
+                                                            <div>
+                                                                <div class="fw-semibold">{{ item.nome_exibicao }}</div>
+                                                                <div class="small text-muted">{{ item.descricao || '-' }}<span v-if="item.sobrenomes_iguais && item.sobrenomes_iguais.length"> • Sobrenomes iguais: {{ item.sobrenomes_iguais.join(', ') }}</span></div>
+                                                            </div>
+                                                            <button type="button" class="btn btn-outline-primary btn-sm" @click="buscaFamiliaCasal = item.nome_exibicao; adicionarRelacaoFamiliarCasal(item)">Vincular</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row g-2">
+                                                    <div class="col-md-4">
+                                                        <select v-model="novoParentescoCasal" class="form-select form-select-sm">
+                                                            <option v-for="opcao in opcoesParentescoCasal" :key="`opcao-par-casal-${opcao.value}`" :value="opcao.value">{{ opcao.label }}</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-8">
+                                                        <input type="text" v-model.trim="buscaFamiliaCasal" @input="buscarRelacionaveisCasal" @focus="buscarRelacionaveisCasal" class="form-control form-control-sm" :disabled="!formCasal.id" placeholder="Pesquisar em todos os cadastros do sistema...">
+                                                    </div>
+                                                </div>
+                                                <div class="small text-muted mt-2">Você pode adicionar quantos parentes precisar. O vínculo aparecerá automaticamente na ficha da outra pessoa.</div>
+                                                <div v-if="!formCasal.id" class="small text-muted mt-2">Salve o casal antes de cadastrar parentescos.</div>
+                                                <ul class="list-group mt-2" v-if="resultadosBuscaFamiliaCasal.length" style="max-height: 280px; overflow-y: auto;">
+                                                    <li class="list-group-item list-group-item-action small" v-for="item in resultadosBuscaFamiliaCasal" :key="`busca-familia-casal-${item.entity_type}-${item.entity_id}`" @click="adicionarRelacaoFamiliarCasal(item)">
+                                                        <div class="fw-semibold">{{ item.nome_exibicao }}</div>
+                                                        <div class="text-muted">{{ item.descricao || '-' }}<span v-if="item.telefone"> • {{ item.telefone }}</span></div>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="ficha-subpane" v-show="subAbaCasalDados === 'saude'">
+                                    <div class="ficha-pane-title">
+                                        <h6>Saúde e apoio</h6>
+                                        <p>Deficiências e restrições alimentares do tio e da tia.</p>
+                                    </div>
+                                    <div class="row g-3">
+                                        <div class="col-12 pt-2"><h6 class="text-muted mb-0">Saúde do Tio</h6></div>
+                                        <div class="col-md-12">
+                                            <label class="form-label d-block">Possui deficiência?</label>
+                                            <div class="d-flex gap-2 align-items-center flex-wrap">
+                                                <div class="form-check mb-0">
+                                                    <input class="form-check-input" type="checkbox" id="checkDeficienciaTio" v-model="formCasal.deficiencia_tio" :true-value="1" :false-value="0">
+                                                    <label class="form-check-label" for="checkDeficienciaTio">Possui deficiência</label>
+                                                </div>
+                                                <input v-if="formCasal.deficiencia_tio" class="form-control flex-grow-1" style="min-width: 260px;" v-model.trim="formCasal.qual_deficiencia_tio" placeholder="Qual?">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <label class="form-label d-block">O tio possui restrição alimentar?</label>
+                                            <div class="d-flex gap-2 align-items-center flex-wrap">
+                                                <div class="form-check mb-0">
+                                                    <input class="form-check-input" type="checkbox" id="checkRestricaoTio" v-model="formCasal.restricao_alimentar_tio" :true-value="1" :false-value="0">
+                                                    <label class="form-check-label" for="checkRestricaoTio">Sim</label>
+                                                </div>
+                                                <div v-if="formCasal.restricao_alimentar_tio" class="flex-grow-1" style="min-width: 280px;">
+                                                    <label class="form-label text-muted small mb-1">Qual restrição alimentar do tio?</label>
+                                                    <select class="form-select" v-model="formCasal.detalhes_restricao_tio">
+                                                        <option disabled value="">Selecione uma restrição...</option>
+                                                        <option v-for="opcao in opcoesRestricaoAlimentar" :key="'restr-tio-'+opcao" :value="opcao">{{ opcao }}</option>
+                                                        <option v-if="formCasal.detalhes_restricao_tio && !opcoesRestricaoAlimentar.includes(formCasal.detalhes_restricao_tio)" :value="formCasal.detalhes_restricao_tio">{{ formCasal.detalhes_restricao_tio }}</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-12 pt-2"><h6 class="text-muted mb-0">Saúde da Tia</h6></div>
+                                        <div class="col-md-12">
+                                            <label class="form-label d-block">Possui deficiência?</label>
+                                            <div class="d-flex gap-2 align-items-center flex-wrap">
+                                                <div class="form-check mb-0">
+                                                    <input class="form-check-input" type="checkbox" id="checkDeficienciaTia" v-model="formCasal.deficiencia_tia" :true-value="1" :false-value="0">
+                                                    <label class="form-check-label" for="checkDeficienciaTia">Possui deficiência</label>
+                                                </div>
+                                                <input v-if="formCasal.deficiencia_tia" class="form-control flex-grow-1" style="min-width: 260px;" v-model.trim="formCasal.qual_deficiencia_tia" placeholder="Qual?">
+                                            </div>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <label class="form-label d-block">A tia possui restrição alimentar?</label>
+                                            <div class="d-flex gap-2 align-items-center flex-wrap">
+                                                <div class="form-check mb-0">
+                                                    <input class="form-check-input" type="checkbox" id="checkRestricaoTia" v-model="formCasal.restricao_alimentar_tia" :true-value="1" :false-value="0">
+                                                    <label class="form-check-label" for="checkRestricaoTia">Sim</label>
+                                                </div>
+                                                <div v-if="formCasal.restricao_alimentar_tia" class="flex-grow-1" style="min-width: 280px;">
+                                                    <label class="form-label text-muted small mb-1">Qual restrição alimentar da tia?</label>
+                                                    <select class="form-select" v-model="formCasal.detalhes_restricao_tia">
+                                                        <option disabled value="">Selecione uma restrição...</option>
+                                                        <option v-for="opcao in opcoesRestricaoAlimentar" :key="'restr-tia-'+opcao" :value="opcao">{{ opcao }}</option>
+                                                        <option v-if="formCasal.detalhes_restricao_tia && !opcoesRestricaoAlimentar.includes(formCasal.detalhes_restricao_tia)" :value="formCasal.detalhes_restricao_tia">{{ formCasal.detalhes_restricao_tia }}</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                </fieldset>
+                            </div>
+                            </div>
+                        </div>
+                        <div v-else-if="abaCasal==='historico'">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="m-0">Histórico de Atividades e Cargos</h6>
+                                    </div>
+                                    <div class="list-group mb-3">
+                                        <div v-for="com in comissoesCasal" :key="com.id" class="list-group-item">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <h6 class="mb-1 text-primary" v-html="formatarTipoComissaoCasal(com.tipo)"></h6>
+                                                    <p class="mb-1 small text-muted">
+                                                        <span v-if="com.tipo === 'COORDENACAO'">
+                                                            Coordenação: <strong>{{ com.coordenacao_pasta_caminho || com.coordenacao_pasta_nome || com.coordenacao_nome || '-' }}</strong>
+                                                            <span v-if="com.coordenacao_periodo || com.semestre"> • Período: {{ com.coordenacao_periodo || com.semestre }}</span>
+                                                        </span>
+                                                        <span v-else-if="com.tipo === 'GARCOM_EQUIPE'">
+                                                            Garçom:
+                                                            <strong>
+                                                                {{ com.ejc_numero ? (com.ejc_numero + 'º EJC') : 'Edição não informada' }}
+                                                                <span v-if="com.outro_ejc_nome"> - {{ com.outro_ejc_nome }}</span>
+                                                                <span v-if="com.outro_ejc_paroquia"> - {{ com.outro_ejc_paroquia }}</span>
+                                                            </strong>
+                                                            <span v-if="com.funcao_garcom"> • Papel: {{ com.funcao_garcom }}</span>
+                                                        </span>
+                                                        <span v-else>
+                                                            {{ com.ejc_numero ? (numeroParaRomano(com.ejc_numero) + 'º EJC') : 'Edição não informada' }}
+                                                            <span v-if="com.paroquia"> - {{ com.paroquia }}</span>
+                                                            <span v-if="com.funcao_garcom"> • {{ com.funcao_garcom }}</span>
+                                                            <span v-if="com.semestre"> • Semestre: {{ com.semestre }}</span>
+                                                            <span v-if="com.circulo"> ({{ com.circulo }})</span>
+                                                        </span>
+                                                    </p>
+                                                    <small v-if="com.observacao" class="text-secondary fst-italic">{{ com.observacao }}</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div v-if="loadingComissoesCasal" class="text-center p-3 text-muted bg-light border rounded">
+                                            Carregando...
+                                        </div>
+                                        <div v-else-if="!comissoesCasal.length" class="text-center p-3 text-muted bg-light border rounded">
+                                            Nenhum registro encontrado.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-else-if="abaCasal==='observacoes'">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <h6 class="m-0 mb-3">Histórico de Observações e Informações Especiais</h6>
+                                    <div class="list-group mb-3">
+                                        <div class="list-group-item" v-if="formCasal.observacoes">
+                                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                                <small class="text-muted"><i class="far fa-note-sticky"></i> Observação principal</small>
+                                            </div>
+                                            <p class="mb-0" style="white-space: pre-wrap;">{{ formCasal.observacoes }}</p>
+                                        </div>
+                                        <div v-for="obs in observacoesExtrasCasal" :key="`obs-tio-${obs.id}`" class="list-group-item">
+                                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                                <small class="text-muted"><i class="far fa-clock"></i> {{ formatarDataHora(obs.created_at) }}</small>
+                                            </div>
+                                            <p class="mb-0" style="white-space: pre-wrap;">{{ obs.observacao }}</p>
+                                        </div>
+                                        <div v-if="!formCasal.observacoes && !observacoesExtrasCasal.length" class="text-center p-3 text-muted bg-light border rounded">
+                                            Nenhuma observação registrada neste perfil.
+                                        </div>
+                                    </div>
+                                    <div class="card bg-light border-0">
+                                        <div class="card-body">
+                                            <h6 class="card-title">Adicionar Nova Observação</h6>
+                                            <label class="form-label small text-muted">A observação ficará salva como uma anotação de histórico na linha do tempo.</label>
+                                            <textarea class="form-control mb-2" rows="3" v-model.trim="novaObservacaoCasal" placeholder="Digite aqui a informação especial..."></textarea>
+                                            <div class="text-end">
+                                                <button class="btn btn-success btn-sm" @click="adicionarObservacaoCasalExtra" :disabled="!formCasal.id || !novaObservacaoCasal.trim()"><i class="fa-solid fa-plus icon-accent"></i> Adicionar ao Histórico</button>
+                                            </div>
+                                            <div class="small text-muted mt-2" v-if="!formCasal.id">Salve o casal antes de adicionar observações extras.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-else-if="abaCasal==='jovens'">
+                            <div v-if="!formCasal.id" class="text-muted">Salve o casal para vincular jovens.</div>
+                            <div v-else>
+                                <label class="form-label">Adicionar jovem</label>
+                                <input type="text" class="form-control form-control-sm" v-model="searchJovemQuery" @input="onSearchJovemInput" placeholder="Buscar jovem pelo nome...">
+                                <ul class="list-group mt-1" v-if="searchJovemResults.length">
+                                    <li class="list-group-item list-group-item-action small" v-for="s in searchJovemResults" :key="`jv-${s.id}`" @click="adicionarJovemCasal(s)">
+                                        {{ s.nome_completo }}
+                                        <span class="text-muted ms-2">
+                                            {{ (s.idade !== null && s.idade !== undefined) ? (s.idade + ' anos') : '-' }}
+                                            • {{ s.estado_civil || '-' }}
+                                        </span>
+                                    </li>
+                                </ul>
+                                <div class="mt-3">
+                                    <div v-if="loadingJovensCasal" class="text-muted">Carregando jovens...</div>
+                                    <div v-else-if="!jovensCasal.length" class="text-muted">Nenhum jovem vinculado.</div>
+                                    <div v-else class="list-group">
+                                        <div class="list-group-item d-flex justify-content-between align-items-center" v-for="j in jovensCasal" :key="`vinc-${j.id}`">
+                                            <div>
+                                                <div class="fw-semibold">{{ j.nome_completo }}</div>
+                                                <div class="small text-muted">
+                                                    {{ j.telefone || '-' }} • {{ j.circulo || '-' }} • {{ formatarIdade(j.data_nascimento) }}
+                                                </div>
+                                            </div>
+                                            <button class="btn btn-sm btn-outline-danger" @click="removerJovemCasal(j)">Remover</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-else>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <h6 class="m-0 mb-3">Eventos com Presença Registrada</h6>
+                                    <div v-if="loadingPresencas" class="text-muted">Carregando presenças...</div>
+                                    <div v-else class="list-group">
+                                        <div class="list-group-item" v-for="pres in presencasCasal" :key="`pres-${pres.id}`">
+                                            <div class="fw-semibold">{{ pres.evento_titulo || 'Evento sem título' }}</div>
+                                            <small class="text-muted d-block">Data do evento: {{ pres.evento_data ? formatarDataPresenca(pres.evento_data) : 'Não informada' }}</small>
+                                            <small class="text-muted">Registrado em: {{ pres.registrado_em ? formatarDataHora(pres.registrado_em) : 'Não informado' }}</small>
+                                        </div>
+                                        <div v-if="!presencasCasal.length" class="text-center p-3 text-muted bg-light border rounded">
+                                            Nenhuma presença registrada.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer casal-modal-footer">
+                        <button
+                            v-if="isEditingCasal && formCasal.id"
+                            class="btn btn-danger me-auto"
+                            @click="excluirCasal(formCasal)">
+                            <i class="fa-solid fa-trash icon-accent"></i> Deletar Casal
+                        </button>
+                        <button v-if="isEditingCasal" class="btn btn-soft-secondary" @click="cancelarEdicaoCasal">Cancelar</button>
+                        <button v-else class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
+                        <button v-if="isEditingCasal" class="btn btn-success" @click="salvarCasal"><i class="fa-solid fa-floppy-disk icon-accent"></i> Salvar Alterações</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="modalVerFotoCasal" tabindex="-1" aria-hidden="true" style="z-index: 1060;">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content bg-transparent border-0 shadow-none">
+                    <div class="modal-header border-0 position-absolute w-100 d-flex justify-content-end p-2" style="z-index: 1061;">
+                        <button type="button" class="btn-close btn-close-white" data-bs-toggle="modal" data-bs-target="#modalCasal" style="background-color: rgba(0,0,0,0.5); border-radius: 50%; opacity: 1; padding: 0.5rem; margin: 10px;"></button>
+                    </div>
+                    <div class="modal-body p-0 text-center">
+                        <img :src="formCasal.foto_url || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(((formCasal.nome_tio || 'Tio') + ' e ' + (formCasal.nome_tia || 'Tia')).trim()) + '&background=e9ecef&color=6c757d&size=800')"
+                            class="img-fluid rounded shadow"
+                            style="max-height: 80vh; max-width: 100%; object-fit: contain; background-color: #f8f9fa;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="modalEcc" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-light">
+                        <h5 class="modal-title">{{ formEcc.id ? 'Editar Encontro' : 'Novo Encontro' }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Número do Encontro</label>
+                            <input class="form-control" v-model.trim="formEcc.numero" maxlength="30">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Encontro</label>
+                            <select class="form-select" v-model="formEcc.tipo">
+                                <option value="ECC">ECC</option>
+                                <option value="ECNA">ECNA</option>
+                            </select>
+                        </div>
+                        <div class="mb-1">
+                            <label class="form-label">Descrição</label>
+                            <input class="form-control" v-model.trim="formEcc.descricao" maxlength="160">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button class="btn btn-primary" @click="salvarEcc">Salvar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="modalPresencasCasal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-light">
+                        <h5 class="modal-title">Presenças</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div v-if="loadingPresencas" class="text-muted">Carregando presenças...</div>
+                        <div v-else-if="!presencasCasal.length" class="text-muted">Nenhuma presença registrada.</div>
+                        <div v-else class="list-group">
+                            <div class="list-group-item" v-for="pres in presencasCasal" :key="`pres-${pres.id}`">
+                                <div class="fw-semibold">{{ pres.evento_titulo || 'Evento' }}</div>
+                                <div class="small text-muted">
+                                    {{ formatarDataPresenca(pres.evento_data) }}
+                                    <span v-if="pres.registrado_em"> • {{ formatarDataHora(pres.registrado_em) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            injetarMenu('#app');
+            ativarMenu('/gestaodoencontro/tios');
+        });
+
+        const { createApp } = Vue;
+        createApp({
+            data() {
+                return {
+                    nomeMeuEJC: (window.__NOME_EJC_ATUAL && String(window.__NOME_EJC_ATUAL).trim()) || 'Inconfidentes',
+                    aba: 'casais',
+                    abaMembrosOutro: 'jovens',
+                    opcoesRestricaoAlimentar: [
+                        'Alergia a amendoim',
+                        'Alergia a castanhas',
+                        'Alergia a frutos do mar',
+                        'APLV (Alergia à proteína do leite de vaca)',
+                        'Intolerante à lactose',
+                        'Intolerante a glúten (Celíaco)',
+                        'Não come carne vermelha',
+                        'Não come carne de porco',
+                        'Vegetariano',
+                        'Vegano',
+                        'Outras'
+                    ],
+                    loadingCasais: false,
+                    loadingEcc: false,
+                    loadingJovensOutroEjc: false,
+                    mostrarFiltrosCasais: false,
+                    casais: [],
+                    jovensOutroEjc: [],
+                    eccs: [],
+                    equipes: [],
+                    ejcs: [],
+                    outrosEjcs: [],
+                    colunasVisiveisCasais: {
+                        Casal: true,
+                        Telefones: true,
+                        Encontro: true,
+                        Acoes: false
+                    },
+                    filtroNome: '',
+                    filtroTelefone: '',
+                    filtroEccNumero: '',
+                    filtroEccDescricao: '',
+                    modalCasal: null,
+                    modalEcc: null,
+                    modalPresencas: null,
+                    modalImportacaoTios: null,
+                    importFileTios: null,
+                    presencasCasal: [],
+                    comissoesCasal: [],
+                    loadingPresencas: false,
+                    loadingComissoesCasal: false,
+                    jovensCasal: [],
+                    loadingJovensCasal: false,
+                    searchJovemQuery: '',
+                    searchJovemResults: [],
+                    searchJovemTimer: null,
+                    familiaresCasal: [],
+                    sugestoesFamiliaCasal: [],
+                    buscaFamiliaCasal: '',
+                    resultadosBuscaFamiliaCasal: [],
+                    buscaFamiliaCasalTimer: null,
+                    novoParentescoCasal: 'IRMAO',
+                    opcoesParentescoCasal: [
+                        { value: 'IRMAO', label: 'Irmão(ã)' },
+                        { value: 'PRIMO', label: 'Primo(a)' },
+                        { value: 'NAMORADO', label: 'Namorado(a)' },
+                        { value: 'NOIVO', label: 'Noivo(a)' },
+                        { value: 'TIO', label: 'Tio(a)' },
+                        { value: 'MAE_PAI', label: 'Mãe/Pai' }
+                    ],
+                    abaCasal: 'dados',
+                    subAbaCasalDados: 'cadastro',
+                    isEditingCasal: false,
+                    formCasalBackup: null,
+                    formCasal: {
+                        id: null,
+                        foto_url: '',
+                        nome_tio: '',
+                        telefone_tio: '',
+                        data_nascimento_tio: '',
+                        nome_tia: '',
+                        telefone_tia: '',
+                        data_nascimento_tia: '',
+                        origem_tipo: 'EJC',
+                        outro_ejc_id: null,
+                        ecc_id: null,
+                        equipe_ids: [],
+                        servicos: [],
+                        restricao_alimentar: false,
+                        deficiencia: false,
+                        restricao_alimentar_tio: false,
+                        detalhes_restricao_tio: '',
+                        deficiencia_tio: false,
+                        qual_deficiencia_tio: '',
+                        restricao_alimentar_tia: false,
+                        detalhes_restricao_tia: '',
+                        deficiencia_tia: false,
+                        qual_deficiencia_tia: '',
+                        observacoes: '',
+                        termos_aceitos_em: null
+                    },
+                    observacoesExtrasCasal: [],
+                    novaObservacaoCasal: '',
+                    novoServicoCasal: { equipe_id: null, ejc_id: null },
+                    formEcc: { id: null, numero: '', tipo: 'ECC', descricao: '' }
+                };
+            },
+            computed: {
+                casaisFiltrados() {
+                    const nome = String(this.filtroNome || '').trim().toLowerCase();
+                    const tel = String(this.filtroTelefone || '').trim().toLowerCase();
+                    return this.casaisLocais.filter((c) => {
+                        const nomeCasal = `${c.nome_tio || ''} ${c.nome_tia || ''}`.toLowerCase();
+                        const tels = `${c.telefone_tio || ''} ${c.telefone_tia || ''}`.toLowerCase();
+                        const okNome = !nome || nomeCasal.includes(nome);
+                        const okTel = !tel || tels.includes(tel);
+                        return okNome && okTel;
+                    });
+                },
+                casaisLocais() {
+                    return (this.casais || []).filter((c) => String(c.origem_tipo || 'EJC').toUpperCase() !== 'OUTRO_EJC');
+                },
+                casaisOutros() {
+                    return (this.casais || []).filter((c) => String(c.origem_tipo || 'EJC').toUpperCase() === 'OUTRO_EJC');
+                },
+                casaisOutrosFiltrados() {
+                    const nome = String(this.filtroNome || '').trim().toLowerCase();
+                    const tel = String(this.filtroTelefone || '').trim().toLowerCase();
+                    return this.casaisOutros.filter((c) => {
+                        const nomeCasal = `${c.nome_tio || ''} ${c.nome_tia || ''}`.toLowerCase();
+                        const tels = `${c.telefone_tio || ''} ${c.telefone_tia || ''}`.toLowerCase();
+                        const okNome = !nome || nomeCasal.includes(nome);
+                        const okTel = !tel || tels.includes(tel);
+                        return okNome && okTel;
+                    });
+                },
+                jovensOutroEjcFiltrados() {
+                    const nome = String(this.filtroNome || '').trim().toLowerCase();
+                    const tel = String(this.filtroTelefone || '').trim().toLowerCase();
+                    return (this.jovensOutroEjc || []).filter((j) => {
+                        const nomeJovem = String(j.nome_completo || '').toLowerCase();
+                        const telefone = String(j.telefone || '').toLowerCase();
+                        const outro = `${j.outro_ejc_paroquia || ''} ${j.outro_ejc_nome || ''}`.toLowerCase();
+                        const okNome = !nome || nomeJovem.includes(nome) || outro.includes(nome);
+                        const okTel = !tel || telefone.includes(tel);
+                        return okNome && okTel;
+                    });
+                },
+                totalAbaAtual() {
+                    if (this.aba === 'casais') return this.casaisLocais.length;
+                    if (this.aba === 'membros_outro') return this.abaMembrosOutro === 'tios' ? this.casaisOutros.length : (this.jovensOutroEjc || []).length;
+                    return 0;
+                },
+                totalFiltradoAbaAtual() {
+                    if (this.aba === 'casais') return this.casaisFiltrados.length;
+                    if (this.aba === 'membros_outro') return this.abaMembrosOutro === 'tios' ? this.casaisOutrosFiltrados.length : this.jovensOutroEjcFiltrados.length;
+                    return 0;
+                },
+                eccsFiltrados() {
+                    const numero = String(this.filtroEccNumero || '').trim().toLowerCase();
+                    const desc = String(this.filtroEccDescricao || '').trim().toLowerCase();
+                    return (this.eccs || []).filter((e) => {
+                        const n = String(e.numero || '').toLowerCase();
+                        const t = String(e.tipo || '').toLowerCase();
+                        const d = String(e.descricao || '').toLowerCase();
+                        const okNum = !numero || n.includes(numero);
+                        const okDesc = !desc || d.includes(desc) || t.includes(desc);
+                        return okNum && okDesc;
+                    });
+                },
+                eccLabelAtualCasal() {
+                    const eccId = Number(this.formCasal && this.formCasal.ecc_id);
+                    const ecc = (this.eccs || []).find((item) => Number(item.id) === eccId);
+                    if (!ecc) return 'Não informado';
+                    return `${ecc.numero || '-'} ${ecc.tipo || 'ECC'}${ecc.descricao ? ` - ${ecc.descricao}` : ''}`;
+                },
+                outroEjcLabelAtualCasal() {
+                    const outroId = Number(this.formCasal && this.formCasal.outro_ejc_id);
+                    const outro = (this.outrosEjcs || []).find((item) => Number(item.id) === outroId);
+                    if (!outro) return 'Não informado';
+                    return `${outro.paroquia || '-'}${outro.nome ? ` - ${outro.nome}` : ''}`;
+                },
+                colunasConfiguraveisCasais() {
+                    return Object.fromEntries(
+                        Object.entries(this.colunasVisiveisCasais || {})
+                            .filter(([chave]) => chave !== 'Acoes')
+                    );
+                },
+                totalColunasVisiveisCasais() {
+                    const totalConfiguraveis = Object.entries(this.colunasVisiveisCasais || {})
+                        .filter(([chave, ativo]) => chave !== 'Acoes' && ativo)
+                        .length;
+                    return Math.max(1, totalConfiguraveis + 1);
+                }
+            },
+            methods: {
+                getColunasVisiveisCasaisPadrao() {
+                    return {
+                        Casal: true,
+                        Telefones: true,
+                        Encontro: true,
+                        TermosUso: false,
+                        Acoes: false
+                    };
+                },
+                getChavePreferenciasColunasTios() {
+                    return `semear:tios:colunas:${this.nomeMeuEJC || 'padrao'}`;
+                },
+                labelColunaTios(coluna) {
+                    const labels = {
+                        Casal: 'Casal',
+                        Telefones: 'Telefones',
+                        Encontro: 'Encontro',
+                        TermosUso: 'Termos de uso',
+                        Acoes: 'Ações'
+                    };
+                    return labels[coluna] || coluna;
+                },
+                carregarPreferenciasColunasTios() {
+                    try {
+                        const bruto = localStorage.getItem(this.getChavePreferenciasColunasTios());
+                        if (!bruto) {
+                            this.colunasVisiveisCasais = this.getColunasVisiveisCasaisPadrao();
+                            return;
+                        }
+                        const salvo = JSON.parse(bruto);
+                        this.colunasVisiveisCasais = {
+                            ...this.getColunasVisiveisCasaisPadrao(),
+                            ...(salvo || {})
+                        };
+                    } catch (_) {
+                        this.colunasVisiveisCasais = this.getColunasVisiveisCasaisPadrao();
+                    }
+                },
+                salvarPreferenciasColunasTios() {
+                    localStorage.setItem(this.getChavePreferenciasColunasTios(), JSON.stringify(this.colunasVisiveisCasais));
+                },
+                restaurarPreferenciasColunasTios() {
+                    this.colunasVisiveisCasais = this.getColunasVisiveisCasaisPadrao();
+                    localStorage.removeItem(this.getChavePreferenciasColunasTios());
+                },
+                async carregarTudo() {
+                    await Promise.all([
+                        this.carregarCasais(),
+                        this.carregarJovensOutroEjc(),
+                        this.carregarEccs(),
+                        this.carregarEquipes(),
+                        this.carregarEjcs(),
+                        this.carregarOutrosEjcs()
+                    ]);
+                },
+                async carregarCasais() {
+                    this.loadingCasais = true;
+                    try {
+                        const res = await fetch('/api/tios/casais');
+                        const data = await res.json().catch(() => ([]));
+                        this.casais = res.ok && Array.isArray(data) ? data : [];
+                    } catch (err) {
+                        console.error(err);
+                        this.casais = [];
+                    } finally {
+                        this.loadingCasais = false;
+                    }
+                },
+                async carregarJovensOutroEjc() {
+                    this.loadingJovensOutroEjc = true;
+                    try {
+                        const res = await fetch('/api/lista-mestre/jovens-outro-ejc');
+                        const data = await res.json().catch(() => ([]));
+                        this.jovensOutroEjc = res.ok && Array.isArray(data) ? data : [];
+                    } catch (err) {
+                        console.error(err);
+                        this.jovensOutroEjc = [];
+                    } finally {
+                        this.loadingJovensOutroEjc = false;
+                    }
+                },
+                async carregarEccs() {
+                    this.loadingEcc = true;
+                    try {
+                        const res = await fetch('/api/tios/ecc');
+                        const data = await res.json().catch(() => ([]));
+                        this.eccs = res.ok && Array.isArray(data) ? data : [];
+                    } catch (err) {
+                        console.error(err);
+                        this.eccs = [];
+                    } finally {
+                        this.loadingEcc = false;
+                    }
+                },
+                async carregarEquipes() {
+                    try {
+                        const res = await fetch('/api/tios/equipes');
+                        const data = await res.json().catch(() => ([]));
+                        this.equipes = res.ok && Array.isArray(data) ? data : [];
+                    } catch (err) {
+                        console.error(err);
+                        this.equipes = [];
+                    }
+                },
+                async carregarEjcs() {
+                    try {
+                        const res = await fetch('/api/tios/ejcs');
+                        const data = await res.json().catch(() => ([]));
+                        this.ejcs = res.ok && Array.isArray(data) ? data : [];
+                    } catch (err) {
+                        console.error(err);
+                        this.ejcs = [];
+                    }
+                },
+                async carregarOutrosEjcs() {
+                    try {
+                        const res = await fetch('/api/outros-ejcs');
+                        const data = await res.json().catch(() => ([]));
+                        this.outrosEjcs = res.ok && Array.isArray(data) ? data : [];
+                    } catch (err) {
+                        console.error(err);
+                        this.outrosEjcs = [];
+                    }
+                },
+                async carregarFamiliaresCasal() {
+                    if (!this.formCasal || !this.formCasal.id) {
+                        this.familiaresCasal = [];
+                        this.sugestoesFamiliaCasal = [];
+                        this.buscaFamiliaCasal = '';
+                        this.resultadosBuscaFamiliaCasal = [];
+                        return;
+                    }
+                    try {
+                        const res = await fetch(`/api/relacoes-familiares?entity_type=TIO_CASAL&entity_id=${this.formCasal.id}`);
+                        const data = await res.json().catch(() => ([]));
+                        this.familiaresCasal = res.ok && Array.isArray(data) ? data : [];
+                    } catch (err) {
+                        console.error('Erro ao carregar familiares do casal:', err);
+                        this.familiaresCasal = [];
+                    }
+                    try {
+                        const resSug = await fetch(`/api/relacoes-familiares/sugestoes?entity_type=TIO_CASAL&entity_id=${this.formCasal.id}`);
+                        const dataSug = await resSug.json().catch(() => ([]));
+                        this.sugestoesFamiliaCasal = resSug.ok && Array.isArray(dataSug) ? dataSug : [];
+                    } catch (err) {
+                        console.error('Erro ao carregar sugestões de parentesco do casal:', err);
+                        this.sugestoesFamiliaCasal = [];
+                    }
+                },
+                buscarRelacionaveisCasal() {
+                    clearTimeout(this.buscaFamiliaCasalTimer);
+                    const termo = String(this.buscaFamiliaCasal || '').trim();
+                    if (!this.formCasal || !this.formCasal.id) {
+                        this.resultadosBuscaFamiliaCasal = [];
+                        return;
+                    }
+                    this.buscaFamiliaCasalTimer = setTimeout(async () => {
+                        try {
+                            const params = new URLSearchParams({
+                                source_type: 'TIO_CASAL',
+                                source_id: String(this.formCasal.id),
+                                q: termo
+                            });
+                            const res = await fetch(`/api/relacoes-familiares/search?${params.toString()}`);
+                            const data = await res.json().catch(() => ([]));
+                            const itens = res.ok && Array.isArray(data) ? data : [];
+                            this.resultadosBuscaFamiliaCasal = itens.filter((item) => {
+                                if (this.novoParentescoCasal === 'MAE_PAI') return item.entity_type === 'JOVEM';
+                                return true;
+                            });
+                        } catch (err) {
+                            console.error('Erro ao pesquisar familiares do casal:', err);
+                            this.resultadosBuscaFamiliaCasal = [];
+                        }
+                    }, 250);
+                },
+                async adicionarRelacaoFamiliarCasal(item) {
+                    if (!item || !this.formCasal || !this.formCasal.id) return;
+                    try {
+                        const res = await fetch('/api/relacoes-familiares', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                source_type: 'TIO_CASAL',
+                                source_id: this.formCasal.id,
+                                target_type: item.entity_type,
+                                target_id: item.entity_id,
+                                relation: this.novoParentescoCasal
+                            })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao salvar parentesco.');
+                            return;
+                        }
+                        this.buscaFamiliaCasal = '';
+                        this.resultadosBuscaFamiliaCasal = [];
+                        await this.carregarFamiliaresCasal();
+                    } catch (err) {
+                        console.error('Erro ao adicionar parentesco do casal:', err);
+                        alert('Erro ao salvar parentesco.');
+                    }
+                },
+                async removerRelacaoFamiliarCasal(relacaoId) {
+                    if (!relacaoId) return;
+                    try {
+                        const res = await fetch(`/api/relacoes-familiares/${relacaoId}`, { method: 'DELETE' });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao remover parentesco.');
+                            return;
+                        }
+                        await this.carregarFamiliaresCasal();
+                    } catch (err) {
+                        console.error('Erro ao remover parentesco do casal:', err);
+                        alert('Erro ao remover parentesco.');
+                    }
+                },
+                exportarExcel() {
+                    if (this.aba === 'casais' || (this.aba === 'membros_outro' && this.abaMembrosOutro === 'tios')) {
+                        const fonte = this.aba === 'casais' ? (this.casaisFiltrados || []) : (this.casaisOutrosFiltrados || []);
+                        if (!fonte.length) {
+                            alert('Não há dados para exportar.');
+                            return;
+                        }
+                    const rows = fonte.map(c => ({
+                        NomeTio: c.nome_tio || '',
+                        TelefoneTio: c.telefone_tio || '',
+                        DataNascimentoTio: c.data_nascimento_tio ? String(c.data_nascimento_tio).split('T')[0] : '',
+                        RestricaoAlimentarTio: c.restricao_alimentar_tio ? 'Sim' : 'Nao',
+                        DetalhesRestricaoTio: c.detalhes_restricao_tio || '',
+                        NomeTia: c.nome_tia || '',
+                        TelefoneTia: c.telefone_tia || '',
+                        DataNascimentoTia: c.data_nascimento_tia ? String(c.data_nascimento_tia).split('T')[0] : '',
+                        RestricaoAlimentarTia: c.restricao_alimentar_tia ? 'Sim' : 'Nao',
+                        DetalhesRestricaoTia: c.detalhes_restricao_tia || '',
+                        OrigemTipo: c.origem_tipo || 'EJC',
+                        ECCNumero: c.ecc_numero || '',
+                        ECCTipo: c.ecc_tipo || '',
+                        ECCDescricao: c.ecc_descricao || '',
+                        OutroEjcParoquia: c.outro_ejc_paroquia || '',
+                        OutroEjcNome: c.outro_ejc_nome || '',
+                        Servicos: (c.servicos || []).map(s => `${s.equipe_nome}${s.ejc_numero ? ` (${s.ejc_numero}º EJC)` : ''}`).join(' | '),
+                        Observacoes: c.observacoes || ''
+                    }));
+                        ExcelUtils.exportJsonToXlsx({
+                            filename: this.aba === 'casais' ? 'tios_casais.xlsx' : 'membros_outro_ejc_tios.xlsx',
+                            sheetName: 'Casais',
+                            rows
+                        });
+                        return;
+                    }
+
+                    if (this.aba === 'membros_outro' && this.abaMembrosOutro === 'jovens') {
+                        const fonte = this.jovensOutroEjcFiltrados || [];
+                        if (!fonte.length) {
+                            alert('Não há dados para exportar.');
+                            return;
+                        }
+                        const rows = fonte.map((j) => ({
+                            Nome: j.nome_completo || '',
+                            Telefone: j.telefone || '',
+                            Paroquia: j.outro_ejc_paroquia || '',
+                            OutroEjc: j.outro_ejc_nome || '',
+                            Fontes: (j.fontes || []).join(' | '),
+                            Detalhes: (j.detalhes || []).join(' | ')
+                        }));
+                        ExcelUtils.exportJsonToXlsx({
+                            filename: 'membros_outro_ejc_jovens.xlsx',
+                            sheetName: 'Jovens',
+                            rows
+                        });
+                        return;
+                    }
+
+                    const fonte = this.eccsFiltrados || [];
+                    if (!fonte.length) {
+                        alert('Não há dados para exportar.');
+                        return;
+                    }
+                    const rows = fonte.map(e => ({
+                        Numero: e.numero || '',
+                        Tipo: e.tipo || '',
+                        Descricao: e.descricao || ''
+                    }));
+                    ExcelUtils.exportJsonToXlsx({
+                        filename: 'tios_encontros.xlsx',
+                        sheetName: 'Encontros',
+                        rows
+                    });
+                },
+                abrirModalImportacaoTios() {
+                    if (!this.modalImportacaoTios) this.modalImportacaoTios = new bootstrap.Modal(document.getElementById('modalImportacaoTios'));
+                    this.modalImportacaoTios.show();
+                },
+                onImportFileChangeTios(event) {
+                    const file = event.target.files && event.target.files[0] ? event.target.files[0] : null;
+                    if (!file) {
+                        this.importFileTios = null;
+                        return;
+                    }
+                    const nome = String(file.name || '').toLowerCase();
+                    if (!nome.endsWith('.xlsx')) {
+                        this.importFileTios = null;
+                        alert('Selecione um arquivo Excel (.xlsx).');
+                        event.target.value = '';
+                        return;
+                    }
+                    this.importFileTios = file;
+                },
+                async confirmarImportacaoTios() {
+                    if (!this.importFileTios) {
+                        alert('Selecione um arquivo Excel.');
+                        return;
+                    }
+                    await this.importarExcelArquivo(this.importFileTios);
+                    this.importFileTios = null;
+                    const input = document.getElementById('importExcelInputTios');
+                    if (input) input.value = '';
+                    if (this.modalImportacaoTios) this.modalImportacaoTios.hide();
+                },
+                async baixarModeloImportacaoExcelTios() {
+                    if (!this.ejcs.length) await this.carregarEjcs();
+                    const cabecalhoBase = [
+                        'nome_tio',
+                        'telefone_tio',
+                        'data_nascimento_tio',
+                        'restricao_alimentar_tio',
+                        'detalhes_restricao_tio',
+                        'deficiencia_tio',
+                        'qual_deficiencia_tio',
+                        'nome_tia',
+                        'telefone_tia',
+                        'data_nascimento_tia',
+                        'restricao_alimentar_tia',
+                        'detalhes_restricao_tia',
+                        'deficiencia_tia',
+                        'qual_deficiencia_tia',
+                        'origem_tipo',
+                        'ecc_numero',
+                        'ecc_tipo',
+                        'ecc_descricao',
+                        'outro_ejc_paroquia',
+                        'outro_ejc_nome',
+                        'observacoes'
+                    ];
+                    const colunasEquipe = [...this.ejcs]
+                        .filter((ejc) => Number.isFinite(Number(ejc.numero)))
+                        .sort((a, b) => Number(a.numero) - Number(b.numero))
+                        .map((ejc) => `${this.numeroParaRomano(ejc.numero)} EJC`);
+                    const cabecalho = [...cabecalhoBase, ...colunasEquipe];
+                    const exemplo = [
+                        'Joao',
+                        '(31)99999-1111',
+                        '1980-05-10',
+                        'Nao',
+                        '',
+                        'Nao',
+                        '',
+                        'Maria',
+                        '(31)99999-2222',
+                        '1982-08-20',
+                        'Sim',
+                        'Alergia a amendoim',
+                        'Nao',
+                        '',
+                        'EJC',
+                        '12',
+                        'ECC',
+                        'Encontro de Casais',
+                        '',
+                        '',
+                        'Casal exemplo'
+                    ];
+                    while (exemplo.length < cabecalho.length) exemplo.push('');
+                    if (cabecalho.includes('II EJC')) exemplo[cabecalho.indexOf('II EJC')] = 'Liturgia';
+                    const ws = XLSX.utils.aoa_to_sheet([cabecalho, exemplo]);
+                    const instrucoes = [
+                        ['Coluna', 'Como preencher'],
+                        ['origem_tipo', 'Use EJC ou OUTRO_EJC'],
+                        ['ecc_numero', 'Numero do ECC/ECNA quando origem_tipo = EJC'],
+                        ['outro_ejc_paroquia', 'Paroquia cadastrada quando origem_tipo = OUTRO_EJC'],
+                        ['I EJC / II EJC / ...', 'Nome da equipe em que o casal serviu naquela edicao'],
+                        ['booleanos', 'Use Sim/Não, True/False ou 1/0'],
+                        ['datas', 'Use AAAA-MM-DD']
+                    ];
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, ws, 'Modelo importacao');
+                    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(instrucoes), 'Instrucoes');
+                    XLSX.writeFile(wb, 'modelo_importacao_tios.xlsx');
+                },
+                async importarExcelArquivo(file) {
+                    if (!file) return;
+                    if (!String(file.name || '').toLowerCase().endsWith('.xlsx')) {
+                        alert('Selecione um arquivo Excel (.xlsx).');
+                        return;
+                    }
+                    try {
+                        const rows = await ExcelUtils.readXlsxFile(file);
+                        if (!rows.length) {
+                            alert('Arquivo vazio.');
+                            return;
+                        }
+                        if (this.aba === 'casais' || (this.aba === 'membros_outro' && this.abaMembrosOutro === 'tios')) {
+                            await this.carregarEccs();
+                            await this.carregarOutrosEjcs();
+                            await this.carregarCasais();
+                            await this.carregarEquipes();
+                            await this.carregarEjcs();
+                            const eccByNumeroTipo = new Map((this.eccs || []).map(e => [
+                                `${String(e.numero || '').trim()}|${String(e.tipo || 'ECC').trim().toUpperCase()}`,
+                                e
+                            ]));
+                            const outrosByParoquia = new Map((this.outrosEjcs || []).map(o => [
+                                String(o.paroquia || '').trim().toLowerCase(),
+                                o
+                            ]));
+                            const equipeByNome = new Map((this.equipes || []).map((eq) => [String(eq.nome || '').trim().toLowerCase(), eq]));
+                            const ejcByNumero = new Map((this.ejcs || []).map((ejc) => [Number(ejc.numero), ejc]));
+                            const norm = (v) => String(v || '').trim().toLowerCase();
+                            const parseBoolImport = (v) => ['1', 'true', 'sim', 's', 'yes'].includes(norm(v));
+                            const romanoParaNumero = (texto) => {
+                                const roman = String(texto || '').trim().toUpperCase();
+                                if (!roman) return null;
+                                const mapa = { I: 1, V: 5, X: 10, L: 50, C: 100, D: 500, M: 1000 };
+                                let total = 0;
+                                let prev = 0;
+                                for (let i = roman.length - 1; i >= 0; i -= 1) {
+                                    const val = mapa[roman[i]];
+                                    if (!val) return null;
+                                    if (val < prev) total -= val;
+                                    else {
+                                        total += val;
+                                        prev = val;
+                                    }
+                                }
+                                return total || null;
+                            };
+                            const extrairServicos = (row) => {
+                                const servicos = [];
+                                Object.keys(row || {}).forEach((key) => {
+                                    const bruto = row[key];
+                                    const valor = String(bruto || '').trim();
+                                    if (!valor) return;
+                                    const texto = String(key || '').trim();
+                                    let numeroEjc = null;
+                                    const matchNovo = texto.match(/^([IVXLCDM]+)\s+EJC$/i);
+                                    const matchAntigo = texto.match(/^Team_([IVXLCDM]+)EJC$/i);
+                                    if (matchNovo) numeroEjc = romanoParaNumero(matchNovo[1]);
+                                    else if (matchAntigo) numeroEjc = romanoParaNumero(matchAntigo[1]);
+                                    if (!numeroEjc) return;
+                                    const ejc = ejcByNumero.get(Number(numeroEjc));
+                                    if (!ejc) return;
+                                    const nomeEquipe = valor.split('(')[0].trim().toLowerCase();
+                                    const equipe = equipeByNome.get(nomeEquipe);
+                                    if (!equipe) return;
+                                    servicos.push({ equipe_id: Number(equipe.id), ejc_id: Number(ejc.id) });
+                                });
+                                return servicos;
+                            };
+                            for (const r of rows) {
+                                const nomeTio = String(r.NomeTio || r.nome_tio || '').trim();
+                                const nomeTia = String(r.NomeTia || r.nome_tia || '').trim();
+                                if (!nomeTio || !nomeTia) continue;
+                                const telefoneTio = String(r.TelefoneTio || r.telefone_tio || '').trim();
+                                const telefoneTia = String(r.TelefoneTia || r.telefone_tia || '').trim();
+                                const origemTipo = String(r.OrigemTipo || r.origem_tipo || (this.aba === 'membros_outro' ? 'OUTRO_EJC' : 'EJC')).trim().toUpperCase() === 'OUTRO_EJC' ? 'OUTRO_EJC' : 'EJC';
+                                const eccNumero = String(r.ECCNumero || r.ecc_numero || '').trim();
+                                const eccTipo = String(r.ECCTipo || r.ecc_tipo || r.Tipo || r.tipo || 'ECC').trim().toUpperCase();
+                                const ecc = eccNumero ? eccByNumeroTipo.get(`${eccNumero}|${eccTipo}`) : null;
+                                const outroParoquia = String(r.OutroEjcParoquia || r.outro_ejc_paroquia || r.Paroquia || r.paroquia || '').trim();
+                                const outroEjc = outroParoquia ? outrosByParoquia.get(outroParoquia.toLowerCase()) : null;
+                                const payload = {
+                                    origem_tipo: origemTipo,
+                                    nome_tio: nomeTio,
+                                    telefone_tio: telefoneTio,
+                                    data_nascimento_tio: r.DataNascimentoTio || r.data_nascimento_tio || null,
+                                    restricao_alimentar_tio: parseBoolImport(r.RestricaoAlimentarTio || r.restricao_alimentar_tio),
+                                    detalhes_restricao_tio: r.DetalhesRestricaoTio || r.detalhes_restricao_tio || null,
+                                    deficiencia_tio: parseBoolImport(r.DeficienciaTio || r.deficiencia_tio),
+                                    qual_deficiencia_tio: r.QualDeficienciaTio || r.qual_deficiencia_tio || null,
+                                    nome_tia: nomeTia,
+                                    telefone_tia: telefoneTia,
+                                    data_nascimento_tia: r.DataNascimentoTia || r.data_nascimento_tia || null,
+                                    restricao_alimentar_tia: parseBoolImport(r.RestricaoAlimentarTia || r.restricao_alimentar_tia),
+                                    detalhes_restricao_tia: r.DetalhesRestricaoTia || r.detalhes_restricao_tia || null,
+                                    deficiencia_tia: parseBoolImport(r.DeficienciaTia || r.deficiencia_tia),
+                                    qual_deficiencia_tia: r.QualDeficienciaTia || r.qual_deficiencia_tia || null,
+                                    ecc_id: origemTipo === 'EJC' ? (ecc ? ecc.id : null) : null,
+                                    outro_ejc_id: origemTipo === 'OUTRO_EJC' ? (outroEjc ? outroEjc.id : null) : null,
+                                    observacoes: r.Observacoes || r.observacoes || null,
+                                    servicos: extrairServicos(r)
+                                };
+                                const existente = (this.casais || []).find(c =>
+                                    (norm(c.nome_tio) === norm(nomeTio) && norm(c.nome_tia) === norm(nomeTia)) ||
+                                    (telefoneTio && norm(c.telefone_tio) === norm(telefoneTio))
+                                );
+                                const url = existente ? `/api/tios/casais/${existente.id}` : '/api/tios/casais';
+                                const method = existente ? 'PUT' : 'POST';
+                                // eslint-disable-next-line no-await-in-loop
+                                await fetch(url, {
+                                    method,
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(payload)
+                                });
+                            }
+                            await this.carregarCasais();
+                            alert(this.aba === 'casais' ? 'Importação de casais concluída.' : 'Importação de tios de outro EJC concluída.');
+                            return;
+                        }
+
+                        await this.carregarEccs();
+                        const norm = (v) => String(v || '').trim();
+                        for (const r of rows) {
+                            const numero = norm(r.Numero || r.numero);
+                            if (!numero) continue;
+                            const descricao = norm(r.Descricao || r.descricao);
+                            const tipoRaw = norm(r.Tipo || r.tipo) || 'ecc';
+                            const tipo = tipoRaw === 'ecna' ? 'ECNA' : 'ECC';
+                            const existente = (this.eccs || []).find(e => String(e.numero || '').trim() === numero);
+                            const url = existente ? `/api/tios/ecc/${existente.id}` : '/api/tios/ecc';
+                            const method = existente ? 'PUT' : 'POST';
+                            // eslint-disable-next-line no-await-in-loop
+                            await fetch(url, {
+                                method,
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ numero, tipo, descricao })
+                            });
+                        }
+                        await this.carregarEccs();
+                        alert('Importação de encontros concluída.');
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao importar Excel.');
+                    }
+                },
+                async importarExcel(evt) {
+                    const file = evt.target.files && evt.target.files[0] ? evt.target.files[0] : null;
+                    evt.target.value = '';
+                    await this.importarExcelArquivo(file);
+                },
+                formatarEjcOption(ejc) {
+                    if (!ejc) return '-';
+                    const numero = ejc.numero ? `${this.numeroParaRomano(ejc.numero)} EJC` : 'EJC';
+                    const local = [this.nomeMeuEJC || ejc.paroquia, ejc.ano].filter(Boolean).join(' - ');
+                    return [numero, local].filter(Boolean).join(' | ');
+                },
+                formatarServicoLabel(srv) {
+                    if (!srv) return '-';
+                    const equipe = this.obterNomeEquipeServico(srv);
+                    if (srv.ejc_numero) {
+                        const numero = `${this.numeroParaRomano(srv.ejc_numero)} EJC`;
+                        const local = this.nomeMeuEJC ? ` ${this.nomeMeuEJC}` : (srv.ejc_paroquia ? ` ${srv.ejc_paroquia}` : '');
+                        return `${equipe} - ${numero}${local}`;
+                    }
+                    return `${equipe} - edição não informada`;
+                },
+                formatarHistoricoOutroEjc(srv) {
+                    if (!srv) return '-';
+                    const numero = Number(srv.ejc_numero || 0);
+                    const edicao = Number.isInteger(numero) && numero > 0
+                        ? `${this.numeroParaRomano(numero)} EJC ${this.nomeMeuEJC || srv.ejc_paroquia || ''}`.trim()
+                        : (srv.edicao_ejc || 'Edição não informada');
+                    const equipe = String(srv.equipe || srv.equipe_nome || '').trim() || 'Equipe';
+                    const papel = String(srv.papel || '').trim();
+                    return papel ? `${edicao} - ${equipe} (${papel})` : `${edicao} - ${equipe}`;
+                },
+                obterNomeEquipeServico(srv) {
+                    if (!srv) return 'Equipe não informada';
+                    const nomeDireto = String(srv.equipe_nome || srv.equipe || '').trim();
+                    if (nomeDireto) return nomeDireto;
+                    const equipeId = Number(srv.equipe_id || 0);
+                    const equipe = (this.equipes || []).find((e) => Number(e.id) === equipeId);
+                    return (equipe && equipe.nome) ? equipe.nome : 'Equipe não informada';
+                },
+                formatarEdicaoServico(srv) {
+                    if (!srv) return 'Edição não informada';
+                    const numeroBruto = Number(srv.ejc_numero || 0);
+                    if (Number.isInteger(numeroBruto) && numeroBruto > 0) {
+                        return `${this.numeroParaRomano(numeroBruto)} EJC ${this.nomeMeuEJC || srv.ejc_paroquia || ''}`.trim();
+                    }
+                    const ejcId = Number(srv.ejc_id || 0);
+                    const ejc = (this.ejcs || []).find((e) => Number(e.id) === ejcId);
+                    if (ejc && ejc.numero) {
+                        return `${this.numeroParaRomano(ejc.numero)} EJC ${this.nomeMeuEJC || ejc.paroquia || ''}`.trim();
+                    }
+                    return 'Edição não informada';
+                },
+                formatarServicoEdicaoPorIds(srv) {
+                    if (!srv) return '-';
+                    const equipeId = Number(srv.equipe_id || 0);
+                    const ejcId = Number(srv.ejc_id || 0);
+                    const equipe = (this.equipes || []).find((e) => Number(e.id) === equipeId);
+                    const ejc = (this.ejcs || []).find((e) => Number(e.id) === ejcId);
+                    const nomeEquipe = equipe && equipe.nome ? equipe.nome : 'Equipe não informada';
+                    if (ejc && ejc.numero) {
+                        const numero = `${this.numeroParaRomano(ejc.numero)} EJC`;
+                        const local = this.nomeMeuEJC ? ` ${this.nomeMeuEJC}` : (ejc.paroquia ? ` ${ejc.paroquia}` : '');
+                        return `${nomeEquipe} - ${numero}${local}`;
+                    }
+                    return `${nomeEquipe} - edição não informada`;
+                },
+                servicosRegistradosCasal() {
+                    return (this.formCasal && Array.isArray(this.formCasal.servicos) ? this.formCasal.servicos : [])
+                        .filter((srv) => Number(srv && srv.equipe_id) > 0);
+                },
+                servicosRegistradosCasalComIndice() {
+                    const base = this.formCasal && Array.isArray(this.formCasal.servicos) ? this.formCasal.servicos : [];
+                    const out = [];
+                    base.forEach((srv, idx) => {
+                        if (Number(srv && srv.equipe_id) > 0) out.push({ srv, idx });
+                    });
+                    return out;
+                },
+                clonarFormCasal(payload) {
+                    try {
+                        return JSON.parse(JSON.stringify(payload || {}));
+                    } catch (_) {
+                        return { ...(payload || {}) };
+                    }
+                },
+                iniciarEdicaoCasal() {
+                    this.formCasalBackup = this.clonarFormCasal(this.formCasal);
+                    this.isEditingCasal = true;
+                },
+                cancelarEdicaoCasal() {
+                    if (this.formCasal && this.formCasal.id && this.formCasalBackup) {
+                        this.formCasal = this.clonarFormCasal(this.formCasalBackup);
+                        this.isEditingCasal = false;
+                        return;
+                    }
+                    if (this.modalCasal) this.modalCasal.hide();
+                },
+                formatarDataPresenca(data) {
+                    if (!data) return '-';
+                    const dt = new Date(`${data}T00:00:00`);
+                    return Number.isNaN(dt.getTime()) ? data : dt.toLocaleDateString('pt-BR');
+                },
+                formatarDataHora(dataHora) {
+                    if (!dataHora) return '-';
+                    const dt = new Date(dataHora);
+                    return Number.isNaN(dt.getTime()) ? dataHora : dt.toLocaleString('pt-BR');
+                },
+                async carregarComissoesCasal() {
+                    this.abaCasal = 'historico';
+                    if (!this.formCasal || !this.formCasal.id) {
+                        this.comissoesCasal = [];
+                        return;
+                    }
+                    this.loadingComissoesCasal = true;
+                    try {
+                        const res = await fetch(`/api/tios/casais/${this.formCasal.id}/comissoes`);
+                        const data = await res.json().catch(() => ([]));
+                        this.comissoesCasal = res.ok && Array.isArray(data) ? data.filter(Boolean) : [];
+                        if (!this.comissoesCasal.length) {
+                            const resCoord = await fetch('/api/coordenadores');
+                            const dataCoord = await resCoord.json().catch(() => ([]));
+                            const coordenacoes = resCoord.ok && Array.isArray(dataCoord) ? dataCoord : [];
+                            this.comissoesCasal = coordenacoes
+                                .filter((coord) => Array.isArray(coord.membros) && coord.membros.some((m) => String(m.membro_tipo || '').toUpperCase() === 'TIO' && Number(m.tio_casal_id) === Number(this.formCasal.id)))
+                                .map((coord) => ({
+                                    id: `coord-tio-${coord.id}-${this.formCasal.id}`,
+                                    tipo: 'COORDENACAO',
+                                    coordenacao_nome: coord.nome || '',
+                                    coordenacao_pasta_nome: coord.pasta_nome || coord.nome || '',
+                                    coordenacao_pasta_caminho: coord.pasta_nome || coord.nome || '',
+                                    coordenacao_periodo: coord.periodo || ''
+                                }));
+                        }
+                    } catch (err) {
+                        console.error('Erro ao carregar comissões do casal:', err);
+                        this.comissoesCasal = [];
+                    } finally {
+                        this.loadingComissoesCasal = false;
+                    }
+                },
+                formatarTipoComissaoCasal(tipo) {
+                    const mapa = {
+                        GARCOM_EQUIPE: '<i class="fa-solid fa-utensils icon-accent me-1"></i>Equipe de Garçom',
+                        COORDENACAO: '<i class="fa-solid fa-compass icon-accent me-1"></i>Coordenação',
+                        DIRIGENTE: '<i class="fa-solid fa-bullseye icon-accent me-1"></i>Dirigente',
+                        GARCOM_OUTRO: '<i class="fa-solid fa-utensils icon-accent me-1"></i>Garçom em outro EJC'
+                    };
+                    return mapa[tipo] || tipo || 'Comissão';
+                },
+                formatarIdade(data) {
+                    if (!data) return '-';
+                    const dt = new Date(`${String(data).split('T')[0]}T00:00:00`);
+                    if (Number.isNaN(dt.getTime())) return '-';
+                    const diff = Date.now() - dt.getTime();
+                    const idade = Math.floor(diff / (365.25 * 24 * 60 * 60 * 1000));
+                    return Number.isFinite(idade) ? `${idade} anos` : '-';
+                },
+                numeroParaRomano(valor) {
+                    const num = Number(valor);
+                    if (!Number.isInteger(num) || num <= 0) return String(valor || '');
+                    const mapa = [
+                        [1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'],
+                        [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'],
+                        [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']
+                    ];
+                    let n = num;
+                    let out = '';
+                    for (const [v, r] of mapa) {
+                        while (n >= v) {
+                            out += r;
+                            n -= v;
+                        }
+                    }
+                    return out;
+                },
+                normalizarCamposSaudeCasal() {
+                    if (!this.formCasal.deficiencia_tio) this.formCasal.qual_deficiencia_tio = '';
+                    if (!this.formCasal.restricao_alimentar_tio) this.formCasal.detalhes_restricao_tio = '';
+                    if (!this.formCasal.deficiencia_tia) this.formCasal.qual_deficiencia_tia = '';
+                    if (!this.formCasal.restricao_alimentar_tia) this.formCasal.detalhes_restricao_tia = '';
+                    this.formCasal.deficiencia = !!(this.formCasal.deficiencia_tio || this.formCasal.deficiencia_tia);
+                    this.formCasal.restricao_alimentar = !!(this.formCasal.restricao_alimentar_tio || this.formCasal.restricao_alimentar_tia);
+                },
+                async abrirPresencasCasal(casal) {
+                    if (!casal || !casal.id) return;
+                    this.abrirEditarCasal(casal);
+                    this.abaCasal = 'presencas';
+                    await this.carregarPresencasCasal();
+                },
+                async carregarPresencasCasal() {
+                    if (!this.formCasal || !this.formCasal.id) return;
+                    this.presencasCasal = [];
+                    this.loadingPresencas = true;
+                    try {
+                        const res = await fetch(`/api/tios/presencas/${this.formCasal.id}`);
+                        const data = await res.json().catch(() => ([]));
+                        this.presencasCasal = Array.isArray(data) ? data : [];
+                    } catch (err) {
+                        console.error(err);
+                        this.presencasCasal = [];
+                    } finally {
+                        this.loadingPresencas = false;
+                    }
+                },
+                async carregarJovensCasal() {
+                    if (!this.formCasal || !this.formCasal.id) {
+                        this.jovensCasal = [];
+                        return;
+                    }
+                    this.loadingJovensCasal = true;
+                    try {
+                        const res = await fetch(`/api/tios/${this.formCasal.id}/jovens`);
+                        const data = await res.json().catch(() => ([]));
+                        this.jovensCasal = res.ok && Array.isArray(data) ? data : [];
+                    } catch (err) {
+                        console.error('Erro ao carregar jovens do casal:', err);
+                        this.jovensCasal = [];
+                    } finally {
+                        this.loadingJovensCasal = false;
+                    }
+                },
+                async carregarObservacoesCasalExtras() {
+                    if (!this.formCasal || !this.formCasal.id) {
+                        this.observacoesExtrasCasal = [];
+                        return;
+                    }
+                    try {
+                        const res = await fetch(`/api/tios/casais/${this.formCasal.id}/observacoes`);
+                        const data = await res.json().catch(() => ([]));
+                        this.observacoesExtrasCasal = res.ok && Array.isArray(data) ? data : [];
+                    } catch (err) {
+                        console.error('Erro ao carregar observações extras do casal:', err);
+                        this.observacoesExtrasCasal = [];
+                    }
+                },
+                async adicionarObservacaoCasalExtra() {
+                    if (!this.formCasal || !this.formCasal.id) {
+                        alert('Salve o casal antes de adicionar observações.');
+                        return;
+                    }
+                    const observacao = String(this.novaObservacaoCasal || '').trim();
+                    if (!observacao) {
+                        alert('Informe uma observação.');
+                        return;
+                    }
+                    try {
+                        const res = await fetch(`/api/tios/casais/${this.formCasal.id}/observacoes`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ observacao })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao salvar observação.');
+                            return;
+                        }
+                        this.novaObservacaoCasal = '';
+                        await this.carregarObservacoesCasalExtras();
+                    } catch (err) {
+                        console.error('Erro ao salvar observação extra:', err);
+                        alert('Erro ao salvar observação.');
+                    }
+                },
+                onSearchJovemInput() {
+                    clearTimeout(this.searchJovemTimer);
+                    const q = String(this.searchJovemQuery || '').trim();
+                    if (!q) {
+                        this.searchJovemResults = [];
+                        return;
+                    }
+                    this.searchJovemTimer = setTimeout(() => this.buscarJovensParaCasal(q), 250);
+                },
+                async buscarJovensParaCasal(q) {
+                    try {
+                        const res = await fetch(`/api/jovens/search?q=${encodeURIComponent(q)}`);
+                        const data = await res.json().catch(() => ([]));
+                        this.searchJovemResults = res.ok && Array.isArray(data) ? data : [];
+                    } catch (err) {
+                        console.error('Erro ao buscar jovens:', err);
+                        this.searchJovemResults = [];
+                    }
+                },
+                async adicionarJovemCasal(jovem) {
+                    if (!this.formCasal || !this.formCasal.id || !jovem || !jovem.id) return;
+                    try {
+                        const res = await fetch(`/api/tios/${this.formCasal.id}/jovens`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ jovem_id: jovem.id })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao vincular jovem.');
+                            return;
+                        }
+                        this.searchJovemQuery = '';
+                        this.searchJovemResults = [];
+                        await this.carregarJovensCasal();
+                    } catch (err) {
+                        console.error('Erro ao vincular jovem:', err);
+                        alert('Erro ao vincular jovem.');
+                    }
+                },
+                async removerJovemCasal(vinculo) {
+                    if (!vinculo || !vinculo.id || !this.formCasal || !this.formCasal.id) return;
+                    if (!(await uiConfirm('Remover este jovem do casal?'))) return;
+                    try {
+                        const res = await fetch(`/api/tios/${this.formCasal.id}/jovens/${vinculo.id}`, { method: 'DELETE' });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao remover vínculo.');
+                            return;
+                        }
+                        await this.carregarJovensCasal();
+                    } catch (err) {
+                        console.error('Erro ao remover vínculo:', err);
+                        alert('Erro ao remover vínculo.');
+                    }
+                },
+                abrirNovoCasal() {
+                    this.formCasal = {
+                        id: null,
+                        foto_url: '',
+                        nome_tio: '',
+                        telefone_tio: '',
+                        data_nascimento_tio: '',
+                        nome_tia: '',
+                        telefone_tia: '',
+                        data_nascimento_tia: '',
+                        origem_tipo: 'EJC',
+                        outro_ejc_id: null,
+                        ecc_id: null,
+                        equipe_ids: [],
+                        servicos: [],
+                        restricao_alimentar: false,
+                        deficiencia: false,
+                        restricao_alimentar_tio: false,
+                        detalhes_restricao_tio: '',
+                        deficiencia_tio: false,
+                        qual_deficiencia_tio: '',
+                        restricao_alimentar_tia: false,
+                        detalhes_restricao_tia: '',
+                        deficiencia_tia: false,
+                        qual_deficiencia_tia: '',
+                        observacoes: '',
+                        termos_aceitos_em: null
+                    };
+                    this.observacoesExtrasCasal = [];
+                    this.comissoesCasal = [];
+                    this.novaObservacaoCasal = '';
+                    this.novoServicoCasal = { equipe_id: null, ejc_id: null };
+                    this.abaCasal = 'dados';
+                    this.subAbaCasalDados = 'cadastro';
+                    this.isEditingCasal = true;
+                    this.formCasalBackup = null;
+                    this.jovensCasal = [];
+                    this.searchJovemQuery = '';
+                    this.searchJovemResults = [];
+                    this.familiaresCasal = [];
+                    this.buscaFamiliaCasal = '';
+                    this.resultadosBuscaFamiliaCasal = [];
+                    if (!this.modalCasal) this.modalCasal = new bootstrap.Modal(document.getElementById('modalCasal'));
+                    this.modalCasal.show();
+                },
+                abrirNovoCasalOutroEjc() {
+                    this.abrirNovoCasal();
+                    this.formCasal.origem_tipo = 'OUTRO_EJC';
+                    this.formCasal.ecc_id = null;
+                    this.formCasal.outro_ejc_id = null;
+                },
+                async abrirEditarCasal(item) {
+                    this.formCasal = {
+                        id: item.id,
+                        foto_url: item.foto_url || '',
+                        nome_tio: item.nome_tio || '',
+                        telefone_tio: item.telefone_tio || '',
+                        data_nascimento_tio: item.data_nascimento_tio || '',
+                        nome_tia: item.nome_tia || '',
+                        telefone_tia: item.telefone_tia || '',
+                        data_nascimento_tia: item.data_nascimento_tia || '',
+                        origem_tipo: item.origem_tipo || 'EJC',
+                        outro_ejc_id: item.outro_ejc_id || null,
+                        ecc_id: item.ecc_id || null,
+                        equipe_ids: Array.isArray(item.equipe_ids) ? item.equipe_ids.slice() : [],
+                        servicos: Array.isArray(item.servicos) && item.servicos.length
+                            ? item.servicos.map((s) => ({ equipe_id: s.equipe_id || null, ejc_id: s.ejc_id || null }))
+                            : [],
+                        restricao_alimentar: !!item.restricao_alimentar,
+                        deficiencia: !!item.deficiencia,
+                        restricao_alimentar_tio: !!item.restricao_alimentar_tio,
+                        detalhes_restricao_tio: item.detalhes_restricao_tio || '',
+                        deficiencia_tio: !!item.deficiencia_tio,
+                        qual_deficiencia_tio: item.qual_deficiencia_tio || '',
+                        restricao_alimentar_tia: !!item.restricao_alimentar_tia,
+                        detalhes_restricao_tia: item.detalhes_restricao_tia || '',
+                        deficiencia_tia: !!item.deficiencia_tia,
+                        qual_deficiencia_tia: item.qual_deficiencia_tia || '',
+                        observacoes: item.observacoes || '',
+                        termos_aceitos_em: item.termos_aceitos_em || null
+                    };
+                    this.observacoesExtrasCasal = [];
+                    this.comissoesCasal = [];
+                    this.novaObservacaoCasal = '';
+                    this.novoServicoCasal = { equipe_id: null, ejc_id: null };
+                    this.abaCasal = 'dados';
+                    this.subAbaCasalDados = 'cadastro';
+                    this.isEditingCasal = false;
+                    this.formCasalBackup = this.clonarFormCasal(this.formCasal);
+                    this.jovensCasal = [];
+                    this.searchJovemQuery = '';
+                    this.searchJovemResults = [];
+                    this.buscaFamiliaCasal = '';
+                    this.resultadosBuscaFamiliaCasal = [];
+                    await this.carregarFamiliaresCasal();
+                    if (!this.modalCasal) this.modalCasal = new bootstrap.Modal(document.getElementById('modalCasal'));
+                    this.modalCasal.show();
+                },
+                adicionarServicoCasal() {
+                    if (!this.isEditingCasal) return;
+                    const equipeId = this.novoServicoCasal && this.novoServicoCasal.equipe_id ? Number(this.novoServicoCasal.equipe_id) : null;
+                    const ejcId = this.novoServicoCasal && this.novoServicoCasal.ejc_id ? Number(this.novoServicoCasal.ejc_id) : null;
+                    if (!equipeId || !ejcId) return;
+                    this.formCasal.servicos.push({ equipe_id: equipeId, ejc_id: ejcId });
+                    this.novoServicoCasal = { equipe_id: null, ejc_id: null };
+                },
+                removerServicoCasal(idx) {
+                    if (!this.isEditingCasal) return;
+                    this.formCasal.servicos.splice(idx, 1);
+                },
+                async uploadFotoCasal(event) {
+                    const file = event && event.target && event.target.files ? event.target.files[0] : null;
+                    event.target.value = '';
+                    if (!file || !this.formCasal || !this.formCasal.id) return;
+                    const formData = new FormData();
+                    formData.append('foto', file);
+                    try {
+                        const res = await fetch(`/api/tios/casais/${this.formCasal.id}/foto`, {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao enviar foto.');
+                            return;
+                        }
+                        this.formCasal.foto_url = data.foto_url || '';
+                        const idx = (this.casais || []).findIndex((c) => Number(c.id) === Number(this.formCasal.id));
+                        if (idx >= 0) this.casais[idx].foto_url = data.foto_url || '';
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao enviar foto.');
+                    }
+                },
+                async salvarCasal() {
+                    if (!this.formCasal.nome_tio || !this.formCasal.telefone_tio || !this.formCasal.nome_tia || !this.formCasal.telefone_tia) {
+                        alert('Preencha nome e telefone do tio e da tia.');
+                        return;
+                    }
+                    if (this.formCasal.origem_tipo === 'OUTRO_EJC' && !this.formCasal.outro_ejc_id) {
+                        alert('Selecione a paróquia do outro EJC.');
+                        return;
+                    }
+                    this.normalizarCamposSaudeCasal();
+                    const servicosValidos = (this.formCasal.servicos || [])
+                        .map((s) => ({
+                            equipe_id: s && s.equipe_id ? Number(s.equipe_id) : null,
+                            ejc_id: s && s.ejc_id ? Number(s.ejc_id) : null
+                        }))
+                        .filter((s) => s.equipe_id);
+                    const payload = {
+                        ...this.formCasal,
+                        ecc_id: this.formCasal.origem_tipo === 'OUTRO_EJC' ? null : this.formCasal.ecc_id,
+                        outro_ejc_id: this.formCasal.origem_tipo === 'OUTRO_EJC' ? this.formCasal.outro_ejc_id : null,
+                        servicos: servicosValidos,
+                        equipe_ids: Array.from(new Set(servicosValidos.map((s) => s.equipe_id)))
+                    };
+                    try {
+                        const isEdit = !!this.formCasal.id;
+                        const res = await fetch(isEdit ? `/api/tios/casais/${this.formCasal.id}` : '/api/tios/casais', {
+                            method: isEdit ? 'PUT' : 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao salvar casal.');
+                            return;
+                        }
+                        this.formCasal.id = data.id || this.formCasal.id;
+                        this.formCasalBackup = this.clonarFormCasal(this.formCasal);
+                        this.isEditingCasal = false;
+                        await this.carregarFamiliaresCasal();
+                        if (this.modalCasal) this.modalCasal.hide();
+                        await this.carregarCasais();
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao salvar casal.');
+                    }
+                },
+                async excluirCasal(item) {
+                    const nomeCasal = [item?.nome_tio, item?.nome_tia].filter(Boolean).join(' e ') || 'este casal de tios';
+                    const confirmar = await window.uiConfirm(
+                        `Tem certeza que deseja deletar ${nomeCasal}? Esta ação não pode ser desfeita.`,
+                        { title: 'Confirmação' }
+                    );
+                    if (!confirmar) return;
+                    try {
+                        const res = await fetch(`/api/tios/casais/${item.id}`, { method: 'DELETE' });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao excluir casal.');
+                            return;
+                        }
+                        this.isEditingCasal = false;
+                        this.aba = 'casais';
+                        this.abaCasal = 'dados';
+                        this.subAbaCasalDados = 'cadastro';
+                        if (this.modalCasal) this.modalCasal.hide();
+                        await this.carregarCasais();
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao excluir casal.');
+                    }
+                },
+                abrirNovoEcc() {
+                    this.formEcc = { id: null, numero: '', tipo: 'ECC', descricao: '' };
+                    if (!this.modalEcc) this.modalEcc = new bootstrap.Modal(document.getElementById('modalEcc'));
+                    this.modalEcc.show();
+                },
+                abrirEditarEcc(item) {
+                    this.formEcc = { id: item.id, numero: item.numero || '', tipo: item.tipo || 'ECC', descricao: item.descricao || '' };
+                    if (!this.modalEcc) this.modalEcc = new bootstrap.Modal(document.getElementById('modalEcc'));
+                    this.modalEcc.show();
+                },
+                async salvarEcc() {
+                    if (!this.formEcc.numero) {
+                        alert('Informe o número do Encontro.');
+                        return;
+                    }
+                    try {
+                        const isEdit = !!this.formEcc.id;
+                        const res = await fetch(isEdit ? `/api/tios/ecc/${this.formEcc.id}` : '/api/tios/ecc', {
+                            method: isEdit ? 'PUT' : 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(this.formEcc)
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao salvar Encontro.');
+                            return;
+                        }
+                        if (this.modalEcc) this.modalEcc.hide();
+                        await this.carregarEccs();
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao salvar Encontro.');
+                    }
+                },
+                async excluirEcc(item) {
+                    if (!(await uiConfirm('Excluir este Encontro?'))) return;
+                    try {
+                        const res = await fetch(`/api/tios/ecc/${item.id}`, { method: 'DELETE' });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao excluir Encontro.');
+                            return;
+                        }
+                        await this.carregarEccs();
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao excluir Encontro.');
+                    }
+                }
+            },
+            mounted() {
+                window.addEventListener('meu-ejc-atualizado', (event) => {
+                    const nome = event && event.detail && event.detail.nome ? String(event.detail.nome).trim() : '';
+                    if (nome) {
+                        this.nomeMeuEJC = nome;
+                        this.carregarPreferenciasColunasTios();
+                    }
+                });
+                try {
+                    const nome = (window.__NOME_EJC_ATUAL && String(window.__NOME_EJC_ATUAL).trim()) || '';
+                    if (nome) this.nomeMeuEJC = nome;
+                } catch (_) {}
+                this.carregarPreferenciasColunasTios();
+                this.carregarTudo();
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

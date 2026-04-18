@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>EJC - Log</title>
+    <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
+    <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="/css/velzon-theme.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/ui-kit.js"></script>
+    <script src="/js/menu.js"></script>
+    <style>
+        .logs-shell { max-width: 1280px; margin: 0 auto; }
+        .logs-card {
+            border: 1px solid rgba(184, 135, 50, 0.14);
+            border-radius: 24px;
+            background: rgba(255, 253, 248, 0.92);
+            box-shadow: 0 18px 36px rgba(52, 37, 16, 0.08);
+        }
+        .logs-card { padding: 1.6rem; margin-bottom: 1.2rem; }
+        .logs-kicker {
+            color: #8d6a37; text-transform: uppercase; letter-spacing: .1em; font-size: .72rem; font-weight: 700; margin-bottom: .55rem;
+        }
+        .logs-title {
+            font-size: clamp(1.8rem, 3vw, 2.4rem); margin: 0; color: #352512;
+        }
+        .logs-subtitle { color: #6e5734; font-size: 1rem; margin-top: .65rem; }
+        .log-grid-wrap {
+            border: 1px solid rgba(184, 135, 50, 0.14);
+            border-radius: 24px;
+            overflow-x: auto;
+            overflow-y: hidden;
+            background: rgba(255, 253, 248, 0.92);
+            box-shadow: 0 18px 36px rgba(52, 37, 16, 0.08);
+        }
+        .log-grid-head,
+        .log-grid-row {
+            display: grid;
+            grid-template-columns: minmax(180px, 1.3fr) minmax(280px, 2fr) minmax(140px, 1fr) minmax(110px, 0.8fr) minmax(140px, 1fr);
+            gap: 1rem;
+            align-items: center;
+            padding: 1rem 1.25rem;
+        }
+        .log-grid-head {
+            background: rgba(243, 235, 220, 0.9);
+            border-bottom: 1px solid rgba(184, 135, 50, 0.14);
+            color: #8d6a37;
+            text-transform: uppercase;
+            letter-spacing: .08em;
+            font-size: .78rem;
+            font-weight: 800;
+        }
+        .log-grid-row {
+            border-bottom: 1px solid rgba(184, 135, 50, 0.1);
+        }
+        .log-grid-row:last-child {
+            border-bottom: 0;
+        }
+        .log-grid-head,
+        .log-grid-row {
+            min-width: 860px;
+        }
+        .log-cell-title {
+            font-weight: 700;
+            color: #322211;
+            line-height: 1.3;
+        }
+        .log-cell-subtitle {
+            color: #7b6a52;
+            font-size: .92rem;
+            margin-top: .2rem;
+        }
+        .log-cell-value {
+            color: #6b5435;
+            font-weight: 600;
+            line-height: 1.35;
+        }
+
+        .log-filters {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(180px, 1fr));
+            gap: 14px;
+            margin: 18px 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="logs-shell">
+            <section class="logs-card">
+                <div class="logs-kicker">Administrativo</div>
+                <h1 class="logs-title">Log do sistema</h1>
+                <div class="logs-subtitle">Aqui aparecem apenas as ações realizadas nos últimos dois meses.</div>
+            </section>
+
+            <section class="logs-card" v-if="erro">
+                <div class="alert alert-danger mb-0">{{ erro }}</div>
+            </section>
+
+            <section class="logs-card" v-if="logs.length">
+                <div class="log-filters">
+                    <div>
+                        <label class="form-label">Pesquisar usuário</label>
+                        <input class="form-control" v-model.trim="filtros.usuario" placeholder="Nome ou e-mail">
+                    </div>
+                    <div>
+                        <label class="form-label">Pesquisar ação</label>
+                        <input class="form-control" v-model.trim="filtros.acao" placeholder="Ex.: criou, editou, excluiu">
+                    </div>
+                    <div>
+                        <label class="form-label">Data</label>
+                        <input class="form-control" type="date" v-model="filtros.data">
+                    </div>
+                </div>
+            </section>
+
+            <div class="log-grid-wrap" v-if="logsFiltrados.length">
+                <div class="log-grid-head">
+                    <div>Usuário</div>
+                    <div>Ação</div>
+                    <div>Menu</div>
+                    <div>Data</div>
+                    <div>Horário</div>
+                </div>
+                <article class="log-grid-row" v-for="log in logsFiltrados" :key="log.id">
+                    <div>
+                        <div class="log-cell-title">{{ log.actor_name || 'Usuário do sistema' }}</div>
+                        <div class="log-cell-subtitle">{{ log.actor_identifier || '-' }}</div>
+                    </div>
+                    <div class="log-cell-value">{{ log.action_label }}</div>
+                    <div class="log-cell-value">{{ log.menu_label }}</div>
+                    <div class="log-cell-value">{{ formatarData(log.created_at) }}</div>
+                    <div class="log-cell-value">{{ formatarHora(log.created_at) }}</div>
+                </article>
+            </div>
+
+            <section class="logs-card text-center" v-else-if="logs.length && !loading">
+                <strong>Nenhum log encontrado com esses filtros.</strong>
+                <div class="text-muted mt-2">Você pode pesquisar por usuário, ação ou data.</div>
+            </section>
+
+            <section class="logs-card text-center" v-else-if="!loading">
+                <strong>Nenhum log encontrado.</strong>
+                <div class="text-muted mt-2">As ações realizadas nos últimos dois meses aparecerão aqui.</div>
+            </section>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.injetarMenu) window.injetarMenu('#app');
+            createApp({
+                data() {
+                    return { logs: [], filtros: { usuario: '', acao: '', data: '' }, loading: true, erro: '' };
+                },
+                computed: {
+                    logsFiltrados() {
+                        const usuario = String(this.filtros.usuario || '').trim().toLowerCase();
+                        const acao = String(this.filtros.acao || '').trim().toLowerCase();
+                        const data = String(this.filtros.data || '').trim();
+                        return (this.logs || []).filter((log) => {
+                            const nomeUsuario = `${log.actor_name || ''} ${log.actor_identifier || ''}`.toLowerCase();
+                            const textoAcao = `${log.action_label || ''} ${log.menu_label || ''}`.toLowerCase();
+                            const dataLog = this.formatarDataInput(log.created_at);
+                            if (usuario && !nomeUsuario.includes(usuario)) return false;
+                            if (acao && !textoAcao.includes(acao)) return false;
+                            if (data && dataLog !== data) return false;
+                            return true;
+                        });
+                    }
+                },
+                async mounted() {
+                    try {
+                        const res = await fetch('/api/logs');
+                        const data = await res.json().catch(() => ([]));
+                        if (!res.ok) {
+                            this.erro = data.error || 'Não foi possível carregar os logs.';
+                            return;
+                        }
+                        this.logs = Array.isArray(data) ? data : [];
+                    } catch (_) {
+                        this.erro = 'Erro ao conectar com o servidor.';
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                methods: {
+                    formatarData(valor) {
+                        return new Date(valor).toLocaleDateString('pt-BR');
+                    },
+                    formatarDataInput(valor) {
+                        const data = new Date(valor);
+                        if (Number.isNaN(data.getTime())) return '';
+                        const ano = data.getFullYear();
+                        const mes = String(data.getMonth() + 1).padStart(2, '0');
+                        const dia = String(data.getDate()).padStart(2, '0');
+                        return `${ano}-${mes}-${dia}`;
+                    },
+                    formatarHora(valor) {
+                        return new Date(valor).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+                    }
+                }
+            }).mount('#app');
+        });
+    </script>
+</body>
+</html>

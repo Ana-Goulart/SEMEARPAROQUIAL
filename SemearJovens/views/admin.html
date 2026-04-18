@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EJC - Administração</title>
+    <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
+    <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/velzon-theme.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/ui-kit.js"></script>
+    <style>
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1050;
+            padding: 16px;
+        }
+
+        .dialog-card {
+            width: 100%;
+            max-width: 640px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 18px 50px rgba(15, 23, 42, 0.2);
+        }
+
+        .module-user-card {
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 12px;
+            background: #fbfcfd;
+        }
+
+        .module-user-list {
+            font-size: 0.9rem;
+            border: 1px dashed #d9dee3;
+            border-radius: 8px;
+            padding: 10px;
+            background: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="container-fluid">
+        <div class="row min-vh-100">
+            <aside class="col-md-3 col-lg-2 bg-light border-end p-3">
+                <h5 class="mb-3">Admin</h5>
+                <div class="list-group">
+                    <button class="list-group-item list-group-item-action" :class="{active: aba==='cadastro'}" @click="abrirCadastro">Cadastrar Paróquia</button>
+                    <button class="list-group-item list-group-item-action" :class="{active: aba==='lista'}" @click="carregarTenants">Paróquias cadastradas</button>
+                </div>
+                <button class="btn btn-outline-secondary btn-sm mt-3 w-100" @click="sair">Sair</button>
+            </aside>
+            <main class="col-md-9 col-lg-10 p-4">
+                <h3 class="mb-3">Sistema Administrador de Paróquias</h3>
+
+                <div v-if="mensagem.texto" class="alert" :class="mensagem.tipo==='erro' ? 'alert-danger' : 'alert-success'">
+                    {{ mensagem.texto }}
+                </div>
+
+                <div v-if="aba==='cadastro'" class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <h5 class="mb-3">{{ editandoId ? 'Editar Paróquia' : 'Cadastrar Paróquia' }}</h5>
+                        <div class="row g-3">
+                            <div class="col-md-6"><label class="form-label">Nome do EJC</label><input class="form-control" v-model.trim="form.nome_ejc"></div>
+                            <div class="col-md-6"><label class="form-label">Paróquia</label><input class="form-control" v-model.trim="form.paroquia"></div>
+                            <div class="col-md-6"><label class="form-label">Endereço</label><input class="form-control" v-model.trim="form.endereco"></div>
+                            <div class="col-md-3"><label class="form-label">Cidade</label><input class="form-control" v-model.trim="form.cidade"></div>
+                            <div class="col-md-3"><label class="form-label">Estado</label><input class="form-control" v-model.trim="form.estado" placeholder="Ex: MG"></div>
+                        </div>
+
+                        <div class="mt-4">
+                            <h6 class="mb-2">Módulo liberado</h6>
+                            <div class="module-user-card mb-3">
+                                <strong>EJC</strong>
+                                <div class="small text-muted mt-1">Esta paróquia terá somente um módulo liberado e somente um usuário de acesso para o EJC.</div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <h6 class="mb-2">Usuário do EJC</h6>
+                            <p class="text-muted small mb-3">Cada paróquia pode ter apenas um usuário para acessar o sistema EJC.</p>
+
+                            <div class="module-user-card mb-3">
+                                <div v-if="usuarioAtual" class="module-user-list mb-3">
+                                    <div class="fw-semibold mb-1">Usuário atual:</div>
+                                    <div>{{ usuarioAtual.nome_completo }} ({{ usuarioAtual.email }})</div>
+                                </div>
+
+                                <div class="row g-2">
+                                    <div class="col-md-4">
+                                        <label class="form-label">Nome completo</label>
+                                        <input class="form-control" v-model.trim="form.usuario.nome_completo">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">E-mail/Login</label>
+                                        <input class="form-control" type="email" v-model.trim="form.usuario.email">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Senha</label>
+                                        <input class="form-control" type="password" v-model="form.usuario.senha">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label">Grupo</label>
+                                        <select class="form-select" v-model="form.usuario.grupo">
+                                            <option v-for="grupo in gruposDisponiveis" :key="`grupo-unico-${grupo}`" :value="grupo">{{ grupo }}</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-3 d-flex justify-content-end gap-2">
+                            <button v-if="editandoId" class="btn btn-light" @click="abrirCadastro">Cancelar</button>
+                            <button class="btn btn-primary" @click="salvar" :disabled="saving">{{ saving ? 'Salvando...' : (editandoId ? 'Salvar alterações' : 'Criar paróquia') }}</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-else class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="mb-0">Paróquias Cadastradas</h5>
+                            <button class="btn btn-sm btn-soft-primary" @click="carregarTenants">Atualizar</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-sm align-middle">
+                                <thead><tr><th>EJC</th><th>Paróquia</th><th>Cidade</th><th>Estado</th><th>Módulos</th><th>Usuários por módulo</th><th>Status</th><th>Ações</th></tr></thead>
+                                <tbody>
+                                    <tr v-for="t in tenants" :key="t.id">
+                                        <td>{{ t.nome_ejc }}</td>
+                                        <td>{{ t.paroquia }}</td>
+                                        <td>{{ t.cidade }}</td>
+                                        <td>{{ t.estado }}</td>
+                                        <td>
+                                            <span v-if="!(t.modules || []).length" class="text-muted">-</span>
+                                            <span v-for="m in (t.modules || [])" :key="`tb-mod-${t.id}-${m}`" class="badge bg-info-subtle text-info me-1">{{ moduloNome(m) }}</span>
+                                        </td>
+                                        <td>
+                                            <div v-if="!(t.module_users || []).length" class="text-muted">-</div>
+                                            <div v-for="item in usuariosPorModulo(t.module_users || [])" :key="`tb-user-${t.id}-${item.moduleCode}`" class="small">
+                                                <strong>{{ moduloNome(item.moduleCode) }}:</strong> {{ item.count }} usuário(s)
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge" :class="t.ativo ? 'bg-success-subtle text-success' : 'bg-warning-subtle text-warning'">
+                                                {{ t.ativo ? 'Ativo' : 'Desabilitado' }}
+                                            </span>
+                                        </td>
+                                        <td class="d-flex gap-1 flex-wrap">
+                                            <button class="btn btn-edit-standard btn-sm" @click="editarTenant(t)">Editar</button>
+                                            <button v-if="t.ativo" class="btn btn-sm btn-outline-warning" @click="abrirDesabilitar(t)">Desabilitar</button>
+                                            <button v-else class="btn btn-sm btn-outline-success" @click="habilitar(t)">Habilitar</button>
+                                            <button class="btn btn-sm btn-outline-danger" @click="abrirExcluir(t)">Excluir</button>
+                                        </td>
+                                    </tr>
+                                    <tr v-if="!tenants.length"><td colspan="8" class="text-muted text-center">Nenhuma paróquia cadastrada.</td></tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <div v-if="dialogExcluir.aberto" class="overlay">
+            <div class="dialog-card p-4">
+                <h5 class="mb-2">Excluir Paróquia</h5>
+                <p class="text-muted mb-3">Tem certeza que deseja excluir <strong>{{ dialogExcluir.item?.nome_ejc }}</strong>? Esta ação remove os dados desta paróquia.</p>
+                <div class="d-flex justify-content-end gap-2">
+                    <button class="btn btn-light" @click="dialogExcluir.aberto=false">Cancelar</button>
+                    <button class="btn btn-danger" :disabled="saving" @click="confirmarExcluir">Excluir Paróquia</button>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="dialogDesabilitar.aberto" class="overlay">
+            <div class="dialog-card p-4">
+                <h5 class="mb-2">Desabilitar Paróquia</h5>
+                <p class="text-muted mb-3">Informe o motivo que será exibido no login para <strong>{{ dialogDesabilitar.item?.nome_ejc }}</strong>.</p>
+                <textarea class="form-control" rows="4" v-model.trim="dialogDesabilitar.motivo" placeholder="Ex: Sistema temporariamente bloqueado por pendência cadastral."></textarea>
+                <div class="d-flex justify-content-end gap-2 mt-3">
+                    <button class="btn btn-light" @click="dialogDesabilitar.aberto=false">Cancelar</button>
+                    <button class="btn btn-warning" :disabled="saving" @click="confirmarDesabilitar">Desabilitar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+        createApp({
+            data() {
+                return {
+                    aba: 'cadastro',
+                    saving: false,
+                    editandoId: null,
+                    tenants: [],
+                    modulosDisponiveis: [],
+                    gruposDisponiveis: ['Tios', 'Jovens', 'Diretor Espiritual', 'Padre'],
+                    mensagem: { tipo: '', texto: '' },
+                    dialogExcluir: { aberto: false, item: null },
+                    dialogDesabilitar: { aberto: false, item: null, motivo: '' },
+                    editingExistingModuleUsers: {},
+                    form: {
+                        nome_ejc: '',
+                        paroquia: '',
+                        endereco: '',
+                        cidade: '',
+                        estado: '',
+                        usuario: { nome_completo: '', email: '', senha: '', grupo: 'Tios' }
+                    }
+                };
+            },
+            async mounted() {
+                const me = await fetch('/api/admin/me').then(r => r.json()).catch(() => ({}));
+                if (!me.logged) { window.location.href = '/admin/login'; return; }
+                await this.carregarModulos();
+                await this.carregarTenants();
+                this.aba = 'cadastro';
+                this.resetForm();
+            },
+            computed: {
+                usuarioAtual() {
+                    const lista = this.editingExistingModuleUsers['semear-jovens'] || [];
+                    return lista.length ? lista[0] : null;
+                }
+            },
+            methods: {
+                limparMensagem() {
+                    this.mensagem = { tipo: '', texto: '' };
+                },
+                sucesso(texto) {
+                    this.mensagem = { tipo: 'ok', texto };
+                },
+                erro(texto) {
+                    this.mensagem = { tipo: 'erro', texto };
+                },
+                moduloNome(code) {
+                    return this.modulosDisponiveis.find((item) => item.code === code)?.nome || code;
+                },
+                usuariosPorModulo(users) {
+                    const map = new Map();
+                    for (const user of users) {
+                        const key = String(user.module_code || '').trim();
+                        if (!key) continue;
+                        map.set(key, (map.get(key) || 0) + 1);
+                    }
+                    return [...map.entries()].map(([moduleCode, count]) => ({ moduleCode, count }));
+                },
+                async carregarModulos() {
+                    try {
+                        const res = await fetch('/api/admin/modules');
+                        this.modulosDisponiveis = res.ok ? await res.json() : [];
+                    } catch (_) {
+                        this.modulosDisponiveis = [];
+                    }
+                },
+                criarDraftVazio() {
+                    return { nome_completo: '', email: '', senha: '', grupo: 'Tios' };
+                },
+                resetForm() {
+                    this.form = {
+                        nome_ejc: '',
+                        paroquia: '',
+                        endereco: '',
+                        cidade: '',
+                        estado: '',
+                        usuario: this.criarDraftVazio()
+                    };
+                    this.editingExistingModuleUsers = {};
+                },
+                abrirCadastro() {
+                    this.editandoId = null;
+                    this.aba = 'cadastro';
+                    this.resetForm();
+                    this.limparMensagem();
+                },
+                editarTenant(t) {
+                    this.editandoId = t.id;
+                    this.form = {
+                        nome_ejc: t.nome_ejc || '',
+                        paroquia: t.paroquia || '',
+                        endereco: t.endereco || '',
+                        cidade: t.cidade || '',
+                        estado: t.estado || '',
+                        usuario: this.criarDraftVazio()
+                    };
+                    this.editingExistingModuleUsers = {};
+                    this.editingExistingModuleUsers['semear-jovens'] = (t.module_users || []).filter((u) => u.module_code === 'semear-jovens');
+                    if (this.editingExistingModuleUsers['semear-jovens'].length) {
+                        const atual = this.editingExistingModuleUsers['semear-jovens'][0];
+                        this.form.usuario = {
+                            nome_completo: atual.nome_completo || '',
+                            email: atual.email || '',
+                            senha: '',
+                            grupo: atual.grupo || 'Tios'
+                        };
+                    }
+                    this.aba = 'cadastro';
+                    this.limparMensagem();
+                },
+                montarUsuarioCompleto() {
+                    const draft = this.form.usuario || this.criarDraftVazio();
+                    const nome = String(draft.nome_completo || '').trim();
+                    const email = String(draft.email || '').trim().toLowerCase();
+                    const senha = String(draft.senha || '');
+                    const grupo = String(draft.grupo || 'Tios').trim() || 'Tios';
+                    const hasAll = !!(nome && email && senha);
+                    const temExistente = !!this.usuarioAtual;
+                    if (!hasAll && !temExistente) {
+                        throw new Error('Preencha nome, e-mail e senha do usuário do EJC.');
+                    }
+                    if (!hasAll && temExistente) {
+                        throw new Error('Informe também a senha para atualizar o único usuário do EJC.');
+                    }
+                    return { module_code: 'semear-jovens', nome_completo: nome, email, senha, grupo };
+                },
+                async salvar() {
+                    const f = this.form;
+                    this.limparMensagem();
+                    if (!f.nome_ejc || !f.paroquia || !f.cidade || !f.estado) {
+                        this.erro('Preencha nome do EJC, paróquia, cidade e estado.');
+                        return;
+                    }
+
+                    let moduleUserDraft = null;
+                    try {
+                        moduleUserDraft = this.montarUsuarioCompleto();
+                    } catch (err) {
+                        this.erro(err.message || 'Erro ao validar usuário do EJC.');
+                        return;
+                    }
+
+                    this.saving = true;
+                    try {
+                        if (this.editandoId) {
+                            const res = await fetch(`/api/admin/tenants/${this.editandoId}`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    nome_ejc: f.nome_ejc,
+                                    paroquia: f.paroquia,
+                                    endereco: f.endereco,
+                                    cidade: f.cidade,
+                                    estado: f.estado
+                                })
+                            });
+                            const data = await res.json().catch(() => ({}));
+                            if (!res.ok) { this.erro(data.error || 'Erro ao salvar paróquia.'); return; }
+
+                            const userRes = await fetch(`/api/admin/tenants/${this.editandoId}/module-users`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(moduleUserDraft)
+                            });
+                            const userData = await userRes.json().catch(() => ({}));
+                            if (!userRes.ok) {
+                                this.erro(userData.error || 'Erro ao salvar usuário do EJC.');
+                                return;
+                            }
+
+                            this.sucesso('Paróquia atualizada com sucesso.');
+                        } else {
+                            const res = await fetch('/api/admin/tenants', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    nome_ejc: f.nome_ejc,
+                                    paroquia: f.paroquia,
+                                    endereco: f.endereco,
+                                    cidade: f.cidade,
+                                    estado: f.estado,
+                                    module_users: [moduleUserDraft]
+                                })
+                            });
+                            const data = await res.json().catch(() => ({}));
+                            if (!res.ok) { this.erro(data.error || 'Erro ao cadastrar paróquia.'); return; }
+                            this.sucesso('Paróquia cadastrada com sucesso.');
+                        }
+
+                        this.aba = 'lista';
+                        this.editandoId = null;
+                        this.resetForm();
+                        await this.carregarTenants();
+                    } catch (_) {
+                        this.erro('Erro ao conectar com o servidor.');
+                    } finally {
+                        this.saving = false;
+                    }
+                },
+                async carregarTenants() {
+                    this.aba = 'lista';
+                    try {
+                        const res = await fetch('/api/admin/tenants');
+                        this.tenants = res.ok ? await res.json() : [];
+                    } catch (_) {
+                        this.tenants = [];
+                    }
+                },
+                abrirExcluir(t) {
+                    this.dialogExcluir = { aberto: true, item: t };
+                },
+                async confirmarExcluir() {
+                    if (!this.dialogExcluir.item) return;
+                    this.saving = true;
+                    this.limparMensagem();
+                    try {
+                        const res = await fetch(`/api/admin/tenants/${this.dialogExcluir.item.id}`, { method: 'DELETE' });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) { this.erro(data.error || 'Erro ao excluir paróquia.'); return; }
+                        this.dialogExcluir = { aberto: false, item: null };
+                        this.sucesso('Paróquia excluída com sucesso.');
+                        await this.carregarTenants();
+                    } catch (_) {
+                        this.erro('Erro ao conectar com o servidor.');
+                    } finally {
+                        this.saving = false;
+                    }
+                },
+                abrirDesabilitar(t) {
+                    this.dialogDesabilitar = { aberto: true, item: t, motivo: '' };
+                },
+                async confirmarDesabilitar() {
+                    if (!this.dialogDesabilitar.item) return;
+                    if (!this.dialogDesabilitar.motivo) {
+                        this.erro('Informe o motivo da desabilitação.');
+                        return;
+                    }
+                    this.saving = true;
+                    this.limparMensagem();
+                    try {
+                        const res = await fetch(`/api/admin/tenants/${this.dialogDesabilitar.item.id}/status`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ ativo: false, motivo_desabilitacao: this.dialogDesabilitar.motivo })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) { this.erro(data.error || 'Erro ao desabilitar paróquia.'); return; }
+                        this.dialogDesabilitar = { aberto: false, item: null, motivo: '' };
+                        this.sucesso('Paróquia desabilitada com sucesso.');
+                        await this.carregarTenants();
+                    } catch (_) {
+                        this.erro('Erro ao conectar com o servidor.');
+                    } finally {
+                        this.saving = false;
+                    }
+                },
+                async habilitar(t) {
+                    this.saving = true;
+                    this.limparMensagem();
+                    try {
+                        const res = await fetch(`/api/admin/tenants/${t.id}/status`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ ativo: true })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) { this.erro(data.error || 'Erro ao habilitar paróquia.'); return; }
+                        this.sucesso('Paróquia habilitada com sucesso.');
+                        await this.carregarTenants();
+                    } catch (_) {
+                        this.erro('Erro ao conectar com o servidor.');
+                    } finally {
+                        this.saving = false;
+                    }
+                },
+                async sair() {
+                    await fetch('/api/admin/logout', { method: 'POST' }).catch(() => {});
+                    window.location.href = '/admin/login';
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

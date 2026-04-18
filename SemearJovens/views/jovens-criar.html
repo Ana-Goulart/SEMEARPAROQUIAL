@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Criar Jovem - EJC</title>
+    <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
+    <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/velzon-theme.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/ui-kit.js"></script>
+    <script src="/js/date-br.js" defer></script>
+</head>
+<body style="min-height:100vh;background:linear-gradient(155deg,#fbf5e9 0%,#f3e6cc 46%,#efe5d8 100%);">
+    <div id="app" class="container py-4 py-md-5">
+        <div class="row justify-content-center">
+            <div class="col-12 col-xl-9">
+                <div v-if="sucesso" class="card border-0 shadow">
+                    <div class="card-body p-4 p-md-5 text-center">
+                        <img src="/assets/logo-oficial.png" alt="Semear Paroquial" style="width:110px;height:110px;object-fit:contain;">
+                        <h2 class="mt-3 mb-2">Cadastro enviado</h2>
+                        <p class="text-muted mb-4">O jovem foi adicionado na Lista Mestre com sucesso.</p>
+                        <a :href="montagemForcadaId ? `/jovens/criar-cadastro?montagem_id=${montagemForcadaId}` : '/jovens/criar-cadastro'" class="btn btn-outline-primary">Cadastrar outro jovem</a>
+                    </div>
+                </div>
+
+                <div v-else class="card border-0 shadow">
+                    <div class="card-body p-4">
+                        <div class="text-center mb-4">
+                            <img src="/assets/logo-oficial.png" alt="Semear Paroquial" style="width:120px;height:120px;object-fit:contain;">
+                            <h4 class="mt-2 mb-1">Cria jovem</h4>
+                            <p class="text-muted mb-0">Formulário público para adicionar um novo jovem na Lista Mestre.</p>
+                            <p v-if="montagemForcadaId" class="text-muted small mb-0">Cadastro vinculado automaticamente a {{ montagemForcadaLabel }}.</p>
+                        </div>
+
+                        <div class="alert alert-warning py-2 small">
+                            Preencha o máximo de dados possível. Nome completo e telefone são obrigatórios.
+                        </div>
+
+                        <div class="row g-3">
+                            <div class="col-12"><h6 class="text-muted mb-0">Dados básicos</h6></div>
+                            <div class="col-md-6">
+                                <label class="form-label">Nome completo *</label>
+                                <input class="form-control" v-model.trim="form.nome_completo" maxlength="180">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Apelido</label>
+                                <input class="form-control" v-model.trim="form.apelido" maxlength="120">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Telefone *</label>
+                                <input class="form-control" v-model.trim="form.telefone" maxlength="30" placeholder="(31)99999-9999" @input="onTelefoneInput">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">E-mail</label>
+                                <input class="form-control" v-model.trim="form.email" maxlength="180" placeholder="email@exemplo.com">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Instagram</label>
+                                <input class="form-control" v-model.trim="form.instagram" maxlength="120" placeholder="@usuario">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Data de nascimento</label>
+                                <input type="text" class="form-control date-br" v-model.trim="form.data_nascimento_br" placeholder="dd/mm/aaaa" inputmode="numeric">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Sexo</label>
+                                <select class="form-select" v-model="form.sexo">
+                                    <option value="">Selecione</option>
+                                    <option value="Feminino">Feminino</option>
+                                    <option value="Masculino">Masculino</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">EJC que fez</label>
+                                <input v-if="montagemForcadaId" class="form-control" :value="montagemForcadaLabel" readonly>
+                                <select v-else class="form-select" v-model="form.numero_ejc_fez">
+                                    <option value="">Selecione</option>
+                                    <option v-for="ejc in opcoes.ejcs" :key="`ejc-${ejc.id}`" :value="String(ejc.id)">{{ ejc.numero }}º EJC{{ ejc.em_montagem ? ' (Montagem)' : '' }}</option>
+                                </select>
+                            </div>
+
+                            <div class="col-12"><h6 class="text-muted mb-0">Situação e endereço</h6></div>
+                            <div class="col-md-4">
+                                <label class="form-label">Estado civil</label>
+                                <select class="form-select" v-model="form.estado_civil">
+                                    <option value="Solteiro">Solteiro</option>
+                                    <option value="Casado">Casado</option>
+                                    <option value="Amasiado">Amasiado</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4" v-if="['Casado','Amasiado'].includes(form.estado_civil)">
+                                <label class="form-label">Data do casamento</label>
+                                <input type="text" class="form-control date-br" v-model.trim="form.data_casamento_br" placeholder="dd/mm/aaaa" inputmode="numeric">
+                            </div>
+                            <div class="col-md-4" v-if="!montagemForcadaId">
+                                <label class="form-label">Círculo</label>
+                                <select class="form-select" v-model="form.circulo">
+                                    <option value="">Selecione</option>
+                                    <option v-for="circulo in opcoes.circulos" :key="`cir-${circulo.id}`" :value="circulo.nome">{{ circulo.nome }}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">CEP</label>
+                                <input class="form-control" v-model.trim="form.endereco_cep" maxlength="10" placeholder="00000-000" @input="onCepInput">
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label">Rua</label>
+                                <input class="form-control" v-model.trim="form.endereco_rua" maxlength="180">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Número</label>
+                                <input class="form-control" v-model.trim="form.endereco_numero" maxlength="30">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Bairro</label>
+                                <input class="form-control" v-model.trim="form.endereco_bairro" maxlength="120">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Cidade</label>
+                                <input class="form-control" v-model.trim="form.endereco_cidade" maxlength="120">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Casal de tios</label>
+                                <select class="form-select" v-model="form.tio_casal_id">
+                                    <option value="">Selecione</option>
+                                    <option v-for="casal in opcoes.tios_casais" :key="`tio-${casal.id}`" :value="casal.id">{{ casal.nome_tio || '-' }} e {{ casal.nome_tia || '-' }}</option>
+                                </select>
+                            </div>
+
+                            <div class="col-12"><h6 class="text-muted mb-0">Saúde e serviço</h6></div>
+                            <div class="col-md-4">
+                                <label class="form-label">Possui deficiência?</label>
+                                <select class="form-select" v-model="form.deficiencia">
+                                    <option :value="false">Não</option>
+                                    <option :value="true">Sim</option>
+                                </select>
+                            </div>
+                            <div class="col-md-8" v-if="form.deficiencia">
+                                <label class="form-label">Qual deficiência</label>
+                                <input class="form-control" v-model.trim="form.qual_deficiencia" maxlength="200">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Restrição alimentar?</label>
+                                <select class="form-select" v-model="form.restricao_alimentar">
+                                    <option :value="false">Não</option>
+                                    <option :value="true">Sim</option>
+                                </select>
+                            </div>
+                            <div class="col-md-8" v-if="form.restricao_alimentar">
+                                <label class="form-label">Detalhes da restrição</label>
+                                <select class="form-select" v-model="form.detalhes_restricao">
+                                    <option value="">Selecione</option>
+                                    <option v-for="item in restricoesDisponiveis" :key="`rest-${item}`" :value="item">{{ item }}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">É músico?</label>
+                                <select class="form-select" v-model="form.eh_musico" @change="onMusicoToggle">
+                                    <option :value="false">Não</option>
+                                    <option :value="true">Sim</option>
+                                </select>
+                            </div>
+                            <div class="col-md-8" v-if="form.eh_musico">
+                                <label class="form-label">Instrumentos</label>
+                                <div class="border rounded p-2 bg-light d-flex flex-wrap gap-3">
+                                    <div class="form-check" v-for="ins in instrumentosDisponiveis" :key="`ins-${ins}`">
+                                        <input class="form-check-input" type="checkbox" :id="`ins-${ins}`" :value="ins" v-model="form.instrumentos_musicais">
+                                        <label class="form-check-label" :for="`ins-${ins}`">{{ ins }}</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12" v-if="opcoes.pastorais.length">
+                                <label class="form-label">Pastorais que participa</label>
+                                <div class="border rounded p-2 bg-light d-flex flex-wrap gap-3">
+                                    <div class="form-check" v-for="pastoral in opcoes.pastorais" :key="`past-${pastoral.id}`">
+                                        <input class="form-check-input" type="checkbox" :id="`past-${pastoral.id}`" :value="pastoral.id" v-model="form.pastorais">
+                                        <label class="form-check-label" :for="`past-${pastoral.id}`">{{ pastoral.nome }}</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12" v-if="['Casado','Amasiado'].includes(form.estado_civil)">
+                                <div class="p-3 bg-light border rounded">
+                                    <h6 class="mb-3">Informações do cônjuge</h6>
+                                    <div class="row g-3">
+                                        <div class="col-md-4">
+                                            <label class="form-label">Nome do cônjuge</label>
+                                            <input class="form-control" v-model.trim="form.conjuge_nome" maxlength="180">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Telefone do cônjuge</label>
+                                            <input class="form-control" v-model.trim="form.conjuge_telefone" maxlength="30" @input="onConjugeTelefoneInput">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Outro EJC do cônjuge</label>
+                                            <select class="form-select" v-model="form.conjuge_outro_ejc_id">
+                                                <option value="">Selecione</option>
+                                                <option v-for="outro in opcoes.outros_ejcs" :key="`oe-${outro.id}`" :value="outro.id">{{ outro.paroquia }}<span v-if="outro.nome"> - {{ outro.nome }}</span></option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Paróquia do cônjuge</label>
+                                            <input class="form-control" v-model.trim="form.conjuge_paroquia" maxlength="180">
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">ECC/ECNA do cônjuge</label>
+                                            <select class="form-select" v-model="form.conjuge_ecc_tipo">
+                                                <option value="">Selecione</option>
+                                                <option value="NAO_FEZ">Não fez ainda</option>
+                                                <option value="ECC">ECC</option>
+                                                <option value="ECNA">ECNA</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <label class="form-label">Número do ECC/ECNA</label>
+                                            <input class="form-control" v-model.trim="form.conjuge_ecc_numero" maxlength="30">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label">Observações</label>
+                                <textarea class="form-control" rows="3" v-model.trim="form.observacoes_extras" maxlength="1000"></textarea>
+                            </div>
+                            <div class="col-12">
+                                <div class="p-3 bg-light border rounded">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="aceiteTermosCriarJovem" v-model="aceiteTermos">
+                                        <label class="form-check-label" for="aceiteTermosCriarJovem">Li e aceito os termos de uso</label>
+                                    </div>
+                                    <div class="small text-muted mt-2">{{ termosTexto }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid mt-4">
+                            <button class="btn btn-primary" :disabled="enviando || !aceiteTermos" @click="enviar">
+                                {{ enviando ? 'Enviando...' : 'Criar jovem na Lista Mestre' }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+        createApp({
+            data() {
+                return {
+                    enviando: false,
+                    sucesso: false,
+                    montagemForcadaId: '',
+                    montagemForcadaLabel: '',
+                    aceiteTermos: false,
+                    termosTexto: 'Ao enviar este formulário, você autoriza o EJC a armazenar e utilizar os dados pessoais para cadastro, contato e organização do encontro.',
+                    restricoesDisponiveis: [
+                        'Alergia a amendoim',
+                        'Alergia a castanhas',
+                        'Alergia a frutos do mar',
+                        'APLV (Alergia à proteína do leite de vaca)',
+                        'Intolerante à lactose',
+                        'Intolerante a glúten (Celíaco)',
+                        'Não come carne vermelha',
+                        'Não come carne de porco',
+                        'Vegetariano',
+                        'Vegano',
+                        'Outras'
+                    ],
+                    instrumentosDisponiveis: [
+                        'Voz',
+                        'Violao',
+                        'Guitarra',
+                        'Baixo',
+                        'Teclado',
+                        'Bateria',
+                        'Percussao',
+                        'Flauta',
+                        'Saxofone',
+                        'Violino',
+                        'Cajon',
+                        'Ukulele'
+                    ],
+                    opcoes: {
+                        ejcs: [],
+                        circulos: [],
+                        pastorais: [],
+                        tios_casais: [],
+                        outros_ejcs: []
+                    },
+                    form: {
+                        nome_completo: '',
+                        apelido: '',
+                        telefone: '',
+                        email: '',
+                        instagram: '',
+                        data_nascimento_br: '',
+                        numero_ejc_fez: '',
+                        sexo: '',
+                        estado_civil: 'Solteiro',
+                        data_casamento_br: '',
+                        circulo: '',
+                        endereco_cep: '',
+                        endereco_rua: '',
+                        endereco_numero: '',
+                        endereco_bairro: '',
+                        endereco_cidade: '',
+                        tio_casal_id: '',
+                        deficiencia: false,
+                        qual_deficiencia: '',
+                        restricao_alimentar: false,
+                        detalhes_restricao: '',
+                        eh_musico: false,
+                        instrumentos_musicais: [],
+                        pastorais: [],
+                        conjuge_nome: '',
+                        conjuge_telefone: '',
+                        conjuge_outro_ejc_id: '',
+                        conjuge_paroquia: '',
+                        conjuge_ecc_tipo: '',
+                        conjuge_ecc_numero: '',
+                        observacoes_extras: ''
+                    }
+                };
+            },
+            methods: {
+                formatarTelefoneBr(valor) {
+                    const digits = String(valor || '').replace(/\D/g, '').slice(0, 11);
+                    if (digits.length <= 2) return digits ? `(${digits}` : '';
+                    if (digits.length <= 6) return `(${digits.slice(0, 2)})${digits.slice(2)}`;
+                    if (digits.length <= 10) return `(${digits.slice(0, 2)})${digits.slice(2, 6)}-${digits.slice(6)}`;
+                    return `(${digits.slice(0, 2)})${digits.slice(2, 7)}-${digits.slice(7)}`;
+                },
+                onTelefoneInput() {
+                    this.form.telefone = this.formatarTelefoneBr(this.form.telefone);
+                },
+                onConjugeTelefoneInput() {
+                    this.form.conjuge_telefone = this.formatarTelefoneBr(this.form.conjuge_telefone);
+                },
+                formatarCep(cep) {
+                    const digits = String(cep || '').replace(/\D/g, '').slice(0, 8);
+                    if (digits.length <= 5) return digits;
+                    return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+                },
+                async onCepInput() {
+                    this.form.endereco_cep = this.formatarCep(this.form.endereco_cep);
+                    const digits = String(this.form.endereco_cep || '').replace(/\D/g, '');
+                    if (digits.length !== 8) return;
+                    try {
+                        const res = await fetch(`/api/cep/${digits}`);
+                        const data = await res.json().catch(() => ({}));
+                        if (data.logradouro && !this.form.endereco_rua) this.form.endereco_rua = data.logradouro;
+                        if (data.bairro && !this.form.endereco_bairro) this.form.endereco_bairro = data.bairro;
+                        if (data.localidade && !this.form.endereco_cidade) this.form.endereco_cidade = data.localidade;
+                    } catch (_) {}
+                },
+                parseDateBrToIso(valor) {
+                    if (!valor) return null;
+                    const txt = String(valor).trim();
+                    if (!txt) return null;
+                    if (/^\d{4}-\d{2}-\d{2}$/.test(txt)) return txt;
+                    const match = txt.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})$/);
+                    if (!match) return null;
+                    return `${match[3]}-${match[2]}-${match[1]}`;
+                },
+                onMusicoToggle() {
+                    if (!this.form.eh_musico) this.form.instrumentos_musicais = [];
+                },
+                aplicarMontagemForcada() {
+                    const params = new URLSearchParams(window.location.search);
+                    const montagemId = String(params.get('montagem_id') || '').trim();
+                    if (!montagemId) return;
+                    this.montagemForcadaId = montagemId;
+                    this.form.numero_ejc_fez = `montagem:${montagemId}`;
+                    this.form.circulo = '';
+                },
+                async carregarOpcoes() {
+                    try {
+                        const sufixo = this.montagemForcadaId ? `?montagem_id=${encodeURIComponent(this.montagemForcadaId)}` : '';
+                        const res = await fetch(`/api/jovens-public/cadastro-opcoes${sufixo}`);
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) throw new Error(data.error || 'Erro ao carregar opções.');
+                        this.opcoes = {
+                            ejcs: Array.isArray(data.ejcs) ? data.ejcs : [],
+                            circulos: Array.isArray(data.circulos) ? data.circulos : [],
+                            pastorais: Array.isArray(data.pastorais) ? data.pastorais : [],
+                            tios_casais: Array.isArray(data.tios_casais) ? data.tios_casais : [],
+                            outros_ejcs: Array.isArray(data.outros_ejcs) ? data.outros_ejcs : []
+                        };
+                        if (this.montagemForcadaId) {
+                            const chave = `montagem:${this.montagemForcadaId}`;
+                            const item = this.opcoes.ejcs.find((ejc) => String(ejc.id) === chave);
+                            if (item && item.numero) {
+                                this.montagemForcadaLabel = `${item.numero}º EJC (Montagem)`;
+                            } else {
+                                this.montagemForcadaLabel = 'Montagem atual';
+                            }
+                        }
+                    } catch (err) {
+                        console.error(err);
+                    }
+                },
+                async enviar() {
+                    if (!this.form.nome_completo || !this.form.telefone) {
+                        alert('Preencha nome completo e telefone.');
+                        return;
+                    }
+                    if (this.form.deficiencia && !this.form.qual_deficiencia) {
+                        alert('Informe a deficiência.');
+                        return;
+                    }
+                    if (this.form.restricao_alimentar && !this.form.detalhes_restricao) {
+                        alert('Informe a restrição alimentar.');
+                        return;
+                    }
+                    this.enviando = true;
+                    try {
+                        let moverCasalParaTios = false;
+                        const devePerguntarMoverParaTios = ['Casado', 'Amasiado'].includes(this.form.estado_civil)
+                            && !!this.form.conjuge_nome
+                            && (this.form.conjuge_ecc_tipo === 'ECC' || this.form.conjuge_ecc_tipo === 'ECNA')
+                            && !!this.form.conjuge_ecc_numero;
+                        if (devePerguntarMoverParaTios && typeof window.showFloatingConfirm === 'function') {
+                            moverCasalParaTios = await window.showFloatingConfirm(
+                                'Deseja mover este casal para a lista de tios usando os dados do casal?'
+                            );
+                        } else if (devePerguntarMoverParaTios) {
+                            moverCasalParaTios = window.confirm('Deseja mover este casal para a lista de tios usando os dados do casal?');
+                        }
+
+                        const res = await fetch('/api/jovens-public/criar-cadastro', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                ...this.form,
+                                mover_casal_para_tios: moverCasalParaTios,
+                                montagem_id: this.montagemForcadaId || null,
+                                data_nascimento: this.parseDateBrToIso(this.form.data_nascimento_br),
+                                data_casamento: this.parseDateBrToIso(this.form.data_casamento_br),
+                                aceite_termos: this.aceiteTermos
+                            })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Não foi possível criar o cadastro.');
+                            return;
+                        }
+                        if (this.montagemForcadaId) {
+                            try {
+                                localStorage.setItem(`montagem_encontristas_publico_atualizado_${this.montagemForcadaId}`, String(Date.now()));
+                            } catch (_) { }
+                        }
+                        this.sucesso = true;
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao enviar cadastro.');
+                    } finally {
+                        this.enviando = false;
+                    }
+                }
+            },
+            mounted() {
+                const params = new URLSearchParams(window.location.search);
+                this.sucesso = params.get('sucesso') === '1';
+                if (!this.sucesso) {
+                    this.aplicarMontagemForcada();
+                    this.carregarOpcoes();
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

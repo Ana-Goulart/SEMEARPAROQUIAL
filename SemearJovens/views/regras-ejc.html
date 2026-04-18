@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>EJC - Regras por Encontro</title>
+    <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
+    <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/velzon-theme.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/ui-kit.js"></script>
+    <script src="/js/menu.js"></script>
+    <style>
+        .regra-card {
+            border: 1px solid #e5e7eb;
+            border-radius: 18px;
+            background: #fff;
+            box-shadow: 0 12px 32px rgba(15, 23, 42, 0.06);
+            transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+            cursor: pointer;
+        }
+
+        .regra-card:hover {
+            transform: translateY(-3px);
+            border-color: #c8b18a;
+            box-shadow: 0 16px 40px rgba(138, 99, 48, 0.12);
+        }
+
+        .regra-card.regra-card-bloqueada {
+            cursor: default;
+            background: #fcfcfc;
+            border-color: #e5e7eb;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+        }
+
+        .regra-card.regra-card-bloqueada:hover {
+            transform: none;
+            border-color: #e5e7eb;
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+        }
+
+        .regra-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: .35rem;
+            padding: .35rem .65rem;
+            border-radius: 999px;
+            background: #f7f1e7;
+            color: #7a5830;
+            font-size: .82rem;
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <main class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h3><i class="fas fa-scale-balanced me-2"></i>Regras por Edição do EJC</h3>
+                    <p class="text-muted mb-0">
+                        Personalize as regras que serão usadas na montagem de cada encontro.
+                    </p>
+                    <p class="text-muted small mb-0">
+                        Essas regras são consultadas na hora de montar equipes e gerar alertas de alocação.
+                    </p>
+                </div>
+            </div>
+
+            <div v-if="carregando" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <div class="text-muted mt-2">Carregando regras...</div>
+            </div>
+
+            <div v-else-if="ejcs.length === 0" class="text-center text-muted py-5">
+                Nenhum EJC cadastrado.
+            </div>
+
+            <div v-else class="row g-3">
+                <div class="col-12 col-xl-6" v-for="item in ejcs" :key="item.ejc_id">
+                    <div class="regra-card p-4 h-100" :class="{ 'regra-card-bloqueada': !item.regras_editaveis }" @click="abrirModal(item)">
+                        <div class="d-flex justify-content-between align-items-start gap-3">
+                            <div>
+                                <h5 class="mb-1">{{ numeroParaRomano(item.numero) }} EJC</h5>
+                                <div class="text-muted small">{{ item.paroquia }} <span v-if="item.ano">• {{ item.ano }}</span></div>
+                            </div>
+                            <span v-if="item.regras_editaveis" class="badge bg-soft-primary text-primary">Montagem atual</span>
+                            <span v-else class="badge bg-soft-secondary text-muted">Montagem finalizada</span>
+                        </div>
+
+                        <div class="mt-3 d-flex flex-wrap gap-2">
+                            <span class="regra-chip">
+                                Coordenação:
+                                {{ item.coordenador_tipo_casal === 'JOVEM_HOMEM_E_MULHER' ? '1 homem e 1 mulher' : 'livre' }}
+                            </span>
+                            <span class="regra-chip">
+                                Tios coordenadores:
+                                {{ item.permite_tios_coordenadores ? 'sim' : 'não' }}
+                            </span>
+                            <span class="regra-chip">
+                                Amasiados:
+                                {{ item.permite_casal_amasiado_servir ? 'podem servir' : 'não podem servir' }}
+                            </span>
+                        </div>
+
+                        <div class="mt-3 small text-muted">
+                            Idade máxima de coordenador jovem: <strong>{{ item.idade_maxima_coordenador_jovem ?? 'sem limite' }}</strong><br>
+                            Casados sem ECC: <strong>{{ item.anos_casado_sem_ecc_pode_servir ?? 'sem limite' }}</strong>
+                            <span v-if="item.anos_casado_sem_ecc_pode_servir !== null"> ano(s) após o casamento</span>
+                        </div>
+
+                        <div class="mt-3 small" :class="item.regras_editaveis ? 'text-success' : 'text-muted'">
+                            {{ item.regras_editaveis
+                                ? 'Essas regras ainda podem ser alteradas porque a montagem desta edição está ativa.'
+                                : 'Essas regras ficaram bloqueadas porque a montagem desta edição já foi finalizada.' }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <div class="modal fade" id="modalRegras" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">
+                            <i class="fas fa-sliders me-2"></i>
+                            Regras do {{ numeroParaRomano(formulario.numero) }} EJC
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body bg-light">
+                        <div v-if="!formulario.regras_editaveis" class="alert alert-secondary border-0 shadow-sm">
+                            Essas regras estão bloqueadas porque a montagem desta edição já foi finalizada.
+                        </div>
+
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Casal coordenador das equipes</label>
+                                        <select v-model="formulario.coordenador_tipo_casal" class="form-select" :disabled="!formulario.regras_editaveis">
+                                            <option value="LIVRE">Pode ser qualquer combinação</option>
+                                            <option value="JOVEM_HOMEM_E_MULHER">Obrigatoriamente 1 jovem homem e 1 jovem mulher</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label">Tios podem coordenar equipes?</label>
+                                        <select v-model.number="formulario.permite_tios_coordenadores" class="form-select" :disabled="!formulario.regras_editaveis">
+                                            <option :value="1">Sim</option>
+                                            <option :value="0">Não</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label">Idade máxima dos coordenadores jovens</label>
+                                        <input type="number" min="0" step="1" v-model="formulario.idade_maxima_coordenador_jovem" class="form-control"
+                                            :disabled="!formulario.regras_editaveis"
+                                            placeholder="Deixe em branco para não limitar">
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label">Casal amasiado pode servir?</label>
+                                        <select v-model.number="formulario.permite_casal_amasiado_servir" class="form-select" :disabled="!formulario.regras_editaveis">
+                                            <option :value="1">Sim</option>
+                                            <option :value="0">Não</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label">Se casal amasiado puder servir</label>
+                                        <select v-model="formulario.casal_amasiado_regra_equipe" class="form-select"
+                                            :disabled="!formulario.regras_editaveis || !formulario.permite_casal_amasiado_servir">
+                                            <option value="INDIFERENTE">Podem servir em qualquer configuração</option>
+                                            <option value="MESMA_EQUIPE">Devem servir na mesma equipe</option>
+                                            <option value="EQUIPES_SEPARADAS">Devem servir em equipes separadas</option>
+                                        </select>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label class="form-label">Casados sem ECC podem servir por quantos anos?</label>
+                                        <input type="number" min="0" step="1" v-model="formulario.anos_casado_sem_ecc_pode_servir" class="form-control"
+                                            :disabled="!formulario.regras_editaveis"
+                                            placeholder="Deixe em branco para não limitar">
+                                        <div class="form-text">
+                                            A validação usa a data do casamento e a data do encontro para calcular o limite exato.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                        <button type="button" class="btn btn-success" @click="salvar" :disabled="!formulario.regras_editaveis">
+                            <i class="fas fa-save me-1"></i>Salvar regras
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            injetarMenu('#app');
+            ativarMenu('/gestaodoencontro/regras');
+        });
+
+        const { createApp } = Vue;
+        createApp({
+            data() {
+                return {
+                    carregando: true,
+                    ejcs: [],
+                    modalInstancia: null,
+                    formulario: {
+                        ejc_id: null,
+                        numero: null,
+                        coordenador_tipo_casal: 'LIVRE',
+                        permite_tios_coordenadores: 1,
+                        idade_maxima_coordenador_jovem: '',
+                        permite_casal_amasiado_servir: 1,
+                        casal_amasiado_regra_equipe: 'INDIFERENTE',
+                        anos_casado_sem_ecc_pode_servir: '',
+                        regras_editaveis: 0
+                    }
+                };
+            },
+            methods: {
+                numeroParaRomano(num) {
+                    if (!num) return '';
+                    const roman = [
+                        { value: 1000, numeral: 'M' }, { value: 900, numeral: 'CM' }, { value: 500, numeral: 'D' },
+                        { value: 400, numeral: 'CD' }, { value: 100, numeral: 'C' }, { value: 90, numeral: 'XC' },
+                        { value: 50, numeral: 'L' }, { value: 40, numeral: 'XL' }, { value: 10, numeral: 'X' },
+                        { value: 9, numeral: 'IX' }, { value: 5, numeral: 'V' }, { value: 4, numeral: 'IV' }, { value: 1, numeral: 'I' }
+                    ];
+                    let result = '';
+                    let n = parseInt(num, 10);
+                    if (isNaN(n) || n <= 0) return '';
+                    for (const item of roman) {
+                        while (n >= item.value) {
+                            result += item.numeral;
+                            n -= item.value;
+                        }
+                    }
+                    return result;
+                },
+                async carregar() {
+                    this.carregando = true;
+                    try {
+                        const res = await fetch('/api/regras-ejc');
+                        this.ejcs = res.ok ? await res.json() : [];
+                    } catch (err) {
+                        console.error(err);
+                        this.ejcs = [];
+                    } finally {
+                        this.carregando = false;
+                    }
+                },
+                abrirModal(item) {
+                    this.formulario = {
+                        ejc_id: item.ejc_id,
+                        numero: item.numero,
+                        coordenador_tipo_casal: item.coordenador_tipo_casal || 'LIVRE',
+                        permite_tios_coordenadores: item.permite_tios_coordenadores ? 1 : 0,
+                        idade_maxima_coordenador_jovem: item.idade_maxima_coordenador_jovem ?? '',
+                        permite_casal_amasiado_servir: item.permite_casal_amasiado_servir ? 1 : 0,
+                        casal_amasiado_regra_equipe: item.casal_amasiado_regra_equipe || 'INDIFERENTE',
+                        anos_casado_sem_ecc_pode_servir: item.anos_casado_sem_ecc_pode_servir ?? '',
+                        regras_editaveis: item.regras_editaveis ? 1 : 0
+                    };
+                    if (!this.modalInstancia) {
+                        this.modalInstancia = new bootstrap.Modal(document.getElementById('modalRegras'));
+                    }
+                    this.modalInstancia.show();
+                },
+                async salvar() {
+                    if (!this.formulario.ejc_id) return;
+                    if (!this.formulario.regras_editaveis) {
+                        alert('As regras desta edição não podem mais ser alteradas porque a montagem já foi finalizada.');
+                        return;
+                    }
+                    try {
+                        const res = await fetch(`/api/regras-ejc/${this.formulario.ejc_id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(this.formulario)
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao salvar regras.');
+                            return;
+                        }
+                        await this.carregar();
+                        if (this.modalInstancia) this.modalInstancia.hide();
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao salvar regras.');
+                    }
+                }
+            },
+            mounted() {
+                this.carregar();
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

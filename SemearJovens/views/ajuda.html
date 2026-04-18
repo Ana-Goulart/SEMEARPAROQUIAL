@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ajuda - EJC</title>
+    <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
+    <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/velzon-theme.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/menu.js"></script>
+    <style>
+        .ajuda-hero {
+            border: 1px solid rgba(185, 138, 53, 0.16);
+            background:
+                radial-gradient(circle at top left, rgba(255, 250, 239, 0.95), rgba(255, 255, 255, 0.98)),
+                linear-gradient(135deg, rgba(234, 201, 135, 0.10), rgba(255, 255, 255, 0));
+        }
+
+        .ajuda-status-badge {
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+        }
+
+        .ajuda-msg-card {
+            border: 1px solid rgba(15, 23, 42, 0.08);
+        }
+
+        .ajuda-msg-texto {
+            white-space: pre-wrap;
+        }
+
+        .ajuda-resumo-btn {
+            width: 100%;
+            border: 0;
+            background: transparent;
+            padding: 0;
+            text-align: left;
+        }
+
+        .ajuda-ticket-numero {
+            font-size: 0.82rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            color: #8a6a36;
+            text-transform: uppercase;
+        }
+
+        .ajuda-conversa {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .ajuda-bolha {
+            max-width: 88%;
+            border-radius: 18px;
+            padding: 12px 14px;
+            border: 1px solid rgba(15, 23, 42, 0.08);
+            background: #fff;
+        }
+
+        .ajuda-bolha--usuario {
+            align-self: flex-start;
+            background: #fffaf0;
+            border-color: rgba(185, 138, 53, 0.18);
+        }
+
+        .ajuda-bolha--admin {
+            align-self: flex-end;
+            background: #eef6ff;
+            border-color: rgba(49, 109, 194, 0.18);
+        }
+
+        .ajuda-bolha-meta {
+            font-size: 0.78rem;
+            color: #64748b;
+            margin-bottom: 6px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <div class="container-fluid py-4">
+            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+                <div>
+                    <h1 class="mb-1">Ajuda</h1>
+                    <p class="text-muted mb-0">Envie sua dúvida para a administração do sistema quando precisar de apoio.</p>
+                </div>
+                <button class="btn btn-outline-primary" @click="carregarTudo" :disabled="loading">
+                    {{ loading ? 'Atualizando...' : 'Atualizar' }}
+                </button>
+            </div>
+
+            <div v-if="alerta.texto" class="alert" :class="alerta.tipo === 'erro' ? 'alert-danger' : 'alert-success'">
+                {{ alerta.texto }}
+            </div>
+
+            <div class="card shadow-sm ajuda-hero mb-4">
+                <div class="card-body">
+                    <div class="row g-3 align-items-center">
+                        <div class="col-lg-8">
+                            <h4 class="mb-2">Fale com a administradora do sistema</h4>
+                            <p class="text-muted mb-0">Use este espaço quando surgir dúvida de acesso, erro de cadastro, problema com login ou qualquer situação que precise de ajuda da administração. Quando a administradora marcar um chamado como solucionado, o EJC precisa confirmar se realmente foi resolvido.</p>
+                        </div>
+                        <div class="col-lg-4">
+                            <div class="small text-muted">EJC</div>
+                            <div class="fw-semibold">{{ usuario.nome_ejc || '-' }}</div>
+                            <div class="small text-muted mt-2">Usuário</div>
+                            <div class="fw-semibold">{{ usuario.nome_completo || '-' }}</div>
+                            <div class="small text-muted">{{ usuario.username || '' }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-xl-5">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body">
+                            <h5 class="mb-3">Nova mensagem</h5>
+                            <div class="mb-3">
+                                <label class="form-label">Assunto</label>
+                                <input class="form-control" v-model.trim="form.assunto" maxlength="180" placeholder="Ex: Login já existe em outro EJC">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Mensagem</label>
+                                <textarea class="form-control" rows="8" v-model.trim="form.mensagem" placeholder="Descreva aqui o que aconteceu e o que você precisa."></textarea>
+                            </div>
+                            <div class="d-grid">
+                                <button class="btn btn-primary" @click="enviar" :disabled="enviando">
+                                    {{ enviando ? 'Enviando...' : 'Enviar pedido de ajuda' }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-xl-7">
+                    <div class="card shadow-sm h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="mb-0">Mensagens enviadas</h5>
+                                <span class="text-muted small">{{ mensagens.length }} chamado(s) do EJC</span>
+                            </div>
+
+                            <div v-if="!mensagens.length" class="text-muted text-center py-5">
+                                Nenhum chamado aberto ainda neste EJC.
+                            </div>
+
+                            <div v-for="item in mensagens" :key="item.id" class="card ajuda-msg-card mb-3">
+                                <div class="card-body">
+                                    <button type="button" class="ajuda-resumo-btn" @click="toggleChamado(item.id)">
+                                        <div class="d-flex flex-column flex-md-row justify-content-between gap-2 align-items-md-start">
+                                            <div>
+                                                <div class="ajuda-ticket-numero">Chamado {{ protocolo(item.id) }}</div>
+                                                <h6 class="mb-1">{{ item.assunto }}</h6>
+                                                <div class="text-muted small">{{ formatarData(item.created_at) }} • aberto por {{ item.user_nome }}</div>
+                                            </div>
+                                            <div class="d-flex align-items-center gap-2">
+                                                <span class="badge ajuda-status-badge" :class="classeStatus(item.status)">
+                                                    {{ nomeStatus(item.status) }}
+                                                </span>
+                                                <span class="text-muted small">{{ chamadoAberto(item.id) ? 'Ocultar' : 'Abrir' }}</span>
+                                            </div>
+                                        </div>
+                                    </button>
+
+                                    <div v-if="chamadoAberto(item.id)" class="mt-3 pt-3 border-top">
+                                        <div v-if="item.status === 'SOLUCIONADA'" class="alert alert-info py-2">
+                                            Este chamado foi marcado como solucionado. Se estiver resolvido, clique em confirmar. Se ainda precisar de ajuda, responda abaixo para voltar para análise.
+                                        </div>
+                                        <div v-if="item.status === 'ENCERRADA'" class="alert alert-success py-2">
+                                            Este chamado já foi confirmado pelo EJC e está encerrado.
+                                        </div>
+
+                                        <div class="ajuda-conversa">
+                                            <div v-for="fala in item.conversa || []" :key="fala.id"
+                                                class="ajuda-bolha"
+                                                :class="fala.author_type === 'ADMIN' ? 'ajuda-bolha--admin' : 'ajuda-bolha--usuario'">
+                                                <div class="ajuda-bolha-meta">
+                                                    <strong>{{ fala.author_name }}</strong>
+                                                    <span class="ms-1">• {{ fala.author_type === 'ADMIN' ? 'Administração' : 'Usuário do EJC' }}</span>
+                                                    <span class="ms-1">• {{ formatarData(fala.created_at) }}</span>
+                                                </div>
+                                                <div class="ajuda-msg-texto">{{ fala.message }}</div>
+                                            </div>
+                                        </div>
+
+                                        <div v-if="item.status === 'SOLUCIONADA'" class="d-flex justify-content-end mt-3">
+                                            <button class="btn btn-sm btn-success" @click="confirmarResolucao(item)" :disabled="confirmandoChamadoId === item.id">
+                                                {{ confirmandoChamadoId === item.id ? 'Confirmando...' : 'Confirmar que foi resolvido' }}
+                                            </button>
+                                        </div>
+
+                                        <div v-if="item.status !== 'ENCERRADA'" class="mt-3">
+                                            <label class="form-label small text-muted">Responder neste chamado</label>
+                                            <textarea class="form-control" rows="3" v-model.trim="respostas[item.id]" placeholder="Escreva aqui sua resposta para continuar a conversa."></textarea>
+                                            <div class="d-flex justify-content-end mt-2">
+                                                <button class="btn btn-sm btn-outline-primary" @click="enviarResposta(item)" :disabled="enviandoRespostaId === item.id">
+                                                    {{ enviandoRespostaId === item.id ? 'Enviando...' : 'Responder chamado' }}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.injetarMenu) window.injetarMenu('#app');
+            if (window.ativarMenu) window.ativarMenu('/administrativo/ajuda');
+
+            const { createApp } = Vue;
+
+            createApp({
+            data() {
+                return {
+                    loading: false,
+                    enviando: false,
+                    enviandoRespostaId: null,
+                    confirmandoChamadoId: null,
+                    usuario: {},
+                    mensagens: [],
+                    respostas: {},
+                    chamadosAbertos: {},
+                    alerta: { tipo: '', texto: '' },
+                    form: {
+                        assunto: '',
+                        mensagem: ''
+                    }
+                };
+            },
+            async mounted() {
+                await this.carregarTudo();
+            },
+            methods: {
+                sucesso(texto) {
+                    this.alerta = { tipo: 'ok', texto };
+                },
+                erro(texto) {
+                    this.alerta = { tipo: 'erro', texto };
+                },
+                limparAlerta() {
+                    this.alerta = { tipo: '', texto: '' };
+                },
+                nomeStatus(status) {
+                    const mapa = {
+                        NOVA: 'Nova',
+                        EM_ANALISE: 'Em análise',
+                        SOLUCIONADA: 'Solucionado',
+                        ENCERRADA: 'Encerrado'
+                    };
+                    return mapa[String(status || '').trim()] || 'Nova';
+                },
+                classeStatus(status) {
+                    const valor = String(status || '').trim();
+                    if (valor === 'ENCERRADA') return 'bg-success-subtle text-success';
+                    if (valor === 'SOLUCIONADA') return 'bg-info-subtle text-info';
+                    if (valor === 'EM_ANALISE') return 'bg-warning-subtle text-warning';
+                    return 'bg-primary-subtle text-primary';
+                },
+                formatarData(valor) {
+                    if (!valor) return '-';
+                    const data = new Date(valor);
+                    if (Number.isNaN(data.getTime())) return valor;
+                    return data.toLocaleString('pt-BR');
+                },
+                protocolo(id) {
+                    return `#${String(id || '').padStart(4, '0')}`;
+                },
+                chamadoAberto(id) {
+                    return !!this.chamadosAbertos[id];
+                },
+                toggleChamado(id) {
+                    this.chamadosAbertos[id] = !this.chamadosAbertos[id];
+                },
+                async carregarTudo() {
+                    this.loading = true;
+                    try {
+                        const res = await fetch('/api/ajuda');
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            this.erro(data.error || 'Não foi possível carregar a ajuda.');
+                            return;
+                        }
+                        this.usuario = data.usuario || {};
+                        this.mensagens = Array.isArray(data.mensagens) ? data.mensagens : [];
+                        this.respostas = {};
+                        this.chamadosAbertos = {};
+                    } catch (_) {
+                        this.erro('Erro ao conectar com o servidor.');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                async enviar() {
+                    this.limparAlerta();
+                    if (!this.form.assunto || !this.form.mensagem) {
+                        this.erro('Preencha assunto e mensagem.');
+                        return;
+                    }
+                    this.enviando = true;
+                    try {
+                        const res = await fetch('/api/ajuda', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(this.form)
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            this.erro(data.error || 'Não foi possível enviar a mensagem.');
+                            return;
+                        }
+                        this.form = { assunto: '', mensagem: '' };
+                        this.sucesso(data.message || 'Mensagem enviada com sucesso.');
+                        await this.carregarTudo();
+                    } catch (_) {
+                        this.erro('Erro ao conectar com o servidor.');
+                    } finally {
+                        this.enviando = false;
+                    }
+                },
+                async enviarResposta(item) {
+                    const texto = String(this.respostas[item.id] || '').trim();
+                    if (!texto) {
+                        this.erro('Escreva a resposta antes de enviar.');
+                        return;
+                    }
+                    this.enviandoRespostaId = item.id;
+                    this.limparAlerta();
+                    try {
+                        const res = await fetch(`/api/ajuda/${item.id}/replies`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ message: texto })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            this.erro(data.error || 'Não foi possível enviar a resposta.');
+                            return;
+                        }
+                        this.respostas[item.id] = '';
+                        this.sucesso(data.message || 'Resposta enviada com sucesso.');
+                        await this.carregarTudo();
+                    } catch (_) {
+                        this.erro('Erro ao conectar com o servidor.');
+                    } finally {
+                        this.enviandoRespostaId = null;
+                    }
+                },
+                async confirmarResolucao(item) {
+                    this.confirmandoChamadoId = item.id;
+                    this.limparAlerta();
+                    try {
+                        const res = await fetch(`/api/ajuda/${item.id}/confirmar`, {
+                            method: 'POST'
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            this.erro(data.error || 'Não foi possível confirmar a resolução.');
+                            return;
+                        }
+                        this.sucesso(data.message || 'Chamado confirmado com sucesso.');
+                        await this.carregarTudo();
+                    } catch (_) {
+                        this.erro('Erro ao conectar com o servidor.');
+                    } finally {
+                        this.confirmandoChamadoId = null;
+                    }
+                }
+            }
+        }).mount('#app');
+        });
+    </script>
+</body>
+
+</html>

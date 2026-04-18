@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atualização - Outro EJC</title>
+    <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
+    <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/velzon-theme.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/ui-kit.js"></script>
+    <script src="/js/date-br.js" defer></script>
+    <style>
+        body {
+            min-height: 100vh;
+            background: linear-gradient(155deg, #fbf5e9 0%, #f3e6cc 46%, #efe5d8 100%);
+        }
+        .form-shell {
+            border: 1px solid rgba(168, 125, 44, 0.18);
+            border-radius: 28px;
+            background: rgba(255, 252, 246, 0.96);
+            box-shadow: 0 22px 48px rgba(94, 63, 17, 0.12);
+        }
+        .section-card {
+            border: 1px solid rgba(168, 125, 44, 0.16);
+            border-radius: 22px;
+            background: #fffdf9;
+            padding: 1.25rem;
+        }
+        .section-title {
+            font-family: Georgia, serif;
+            font-size: 1.45rem;
+            color: #132f4c;
+            margin-bottom: 0.35rem;
+        }
+        .helper-box {
+            border: 1px solid rgba(225, 178, 53, 0.45);
+            border-radius: 16px;
+            background: #fff4d9;
+            color: #8a5c00;
+            padding: 1rem 1.1rem;
+        }
+        .terms-box {
+            border: 1px solid rgba(168, 125, 44, 0.18);
+            border-radius: 16px;
+            background: #f8f1e2;
+            padding: 1rem 1.1rem;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="container py-4 py-md-5">
+        <div class="row justify-content-center">
+            <div class="col-12 col-xl-10">
+                <div class="form-shell p-3 p-md-4 p-lg-5">
+                    <div class="text-center mb-4">
+                        <img src="/assets/logo-oficial.png" alt="Semear Paroquial" style="width:120px;height:120px;object-fit:contain;">
+                        <h1 class="mt-2 mb-1 section-title">Atualização Cadastral - Outro EJC</h1>
+                        <p class="text-muted mb-0">Confirme os dados do jovem ou do casal de tios e atualize o cadastro.</p>
+                    </div>
+
+                    <div class="helper-box mb-4">
+                        Primeiro selecione a paróquia, depois informe se o cadastro é de <strong>jovem</strong> ou <strong>tio</strong>. Após confirmar os dados corretos, a atualização será liberada.
+                    </div>
+
+                    <div class="section-card mb-4">
+                        <h2 class="h5 mb-3">Identificação do cadastro</h2>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Qual paróquia / EJC?</label>
+                                <select class="form-select" v-model.number="filtro.outro_ejc_id" @change="onFiltroBaseChange">
+                                    <option :value="0">Selecione...</option>
+                                    <option v-for="item in outrosEjcs" :key="`oe-${item.id}`" :value="item.id">
+                                        {{ [item.paroquia, item.nome].filter(Boolean).join(' - ') || ('EJC #' + item.id) }}
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Quem vai atualizar?</label>
+                                <select class="form-select" v-model="filtro.tipo" @change="onFiltroBaseChange">
+                                    <option value="">Selecione...</option>
+                                    <option value="jovem">Jovem</option>
+                                    <option value="tio">Tio</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">{{ filtro.tipo === 'tio' ? 'Qual casal?' : 'Qual jovem?' }}</label>
+                                <select class="form-select" v-model.number="filtro.cadastro_id" :disabled="!filtro.outro_ejc_id || !filtro.tipo || carregandoMembros" @change="resetarValidacao">
+                                    <option :value="0">{{ carregandoMembros ? 'Carregando...' : 'Selecione...' }}</option>
+                                    <option v-for="item in membros" :key="`m-${item.id}`" :value="item.id">
+                                        {{ item.nome }}
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-if="filtro.tipo === 'jovem' && filtro.cadastro_id" class="section-card mb-4">
+                        <h2 class="h5 mb-3">Confirmar dados do jovem</h2>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Telefone</label>
+                                <input class="form-control" v-model.trim="validacaoJovem.telefone" maxlength="30" placeholder="(31)99999-9999" @input="validacaoJovem.telefone = formatarTelefoneBr(validacaoJovem.telefone)">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Data de nascimento</label>
+                                <input type="text" class="form-control date-br" v-model="validacaoJovem.data_nascimento" placeholder="dd/mm/aaaa">
+                            </div>
+                            <div class="col-12 d-flex gap-2 flex-wrap pt-2">
+                                <button class="btn btn-primary" :disabled="validando" @click="validarJovem">
+                                    {{ validando ? 'Confirmando...' : 'Confirmar dados' }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-if="filtro.tipo === 'tio' && filtro.cadastro_id" class="section-card mb-4">
+                        <h2 class="h5 mb-3">Confirmar dados do casal</h2>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Telefone do tio</label>
+                                <input class="form-control" v-model.trim="validacaoTio.telefone_tio" maxlength="30" placeholder="(31)99999-9999" @input="validacaoTio.telefone_tio = formatarTelefoneBr(validacaoTio.telefone_tio)">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Data de nascimento do tio</label>
+                                <input type="text" class="form-control date-br" v-model="validacaoTio.data_nascimento_tio" placeholder="dd/mm/aaaa">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Telefone da tia</label>
+                                <input class="form-control" v-model.trim="validacaoTio.telefone_tia" maxlength="30" placeholder="(31)99999-9999" @input="validacaoTio.telefone_tia = formatarTelefoneBr(validacaoTio.telefone_tia)">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Data de nascimento da tia</label>
+                                <input type="text" class="form-control date-br" v-model="validacaoTio.data_nascimento_tia" placeholder="dd/mm/aaaa">
+                            </div>
+                            <div class="col-12 d-flex gap-2 flex-wrap pt-2">
+                                <button class="btn btn-primary" :disabled="validando" @click="validarTio">
+                                    {{ validando ? 'Confirmando...' : 'Confirmar dados' }}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-if="estado === 'ATUALIZACAO_JOVEM'" class="section-card mb-4">
+                        <h2 class="h5 mb-3">Dados para atualizar</h2>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Telefone</label>
+                                <input class="form-control" v-model.trim="atualizacaoJovem.telefone" maxlength="30" placeholder="(31)99999-9999" @input="atualizacaoJovem.telefone = formatarTelefoneBr(atualizacaoJovem.telefone)">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Apelido</label>
+                                <input class="form-control" v-model.trim="atualizacaoJovem.apelido" maxlength="120">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">E-mail</label>
+                                <input class="form-control" v-model.trim="atualizacaoJovem.email" maxlength="180">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Instagram</label>
+                                <input class="form-control" v-model.trim="atualizacaoJovem.instagram" maxlength="120">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Estado civil</label>
+                                <select class="form-select" v-model="atualizacaoJovem.estado_civil">
+                                    <option value="">Selecione</option>
+                                    <option v-for="item in estadosCivis" :key="`ec-${item}`" :value="item">{{ item }}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Sexo</label>
+                                <select class="form-select" v-model="atualizacaoJovem.sexo">
+                                    <option value="">Selecione</option>
+                                    <option value="Masculino">Masculino</option>
+                                    <option value="Feminino">Feminino</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Círculo</label>
+                                <input class="form-control" v-model.trim="atualizacaoJovem.circulo" maxlength="120" placeholder="Ex: Azul">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Possui deficiência?</label>
+                                <select class="form-select" v-model="atualizacaoJovem.deficiencia">
+                                    <option :value="false">Não</option>
+                                    <option :value="true">Sim</option>
+                                </select>
+                            </div>
+                            <div class="col-md-8" v-if="atualizacaoJovem.deficiencia">
+                                <label class="form-label">Qual deficiência?</label>
+                                <input class="form-control" v-model.trim="atualizacaoJovem.qual_deficiencia" maxlength="220">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Possui restrição alimentar?</label>
+                                <select class="form-select" v-model="atualizacaoJovem.restricao_alimentar">
+                                    <option :value="false">Não</option>
+                                    <option :value="true">Sim</option>
+                                </select>
+                            </div>
+                            <div class="col-md-8" v-if="atualizacaoJovem.restricao_alimentar">
+                                <label class="form-label">Qual restrição alimentar?</label>
+                                <select class="form-select" v-model="atualizacaoJovem.detalhes_restricao">
+                                    <option disabled value="">Selecione...</option>
+                                    <option v-for="item in restricoesDisponiveis" :key="`rj-${item}`" :value="item">{{ item }}</option>
+                                    <option value="Outras">Outras</option>
+                                </select>
+                                <input v-if="atualizacaoJovem.detalhes_restricao === 'Outras'" class="form-control mt-2" v-model.trim="atualizacaoJovem.outra_restricao" maxlength="220" placeholder="Descreva a restrição">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">É músico?</label>
+                                <select class="form-select" v-model="atualizacaoJovem.eh_musico">
+                                    <option :value="false">Não</option>
+                                    <option :value="true">Sim</option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <div class="terms-box">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="aceiteTermosOutroJovem" v-model="aceiteTermos">
+                                        <label class="form-check-label" for="aceiteTermosOutroJovem">Li e aceito os termos de uso</label>
+                                    </div>
+                                    <div class="small text-muted mt-2">{{ termosTexto }}</div>
+                                </div>
+                            </div>
+                            <div class="col-12 d-flex gap-2 flex-wrap">
+                                <button class="btn btn-primary" :disabled="enviando || !aceiteTermos" @click="salvarJovem">
+                                    {{ enviando ? 'Salvando...' : 'Atualizar dados' }}
+                                </button>
+                                <button class="btn btn-outline-secondary" @click="reiniciarFluxo">Voltar</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-if="estado === 'ATUALIZACAO_TIO'" class="section-card mb-4">
+                        <h2 class="h5 mb-3">Dados para atualizar</h2>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Novo telefone do tio</label>
+                                <input class="form-control" v-model.trim="atualizacaoTio.telefone_tio" maxlength="30" placeholder="(31)99999-9999" @input="atualizacaoTio.telefone_tio = formatarTelefoneBr(atualizacaoTio.telefone_tio)">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Novo telefone da tia</label>
+                                <input class="form-control" v-model.trim="atualizacaoTio.telefone_tia" maxlength="30" placeholder="(31)99999-9999" @input="atualizacaoTio.telefone_tia = formatarTelefoneBr(atualizacaoTio.telefone_tia)">
+                            </div>
+
+                            <div class="col-12 pt-2"><h3 class="h6 text-muted mb-0">Dados do tio</h3></div>
+                            <div class="col-md-4">
+                                <label class="form-label">Tio possui restrição alimentar?</label>
+                                <select class="form-select" v-model="atualizacaoTio.restricao_alimentar_tio">
+                                    <option :value="false">Não</option>
+                                    <option :value="true">Sim</option>
+                                </select>
+                            </div>
+                            <div class="col-md-8" v-if="atualizacaoTio.restricao_alimentar_tio">
+                                <label class="form-label">Qual restrição alimentar do tio?</label>
+                                <select class="form-select" v-model="atualizacaoTio.detalhes_restricao_tio">
+                                    <option disabled value="">Selecione...</option>
+                                    <option v-for="item in restricoesDisponiveis" :key="`rtio-${item}`" :value="item">{{ item }}</option>
+                                    <option value="Outras">Outras</option>
+                                </select>
+                                <input v-if="atualizacaoTio.detalhes_restricao_tio === 'Outras'" class="form-control mt-2" v-model.trim="atualizacaoTio.outra_restricao_tio" maxlength="220" placeholder="Descreva a restrição">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Tio possui deficiência?</label>
+                                <select class="form-select" v-model="atualizacaoTio.deficiencia_tio">
+                                    <option :value="false">Não</option>
+                                    <option :value="true">Sim</option>
+                                </select>
+                            </div>
+                            <div class="col-md-8" v-if="atualizacaoTio.deficiencia_tio">
+                                <label class="form-label">Qual deficiência do tio?</label>
+                                <input class="form-control" v-model.trim="atualizacaoTio.qual_deficiencia_tio" maxlength="220">
+                            </div>
+
+                            <div class="col-12 pt-2"><h3 class="h6 text-muted mb-0">Dados da tia</h3></div>
+                            <div class="col-md-4">
+                                <label class="form-label">Tia possui restrição alimentar?</label>
+                                <select class="form-select" v-model="atualizacaoTio.restricao_alimentar_tia">
+                                    <option :value="false">Não</option>
+                                    <option :value="true">Sim</option>
+                                </select>
+                            </div>
+                            <div class="col-md-8" v-if="atualizacaoTio.restricao_alimentar_tia">
+                                <label class="form-label">Qual restrição alimentar da tia?</label>
+                                <select class="form-select" v-model="atualizacaoTio.detalhes_restricao_tia">
+                                    <option disabled value="">Selecione...</option>
+                                    <option v-for="item in restricoesDisponiveis" :key="`rtia-${item}`" :value="item">{{ item }}</option>
+                                    <option value="Outras">Outras</option>
+                                </select>
+                                <input v-if="atualizacaoTio.detalhes_restricao_tia === 'Outras'" class="form-control mt-2" v-model.trim="atualizacaoTio.outra_restricao_tia" maxlength="220" placeholder="Descreva a restrição">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Tia possui deficiência?</label>
+                                <select class="form-select" v-model="atualizacaoTio.deficiencia_tia">
+                                    <option :value="false">Não</option>
+                                    <option :value="true">Sim</option>
+                                </select>
+                            </div>
+                            <div class="col-md-8" v-if="atualizacaoTio.deficiencia_tia">
+                                <label class="form-label">Qual deficiência da tia?</label>
+                                <input class="form-control" v-model.trim="atualizacaoTio.qual_deficiencia_tia" maxlength="220">
+                            </div>
+
+                            <div class="col-12">
+                                <div class="terms-box">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="aceiteTermosOutroTio" v-model="aceiteTermos">
+                                        <label class="form-check-label" for="aceiteTermosOutroTio">Li e aceito os termos de uso</label>
+                                    </div>
+                                    <div class="small text-muted mt-2">{{ termosTexto }}</div>
+                                </div>
+                            </div>
+                            <div class="col-12 d-flex gap-2 flex-wrap">
+                                <button class="btn btn-primary" :disabled="enviando || !aceiteTermos" @click="salvarTio">
+                                    {{ enviando ? 'Salvando...' : 'Atualizar dados' }}
+                                </button>
+                                <button class="btn btn-outline-secondary" @click="reiniciarFluxo">Voltar</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-if="mensagem" class="alert alert-success mb-0">{{ mensagem }}</div>
+                    <div v-if="erro" class="alert alert-danger mb-0">{{ erro }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    carregandoMembros: false,
+                    validando: false,
+                    enviando: false,
+                    estado: 'ESCOLHA',
+                    token: '',
+                    aceiteTermos: false,
+                    mensagem: '',
+                    erro: '',
+                    termosTexto: 'Ao enviar este formulário, você autoriza o EJC a armazenar e utilizar seus dados pessoais para contato e atualização cadastral. Você pode solicitar atualização ou remoção dos dados a qualquer momento.',
+                    restricoesDisponiveis: [
+                        'Alergia a amendoim',
+                        'Alergia a castanhas',
+                        'Alergia a frutos do mar',
+                        'APLV (Alergia à proteína do leite de vaca)',
+                        'Intolerante à lactose',
+                        'Intolerante a glúten (Celíaco)',
+                        'Não come carne vermelha',
+                        'Não come carne de porco',
+                        'Vegetariano',
+                        'Vegano'
+                    ],
+                    estadosCivis: ['Solteiro(a)', 'Namorando', 'Noivo(a)', 'Casado(a)', 'Separado(a)', 'Divorciado(a)', 'Viúvo(a)'],
+                    outrosEjcs: [],
+                    membros: [],
+                    filtro: {
+                        outro_ejc_id: 0,
+                        tipo: '',
+                        cadastro_id: 0
+                    },
+                    validacaoJovem: {
+                        telefone: '',
+                        data_nascimento: ''
+                    },
+                    validacaoTio: {
+                        telefone_tio: '',
+                        data_nascimento_tio: '',
+                        telefone_tia: '',
+                        data_nascimento_tia: ''
+                    },
+                    atualizacaoJovem: {
+                        telefone: '',
+                        apelido: '',
+                        email: '',
+                        instagram: '',
+                        estado_civil: '',
+                        sexo: '',
+                        circulo: '',
+                        deficiencia: false,
+                        qual_deficiencia: '',
+                        restricao_alimentar: false,
+                        detalhes_restricao: '',
+                        outra_restricao: '',
+                        eh_musico: false
+                    },
+                    atualizacaoTio: {
+                        telefone_tio: '',
+                        telefone_tia: '',
+                        restricao_alimentar_tio: false,
+                        detalhes_restricao_tio: '',
+                        outra_restricao_tio: '',
+                        deficiencia_tio: false,
+                        qual_deficiencia_tio: '',
+                        restricao_alimentar_tia: false,
+                        detalhes_restricao_tia: '',
+                        outra_restricao_tia: '',
+                        deficiencia_tia: false,
+                        qual_deficiencia_tia: ''
+                    }
+                };
+            },
+            methods: {
+                formatarTelefoneBr(valor) {
+                    const digits = String(valor || '').replace(/\D/g, '').slice(0, 11);
+                    if (digits.length <= 2) return digits ? `(${digits}` : '';
+                    if (digits.length <= 6) return `(${digits.slice(0, 2)})${digits.slice(2)}`;
+                    if (digits.length <= 10) return `(${digits.slice(0, 2)})${digits.slice(2, 6)}-${digits.slice(6)}`;
+                    return `(${digits.slice(0, 2)})${digits.slice(2, 7)}-${digits.slice(7)}`;
+                },
+                limparMensagens() {
+                    this.erro = '';
+                    this.mensagem = '';
+                },
+                resetarValidacao() {
+                    this.estado = 'ESCOLHA';
+                    this.token = '';
+                    this.aceiteTermos = false;
+                    this.limparMensagens();
+                },
+                reiniciarFluxo() {
+                    this.resetarValidacao();
+                    this.validacaoJovem = { telefone: '', data_nascimento: '' };
+                    this.validacaoTio = { telefone_tio: '', data_nascimento_tio: '', telefone_tia: '', data_nascimento_tia: '' };
+                },
+                onFiltroBaseChange() {
+                    this.filtro.cadastro_id = 0;
+                    this.membros = [];
+                    this.reiniciarFluxo();
+                    if (this.filtro.outro_ejc_id && this.filtro.tipo) {
+                        this.carregarMembros();
+                    }
+                },
+                detalhesRestricaoFinal(campo, outraCampo) {
+                    if (!campo) return null;
+                    return campo === 'Outras' ? (outraCampo || 'Outras') : campo;
+                },
+                async carregarOutrosEjcs() {
+                    try {
+                        const res = await fetch('/api/jovens-outro-ejc-public/outros-ejcs');
+                        this.outrosEjcs = res.ok ? await res.json() : [];
+                    } catch (_) {
+                        this.outrosEjcs = [];
+                    }
+                },
+                async carregarMembros() {
+                    this.carregandoMembros = true;
+                    this.limparMensagens();
+                    try {
+                        const params = new URLSearchParams({
+                            outro_ejc_id: String(this.filtro.outro_ejc_id),
+                            tipo: this.filtro.tipo
+                        });
+                        const res = await fetch(`/api/jovens-outro-ejc-public/membros?${params.toString()}`);
+                        const data = await res.json().catch(() => ([]));
+                        if (!res.ok) throw new Error(data.error || 'Erro ao carregar cadastros.');
+                        this.membros = Array.isArray(data) ? data : [];
+                    } catch (e) {
+                        this.erro = e.message || 'Erro ao carregar cadastros.';
+                        this.membros = [];
+                    } finally {
+                        this.carregandoMembros = false;
+                    }
+                },
+                preencherAtualizacaoJovem(cadastro = {}) {
+                    this.atualizacaoJovem = {
+                        telefone: cadastro.telefone || '',
+                        apelido: cadastro.apelido || '',
+                        email: cadastro.email || '',
+                        instagram: cadastro.instagram || '',
+                        estado_civil: cadastro.estado_civil || '',
+                        sexo: cadastro.sexo || '',
+                        circulo: cadastro.circulo || '',
+                        deficiencia: !!cadastro.deficiencia,
+                        qual_deficiencia: cadastro.qual_deficiencia || '',
+                        restricao_alimentar: !!cadastro.restricao_alimentar,
+                        detalhes_restricao: cadastro.detalhes_restricao || '',
+                        outra_restricao: '',
+                        eh_musico: !!cadastro.eh_musico
+                    };
+                    if (!this.restricoesDisponiveis.includes(this.atualizacaoJovem.detalhes_restricao) && this.atualizacaoJovem.detalhes_restricao) {
+                        this.atualizacaoJovem.outra_restricao = this.atualizacaoJovem.detalhes_restricao;
+                        this.atualizacaoJovem.detalhes_restricao = 'Outras';
+                    }
+                },
+                preencherAtualizacaoTio(cadastro = {}) {
+                    this.atualizacaoTio = {
+                        telefone_tio: cadastro.telefone_tio || '',
+                        telefone_tia: cadastro.telefone_tia || '',
+                        restricao_alimentar_tio: !!cadastro.restricao_alimentar_tio,
+                        detalhes_restricao_tio: cadastro.detalhes_restricao_tio || '',
+                        outra_restricao_tio: '',
+                        deficiencia_tio: !!cadastro.deficiencia_tio,
+                        qual_deficiencia_tio: cadastro.qual_deficiencia_tio || '',
+                        restricao_alimentar_tia: !!cadastro.restricao_alimentar_tia,
+                        detalhes_restricao_tia: cadastro.detalhes_restricao_tia || '',
+                        outra_restricao_tia: '',
+                        deficiencia_tia: !!cadastro.deficiencia_tia,
+                        qual_deficiencia_tia: cadastro.qual_deficiencia_tia || ''
+                    };
+                    if (!this.restricoesDisponiveis.includes(this.atualizacaoTio.detalhes_restricao_tio) && this.atualizacaoTio.detalhes_restricao_tio) {
+                        this.atualizacaoTio.outra_restricao_tio = this.atualizacaoTio.detalhes_restricao_tio;
+                        this.atualizacaoTio.detalhes_restricao_tio = 'Outras';
+                    }
+                    if (!this.restricoesDisponiveis.includes(this.atualizacaoTio.detalhes_restricao_tia) && this.atualizacaoTio.detalhes_restricao_tia) {
+                        this.atualizacaoTio.outra_restricao_tia = this.atualizacaoTio.detalhes_restricao_tia;
+                        this.atualizacaoTio.detalhes_restricao_tia = 'Outras';
+                    }
+                },
+                async validarJovem() {
+                    this.limparMensagens();
+                    this.validando = true;
+                    try {
+                        const payload = {
+                            outro_ejc_id: this.filtro.outro_ejc_id,
+                            jovem_id: this.filtro.cadastro_id,
+                            telefone: this.validacaoJovem.telefone,
+                            data_nascimento: this.validacaoJovem.data_nascimento
+                        };
+                        const res = await fetch('/api/jovens-outro-ejc-public/validar-jovem', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) throw new Error(data.error || 'Erro ao validar cadastro.');
+                        this.token = data.token || '';
+                        this.aceiteTermos = false;
+                        this.preencherAtualizacaoJovem(data.cadastro || {});
+                        this.estado = 'ATUALIZACAO_JOVEM';
+                        this.mensagem = data.message || 'Dados confirmados.';
+                    } catch (e) {
+                        this.erro = e.message || 'Erro ao validar cadastro.';
+                    } finally {
+                        this.validando = false;
+                    }
+                },
+                async validarTio() {
+                    this.limparMensagens();
+                    this.validando = true;
+                    try {
+                        const payload = {
+                            outro_ejc_id: this.filtro.outro_ejc_id,
+                            casal_id: this.filtro.cadastro_id,
+                            telefone_tio: this.validacaoTio.telefone_tio,
+                            data_nascimento_tio: this.validacaoTio.data_nascimento_tio,
+                            telefone_tia: this.validacaoTio.telefone_tia,
+                            data_nascimento_tia: this.validacaoTio.data_nascimento_tia
+                        };
+                        const res = await fetch('/api/jovens-outro-ejc-public/validar-tio', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) throw new Error(data.error || 'Erro ao validar cadastro.');
+                        this.token = data.token || '';
+                        this.aceiteTermos = false;
+                        this.preencherAtualizacaoTio(data.cadastro || {});
+                        this.estado = 'ATUALIZACAO_TIO';
+                        this.mensagem = data.message || 'Dados confirmados.';
+                    } catch (e) {
+                        this.erro = e.message || 'Erro ao validar cadastro.';
+                    } finally {
+                        this.validando = false;
+                    }
+                },
+                async salvarJovem() {
+                    this.limparMensagens();
+                    this.enviando = true;
+                    try {
+                        const payload = {
+                            token: this.token,
+                            aceite_termos: this.aceiteTermos ? 1 : 0,
+                            telefone: this.atualizacaoJovem.telefone,
+                            apelido: this.atualizacaoJovem.apelido || null,
+                            email: this.atualizacaoJovem.email || null,
+                            instagram: this.atualizacaoJovem.instagram || null,
+                            estado_civil: this.atualizacaoJovem.estado_civil || null,
+                            sexo: this.atualizacaoJovem.sexo || null,
+                            circulo: this.atualizacaoJovem.circulo || null,
+                            deficiencia: this.atualizacaoJovem.deficiencia ? 1 : 0,
+                            qual_deficiencia: this.atualizacaoJovem.deficiencia ? (this.atualizacaoJovem.qual_deficiencia || null) : null,
+                            restricao_alimentar: this.atualizacaoJovem.restricao_alimentar ? 1 : 0,
+                            detalhes_restricao: this.atualizacaoJovem.restricao_alimentar
+                                ? this.detalhesRestricaoFinal(this.atualizacaoJovem.detalhes_restricao, this.atualizacaoJovem.outra_restricao)
+                                : null,
+                            eh_musico: this.atualizacaoJovem.eh_musico ? 1 : 0
+                        };
+                        const res = await fetch('/api/jovens-outro-ejc-public/atualizar-jovem', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) throw new Error(data.error || 'Erro ao atualizar cadastro.');
+                        this.mensagem = data.message || 'Dados atualizados com sucesso.';
+                    } catch (e) {
+                        this.erro = e.message || 'Erro ao atualizar cadastro.';
+                    } finally {
+                        this.enviando = false;
+                    }
+                },
+                async salvarTio() {
+                    this.limparMensagens();
+                    this.enviando = true;
+                    try {
+                        const payload = {
+                            token: this.token,
+                            aceite_termos: this.aceiteTermos ? 1 : 0,
+                            telefone_tio: this.atualizacaoTio.telefone_tio,
+                            telefone_tia: this.atualizacaoTio.telefone_tia,
+                            restricao_alimentar_tio: this.atualizacaoTio.restricao_alimentar_tio ? 1 : 0,
+                            detalhes_restricao_tio: this.atualizacaoTio.restricao_alimentar_tio
+                                ? this.detalhesRestricaoFinal(this.atualizacaoTio.detalhes_restricao_tio, this.atualizacaoTio.outra_restricao_tio)
+                                : null,
+                            deficiencia_tio: this.atualizacaoTio.deficiencia_tio ? 1 : 0,
+                            qual_deficiencia_tio: this.atualizacaoTio.deficiencia_tio ? (this.atualizacaoTio.qual_deficiencia_tio || null) : null,
+                            restricao_alimentar_tia: this.atualizacaoTio.restricao_alimentar_tia ? 1 : 0,
+                            detalhes_restricao_tia: this.atualizacaoTio.restricao_alimentar_tia
+                                ? this.detalhesRestricaoFinal(this.atualizacaoTio.detalhes_restricao_tia, this.atualizacaoTio.outra_restricao_tia)
+                                : null,
+                            deficiencia_tia: this.atualizacaoTio.deficiencia_tia ? 1 : 0,
+                            qual_deficiencia_tia: this.atualizacaoTio.deficiencia_tia ? (this.atualizacaoTio.qual_deficiencia_tia || null) : null
+                        };
+                        const res = await fetch('/api/jovens-outro-ejc-public/atualizar-tio', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) throw new Error(data.error || 'Erro ao atualizar cadastro.');
+                        this.mensagem = data.message || 'Dados atualizados com sucesso.';
+                    } catch (e) {
+                        this.erro = e.message || 'Erro ao atualizar cadastro.';
+                    } finally {
+                        this.enviando = false;
+                    }
+                }
+            },
+            mounted() {
+                this.carregarOutrosEjcs();
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

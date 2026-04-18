@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Círculos - EJC</title>
+    <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
+    <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/velzon-theme.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/ui-kit.js"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <style>
+        .swatch {
+            width: 22px;
+            height: 22px;
+            border-radius: 999px;
+            border: 1px solid #ced4da;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 8px;
+            background: #f8f9fa;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <main class="container-fluid py-4">
+            <div v-if="feedback.text" class="alert py-2" :class="feedbackClass" role="alert">
+                {{ feedback.text }}
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h4 class="mb-0">Círculos</h4>
+                <button type="button" class="btn btn-primary" @click="abrirNovo">Nova Cor</button>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Cor de Círculo</th>
+                                    <th style="width: 120px;">Status</th>
+                                    <th style="width: 160px;">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-if="loading">
+                                    <td colspan="3" class="text-center text-muted">Carregando...</td>
+                                </tr>
+                                <tr v-else-if="!circulos.length">
+                                    <td colspan="3" class="text-center text-muted">Nenhuma cor cadastrada.</td>
+                                </tr>
+                                <tr v-for="c in circulos" :key="c.id">
+                                    <td>
+                                        <span class="swatch" :style="{ backgroundColor: c.cor_hex || '#f8f9fa' }"></span>
+                                        <span class="fw-medium">{{ c.nome }}</span>
+                                        <span v-if="c.cor_hex" class="text-muted small ms-2">{{ c.cor_hex }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge" :class="c.ativo ? 'bg-success' : 'bg-secondary'">
+                                            {{ c.ativo ? 'Ativo' : 'Inativo' }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button type="button" class="btn btn-edit-standard btn-sm me-1"
+                                            @click="abrirEditar(c)">Editar</button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger"
+                                            @click="abrirConfirmacaoExclusao(c)">Excluir</button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <div class="modal fade" id="modalCirculo" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-soft-primary">
+                        <h5 class="modal-title">{{ form.id ? 'Editar Cor de Círculo' : 'Nova Cor de Círculo' }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <ul class="nav nav-tabs mb-3">
+                            <li class="nav-item">
+                                <button type="button" class="nav-link" :class="{active: abaModal==='dados'}" @click="abaModal='dados'">Dados</button>
+                            </li>
+                            <li class="nav-item" v-if="form.id">
+                                <button type="button" class="nav-link" :class="{active: abaModal==='jovens'}" @click="abrirAbaJovensCirculo">Jovens</button>
+                            </li>
+                        </ul>
+
+                        <div v-if="abaModal==='dados'">
+                            <div class="mb-3">
+                                <label class="form-label">Nome *</label>
+                                <input type="text" class="form-control" v-model.trim="form.nome" maxlength="80"
+                                    placeholder="Ex: Lilás">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Cor HEX (opcional)</label>
+                                <input type="text" class="form-control" v-model.trim="form.cor_hex" maxlength="7"
+                                    placeholder="#A855F7">
+                            </div>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="ativoCirculo" v-model="form.ativo">
+                                <label class="form-check-label" for="ativoCirculo">Ativo (aparece na Lista Mestre)</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div v-else>
+                            <div v-if="jovensLoading" class="text-center py-3 text-muted">Carregando jovens...</div>
+                            <div v-else-if="!jovensCirculo.length" class="text-center py-3 text-muted bg-light border rounded">Nenhum jovem neste círculo.</div>
+                            <div v-else class="list-group">
+                                <div v-for="jovem in jovensCirculo" :key="`circulo-jovem-${jovem.id}`" class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div>
+                                        <div class="fw-semibold">{{ jovem.nome_completo }}</div>
+                                        <div class="small text-muted">
+                                            {{ jovem.telefone || '-' }} • {{ jovem.sexo || '-' }} • {{ jovem.estado_civil || '-' }}
+                                        </div>
+                                    </div>
+                                    <div class="small text-muted">{{ formatarIdade(jovem.data_nascimento) }}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-soft-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button v-if="abaModal==='dados'" type="button" class="btn btn-primary" @click="salvar">Salvar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="modalConfirmarExclusao" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-soft-danger">
+                        <h5 class="modal-title">Confirmar Exclusão</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" :disabled="!!removendoId"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="mb-0" style="white-space: pre-wrap;">{{ textoConfirmacaoExclusao }}</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-soft-secondary" data-bs-dismiss="modal"
+                            :disabled="!!removendoId">Cancelar</button>
+                        <button type="button" class="btn btn-danger" @click="confirmarExclusao"
+                            :disabled="!!removendoId">
+                            {{ removendoId ? 'Excluindo...' : (confirmacaoForce ? 'Excluir e Limpar' : 'Excluir') }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/menu.js?v=2"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            injetarMenu('#app');
+            ativarMenu('/configuracoes/circulos');
+        });
+
+        Vue.createApp({
+            data() {
+                return {
+                    loading: false,
+                    circulos: [],
+                    modal: null,
+                    abaModal: 'dados',
+                    form: { id: null, nome: '', cor_hex: '', ativo: true },
+                    jovensCirculo: [],
+                    jovensLoading: false,
+                    removendoId: null,
+                    feedback: { text: '', type: 'info' },
+                    modalConfirmar: null,
+                    circuloPendenteExclusao: null,
+                    confirmacaoForce: false,
+                    textoConfirmacaoExclusao: ''
+                };
+            },
+            computed: {
+                feedbackClass() {
+                    const map = {
+                        success: 'alert-success',
+                        danger: 'alert-danger',
+                        warning: 'alert-warning',
+                        info: 'alert-primary'
+                    };
+                    return map[this.feedback.type] || map.info;
+                }
+            },
+            methods: {
+                mostrarFeedback(text, type = 'info') {
+                    this.feedback = { text: String(text || ''), type };
+                    setTimeout(() => {
+                        if (this.feedback.text === text) this.feedback = { text: '', type: 'info' };
+                    }, 5000);
+                },
+                async carregar() {
+                    this.loading = true;
+                    try {
+                        const res = await fetch('/api/circulos');
+                        const data = await res.json().catch(() => []);
+                        this.circulos = Array.isArray(data) ? data : [];
+                    } catch (err) {
+                        console.error(err);
+                        this.mostrarFeedback('Erro ao carregar círculos.', 'danger');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                abrirNovo() {
+                    this.abaModal = 'dados';
+                    this.form = { id: null, nome: '', cor_hex: '', ativo: true };
+                    this.jovensCirculo = [];
+                    if (!this.modal) this.modal = new bootstrap.Modal(document.getElementById('modalCirculo'));
+                    this.modal.show();
+                },
+                abrirEditar(c) {
+                    this.abaModal = 'dados';
+                    this.form = {
+                        id: c.id,
+                        nome: c.nome || '',
+                        cor_hex: c.cor_hex || '',
+                        ativo: !!c.ativo
+                    };
+                    this.jovensCirculo = [];
+                    if (!this.modal) this.modal = new bootstrap.Modal(document.getElementById('modalCirculo'));
+                    this.modal.show();
+                },
+                formatarIdade(dataNascimento) {
+                    if (!dataNascimento) return '-';
+                    const nascimento = new Date(dataNascimento);
+                    if (Number.isNaN(nascimento.getTime())) return '-';
+                    const hoje = new Date();
+                    let idade = hoje.getFullYear() - nascimento.getFullYear();
+                    const mes = hoje.getMonth() - nascimento.getMonth();
+                    if (mes < 0 || (mes === 0 && hoje.getDate() < nascimento.getDate())) idade -= 1;
+                    return idade >= 0 ? `${idade} anos` : '-';
+                },
+                async abrirAbaJovensCirculo() {
+                    if (!this.form.id) return;
+                    this.abaModal = 'jovens';
+                    this.jovensLoading = true;
+                    try {
+                        const res = await fetch(`/api/circulos/${this.form.id}/jovens`);
+                        const data = await res.json().catch(() => ([]));
+                        this.jovensCirculo = res.ok && Array.isArray(data) ? data : [];
+                    } catch (err) {
+                        console.error(err);
+                        this.jovensCirculo = [];
+                        this.mostrarFeedback('Erro ao carregar jovens do círculo.', 'danger');
+                    } finally {
+                        this.jovensLoading = false;
+                    }
+                },
+                async salvar() {
+                    if (!this.form.nome) {
+                        this.mostrarFeedback('Informe o nome da cor.', 'warning');
+                        return;
+                    }
+
+                    const payload = {
+                        nome: this.form.nome,
+                        cor_hex: this.form.cor_hex || null,
+                        ativo: this.form.ativo ? 1 : 0
+                    };
+
+                    try {
+                        const url = this.form.id ? `/api/circulos/${this.form.id}` : '/api/circulos';
+                        const method = this.form.id ? 'PUT' : 'POST';
+                        const res = await fetch(url, {
+                            method,
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            this.mostrarFeedback(data.error || 'Erro ao salvar cor de círculo.', 'danger');
+                            return;
+                        }
+                        if (this.modal) this.modal.hide();
+                        this.mostrarFeedback('Cor de círculo salva com sucesso.', 'success');
+                        await this.carregar();
+                    } catch (err) {
+                        console.error(err);
+                        this.mostrarFeedback('Erro ao salvar cor de círculo.', 'danger');
+                    }
+                },
+                abrirConfirmacaoExclusao(c) {
+                    if (this.removendoId || !c) return;
+                    this.circuloPendenteExclusao = c;
+                    this.confirmacaoForce = false;
+                    this.textoConfirmacaoExclusao = `Deseja excluir a cor "${c.nome}"?`;
+                    if (!this.modalConfirmar) this.modalConfirmar = new bootstrap.Modal(document.getElementById('modalConfirmarExclusao'));
+                    this.modalConfirmar.show();
+                },
+                async confirmarExclusao() {
+                    const c = this.circuloPendenteExclusao;
+                    if (!c || this.removendoId) return;
+                    try {
+                        this.removendoId = c.id;
+                        const sufixoForce = this.confirmacaoForce ? '?force=1' : '';
+                        let res = await fetch(`/api/circulos/${c.id}${sufixoForce}`, { method: 'DELETE' });
+                        let data = await res.json().catch(() => ({}));
+                        if (!res.ok && res.status === 409 && data && data.canForce) {
+                            this.confirmacaoForce = true;
+                            this.textoConfirmacaoExclusao = `${data.error}\n\nDeseja excluir mesmo assim e limpar o círculo dos jovens afetados?`;
+                            return;
+                        }
+                        if (!res.ok) {
+                            this.mostrarFeedback(data.error || 'Erro ao remover cor de círculo.', 'danger');
+                            return;
+                        }
+                        if (this.modalConfirmar) this.modalConfirmar.hide();
+                        this.circuloPendenteExclusao = null;
+                        this.confirmacaoForce = false;
+                        this.textoConfirmacaoExclusao = '';
+                        this.mostrarFeedback(data && data.message ? data.message : 'Cor removida com sucesso.', 'success');
+                        await this.carregar();
+                    } catch (err) {
+                        console.error(err);
+                        this.mostrarFeedback('Erro ao remover cor de círculo.', 'danger');
+                    } finally {
+                        this.removendoId = null;
+                        if (!this.confirmacaoForce) {
+                            this.circuloPendenteExclusao = null;
+                            this.textoConfirmacaoExclusao = '';
+                        }
+                    }
+                }
+            },
+            mounted() {
+                this.carregar();
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

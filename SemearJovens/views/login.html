@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EJC - Login</title>
+    <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
+    <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/velzon-theme.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/ui-kit.js"></script>
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(155deg, #fbf5e9 0%, #f3e6cc 46%, #efe5d8 100%);
+            padding: 16px;
+        }
+
+        .login-card {
+            width: 100%;
+            max-width: 420px;
+        }
+
+        .overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.45);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1050;
+            padding: 16px;
+        }
+
+        .dialog-card {
+            width: 100%;
+            max-width: 520px;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 18px 50px rgba(15, 23, 42, 0.2);
+        }
+
+        .brand-top {
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 14px;
+        }
+
+        .brand-mark {
+            width: 110px;
+            height: 110px;
+            margin-bottom: 14px;
+            display: grid;
+            place-items: center;
+            border-radius: 32px;
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.96), rgba(249, 240, 220, 0.92));
+            box-shadow: 0 18px 40px rgba(185, 138, 53, 0.16);
+            border: 1px solid rgba(185, 138, 53, 0.18);
+        }
+
+        .brand-mark img {
+            width: 82px;
+            height: 82px;
+            display: block;
+            object-fit: contain;
+            mix-blend-mode: multiply;
+            filter: contrast(1.08) saturate(1.04);
+        }
+
+        .brand-top .subtitle {
+            font-size: 0.9rem;
+            letter-spacing: 0.14em;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #8a6a36;
+            margin: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app" class="login-card">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-4">
+                <div class="brand-top">
+                    <div class="brand-mark" aria-hidden="true">
+                        <img src="/assets/logo-login-oficial.png" alt="Semear Paroquial">
+                    </div>
+                    <p class="subtitle">Semear Paroquial</p>
+                </div>
+                <h3 class="mb-1 text-center">Acessar Sistema</h3>
+                <p class="text-muted mb-4 text-center">Informe seu usuário e senha para entrar.</p>
+
+                <form @submit.prevent="entrar">
+                    <div class="mb-3">
+                        <label class="form-label">Usuário</label>
+                        <input type="text" class="form-control" v-model="username" required autocomplete="username">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Senha</label>
+                        <input type="password" class="form-control" v-model="senha" required autocomplete="current-password">
+                    </div>
+                    <div class="d-grid">
+                        <button class="btn btn-primary" :disabled="loading">
+                            {{ loading ? 'Entrando...' : 'Entrar' }}
+                        </button>
+                    </div>
+                </form>
+                <div class="text-center mt-3">
+                    <a href="https://admin.semearparoquial.com.br:3001/login" class="small text-muted">Entrar no painel da paróquia</a>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="popup.aberto" class="overlay">
+            <div class="dialog-card p-4">
+                <h5 class="mb-2">{{ popup.titulo }}</h5>
+                <p class="mb-2">{{ popup.mensagem }}</p>
+                <p v-if="popup.motivo" class="text-muted mb-3"><strong>Motivo:</strong> {{ popup.motivo }}</p>
+                <div class="d-flex justify-content-end">
+                    <button class="btn btn-primary" @click="popup.aberto=false">Fechar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    username: '',
+                    senha: '',
+                    loading: false,
+                    popup: { aberto: false, titulo: '', mensagem: '', motivo: '' }
+                };
+            },
+            async mounted() {
+                // Mantém na tela de login até o usuário entrar.
+                // Login somente por usuário e senha.
+            },
+            methods: {
+                abrirPopup(titulo, mensagem, motivo) {
+                    this.popup = { aberto: true, titulo: titulo || 'Aviso', mensagem: mensagem || '', motivo: motivo || '' };
+                },
+                async entrar() {
+                    this.loading = true;
+                    try {
+                        const res = await fetch('/api/auth/login', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                username: this.username,
+                                senha: this.senha
+                            })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            this.abrirPopup('Não foi possível entrar', data.error || 'Não foi possível entrar.', data.motivo || '');
+                            return;
+                        }
+                        window.location.href = '/dashboard';
+                    } catch (_) {
+                        this.abrirPopup('Erro de conexão', 'Erro ao conectar com o servidor.');
+                    } finally {
+                        this.loading = false;
+                    }
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

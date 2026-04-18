@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anexos - EJC</title>
+    <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
+    <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/velzon-theme.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/ui-kit.js"></script>
+    <style>
+        .folder-item,
+        .file-item {
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .folder-item:hover,
+        .file-item:hover {
+            background-color: #e9ecef;
+            border-color: #dee2e6;
+        }
+
+        .item-icon {
+            font-size: 2.5rem;
+            margin-bottom: 5px;
+        }
+
+        .item-name {
+            font-size: 0.9rem;
+            word-break: break-all;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            text-align: center;
+        }
+
+        .breadcrumb-item {
+            cursor: pointer;
+        }
+
+        .breadcrumb-item.active {
+            cursor: default;
+        }
+
+        .selected {
+            background-color: #cfe2ff !important;
+            border-color: #9ec5fe !important;
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            display: none;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #ddd;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            text-align: center;
+            line-height: 22px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .folder-item:hover .delete-btn,
+        .file-item:hover .delete-btn {
+            display: block;
+        }
+
+        .delete-btn:hover {
+            background-color: #ffcccc;
+            border-color: #ff9999;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <!-- Menu injetado via JS -->
+
+        <main class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3><i class="fa-solid fa-folder icon-accent"></i> Meus Anexos</h3>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-primary" @click="criarPasta">
+                        <i class="fa-solid fa-plus icon-accent"></i> Nova Pasta
+                    </button>
+                    <label class="btn btn-outline-success">
+                        <i class="fa-solid fa-upload icon-accent"></i> Upload Arquivo
+                        <input type="file" hidden @change="uploadArquivo">
+                    </label>
+                </div>
+            </div>
+
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb p-3 bg-light rounded-3">
+                    <li class="breadcrumb-item" :class="{ active: currentPath.length === 0 }"
+                        @click="navegarPara(null)">
+                        <i class="fa-solid fa-house icon-accent"></i> Início
+                    </li>
+                    <li v-for="(folder, index) in currentPath" :key="folder.id" class="breadcrumb-item"
+                        :class="{ active: index === currentPath.length - 1 }" @click="navegarPara(folder, index)">
+                        {{ folder.nome }}
+                    </li>
+                </ol>
+            </nav>
+
+            <div v-if="loading" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Carregando...</span>
+                </div>
+            </div>
+
+            <div v-else class="row g-3">
+                <!-- Vazio -->
+                <div v-if="pastas.length === 0 && arquivos.length === 0" class="col-12 text-center py-5 text-muted">
+                    <p class="fs-4"><i class="fa-regular fa-folder-open icon-accent"></i> Pasta vazia</p>
+                    <p>Crie uma pasta ou faça upload de um arquivo.</p>
+                </div>
+
+                <!-- Pastas -->
+                <div v-for="pasta in pastas" :key="'p'+pasta.id" class="col-6 col-md-4 col-lg-2">
+                    <div class="folder-item h-100 d-flex flex-column align-items-center position-relative"
+                        @click="entrarPasta(pasta)" @contextmenu.prevent="abrirMenuContexto($event, 'pasta', pasta)">
+                        <span class="delete-btn" @click.stop="deletarItem('pasta', pasta)"
+                            title="Apagar Pasta"><i class="fa-solid fa-trash icon-accent"></i></span>
+                        <span class="item-icon"><i class="fa-solid fa-folder icon-accent"></i></span>
+                        <span class="item-name">{{ pasta.nome }}</span>
+                    </div>
+                </div>
+
+                <!-- Arquivos -->
+                <div v-for="arquivo in arquivos" :key="'a'+arquivo.id" class="col-6 col-md-4 col-lg-2">
+                    <div class="file-item h-100 d-flex flex-column align-items-center position-relative"
+                        @click="abrirArquivo(arquivo)"
+                        @contextmenu.prevent="abrirMenuContexto($event, 'arquivo', arquivo)">
+                        <span class="delete-btn" @click.stop="deletarItem('arquivo', arquivo)"
+                            title="Apagar Arquivo"><i class="fa-solid fa-trash icon-accent"></i></span>
+                        <span class="item-icon" v-html="getIconeArquivo(arquivo.mimetype)"></span>
+                        <span class="item-name">{{ arquivo.nome }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Context Menu (Simples com Prompt/Confirm por enquanto) -->
+
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="/js/menu.js"></script>
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    currentFolderId: null,
+                    currentPath: [], // Array de objetos {id, nome}
+                    pastas: [],
+                    arquivos: [],
+                    loading: false
+                }
+            },
+            async mounted() {
+                injetarMenu('#app');
+                ativarMenu('Anexos'); // Preciso atualizar o menu.js para ter esse título/link
+                await this.carregarConteudo();
+            },
+            methods: {
+                async carregarConteudo() {
+                    this.loading = true;
+                    try {
+                        const query = this.currentFolderId ? `?parentId=${this.currentFolderId}` : '';
+                        const resPastas = await fetch(`/api/anexos/pastas${query}`);
+                        this.pastas = await resPastas.json();
+
+                        const queryArq = this.currentFolderId ? `?pastaId=${this.currentFolderId}` : '';
+                        const resArquivos = await fetch(`/api/anexos/arquivos${queryArq}`);
+                        this.arquivos = await resArquivos.json();
+                    } catch (err) {
+                        console.error(err);
+                        alert("Erro ao carregar conteúdo.");
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                async criarPasta() {
+                    const nome = await window.showFloatingPrompt("Nome da nova pasta:", { title: 'Nova pasta', placeholder: 'Digite o nome da pasta' });
+                    if (!nome) return;
+
+                    try {
+                        const res = await fetch('/api/anexos/pastas', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ nome, parentId: this.currentFolderId })
+                        });
+                        if (res.ok) {
+                            await this.carregarConteudo();
+                        } else {
+                            alert("Erro ao criar pasta.");
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        alert("Erro ao criar pasta.");
+                    }
+                },
+                async uploadArquivo(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+
+                    const formData = new FormData();
+                    formData.append('arquivo', file);
+                    if (this.currentFolderId) formData.append('pastaId', this.currentFolderId);
+
+                    try {
+                        const res = await fetch('/api/anexos/upload', {
+                            method: 'POST',
+                            body: formData
+                        });
+                        if (res.ok) {
+                            await this.carregarConteudo();
+                        } else {
+                            alert("Erro ao fazer upload.");
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        alert("Erro ao fazer upload.");
+                    } finally {
+                        event.target.value = ''; // Reset input
+                    }
+                },
+                entrarPasta(pasta) {
+                    this.currentPath.push(pasta);
+                    this.currentFolderId = pasta.id;
+                    this.carregarConteudo();
+                },
+                navegarPara(folder, index) {
+                    if (folder === null) {
+                        this.currentPath = [];
+                        this.currentFolderId = null;
+                    } else {
+                        // Cortar o path até o índice clicado
+                        this.currentPath = this.currentPath.slice(0, index + 1);
+                        this.currentFolderId = folder.id;
+                    }
+                    this.carregarConteudo();
+                },
+                abrirArquivo(arquivo) {
+                    // Abrir em nova aba (download/visualizar)
+                    // Como o upload salvou em 'public/uploads', precisamos expor essa pasta estática ou criar rota de download
+                    // O app.js provavelmente serve 'public' estático, mas o caminho no banco é 'public/uploads/nome'. 
+                    // Se app.js tem app.use(express.static('public')), então '/uploads/nome' deve funcionar.
+                    // Ajuste: caminho no banco vem 'public/uploads/File'. Precisamos remover 'public' para URL.
+                    const url = arquivo.caminho.replace(/^public/, '').replace(/\\/g, '/');
+                    window.open(url, '_blank');
+                },
+                async deletarItem(tipo, item) {
+                    if (!(await window.showFloatingConfirm(`Tem certeza que deseja apagar ${tipo} "${item.nome}"? Esta ação não pode ser desfeita.`))) return;
+
+                    const endpoint = tipo === 'pasta' ? `/api/anexos/pastas/${item.id}` : `/api/anexos/arquivos/${item.id}`;
+                    try {
+                        const res = await fetch(endpoint, { method: 'DELETE' });
+                        if (res.ok) {
+                            await this.carregarConteudo();
+                        } else {
+                            alert("Erro ao deletar.");
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        alert("Erro ao deletar.");
+                    }
+                },
+                async abrirMenuContexto(event, tipo, item) {
+                    // Mantendo compatibilidade com right-click se desejado, 
+                    // mas agora redirecionando para a mesma lógica
+                    this.deletarItem(tipo, item);
+                },
+                getIconeArquivo(mimetype) {
+                    if (mimetype.startsWith('image/')) return '<i class="fa-regular fa-image icon-accent"></i>';
+                    if (mimetype.includes('pdf')) return '<i class="fa-solid fa-file-pdf icon-accent"></i>';
+                    if (mimetype.includes('sheet') || mimetype.includes('excel') || mimetype.includes('csv')) return '<i class="fa-solid fa-chart-column icon-accent"></i>';
+                    if (mimetype.includes('word') || mimetype.includes('document')) return '<i class="fa-solid fa-note-sticky icon-accent"></i>';
+                    return '<i class="fa-solid fa-file-lines icon-accent"></i>';
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

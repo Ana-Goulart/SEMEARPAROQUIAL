@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>EJC - Contatos</title>
+    <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
+    <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="/css/velzon-theme.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/ui-kit.js"></script>
+    <script src="/js/menu.js"></script>
+</head>
+<body>
+    <div id="app">
+        <main class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h3 class="mb-1">Contatos</h3>
+                    <p class="text-muted mb-0">Lista telefônica para contatos rápidos.</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button v-if="aba === 'contatos'" class="btn btn-primary" @click="abrirNovo">Adicionar contato</button>
+                    <button v-if="aba === 'pastorais'" class="btn btn-primary" @click="abrirNovaPastoral">Nova pastoral</button>
+                    <button class="btn btn-soft-primary" @click="aba === 'contatos' ? carregar() : carregarPastorais()">Atualizar</button>
+                </div>
+            </div>
+
+            <ul class="nav nav-tabs mb-3">
+                <li class="nav-item">
+                    <button class="nav-link" :class="{active: aba==='contatos'}" @click="aba='contatos'">Contatos</button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link" :class="{active: aba==='pastorais'}" @click="aba='pastorais'">Pastorais</button>
+                </li>
+            </ul>
+
+            <div v-if="aba === 'contatos'" class="card border-0 shadow-sm mb-3">
+                <div class="card-body">
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted">Nome</label>
+                            <input v-model.trim="filtroNome" class="form-control" placeholder="Buscar por nome">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small text-muted">Telefone</label>
+                            <input v-model.trim="filtroTelefone" class="form-control" placeholder="Buscar por telefone">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="aba === 'contatos'" class="card border-0 shadow-sm">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Nome</th>
+                                <th>Telefone</th>
+                                <th>Descrição</th>
+                                <th>Pastoral</th>
+                                <th style="width: 180px;">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="c in contatosFiltrados" :key="c.id">
+                                <td>{{ c.nome }}</td>
+                                <td>{{ c.telefone }}</td>
+                                <td>{{ c.descricao || '-' }}</td>
+                                <td>{{ c.pastoral_nome || 'Sem pastoral' }}</td>
+                                <td>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-edit-standard btn-sm" @click="abrirEditar(c)">Editar</button>
+                                        <button class="btn btn-sm btn-danger" @click="excluir(c)">Excluir</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr v-if="loading">
+                                <td colspan="5" class="text-center py-4">
+                                    <div class="spinner-border spinner-border-sm text-primary me-2"></div>Carregando...
+                                </td>
+                            </tr>
+                            <tr v-else-if="!contatosFiltrados.length">
+                                <td colspan="5" class="text-center text-muted py-4">Nenhum contato encontrado.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div v-if="aba === 'pastorais'" class="card border-0 shadow-sm">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Pastoral</th>
+                                <th>Descrição</th>
+                                <th style="width: 180px;">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="p in pastorais" :key="p.id">
+                                <td>{{ p.nome }}</td>
+                                <td>{{ p.descricao || '-' }}</td>
+                                <td>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-edit-standard btn-sm" @click="abrirEditarPastoral(p)">Editar</button>
+                                        <button class="btn btn-sm btn-danger" @click="excluirPastoral(p)">Excluir</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr v-if="pastoraisLoading">
+                                <td colspan="3" class="text-center py-4">
+                                    <div class="spinner-border spinner-border-sm text-primary me-2"></div>Carregando...
+                                </td>
+                            </tr>
+                            <tr v-else-if="!pastorais.length">
+                                <td colspan="3" class="text-center text-muted py-4">Nenhuma pastoral cadastrada.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+
+        <div class="modal fade" id="modalContato" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-light">
+                        <h5 class="modal-title">{{ form.id ? 'Editar contato' : 'Novo contato' }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Nome</label>
+                            <input type="text" class="form-control" v-model.trim="form.nome" maxlength="180">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Telefone</label>
+                            <input type="text" class="form-control" v-model.trim="form.telefone" maxlength="30">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Pastoral</label>
+                            <select class="form-select" v-model="form.pastoral_id">
+                                <option :value="null">Sem pastoral</option>
+                                <option v-for="p in pastorais" :key="`pastoral-opt-${p.id}`" :value="p.id">{{ p.nome }}</option>
+                            </select>
+                        </div>
+                        <div class="mb-1">
+                            <label class="form-label">Descrição</label>
+                            <textarea class="form-control" rows="3" v-model.trim="form.descricao" maxlength="255"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button class="btn btn-primary" @click="salvar">Salvar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="modalPastoral" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-light">
+                        <h5 class="modal-title">{{ pastoralForm.id ? 'Editar pastoral' : 'Nova pastoral' }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <ul class="nav nav-tabs mb-3">
+                            <li class="nav-item">
+                                <button class="nav-link" :class="{active: pastoralAba==='dados'}" @click="pastoralAba='dados'">Dados</button>
+                            </li>
+                            <li class="nav-item" v-if="pastoralForm.id">
+                                <button class="nav-link" :class="{active: pastoralAba==='jovens'}" @click="abrirAbaJovens">Jovens que pertencem a esta pastoral</button>
+                            </li>
+                        </ul>
+
+                        <div v-if="pastoralAba === 'dados'">
+                            <div class="mb-3">
+                                <label class="form-label">Nome</label>
+                                <input type="text" class="form-control" v-model.trim="pastoralForm.nome" maxlength="180">
+                            </div>
+                            <div class="mb-1">
+                                <label class="form-label">Descrição</label>
+                                <textarea class="form-control" rows="3" v-model.trim="pastoralForm.descricao" maxlength="255"></textarea>
+                            </div>
+                        </div>
+
+                        <div v-if="pastoralAba === 'jovens'">
+                            <div class="mb-3">
+                                <label class="form-label">Adicionar jovem da Lista Mestre</label>
+                                <div class="d-flex gap-2">
+                                    <input type="text" class="form-control" v-model.trim="pastoralBusca" placeholder="Buscar por nome">
+                                    <button class="btn btn-outline-primary" @click="buscarJovensPastoral" :disabled="!pastoralBusca">Buscar</button>
+                                </div>
+                                <div v-if="pastoralResultados.length" class="mt-2">
+                                    <select class="form-select" v-model="pastoralSelecionado">
+                                        <option value="">Selecione um jovem</option>
+                                        <option v-for="j in pastoralResultados" :key="`pastoral-j-${j.id}`" :value="j.id">{{ j.nome_completo }}</option>
+                                    </select>
+                                    <div class="text-end mt-2">
+                                        <button class="btn btn-success btn-sm" @click="adicionarJovemPastoral" :disabled="!pastoralSelecionado">Adicionar</button>
+                                    </div>
+                                </div>
+                                <div v-else-if="pastoralBusca" class="text-muted small mt-2">Nenhum jovem encontrado.</div>
+                            </div>
+
+                            <div class="border rounded p-2 bg-white">
+                                <div v-if="pastoralJovensLoading" class="text-center py-3">
+                                    <div class="spinner-border spinner-border-sm text-primary me-2"></div>Carregando...
+                                </div>
+                                <ul v-else-if="pastoralJovens.length" class="list-group list-group-flush">
+                                    <li v-for="j in pastoralJovens" :key="`pj-${j.id}`" class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>{{ j.nome_completo }}</strong>
+                                            <div class="text-muted small">{{ j.telefone || '-' }}</div>
+                                        </div>
+                                        <button class="btn btn-outline-danger btn-sm" @click="removerJovemPastoral(j)">Remover</button>
+                                    </li>
+                                </ul>
+                                <div v-else class="text-muted small text-center py-3">Nenhum jovem vinculado.</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
+                        <button class="btn btn-primary" @click="salvarPastoral">Salvar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            injetarMenu('#app');
+            ativarMenu('/administrativo/contatos');
+        });
+
+        const { createApp } = Vue;
+        createApp({
+            data() {
+                return {
+                    aba: 'contatos',
+                    loading: false,
+                    contatos: [],
+                    filtroNome: '',
+                    filtroTelefone: '',
+                    modal: null,
+                    form: { id: null, nome: '', telefone: '', descricao: '', pastoral_id: null },
+                    pastorais: [],
+                    pastoraisLoading: false,
+                    modalPastoral: null,
+                    pastoralForm: { id: null, nome: '', descricao: '' },
+                    pastoralAba: 'dados',
+                    pastoralJovens: [],
+                    pastoralJovensLoading: false,
+                    pastoralBusca: '',
+                    pastoralResultados: [],
+                    pastoralSelecionado: ''
+                };
+            },
+            computed: {
+                contatosFiltrados() {
+                    const nome = String(this.filtroNome || '').trim().toLowerCase();
+                    const tel = String(this.filtroTelefone || '').trim().toLowerCase();
+                    return (this.contatos || []).filter((c) => {
+                        const okNome = !nome || String(c.nome || '').toLowerCase().includes(nome);
+                        const okTel = !tel || String(c.telefone || '').toLowerCase().includes(tel);
+                        return okNome && okTel;
+                    });
+                }
+            },
+            methods: {
+                async carregar() {
+                    this.loading = true;
+                    try {
+                        const res = await fetch('/api/contatos');
+                        const data = await res.json().catch(() => ([]));
+                        this.contatos = res.ok && Array.isArray(data) ? data : [];
+                    } catch (err) {
+                        console.error(err);
+                        this.contatos = [];
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                async carregarPastorais() {
+                    this.pastoraisLoading = true;
+                    try {
+                        const res = await fetch('/api/pastorais');
+                        const data = await res.json().catch(() => ([]));
+                        this.pastorais = res.ok && Array.isArray(data) ? data : [];
+                    } catch (err) {
+                        console.error(err);
+                        this.pastorais = [];
+                    } finally {
+                        this.pastoraisLoading = false;
+                    }
+                },
+                abrirNovo() {
+                    this.form = { id: null, nome: '', telefone: '', descricao: '', pastoral_id: null };
+                    if (!this.modal) this.modal = new bootstrap.Modal(document.getElementById('modalContato'));
+                    this.modal.show();
+                },
+                abrirEditar(item) {
+                    this.form = {
+                        id: item.id,
+                        nome: item.nome || '',
+                        telefone: item.telefone || '',
+                        descricao: item.descricao || '',
+                        pastoral_id: item.pastoral_id ?? null
+                    };
+                    if (!this.modal) this.modal = new bootstrap.Modal(document.getElementById('modalContato'));
+                    this.modal.show();
+                },
+                async salvar() {
+                    if (!String(this.form.nome || '').trim() || !String(this.form.telefone || '').trim()) {
+                        alert('Nome e telefone são obrigatórios.');
+                        return;
+                    }
+                    if (this.form.pastoral_id === undefined) {
+                        alert('Selecione uma pastoral (ou Sem pastoral).');
+                        return;
+                    }
+                    try {
+                        const isEdit = !!this.form.id;
+                        const res = await fetch(isEdit ? `/api/contatos/${this.form.id}` : '/api/contatos', {
+                            method: isEdit ? 'PUT' : 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                nome: this.form.nome,
+                                telefone: this.form.telefone,
+                                descricao: this.form.descricao,
+                                pastoral_id: this.form.pastoral_id
+                            })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao salvar contato.');
+                            return;
+                        }
+                        if (this.modal) this.modal.hide();
+                        await this.carregar();
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao salvar contato.');
+                    }
+                },
+                async excluir(item) {
+                    if (!(await uiConfirm('Excluir este contato?'))) return;
+                    try {
+                        const res = await fetch(`/api/contatos/${item.id}`, { method: 'DELETE' });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao excluir contato.');
+                            return;
+                        }
+                        await this.carregar();
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao excluir contato.');
+                    }
+                },
+                abrirNovaPastoral() {
+                    this.pastoralForm = { id: null, nome: '', descricao: '' };
+                    this.pastoralAba = 'dados';
+                    this.pastoralJovens = [];
+                    this.pastoralBusca = '';
+                    this.pastoralResultados = [];
+                    this.pastoralSelecionado = '';
+                    if (!this.modalPastoral) this.modalPastoral = new bootstrap.Modal(document.getElementById('modalPastoral'));
+                    this.modalPastoral.show();
+                },
+                async abrirEditarPastoral(item) {
+                    this.pastoralForm = { id: item.id, nome: item.nome || '', descricao: item.descricao || '' };
+                    this.pastoralAba = 'dados';
+                    this.pastoralJovens = [];
+                    this.pastoralBusca = '';
+                    this.pastoralResultados = [];
+                    this.pastoralSelecionado = '';
+                    if (!this.modalPastoral) this.modalPastoral = new bootstrap.Modal(document.getElementById('modalPastoral'));
+                    this.modalPastoral.show();
+                },
+                async abrirAbaJovens() {
+                    this.pastoralAba = 'jovens';
+                    await this.carregarJovensPastoral();
+                },
+                async salvarPastoral() {
+                    if (!String(this.pastoralForm.nome || '').trim()) {
+                        alert('Nome é obrigatório.');
+                        return;
+                    }
+                    try {
+                        const isEdit = !!this.pastoralForm.id;
+                        const res = await fetch(isEdit ? `/api/pastorais/${this.pastoralForm.id}` : '/api/pastorais', {
+                            method: isEdit ? 'PUT' : 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                nome: this.pastoralForm.nome,
+                                descricao: this.pastoralForm.descricao
+                            })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao salvar pastoral.');
+                            return;
+                        }
+                        if (this.modalPastoral) this.modalPastoral.hide();
+                        await this.carregarPastorais();
+                        await this.carregar();
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao salvar pastoral.');
+                    }
+                },
+                async excluirPastoral(item) {
+                    if (!(await uiConfirm('Excluir esta pastoral?'))) return;
+                    try {
+                        const res = await fetch(`/api/pastorais/${item.id}`, { method: 'DELETE' });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao excluir pastoral.');
+                            return;
+                        }
+                        await this.carregarPastorais();
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao excluir pastoral.');
+                    }
+                },
+                async carregarJovensPastoral() {
+                    if (!this.pastoralForm.id) return;
+                    this.pastoralJovensLoading = true;
+                    try {
+                        const res = await fetch(`/api/pastorais/${this.pastoralForm.id}/jovens`);
+                        const data = await res.json().catch(() => ([]));
+                        this.pastoralJovens = res.ok && Array.isArray(data) ? data : [];
+                    } catch (err) {
+                        console.error(err);
+                        this.pastoralJovens = [];
+                    } finally {
+                        this.pastoralJovensLoading = false;
+                    }
+                },
+                async buscarJovensPastoral() {
+                    if (!String(this.pastoralBusca || '').trim()) return;
+                    try {
+                        const res = await fetch(`/api/lista-mestre/search?q=${encodeURIComponent(this.pastoralBusca)}`);
+                        const data = await res.json().catch(() => ([]));
+                        this.pastoralResultados = res.ok && Array.isArray(data) ? data : [];
+                        if (this.pastoralResultados.length) {
+                            this.pastoralSelecionado = String(this.pastoralResultados[0].id || '');
+                        } else {
+                            this.pastoralSelecionado = '';
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        this.pastoralResultados = [];
+                        this.pastoralSelecionado = '';
+                    }
+                },
+                async adicionarJovemPastoral() {
+                    if (!this.pastoralForm.id || !this.pastoralSelecionado) return;
+                    try {
+                        const res = await fetch(`/api/pastorais/${this.pastoralForm.id}/jovens`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ jovem_id: Number(this.pastoralSelecionado) })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao vincular jovem.');
+                            return;
+                        }
+                        this.pastoralBusca = '';
+                        this.pastoralResultados = [];
+                        this.pastoralSelecionado = '';
+                        await this.carregarJovensPastoral();
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao vincular jovem.');
+                    }
+                },
+                async removerJovemPastoral(jovem) {
+                    if (!this.pastoralForm.id || !jovem || !jovem.id) return;
+                    if (!(await uiConfirm('Remover este jovem da pastoral?'))) return;
+                    try {
+                        const res = await fetch(`/api/pastorais/${this.pastoralForm.id}/jovens/${jovem.id}`, { method: 'DELETE' });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao remover jovem.');
+                            return;
+                        }
+                        await this.carregarJovensPastoral();
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao remover jovem.');
+                    }
+                }
+            },
+            mounted() {
+                this.carregarPastorais();
+                this.carregar();
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>EJC - Uso do Sistema</title>
+    <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
+    <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="/css/velzon-theme.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/ui-kit.js"></script>
+    <script src="/js/menu.js"></script>
+    <style>
+        .usage-card {
+            border: 1px solid #e6ecf5;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #f8fbff 0%, #eef4ff 100%);
+        }
+
+        .usage-value {
+            font-size: 2rem;
+            font-weight: 700;
+        }
+
+        .usage-meta {
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+
+        .module-card {
+            border: 1px solid #eef2f7;
+            border-radius: 12px;
+            padding: 16px;
+            background: #fff;
+        }
+
+        .module-title {
+            font-weight: 600;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <main class="container-fluid">
+            <div class="d-flex justify-content-between mb-4 align-items-center">
+                <div>
+                    <h3><i class="fa-solid fa-chart-column icon-accent"></i> Uso do Sistema</h3>
+                    <p class="text-muted mb-0">Acompanhe o consumo aproximado do banco de dados por módulo.</p>
+                </div>
+                <button class="btn btn-soft-primary" @click="carregarDados" :disabled="loading">
+                    <i class="fas fa-sync-alt"></i> Atualizar
+                </button>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-12 col-md-6 col-xl-4" v-for="card in resumoCards" :key="card.key">
+                    <div class="module-card h-100">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="module-title">{{ card.label }}</div>
+                            <span class="badge bg-light text-dark">{{ card.valor }}</span>
+                        </div>
+                        <div class="usage-meta mt-2" v-if="card.sub">
+                            {{ card.sub }}
+                        </div>
+                        <div class="mt-3">
+                            <a class="btn btn-sm btn-outline-primary" :href="card.link">Ver mais detalhes</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="usage-card p-4 mb-4">
+                <div class="row align-items-center">
+                    <div class="col-md-4">
+                        <div class="usage-meta">Total utilizado</div>
+                        <div class="usage-value">{{ formatarBytes(totalEstimado) }}</div>
+                        <div class="usage-meta">Limite por EJC: {{ limiteGb }} GB</div>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="usage-meta">{{ percentualUso.toFixed(1) }}% usado</span>
+                            <span class="usage-meta">{{ formatarBytes(limiteBytes - totalEstimado) }} disponível</span>
+                        </div>
+                        <div class="progress" style="height: 12px;">
+                            <div class="progress-bar bg-primary" role="progressbar" :style="{ width: percentualUso + '%' }"></div>
+                        </div>
+                        <div class="usage-meta mt-2" v-if="totalCompartilhado > 0">
+                            Parte do uso vem de tabelas compartilhadas (sem separação por EJC).
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-12 col-md-6 col-xl-4" v-for="mod in modulos" :key="mod.key">
+                    <div class="module-card h-100">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="module-title">{{ mod.label }}</div>
+                            <span class="badge bg-light text-dark">{{ formatarBytes(mod.bytes) }}</span>
+                        </div>
+                        <div class="usage-meta mt-2" v-if="mod.compartilhado_bytes > 0">
+                            Inclui {{ formatarBytes(mod.compartilhado_bytes) }} de tabelas compartilhadas.
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-muted small mt-4">
+                Valores calculados a partir do tamanho das tabelas no banco. Podem sofrer variações por cache ou compartilhamento.
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.injetarMenu) window.injetarMenu('#app');
+            if (window.ativarMenu) window.ativarMenu('/administrativo/uso-sistema');
+
+            const { createApp } = Vue;
+            createApp({
+                data() {
+                    return {
+                        loading: false,
+                        limiteBytes: 0,
+                        limiteGb: 50,
+                        totalEstimado: 0,
+                        totalCompartilhado: 0,
+                        modulos: [],
+                        resumo: {}
+                    };
+                },
+                computed: {
+                    percentualUso() {
+                        if (!this.limiteBytes) return 0;
+                        return Math.min(100, (this.totalEstimado / this.limiteBytes) * 100);
+                    },
+                    resumoCards() {
+                        const edicao = this.resumo.edicao_atual && this.resumo.edicao_atual.numero
+                            ? `${this.resumo.edicao_atual.numero}º`
+                            : 'Sem edição';
+                        const edicaoLink = this.resumo.edicao_atual && this.resumo.edicao_atual.origem === 'MONTAGEM'
+                            ? '/gestaodoencontro/montarencontro'
+                            : '/gestaodoencontro/ejc';
+                        return [
+                            {
+                                key: 'jovens',
+                                label: 'Lista Mestre (Jovens)',
+                                valor: this.resumo.jovens ?? 0,
+                                link: '/gestaodoencontro/listamestre'
+                            },
+                            {
+                                key: 'tios',
+                                label: 'Tios',
+                                valor: this.resumo.tios ?? 0,
+                                link: '/gestaodoencontro/tios'
+                            },
+                            {
+                                key: 'equipes',
+                                label: 'Equipes',
+                                valor: this.resumo.equipes ?? 0,
+                                link: '/gestaodoencontro/equipes'
+                            },
+                            {
+                                key: 'edicao',
+                                label: 'Edição atual do EJC',
+                                valor: edicao,
+                                sub: this.resumo.edicao_atual && this.resumo.edicao_atual.origem === 'MONTAGEM'
+                                    ? 'Em montagem'
+                                    : 'Última edição cadastrada',
+                                link: edicaoLink
+                            },
+                            {
+                                key: 'outros_ejcs',
+                                label: 'Outros EJCs',
+                                valor: this.resumo.outros_ejcs ?? 0,
+                                link: '/gestaodoencontro/outrosejcs'
+                            },
+                            {
+                                key: 'jovens_outro_ejc',
+                                label: 'Membros de Outro EJC',
+                                valor: this.resumo.jovens_outro_ejc ?? 0,
+                                link: '/gestaodoencontro/jovensoutroejc'
+                            },
+                            {
+                                key: 'visitantes',
+                                label: 'Visitantes',
+                                valor: this.resumo.visitantes ?? 0,
+                                link: '/gestaodoencontro/visitantes'
+                            },
+                            {
+                                key: 'atas',
+                                label: 'Atas de Reunião',
+                                valor: this.resumo.atas_reunioes ?? 0,
+                                link: '/planejamento/atasdereuniao'
+                            },
+                            {
+                                key: 'espaco',
+                                label: 'Espaço usado',
+                                valor: this.formatarBytes(this.totalEstimado),
+                                sub: `Limite por EJC: ${this.limiteGb} GB`,
+                                link: '/administrativo/uso-sistema'
+                            }
+                        ];
+                    }
+                },
+                methods: {
+                    formatarBytes(value) {
+                        const bytes = Number(value || 0);
+                        if (!bytes) return '0 B';
+                        const unidades = ['B', 'KB', 'MB', 'GB', 'TB'];
+                        let idx = 0;
+                        let num = bytes;
+                        while (num >= 1024 && idx < unidades.length - 1) {
+                            num /= 1024;
+                            idx += 1;
+                        }
+                        return `${num.toFixed(num < 10 && idx > 0 ? 2 : 1)} ${unidades[idx]}`;
+                    },
+                    async carregarDados() {
+                        this.loading = true;
+                        try {
+                            const res = await fetch('/api/uso-sistema');
+                            const data = await res.json().catch(() => ({}));
+                            if (!res.ok) throw new Error(data.error || 'Erro ao carregar dados.');
+                            this.limiteBytes = data.limite_bytes || 0;
+                            this.limiteGb = data.limite_gb || 50;
+                            this.totalEstimado = data.total_estimado_bytes || 0;
+                            this.totalCompartilhado = data.total_compartilhado_bytes || 0;
+                            this.modulos = Array.isArray(data.modulos) ? data.modulos : [];
+                            this.resumo = data.resumo || {};
+                        } catch (err) {
+                            console.error(err);
+                            if (window.uiAlert) window.uiAlert(err.message || 'Erro ao carregar dados.');
+                        } finally {
+                            this.loading = false;
+                        }
+                    }
+                },
+                mounted() {
+                    this.carregarDados();
+                }
+            }).mount('#app');
+        });
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>EJC - Almoxarifado</title>
+    <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
+    <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="/css/velzon-theme.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/ui-kit.js"></script>
+    <script src="/js/menu.js"></script>
+    <style>
+        .kpi-card {
+            border: 1px solid #e6ecf5;
+            border-radius: 12px;
+            background: #fff;
+            padding: 14px 16px;
+        }
+        .kpi-label {
+            color: #64748b;
+            font-size: .86rem;
+        }
+        .kpi-value {
+            font-size: 1.45rem;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .tab-link {
+            border: 0;
+            background: transparent;
+            padding: 8px 2px;
+            margin-right: 16px;
+            font-weight: 600;
+            color: #64748b;
+            border-bottom: 2px solid transparent;
+        }
+        .tab-link.active {
+            color: #0d6efd;
+            border-bottom-color: #0d6efd;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <main class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h3 class="mb-1"><i class="fa-solid fa-box-archive icon-accent"></i> Almoxarifado</h3>
+                    <p class="text-muted mb-0">Inventário de materiais, ferramentas, camisas, descartáveis e produtos de limpeza.</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button v-if="abaAtual === 'itens'" class="btn btn-primary" @click="abrirModalItem()">Novo item</button>
+                    <button v-if="abaAtual === 'categorias'" class="btn btn-outline-primary" @click="abrirModalCategoria()">Nova categoria</button>
+                    <button v-if="abaAtual === 'locais'" class="btn btn-outline-primary" @click="abrirModalLocal()">Novo local</button>
+                    <button class="btn btn-soft-primary" @click="carregarTudo">Atualizar</button>
+                </div>
+            </div>
+
+            <div class="d-flex align-items-center border-bottom mb-3">
+                <button type="button" class="tab-link" :class="{ active: abaAtual === 'itens' }" @click="abaAtual = 'itens'">Itens</button>
+                <button type="button" class="tab-link" :class="{ active: abaAtual === 'categorias' }" @click="abaAtual = 'categorias'">Categorias</button>
+                <button type="button" class="tab-link" :class="{ active: abaAtual === 'locais' }" @click="abaAtual = 'locais'">Locais</button>
+            </div>
+
+            <div class="row g-3 mb-3">
+                <div class="col-md-3">
+                    <div class="kpi-card">
+                        <div class="kpi-label">Itens cadastrados</div>
+                        <div class="kpi-value">{{ resumo.total_itens }}</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="kpi-card">
+                        <div class="kpi-label">Categorias ativas</div>
+                        <div class="kpi-value">{{ resumo.total_categorias }}</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="kpi-card">
+                        <div class="kpi-label">Itens com baixo estoque</div>
+                        <div class="kpi-value text-danger">{{ resumo.total_baixo_estoque }}</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="kpi-card">
+                        <div class="kpi-label">Total de unidades</div>
+                        <div class="kpi-value">{{ formatarQtd(resumo.total_unidades) }}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="abaAtual === 'itens'" class="card border-0 shadow-sm mb-3">
+                <div class="card-body">
+                    <div class="row g-2">
+                        <div class="col-md-5">
+                            <label class="form-label small text-muted">Buscar item</label>
+                            <input class="form-control" v-model.trim="filtros.q" placeholder="Nome ou descrição">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label small text-muted">Categoria</label>
+                            <select class="form-select" v-model.number="filtros.categoria_id">
+                                <option :value="0">Todas</option>
+                                <option v-for="c in categoriasAtivas" :value="c.id" :key="`cat-f-${c.id}`">{{ c.nome }}</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small text-muted">Local</label>
+                            <select class="form-select" v-model.number="filtros.local_id">
+                                <option :value="0">Todos</option>
+                                <option v-for="l in locaisAtivos" :value="l.id" :key="`local-f-${l.id}`">{{ l.nome }}</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label small text-muted">Status</label>
+                            <select class="form-select" v-model="filtros.status">
+                                <option value="">Todos</option>
+                                <option value="ATIVO">Ativo</option>
+                                <option value="INATIVO">Inativo</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="filtroBaixo" v-model="filtros.baixo_estoque">
+                                <label class="form-check-label" for="filtroBaixo">Só baixo estoque</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="abaAtual === 'itens'" class="card border-0 shadow-sm">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Item</th>
+                                <th>Categoria</th>
+                                <th>Quantidade</th>
+                                <th>Mínimo</th>
+                                <th>Unidade</th>
+                                <th>Local</th>
+                                <th>Status</th>
+                                <th style="width: 280px;">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-if="loadingItens">
+                                <td colspan="8" class="text-center py-4">
+                                    <div class="spinner-border spinner-border-sm text-primary me-2"></div>Carregando...
+                                </td>
+                            </tr>
+                            <tr v-for="i in itens" :key="`item-${i.id}`">
+                                <td>
+                                    <div class="fw-semibold">{{ i.nome }}</div>
+                                    <div class="small text-muted">{{ i.descricao || '-' }}</div>
+                                </td>
+                                <td>{{ i.categoria_nome || '-' }}</td>
+                                <td :class="Number(i.quantidade_atual) <= Number(i.quantidade_minima) ? 'text-danger fw-semibold' : ''">{{ formatarQtd(i.quantidade_atual) }}</td>
+                                <td>{{ formatarQtd(i.quantidade_minima) }}</td>
+                                <td>{{ i.unidade || 'UN' }}</td>
+                                <td>{{ i.local_nome || '-' }}</td>
+                                <td>
+                                    <span class="badge" :class="i.status === 'ATIVO' ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'">
+                                        {{ i.status === 'ATIVO' ? 'Ativo' : 'Inativo' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-edit-standard btn-sm" @click="abrirModalItem(i)">Editar</button>
+                                        <button class="btn btn-sm btn-primary" @click="abrirModalItem(i, 'movimentacao')">Empréstimo/Doação</button>
+                                        <button class="btn btn-sm btn-danger" @click="excluirItem(i)">Excluir</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr v-if="!loadingItens && !itens.length">
+                                <td colspan="8" class="text-center text-muted py-4">Nenhum item encontrado.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div v-if="abaAtual === 'categorias'" class="card border-0 shadow-sm mt-3">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">Categorias</h6>
+                    <small class="text-muted">{{ categorias.length }} cadastrada(s)</small>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Nome</th>
+                                <th>Descrição</th>
+                                <th>Status</th>
+                                <th style="width: 180px;">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="c in categorias" :key="`cat-${c.id}`">
+                                <td class="fw-semibold">{{ c.nome }}</td>
+                                <td>{{ c.descricao || '-' }}</td>
+                                <td>
+                                    <span class="badge" :class="Number(c.ativo) ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'">
+                                        {{ Number(c.ativo) ? 'Ativa' : 'Inativa' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-edit-standard btn-sm" @click="abrirModalCategoria(c)">Editar</button>
+                                        <button class="btn btn-sm btn-danger" @click="excluirCategoria(c)">Excluir</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr v-if="!categorias.length">
+                                <td colspan="4" class="text-center text-muted py-4">Nenhuma categoria cadastrada.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div v-if="abaAtual === 'locais'" class="card border-0 shadow-sm mt-3">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">Locais</h6>
+                    <small class="text-muted">{{ locais.length }} cadastrado(s)</small>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Nome</th>
+                                <th>Descrição</th>
+                                <th>Status</th>
+                                <th style="width: 180px;">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="l in locais" :key="`local-${l.id}`">
+                                <td class="fw-semibold">{{ l.nome }}</td>
+                                <td>{{ l.descricao || '-' }}</td>
+                                <td>
+                                    <span class="badge" :class="Number(l.ativo) ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'">
+                                        {{ Number(l.ativo) ? 'Ativo' : 'Inativo' }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-2">
+                                        <button class="btn btn-edit-standard btn-sm" @click="abrirModalLocal(l)">Editar</button>
+                                        <button class="btn btn-sm btn-danger" @click="excluirLocal(l)">Excluir</button>
+                                    </div>
+                                </td>
+                            </tr>
+                            <tr v-if="!locais.length">
+                                <td colspan="4" class="text-center text-muted py-4">Nenhum local cadastrado.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+
+        <div class="modal fade" id="modalItem" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-light">
+                        <h5 class="modal-title">{{ formItem.id ? 'Editar item' : 'Novo item' }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3 d-flex align-items-center border-bottom">
+                            <button type="button" class="tab-link" :class="{ active: abaItem === 'dados' }" @click="abaItem = 'dados'">Dados</button>
+                            <button type="button" class="tab-link" :class="{ active: abaItem === 'movimentacao' }" :disabled="!formItem.id" @click="abaItem = 'movimentacao'">Empréstimo/Doação</button>
+                        </div>
+
+                        <div v-if="abaItem === 'dados'">
+                            <div class="mb-2">
+                                <label class="form-label">Nome *</label>
+                                <input class="form-control" v-model.trim="formItem.nome" maxlength="180">
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Categoria</label>
+                                <select class="form-select" v-model.number="formItem.categoria_id">
+                                    <option :value="null">Sem categoria</option>
+                                    <option v-for="c in categoriasAtivas" :value="c.id" :key="`cat-opt-${c.id}`">{{ c.nome }}</option>
+                                </select>
+                            </div>
+                            <div class="mb-2">
+                                <label class="form-label">Local</label>
+                                <select class="form-select" v-model.number="formItem.local_id">
+                                    <option :value="null">Sem local</option>
+                                    <option v-for="l in locaisAtivos" :value="l.id" :key="`local-opt-${l.id}`">{{ l.nome }}</option>
+                                </select>
+                            </div>
+                            <div class="row g-2">
+                                <div class="col-md-4">
+                                    <label class="form-label">Quantidade atual *</label>
+                                    <input type="number" min="0" step="0.01" class="form-control" v-model.number="formItem.quantidade_atual">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Quantidade mínima *</label>
+                                    <input type="number" min="0" step="0.01" class="form-control" v-model.number="formItem.quantidade_minima">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Unidade</label>
+                                    <input class="form-control" v-model.trim="formItem.unidade" maxlength="30" placeholder="UN, KG, CX...">
+                                </div>
+                            </div>
+                            <div class="mt-2">
+                                <label class="form-label">Descrição</label>
+                                <textarea class="form-control" rows="3" v-model.trim="formItem.descricao"></textarea>
+                            </div>
+                            <div class="mt-2">
+                                <label class="form-label">Status</label>
+                                <select class="form-select" v-model="formItem.status">
+                                    <option value="ATIVO">Ativo</option>
+                                    <option value="INATIVO">Inativo</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div v-else>
+                            <div class="alert alert-light border mb-2 py-2 px-3">
+                                <div><strong>Item:</strong> {{ formItem.nome }}</div>
+                                <div><strong>Estoque atual:</strong> {{ formatarQtd(formItem.quantidade_atual) }} {{ formItem.unidade || 'UN' }}</div>
+                            </div>
+                            <div class="row g-2">
+                                <div class="col-md-4">
+                                    <label class="form-label">Tipo</label>
+                                    <select class="form-select" v-model="formMovimento.tipo">
+                                        <option value="EMPRESTIMO">Empréstimo</option>
+                                        <option value="DOACAO">Doação</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label">Nome de quem está recebendo *</label>
+                                    <input class="form-control" v-model.trim="formMovimento.nome_responsavel" maxlength="180">
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label">Movimento/Pastoral *</label>
+                                    <input class="form-control" v-model.trim="formMovimento.movimento_pastoral" maxlength="180">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Quantidade *</label>
+                                    <input type="number" min="0.01" step="0.01" class="form-control" v-model.number="formMovimento.quantidade">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Observação</label>
+                                    <textarea class="form-control" rows="2" v-model.trim="formMovimento.observacao"></textarea>
+                                </div>
+                            </div>
+                            <div class="mt-2 d-flex justify-content-end">
+                                <button class="btn btn-primary" @click="registrarMovimentacao">Registrar movimentação</button>
+                            </div>
+
+                            <hr>
+                            <h6 class="mb-2">Histórico</h6>
+                            <div class="small text-muted mb-2">Os registros de empréstimo/doação ficam disponíveis por 1 ano.</div>
+                            <div v-if="loadingMovimentacoes" class="text-muted small">Carregando movimentações...</div>
+                            <div v-else-if="!movimentacoes.length" class="text-muted small">Sem movimentações para este item.</div>
+                            <div v-else class="table-responsive">
+                                <table class="table table-sm align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Tipo</th>
+                                            <th>Quem recebeu</th>
+                                            <th>Movimento/Pastoral</th>
+                                            <th>Qtd.</th>
+                                            <th>Data</th>
+                                            <th>Ações</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="m in movimentacoes" :key="`mov-${m.id}`">
+                                            <td>
+                                                <span class="badge" :class="m.tipo === 'DOACAO' ? 'bg-danger-subtle text-danger' : 'bg-primary-subtle text-primary'">
+                                                    {{ m.tipo === 'DOACAO' ? 'Doação' : 'Empréstimo' }}
+                                                </span>
+                                            </td>
+                                            <td>{{ m.nome_responsavel }}</td>
+                                            <td>{{ m.movimento_pastoral }}</td>
+                                            <td>{{ formatarQtd(m.quantidade) }} {{ formItem.unidade || 'UN' }}</td>
+                                            <td>{{ formatarDataHora(m.created_at) }}</td>
+                                            <td>
+                                                <button
+                                                    v-if="m.tipo === 'EMPRESTIMO' && saldoEmprestimo(m) > 0"
+                                                    class="btn btn-sm btn-outline-primary"
+                                                    :disabled="devolvendoId === m.id"
+                                                    @click="devolverEmprestimo(m)"
+                                                >
+                                                    {{ devolvendoId === m.id ? 'Devolvendo...' : 'Devolver' }}
+                                                </button>
+                                                <span
+                                                    v-else-if="m.tipo === 'EMPRESTIMO' && saldoEmprestimo(m) <= 0"
+                                                    class="badge bg-success-subtle text-success"
+                                                >
+                                                    Devolvido
+                                                </span>
+                                                <span v-else class="text-muted small">-</span>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button v-if="abaItem === 'dados'" class="btn btn-primary" @click="salvarItem">Salvar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="modalCategoria" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-light">
+                        <h5 class="modal-title">{{ formCategoria.id ? 'Editar categoria' : 'Nova categoria' }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-2">
+                            <label class="form-label">Nome *</label>
+                            <input class="form-control" v-model.trim="formCategoria.nome" maxlength="120">
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">Descrição</label>
+                            <textarea class="form-control" rows="3" v-model.trim="formCategoria.descricao" maxlength="255"></textarea>
+                        </div>
+                        <div class="mb-1">
+                            <label class="form-label">Status</label>
+                            <select class="form-select" v-model.number="formCategoria.ativo">
+                                <option :value="1">Ativa</option>
+                                <option :value="0">Inativa</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button class="btn btn-primary" @click="salvarCategoria">Salvar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="modalLocal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-light">
+                        <h5 class="modal-title">{{ formLocal.id ? 'Editar local' : 'Novo local' }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-2">
+                            <label class="form-label">Nome *</label>
+                            <input class="form-control" v-model.trim="formLocal.nome" maxlength="120">
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">Descrição</label>
+                            <textarea class="form-control" rows="3" v-model.trim="formLocal.descricao" maxlength="255"></textarea>
+                        </div>
+                        <div class="mb-1">
+                            <label class="form-label">Status</label>
+                            <select class="form-select" v-model.number="formLocal.ativo">
+                                <option :value="1">Ativo</option>
+                                <option :value="0">Inativo</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button class="btn btn-primary" @click="salvarLocal">Salvar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            injetarMenu('#app');
+            ativarMenu('/administrativo/almoxarifado');
+        });
+
+        const { createApp } = Vue;
+        createApp({
+            data() {
+                return {
+                    abaAtual: 'itens',
+                    loadingItens: false,
+                    categorias: [],
+                    locais: [],
+                    itens: [],
+                    resumo: {
+                        total_categorias: 0,
+                        total_itens: 0,
+                        total_baixo_estoque: 0,
+                        total_unidades: 0
+                    },
+                    filtros: {
+                        q: '',
+                        categoria_id: 0,
+                        local_id: 0,
+                        status: '',
+                        baixo_estoque: false
+                    },
+                    formItem: {
+                        id: null,
+                        categoria_id: null,
+                        local_id: null,
+                        nome: '',
+                        descricao: '',
+                        unidade: 'UN',
+                        quantidade_atual: 0,
+                        quantidade_minima: 0,
+                        localizacao: '',
+                        status: 'ATIVO'
+                    },
+                    abaItem: 'dados',
+                    loadingMovimentacoes: false,
+                    devolvendoId: null,
+                    movimentacoes: [],
+                    formMovimento: {
+                        tipo: 'EMPRESTIMO',
+                        nome_responsavel: '',
+                        movimento_pastoral: '',
+                        quantidade: 1,
+                        observacao: ''
+                    },
+                    formCategoria: {
+                        id: null,
+                        nome: '',
+                        descricao: '',
+                        ativo: 1
+                    },
+                    formLocal: {
+                        id: null,
+                        nome: '',
+                        descricao: '',
+                        ativo: 1
+                    },
+                    modalItem: null,
+                    modalCategoria: null,
+                    modalLocal: null
+                };
+            },
+            computed: {
+                categoriasAtivas() {
+                    return (this.categorias || []).filter((c) => Number(c.ativo) === 1);
+                },
+                locaisAtivos() {
+                    return (this.locais || []).filter((l) => Number(l.ativo) === 1);
+                },
+                devolvidoPorEmprestimo() {
+                    const mapa = {};
+                    (this.movimentacoes || []).forEach((m) => {
+                        if (m.tipo === 'DEVOLUCAO' && Number(m.referencia_emprestimo_id || 0) > 0) {
+                            const refId = Number(m.referencia_emprestimo_id);
+                            mapa[refId] = Number(mapa[refId] || 0) + Number(m.quantidade || 0);
+                        }
+                    });
+                    return mapa;
+                }
+            },
+            watch: {
+                filtros: {
+                    deep: true,
+                    handler() {
+                        this.carregarItens();
+                    }
+                }
+            },
+            methods: {
+                formatarQtd(v) {
+                    return Number(v || 0).toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+                },
+                formatarDataHora(v) {
+                    if (!v) return '-';
+                    const dt = new Date(v);
+                    if (Number.isNaN(dt.getTime())) return '-';
+                    return dt.toLocaleString('pt-BR');
+                },
+                saldoEmprestimo(mov) {
+                    if (!mov || mov.tipo !== 'EMPRESTIMO') return 0;
+                    const emprestado = Number(mov.quantidade || 0);
+                    const devolvido = Number(this.devolvidoPorEmprestimo[Number(mov.id)] || 0);
+                    return Number(Math.max(0, emprestado - devolvido).toFixed(2));
+                },
+                async carregarResumo() {
+                    const res = await fetch('/api/almoxarifado/resumo');
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok) return;
+                    this.resumo = {
+                        total_categorias: Number(data.total_categorias || 0),
+                        total_itens: Number(data.total_itens || 0),
+                        total_baixo_estoque: Number(data.total_baixo_estoque || 0),
+                        total_unidades: Number(data.total_unidades || 0)
+                    };
+                },
+                async carregarCategorias() {
+                    const res = await fetch('/api/almoxarifado/categorias');
+                    const data = await res.json().catch(() => ([]));
+                    this.categorias = res.ok && Array.isArray(data) ? data : [];
+                },
+                async carregarLocais() {
+                    const res = await fetch('/api/almoxarifado/locais');
+                    const data = await res.json().catch(() => ([]));
+                    this.locais = res.ok && Array.isArray(data) ? data : [];
+                },
+                async carregarItens() {
+                    this.loadingItens = true;
+                    try {
+                        const params = new URLSearchParams();
+                        if (this.filtros.q) params.set('q', this.filtros.q);
+                        if (this.filtros.categoria_id) params.set('categoria_id', String(this.filtros.categoria_id));
+                        if (this.filtros.local_id) params.set('local_id', String(this.filtros.local_id));
+                        if (this.filtros.status) params.set('status', this.filtros.status);
+                        if (this.filtros.baixo_estoque) params.set('baixo_estoque', '1');
+                        const res = await fetch(`/api/almoxarifado/itens?${params.toString()}`);
+                        const data = await res.json().catch(() => ([]));
+                        this.itens = res.ok && Array.isArray(data) ? data : [];
+                    } catch (_) {
+                        this.itens = [];
+                    } finally {
+                        this.loadingItens = false;
+                    }
+                },
+                async carregarTudo() {
+                    await Promise.all([this.carregarResumo(), this.carregarCategorias(), this.carregarLocais(), this.carregarItens()]);
+                },
+                async abrirModalItem(item, aba = 'dados') {
+                    this.formItem = item ? {
+                        id: item.id,
+                        categoria_id: item.categoria_id || null,
+                        local_id: item.local_id || null,
+                        nome: item.nome || '',
+                        descricao: item.descricao || '',
+                        unidade: item.unidade || 'UN',
+                        quantidade_atual: Number(item.quantidade_atual || 0),
+                        quantidade_minima: Number(item.quantidade_minima || 0),
+                        localizacao: item.localizacao || '',
+                        status: item.status || 'ATIVO'
+                    } : {
+                        id: null,
+                        categoria_id: null,
+                        local_id: null,
+                        nome: '',
+                        descricao: '',
+                        unidade: 'UN',
+                        quantidade_atual: 0,
+                        quantidade_minima: 0,
+                        localizacao: '',
+                        status: 'ATIVO'
+                    };
+                    this.abaItem = aba === 'movimentacao' && this.formItem.id ? 'movimentacao' : 'dados';
+                    this.movimentacoes = [];
+                    this.formMovimento = {
+                        tipo: 'EMPRESTIMO',
+                        nome_responsavel: '',
+                        movimento_pastoral: '',
+                        quantidade: 1,
+                        observacao: ''
+                    };
+                    if (!this.modalItem) this.modalItem = new bootstrap.Modal(document.getElementById('modalItem'));
+                    this.modalItem.show();
+                    if (this.formItem.id) {
+                        await this.carregarMovimentacoes(this.formItem.id);
+                    }
+                },
+                abrirModalCategoria(categoria) {
+                    this.formCategoria = categoria ? {
+                        id: categoria.id,
+                        nome: categoria.nome || '',
+                        descricao: categoria.descricao || '',
+                        ativo: Number(categoria.ativo) ? 1 : 0
+                    } : {
+                        id: null,
+                        nome: '',
+                        descricao: '',
+                        ativo: 1
+                    };
+                    if (!this.modalCategoria) this.modalCategoria = new bootstrap.Modal(document.getElementById('modalCategoria'));
+                    this.modalCategoria.show();
+                },
+                abrirModalLocal(local) {
+                    this.formLocal = local ? {
+                        id: local.id,
+                        nome: local.nome || '',
+                        descricao: local.descricao || '',
+                        ativo: Number(local.ativo) ? 1 : 0
+                    } : {
+                        id: null,
+                        nome: '',
+                        descricao: '',
+                        ativo: 1
+                    };
+                    if (!this.modalLocal) this.modalLocal = new bootstrap.Modal(document.getElementById('modalLocal'));
+                    this.modalLocal.show();
+                },
+                async salvarCategoria() {
+                    if (!String(this.formCategoria.nome || '').trim()) {
+                        await uiAlert('Informe o nome da categoria.');
+                        return;
+                    }
+                    const isEdicao = !!this.formCategoria.id;
+                    const url = isEdicao
+                        ? `/api/almoxarifado/categorias/${this.formCategoria.id}`
+                        : '/api/almoxarifado/categorias';
+                    const method = isEdicao ? 'PUT' : 'POST';
+                    const res = await fetch(url, {
+                        method,
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(this.formCategoria)
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok) {
+                        await uiAlert(data.error || 'Erro ao salvar categoria.');
+                        return;
+                    }
+                    if (this.modalCategoria) this.modalCategoria.hide();
+                    await this.carregarTudo();
+                },
+                async salvarLocal() {
+                    if (!String(this.formLocal.nome || '').trim()) {
+                        await uiAlert('Informe o nome do local.');
+                        return;
+                    }
+                    const isEdicao = !!this.formLocal.id;
+                    const url = isEdicao
+                        ? `/api/almoxarifado/locais/${this.formLocal.id}`
+                        : '/api/almoxarifado/locais';
+                    const method = isEdicao ? 'PUT' : 'POST';
+                    const res = await fetch(url, {
+                        method,
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(this.formLocal)
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok) {
+                        await uiAlert(data.error || 'Erro ao salvar local.');
+                        return;
+                    }
+                    if (this.modalLocal) this.modalLocal.hide();
+                    await this.carregarTudo();
+                },
+                async excluirCategoria(categoria) {
+                    const ok = await uiConfirm(`Deseja excluir a categoria "${categoria.nome}"?`);
+                    if (!ok) return;
+                    const res = await fetch(`/api/almoxarifado/categorias/${categoria.id}`, { method: 'DELETE' });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok) {
+                        await uiAlert(data.error || 'Erro ao excluir categoria.');
+                        return;
+                    }
+                    await this.carregarTudo();
+                },
+                async excluirLocal(local) {
+                    const ok = await uiConfirm(`Deseja excluir o local "${local.nome}"?`);
+                    if (!ok) return;
+                    const res = await fetch(`/api/almoxarifado/locais/${local.id}`, { method: 'DELETE' });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok) {
+                        await uiAlert(data.error || 'Erro ao excluir local.');
+                        return;
+                    }
+                    await this.carregarTudo();
+                },
+                async salvarItem() {
+                    if (!String(this.formItem.nome || '').trim()) {
+                        await uiAlert('Informe o nome do item.');
+                        return;
+                    }
+                    if (Number(this.formItem.quantidade_atual) < 0 || Number(this.formItem.quantidade_minima) < 0) {
+                        await uiAlert('As quantidades não podem ser negativas.');
+                        return;
+                    }
+                    const payload = {
+                        ...this.formItem,
+                        unidade: String(this.formItem.unidade || 'UN').trim().toUpperCase() || 'UN'
+                    };
+                    const isEdicao = !!payload.id;
+                    const url = isEdicao
+                        ? `/api/almoxarifado/itens/${payload.id}`
+                        : '/api/almoxarifado/itens';
+                    const method = isEdicao ? 'PUT' : 'POST';
+                    const res = await fetch(url, {
+                        method,
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok) {
+                        await uiAlert(data.error || 'Erro ao salvar item.');
+                        return;
+                    }
+                    if (this.modalItem) this.modalItem.hide();
+                    await this.carregarTudo();
+                },
+                async carregarMovimentacoes(itemId) {
+                    if (!itemId) return;
+                    this.loadingMovimentacoes = true;
+                    try {
+                        const res = await fetch(`/api/almoxarifado/itens/${itemId}/movimentacoes`);
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            this.movimentacoes = [];
+                            return;
+                        }
+                        this.movimentacoes = Array.isArray(data.movimentacoes) ? data.movimentacoes : [];
+                    } catch (_) {
+                        this.movimentacoes = [];
+                    } finally {
+                        this.loadingMovimentacoes = false;
+                    }
+                },
+                async registrarMovimentacao() {
+                    if (!this.formItem.id) {
+                        await uiAlert('Salve o item antes de registrar empréstimo/doação.');
+                        return;
+                    }
+                    if (!String(this.formMovimento.nome_responsavel || '').trim()) {
+                        await uiAlert('Informe o nome de quem está recebendo.');
+                        return;
+                    }
+                    if (!String(this.formMovimento.movimento_pastoral || '').trim()) {
+                        await uiAlert('Informe o movimento/pastoral.');
+                        return;
+                    }
+                    if (Number(this.formMovimento.quantidade) <= 0) {
+                        await uiAlert('Informe uma quantidade válida.');
+                        return;
+                    }
+
+                    const res = await fetch(`/api/almoxarifado/itens/${this.formItem.id}/movimentacoes`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(this.formMovimento)
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok) {
+                        await uiAlert(data.error || 'Erro ao registrar movimentação.');
+                        return;
+                    }
+
+                    if (data.item_removido) {
+                        if (this.modalItem) this.modalItem.hide();
+                        await this.carregarTudo();
+                        await uiAlert('Doação registrada. Item removido da lista porque o estoque zerou.');
+                        return;
+                    }
+
+                    this.formItem.quantidade_atual = Number(data.quantidade_restante || 0);
+                    this.formMovimento.quantidade = 1;
+                    this.formMovimento.observacao = '';
+                    this.formMovimento.nome_responsavel = '';
+                    this.formMovimento.movimento_pastoral = '';
+                    await Promise.all([this.carregarMovimentacoes(this.formItem.id), this.carregarTudo()]);
+                    await uiAlert(data.message || 'Movimentação registrada com sucesso.');
+                },
+                async devolverEmprestimo(emprestimo) {
+                    const saldo = this.saldoEmprestimo(emprestimo);
+                    if (saldo <= 0) {
+                        await uiAlert('Esse empréstimo já foi devolvido.');
+                        return;
+                    }
+
+                    const unidade = this.formItem.unidade || 'UN';
+                    const mesmaQuantidade = await uiConfirm(`Devolveu a mesma quantidade? (${this.formatarQtd(saldo)} ${unidade})`);
+                    if (mesmaQuantidade === null) return;
+
+                    let quantidadeDevolvida = saldo;
+                    if (!mesmaQuantidade) {
+                        const valor = await uiPrompt('Informe a quantidade devolvida:', {
+                            title: 'Devolução parcial',
+                            defaultValue: String(saldo).replace('.', ',')
+                        });
+                        if (valor === null) return;
+                        quantidadeDevolvida = Number(String(valor).replace(',', '.'));
+                        if (!Number.isFinite(quantidadeDevolvida) || quantidadeDevolvida <= 0) {
+                            await uiAlert('Quantidade inválida.');
+                            return;
+                        }
+                    }
+
+                    this.devolvendoId = Number(emprestimo.id);
+                    try {
+                        const res = await fetch(`/api/almoxarifado/itens/${this.formItem.id}/movimentacoes`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                tipo: 'DEVOLUCAO',
+                                referencia_emprestimo_id: emprestimo.id,
+                                quantidade: quantidadeDevolvida,
+                                nome_responsavel: emprestimo.nome_responsavel,
+                                movimento_pastoral: emprestimo.movimento_pastoral
+                            })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            await uiAlert(data.error || 'Erro ao registrar devolução.');
+                            return;
+                        }
+
+                        this.formItem.quantidade_atual = Number(data.quantidade_restante || this.formItem.quantidade_atual || 0);
+                        await Promise.all([this.carregarMovimentacoes(this.formItem.id), this.carregarTudo()]);
+                        await uiAlert(data.message || 'Devolução registrada com sucesso.');
+                    } finally {
+                        this.devolvendoId = null;
+                    }
+                },
+                async excluirItem(item) {
+                    const ok = await uiConfirm(`Deseja excluir o item "${item.nome}"?`);
+                    if (!ok) return;
+                    const res = await fetch(`/api/almoxarifado/itens/${item.id}`, { method: 'DELETE' });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok) {
+                        await uiAlert(data.error || 'Erro ao excluir item.');
+                        return;
+                    }
+                    await this.carregarTudo();
+                }
+            },
+            mounted() {
+                this.carregarTudo();
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

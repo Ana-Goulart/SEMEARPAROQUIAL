@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EJC - Admin Login</title>
+    <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
+    <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/velzon-theme.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/ui-kit.js"></script>
+    <style>
+        .login-logo-img {
+            mix-blend-mode: multiply;
+            filter: contrast(1.08) saturate(1.04);
+        }
+    </style>
+</head>
+<body class="bg-light d-flex align-items-center justify-content-center" style="min-height:100vh;background:linear-gradient(155deg,#fbf5e9 0%,#f3e6cc 46%,#efe5d8 100%);">
+    <div id="app" class="card shadow-sm border-0" style="width:100%;max-width:420px;">
+        <div class="card-body p-4">
+            <div class="text-center mb-3 d-flex flex-column align-items-center">
+                <img src="/assets/logo-login-oficial.png" alt="Semear Paroquial" class="login-logo-img" style="width:210px;height:210px;display:block;object-fit:contain;object-position:center;">
+                <p class="mb-0 mt-1" style="font-size:.9rem;letter-spacing:.14em;font-weight:600;text-transform:uppercase;color:#8a6a36;">Semear Paroquial</p>
+            </div>
+            <h4 class="mb-1">Painel Administrador</h4>
+            <p class="text-muted small mb-4">Acesso com e-mail administrativo.</p>
+            <form @submit.prevent="entrar">
+                <div class="mb-3">
+                    <label class="form-label">E-mail admin</label>
+                    <input class="form-control" type="email" v-model="username" required autocomplete="username">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Senha</label>
+                    <input type="password" class="form-control" v-model="senha" required autocomplete="current-password">
+                </div>
+                <div class="d-grid">
+                    <button class="btn btn-primary" :disabled="loading">{{ loading ? 'Entrando...' : 'Entrar' }}</button>
+                </div>
+            </form>
+            <div class="text-center mt-3">
+                <a href="/login" class="small text-muted">Voltar ao login do EJC</a>
+            </div>
+        </div>
+    </div>
+    <script>
+        const { createApp } = Vue;
+        createApp({
+            data() {
+                return { username: '', senha: '', loading: false };
+            },
+            async mounted() {
+                try {
+                    const res = await fetch('/api/admin/me');
+                    const data = res.ok ? await res.json() : {};
+                    if (data.logged) window.location.href = '/admin';
+                } catch (_) {}
+            },
+            methods: {
+                async entrar() {
+                    this.loading = true;
+                    try {
+                        const res = await fetch('/api/admin/login', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ username: this.username, senha: this.senha })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) return alert(data.error || 'Não foi possível entrar.');
+                        window.location.href = '/admin';
+                    } catch (_) {
+                        alert('Erro ao conectar com o servidor.');
+                    } finally {
+                        this.loading = false;
+                    }
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atualizar Telefone dos Tios - EJC</title>
+    <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
+    <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/velzon-theme.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/ui-kit.js"></script>
+    <script src="/js/date-br.js" defer></script>
+</head>
+<body style="min-height:100vh;background:linear-gradient(155deg,#fbf5e9 0%,#f3e6cc 46%,#efe5d8 100%);">
+    <div id="app" class="container py-4 py-md-5">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-8">
+                <div class="card border-0 shadow">
+                    <div class="card-body p-4">
+                        <div class="text-center mb-3">
+                            <img src="/assets/logo-oficial.png" alt="Semear Paroquial" style="width:120px;height:120px;object-fit:contain;">
+                            <h4 class="mt-2 mb-1">Atualização de Telefone - Tios</h4>
+                            <p class="text-muted mb-0">Confirme os dados do casal e atualize as informações.</p>
+                        </div>
+
+                        <div class="alert alert-warning py-2 small">
+                            Antes de atualizar, confirme os dados do tio e da tia: nome completo, telefones, datas de nascimento e ECC/ECNA.
+                        </div>
+
+                        <div class="row g-3" v-if="estado === 'VALIDACAO'">
+                            <div class="col-12"><h6 class="text-muted mb-0">Validação</h6></div>
+                            <div class="col-md-6">
+                                <label class="form-label">Nome completo do tio</label>
+                                <input class="form-control" v-model.trim="validacao.nome_tio" maxlength="180">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Nome completo da tia</label>
+                                <input class="form-control" v-model.trim="validacao.nome_tia" maxlength="180">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Telefone do tio</label>
+                                <input class="form-control" v-model.trim="validacao.telefone_tio" maxlength="30" placeholder="(31)99999-9999" @input="onTelefoneValidacaoInput('tio')">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Telefone da tia</label>
+                                <input class="form-control" v-model.trim="validacao.telefone_tia" maxlength="30" placeholder="(31)99999-9999" @input="onTelefoneValidacaoInput('tia')">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Data de nascimento do tio</label>
+                                <input type="text" class="form-control date-br" v-model.trim="validacao.data_nascimento_tio" placeholder="dd/mm/aaaa" inputmode="numeric">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Data de nascimento da tia</label>
+                                <input type="text" class="form-control date-br" v-model.trim="validacao.data_nascimento_tia" placeholder="dd/mm/aaaa" inputmode="numeric">
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label">Qual ECC/ECNA fez</label>
+                                <select class="form-select" v-model.number="validacao.ecc_id">
+                                    <option :value="0">Selecione...</option>
+                                    <option v-for="e in eccList" :key="`ecc-${e.id}`" :value="e.id">
+                                        Fez {{ e.numero }} {{ (e.tipo || 'ECC') }}
+                                        <span v-if="e.descricao"> - {{ e.descricao }}</span>
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div class="col-12 d-grid d-md-flex gap-2 pt-2">
+                                <button class="btn btn-outline-primary" :disabled="validando" @click="validarCadastro">
+                                    {{ validando ? 'Confirmando...' : 'Confirmar cadastro' }}
+                                </button>
+                                <button class="btn btn-outline-secondary" @click="abrirNaoEncontrado">Não encontrei meu registro</button>
+                            </div>
+
+                        </div>
+
+                        <div class="row g-3" v-else-if="estado === 'ATUALIZACAO'">
+                            <div class="col-12"><h6 class="text-muted mb-0">Dados para atualizar</h6></div>
+                            <div class="col-md-6">
+                                <label class="form-label">Novo telefone do tio</label>
+                                <input class="form-control" v-model.trim="atualizacao.telefone_tio" maxlength="30" :disabled="!cadastroValidado" placeholder="(31)99999-9999" @input="onTelefoneAtualizacaoInput('tio')">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Novo telefone da tia</label>
+                                <input class="form-control" v-model.trim="atualizacao.telefone_tia" maxlength="30" :disabled="!cadastroValidado" placeholder="(31)99999-9999" @input="onTelefoneAtualizacaoInput('tia')">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Tio possui restrição alimentar?</label>
+                                <select class="form-select" v-model="atualizacao.restricao_alimentar_tio" :disabled="!cadastroValidado">
+                                    <option :value="false">Não</option>
+                                    <option :value="true">Sim</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Tio possui deficiência?</label>
+                                <select class="form-select" v-model="atualizacao.deficiencia_tio" :disabled="!cadastroValidado">
+                                    <option :value="false">Não</option>
+                                    <option :value="true">Sim</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6" v-if="atualizacao.restricao_alimentar_tio && cadastroValidado">
+                                <label class="form-label">Qual restrição alimentar do tio?</label>
+                                <select class="form-select" v-model="atualizacao.detalhes_restricao_tio">
+                                    <option disabled value="">Selecione uma restrição...</option>
+                                    <option v-for="r in restricoesDisponiveis" :key="`rest-tio-${r}`" :value="r">{{ r }}</option>
+                                    <option value="Outras">Outras</option>
+                                </select>
+                                <input v-if="atualizacao.detalhes_restricao_tio === 'Outras'" class="form-control mt-2" v-model.trim="atualizacao.outra_restricao_tio" maxlength="255" placeholder="Descreva a restrição do tio">
+                            </div>
+                            <div class="col-md-6" v-if="atualizacao.deficiencia_tio && cadastroValidado">
+                                <label class="form-label">Qual deficiência do tio?</label>
+                                <input class="form-control" v-model.trim="atualizacao.qual_deficiencia_tio" maxlength="255">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Tia possui restrição alimentar?</label>
+                                <select class="form-select" v-model="atualizacao.restricao_alimentar_tia" :disabled="!cadastroValidado">
+                                    <option :value="false">Não</option>
+                                    <option :value="true">Sim</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Tia possui deficiência?</label>
+                                <select class="form-select" v-model="atualizacao.deficiencia_tia" :disabled="!cadastroValidado">
+                                    <option :value="false">Não</option>
+                                    <option :value="true">Sim</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6" v-if="atualizacao.restricao_alimentar_tia && cadastroValidado">
+                                <label class="form-label">Qual restrição alimentar da tia?</label>
+                                <select class="form-select" v-model="atualizacao.detalhes_restricao_tia">
+                                    <option disabled value="">Selecione uma restrição...</option>
+                                    <option v-for="r in restricoesDisponiveis" :key="`rest-tia-${r}`" :value="r">{{ r }}</option>
+                                    <option value="Outras">Outras</option>
+                                </select>
+                                <input v-if="atualizacao.detalhes_restricao_tia === 'Outras'" class="form-control mt-2" v-model.trim="atualizacao.outra_restricao_tia" maxlength="255" placeholder="Descreva a restrição da tia">
+                            </div>
+                            <div class="col-md-6" v-if="atualizacao.deficiencia_tia && cadastroValidado">
+                                <label class="form-label">Qual deficiência da tia?</label>
+                                <input class="form-control" v-model.trim="atualizacao.qual_deficiencia_tia" maxlength="255">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Observações adicionais</label>
+                                <textarea class="form-control" rows="3" v-model.trim="atualizacao.observacoes_adicionais" maxlength="1000" :disabled="!cadastroValidado"></textarea>
+                            </div>
+                            <div class="col-12">
+                                <div class="p-3 bg-light border rounded">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="aceiteTermosAtualizacaoTios" v-model="aceiteTermos">
+                                        <label class="form-check-label" for="aceiteTermosAtualizacaoTios">Li e aceito os termos de uso</label>
+                                    </div>
+                                    <div class="small text-muted mt-2">{{ termosTexto }}</div>
+                                </div>
+                            </div>
+                            <div class="col-12 d-flex gap-2 pt-2">
+                                <button class="btn btn-primary" :disabled="enviando || !cadastroValidado || !aceiteTermos" @click="enviar">
+                                    {{ enviando ? 'Enviando...' : 'Atualizar dados' }}
+                                </button>
+                                <button class="btn btn-outline-secondary" @click="voltarValidacao">Voltar</button>
+                            </div>
+                        </div>
+
+                        <div class="row g-3" v-else-if="estado === 'NAO_ENCONTRADO'">
+                            <div class="col-12"><h6 class="text-muted mb-0">Não encontrei meu registro</h6></div>
+                            <div class="col-md-6">
+                                <label class="form-label">Nome completo</label>
+                                <input class="form-control" v-model.trim="naoEncontradoForm.nome_completo" maxlength="180">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Telefone</label>
+                                <input class="form-control" v-model.trim="naoEncontradoForm.telefone" maxlength="30" placeholder="(31)99999-9999" @input="onTelefoneNaoEncontradoInput">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">EJC que fez</label>
+                                <input class="form-control" v-model.trim="naoEncontradoForm.ejc_que_fez" maxlength="180" placeholder="Ex: ECC 12">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Observações adicionais</label>
+                                <textarea class="form-control" rows="3" v-model.trim="naoEncontradoForm.observacoes_adicionais" maxlength="1000"></textarea>
+                            </div>
+                            <div class="col-12">
+                                <div class="p-3 bg-light border rounded">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="aceiteTermosNaoEncontradoTios" v-model="aceiteTermos">
+                                        <label class="form-check-label" for="aceiteTermosNaoEncontradoTios">Li e aceito os termos de uso</label>
+                                    </div>
+                                    <div class="small text-muted mt-2">{{ termosTexto }}</div>
+                                </div>
+                            </div>
+                            <div class="col-12 d-flex gap-2 pt-2">
+                                <button class="btn btn-primary" :disabled="enviando || !aceiteTermos" @click="enviarNaoEncontrado">
+                                    {{ enviando ? 'Enviando...' : 'Enviar dados' }}
+                                </button>
+                                <button class="btn btn-outline-secondary" @click="voltarValidacao">Voltar</button>
+                            </div>
+                        </div>
+
+                        <div class="row g-3" v-else>
+                            <div class="col-12"><h6 class="text-muted mb-0">Cadastro não encontrado</h6></div>
+                            <div class="col-md-6">
+                                <label class="form-label">Nome completo do tio *</label>
+                                <input class="form-control" v-model.trim="novo.nome_tio" maxlength="180">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Nome completo da tia *</label>
+                                <input class="form-control" v-model.trim="novo.nome_tia" maxlength="180">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Telefone do tio *</label>
+                                <input class="form-control" v-model.trim="novo.telefone_tio" maxlength="30" placeholder="(31)99999-9999" @input="onTelefoneNovoInput('tio')">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Telefone da tia *</label>
+                                <input class="form-control" v-model.trim="novo.telefone_tia" maxlength="30" placeholder="(31)99999-9999" @input="onTelefoneNovoInput('tia')">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Data de nascimento do tio *</label>
+                                <input type="text" class="form-control date-br" v-model.trim="novo.data_nascimento_tio" placeholder="dd/mm/aaaa" inputmode="numeric">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Data de nascimento da tia *</label>
+                                <input type="text" class="form-control date-br" v-model.trim="novo.data_nascimento_tia" placeholder="dd/mm/aaaa" inputmode="numeric">
+                            </div>
+                            <div class="col-md-12">
+                                <label class="form-label">Qual ECC/ECNA fez *</label>
+                                <select class="form-select" v-model.number="novo.ecc_id">
+                                    <option :value="0">Selecione...</option>
+                                    <option v-for="e in eccList" :key="`ecc-novo-${e.id}`" :value="e.id">
+                                        Fez {{ e.numero }} {{ (e.tipo || 'ECC') }}
+                                        <span v-if="e.descricao"> - {{ e.descricao }}</span>
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Observações</label>
+                                <textarea class="form-control" rows="3" v-model.trim="novo.observacoes" maxlength="255"></textarea>
+                            </div>
+                            <div class="col-12">
+                                <div class="p-3 bg-light border rounded">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="aceiteTermosCriarTios" v-model="aceiteTermos">
+                                        <label class="form-check-label" for="aceiteTermosCriarTios">Li e aceito os termos de uso</label>
+                                    </div>
+                                    <div class="small text-muted mt-2">{{ termosTexto }}</div>
+                                </div>
+                            </div>
+                            <div class="col-12 d-flex gap-2 pt-2">
+                                <button class="btn btn-primary" :disabled="enviando || !aceiteTermos" @click="criarCadastro">
+                                    {{ enviando ? 'Enviando...' : 'Criar cadastro' }}
+                                </button>
+                                <button class="btn btn-outline-secondary" @click="voltarValidacao">Voltar</button>
+                            </div>
+                        </div>
+
+                        <div class="mt-3" v-if="mensagem">
+                            <div class="alert alert-success py-2 small mb-0">{{ mensagem }}</div>
+                        </div>
+                        <div class="mt-3" v-if="erro">
+                            <div class="alert alert-danger py-2 small mb-0">{{ erro }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+        createApp({
+            data() {
+                return {
+                    estado: 'VALIDACAO',
+                    eccList: [],
+                    validando: false,
+                    enviando: false,
+                    cadastroValidado: false,
+                    token: '',
+                    aceiteTermos: false,
+                    termosTexto: 'Ao enviar este formulário, você autoriza o EJC a armazenar e utilizar seus dados pessoais para contato e atualização cadastral. Você pode solicitar atualização ou remoção dos dados a qualquer momento.',
+                    restricoesDisponiveis: [
+                        'Alergia a amendoim',
+                        'Alergia a castanhas',
+                        'Alergia a frutos do mar',
+                        'APLV (Alergia à proteína do leite de vaca)',
+                        'Intolerante à lactose',
+                        'Intolerante a glúten (Celíaco)',
+                        'Não come carne vermelha',
+                        'Não come carne de porco',
+                        'Vegetariano',
+                        'Vegano'
+                    ],
+                    mensagem: '',
+                    erro: '',
+                    validacao: {
+                        nome_tio: '',
+                        nome_tia: '',
+                        telefone_tio: '',
+                        telefone_tia: '',
+                        data_nascimento_tio: '',
+                        data_nascimento_tia: '',
+                        ecc_id: 0
+                    },
+                    atualizacao: {
+                        telefone_tio: '',
+                        telefone_tia: '',
+                        restricao_alimentar_tio: false,
+                        detalhes_restricao_tio: '',
+                        outra_restricao_tio: '',
+                        deficiencia_tio: false,
+                        qual_deficiencia_tio: '',
+                        restricao_alimentar_tia: false,
+                        detalhes_restricao_tia: '',
+                        outra_restricao_tia: '',
+                        deficiencia_tia: false,
+                        qual_deficiencia_tia: '',
+                        observacoes_adicionais: ''
+                    },
+                    novo: {
+                        nome_tio: '',
+                        nome_tia: '',
+                        telefone_tio: '',
+                        telefone_tia: '',
+                        data_nascimento_tio: '',
+                        data_nascimento_tia: '',
+                        ecc_id: 0,
+                        observacoes: ''
+                    },
+                    naoEncontradoForm: {
+                        nome_completo: '',
+                        telefone: '',
+                        ejc_que_fez: '',
+                        observacoes_adicionais: '',
+                        origem_formulario: 'Tios'
+                    }
+                };
+            },
+            methods: {
+                formatarTelefoneBr(valor) {
+                    const digits = String(valor || '').replace(/\D/g, '').slice(0, 11);
+                    if (digits.length <= 2) return digits ? `(${digits}` : '';
+                    if (digits.length <= 6) return `(${digits.slice(0, 2)})${digits.slice(2)}`;
+                    if (digits.length <= 10) return `(${digits.slice(0, 2)})${digits.slice(2, 6)}-${digits.slice(6)}`;
+                    return `(${digits.slice(0, 2)})${digits.slice(2, 7)}-${digits.slice(7)}`;
+                },
+                onTelefoneValidacaoInput(tipo) {
+                    if (tipo === 'tio') this.validacao.telefone_tio = this.formatarTelefoneBr(this.validacao.telefone_tio);
+                    if (tipo === 'tia') this.validacao.telefone_tia = this.formatarTelefoneBr(this.validacao.telefone_tia);
+                },
+                onTelefoneAtualizacaoInput(tipo) {
+                    if (tipo === 'tio') this.atualizacao.telefone_tio = this.formatarTelefoneBr(this.atualizacao.telefone_tio);
+                    if (tipo === 'tia') this.atualizacao.telefone_tia = this.formatarTelefoneBr(this.atualizacao.telefone_tia);
+                },
+                onTelefoneNovoInput(tipo) {
+                    if (tipo === 'tio') this.novo.telefone_tio = this.formatarTelefoneBr(this.novo.telefone_tio);
+                    if (tipo === 'tia') this.novo.telefone_tia = this.formatarTelefoneBr(this.novo.telefone_tia);
+                },
+                onTelefoneNaoEncontradoInput() {
+                    this.naoEncontradoForm.telefone = this.formatarTelefoneBr(this.naoEncontradoForm.telefone);
+                },
+                async carregarEcc() {
+                    try {
+                        const res = await fetch('/api/tios-public/ecc');
+                        this.eccList = res.ok ? await res.json() : [];
+                    } catch (_) {
+                        this.eccList = [];
+                    }
+                },
+                async validarCadastro() {
+                    this.erro = '';
+                    this.mensagem = '';
+                    this.validando = true;
+                    try {
+                        const res = await fetch('/api/tios-public/validar', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(this.validacao)
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            if (res.status === 404) {
+                                this.estado = 'NAO_ENCONTRADO';
+                                return;
+                            }
+                            throw new Error(data.error || 'Erro ao validar cadastro.');
+                        }
+                        this.token = data.token || '';
+                        this.cadastroValidado = true;
+                        this.estado = 'ATUALIZACAO';
+                        this.atualizacao.telefone_tio = (data.casal && data.casal.telefone_tio) || '';
+                        this.atualizacao.telefone_tia = (data.casal && data.casal.telefone_tia) || '';
+                        this.atualizacao.restricao_alimentar_tio = !!(data.casal && data.casal.restricao_alimentar_tio);
+                        this.atualizacao.detalhes_restricao_tio = (data.casal && data.casal.detalhes_restricao_tio) || '';
+                        this.atualizacao.outra_restricao_tio = '';
+                        this.atualizacao.deficiencia_tio = !!(data.casal && data.casal.deficiencia_tio);
+                        this.atualizacao.qual_deficiencia_tio = (data.casal && data.casal.qual_deficiencia_tio) || '';
+                        this.atualizacao.restricao_alimentar_tia = !!(data.casal && data.casal.restricao_alimentar_tia);
+                        this.atualizacao.detalhes_restricao_tia = (data.casal && data.casal.detalhes_restricao_tia) || '';
+                        this.atualizacao.outra_restricao_tia = '';
+                        this.atualizacao.deficiencia_tia = !!(data.casal && data.casal.deficiencia_tia);
+                        this.atualizacao.qual_deficiencia_tia = (data.casal && data.casal.qual_deficiencia_tia) || '';
+                        this.mensagem = data.message || 'Cadastro confirmado.';
+                    } catch (e) {
+                        this.cadastroValidado = false;
+                        this.erro = e.message || 'Erro ao validar cadastro.';
+                    } finally {
+                        this.validando = false;
+                    }
+                },
+                abrirNaoEncontrado() {
+                    const eccSelecionado = this.eccList.find((e) => Number(e.id) === Number(this.validacao.ecc_id || 0));
+                    const tipoEcc = (eccSelecionado && eccSelecionado.tipo) || 'ECC';
+                    const numeroEcc = (eccSelecionado && eccSelecionado.numero) || '';
+                    this.naoEncontradoForm.nome_completo = [this.validacao.nome_tio, this.validacao.nome_tia].filter(Boolean).join(' e ');
+                    this.naoEncontradoForm.telefone = this.validacao.telefone_tio || this.validacao.telefone_tia || '';
+                    this.naoEncontradoForm.ejc_que_fez = numeroEcc ? `${tipoEcc} ${numeroEcc}` : '';
+                    this.estado = 'NAO_ENCONTRADO';
+                    this.cadastroValidado = false;
+                    this.token = '';
+                    this.erro = '';
+                    this.mensagem = '';
+                },
+                voltarValidacao() {
+                    this.estado = 'VALIDACAO';
+                    this.cadastroValidado = false;
+                    this.token = '';
+                    this.erro = '';
+                    this.mensagem = '';
+                },
+                async enviar() {
+                    this.erro = '';
+                    this.mensagem = '';
+                    if (!this.aceiteTermos) {
+                        this.erro = 'Você precisa aceitar os termos de uso.';
+                        return;
+                    }
+                    this.enviando = true;
+                    try {
+                        const detalhesRestricaoTio = this.atualizacao.restricao_alimentar_tio
+                            ? (this.atualizacao.detalhes_restricao_tio === 'Outras'
+                                ? (this.atualizacao.outra_restricao_tio || 'Outras')
+                                : (this.atualizacao.detalhes_restricao_tio || null))
+                            : null;
+                        const detalhesRestricaoTia = this.atualizacao.restricao_alimentar_tia
+                            ? (this.atualizacao.detalhes_restricao_tia === 'Outras'
+                                ? (this.atualizacao.outra_restricao_tia || 'Outras')
+                                : (this.atualizacao.detalhes_restricao_tia || null))
+                            : null;
+                        const res = await fetch('/api/tios-public/atualizar', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                token: this.token,
+                                aceite_termos: this.aceiteTermos ? 1 : 0,
+                                telefone_tio: this.atualizacao.telefone_tio,
+                                telefone_tia: this.atualizacao.telefone_tia,
+                                restricao_alimentar_tio: this.atualizacao.restricao_alimentar_tio ? 1 : 0,
+                                detalhes_restricao_tio: detalhesRestricaoTio,
+                                deficiencia_tio: this.atualizacao.deficiencia_tio ? 1 : 0,
+                                qual_deficiencia_tio: this.atualizacao.deficiencia_tio ? (this.atualizacao.qual_deficiencia_tio || null) : null,
+                                restricao_alimentar_tia: this.atualizacao.restricao_alimentar_tia ? 1 : 0,
+                                detalhes_restricao_tia: detalhesRestricaoTia,
+                                deficiencia_tia: this.atualizacao.deficiencia_tia ? 1 : 0,
+                                qual_deficiencia_tia: this.atualizacao.deficiencia_tia ? (this.atualizacao.qual_deficiencia_tia || null) : null,
+                                observacoes_adicionais: this.atualizacao.observacoes_adicionais || null
+                            })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) throw new Error(data.error || 'Erro ao atualizar dados.');
+                        this.mensagem = data.message || 'Dados atualizados com sucesso.';
+                    } catch (e) {
+                        this.erro = e.message || 'Erro ao atualizar dados.';
+                    } finally {
+                        this.enviando = false;
+                    }
+                },
+                async criarCadastro() {
+                    this.erro = '';
+                    this.mensagem = '';
+                    if (!this.aceiteTermos) {
+                        this.erro = 'Você precisa aceitar os termos de uso.';
+                        return;
+                    }
+                    this.enviando = true;
+                    try {
+                        const payload = {
+                            aceite_termos: this.aceiteTermos ? 1 : 0,
+                            nome_tio: this.novo.nome_tio,
+                            nome_tia: this.novo.nome_tia,
+                            telefone_tio: this.novo.telefone_tio,
+                            telefone_tia: this.novo.telefone_tia,
+                            data_nascimento_tio: this.novo.data_nascimento_tio,
+                            data_nascimento_tia: this.novo.data_nascimento_tia,
+                            ecc_id: this.novo.ecc_id,
+                            observacoes: this.novo.observacoes || null
+                        };
+                        const res = await fetch('/api/tios-public/criar', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) throw new Error(data.error || 'Erro ao criar cadastro.');
+                        this.mensagem = data.message || 'Cadastro criado com sucesso.';
+                    } catch (e) {
+                        this.erro = e.message || 'Erro ao criar cadastro.';
+                    } finally {
+                        this.enviando = false;
+                    }
+                },
+                async enviarNaoEncontrado() {
+                    if (!this.naoEncontradoForm.nome_completo || !this.naoEncontradoForm.telefone || !this.naoEncontradoForm.ejc_que_fez) {
+                        this.erro = 'Preencha nome, telefone e EJC que fez.';
+                        this.mensagem = '';
+                        return;
+                    }
+                    if (!this.aceiteTermos) {
+                        this.erro = 'Você precisa aceitar os termos de uso.';
+                        this.mensagem = '';
+                        return;
+                    }
+                    this.erro = '';
+                    this.mensagem = '';
+                    this.enviando = true;
+                    try {
+                        const res = await fetch('/api/jovens-public/nao-encontrado', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(this.naoEncontradoForm)
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) throw new Error(data.error || 'Erro ao enviar dados.');
+                        this.mensagem = data.message || 'Dados enviados com sucesso.';
+                        this.naoEncontradoForm = {
+                            nome_completo: '',
+                            telefone: '',
+                            ejc_que_fez: '',
+                            observacoes_adicionais: '',
+                            origem_formulario: 'Tios'
+                        };
+                        this.aceiteTermos = false;
+                        this.estado = 'VALIDACAO';
+                    } catch (e) {
+                        this.erro = e.message || 'Erro ao enviar dados.';
+                    } finally {
+                        this.enviando = false;
+                    }
+                }
+            },
+            mounted() {
+                this.carregarEcc();
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

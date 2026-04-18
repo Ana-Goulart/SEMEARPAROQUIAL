@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>EJC - Montar Encontro (Equipe)</title>
+    <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
+    <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="/css/velzon-theme.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/ui-kit.js"></script>
+    <script src="/js/menu.js"></script>
+    <style>
+        .busca-resultados {
+            position: absolute;
+            z-index: 1000;
+            width: 100%;
+            max-height: 250px;
+            overflow-y: auto;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 0 0 8px 8px;
+        }
+
+        .busca-item {
+            padding: 10px 15px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            background: white;
+        }
+
+        .busca-item:hover {
+            background: #f8f9fa;
+            color: var(--vz-primary);
+        }
+
+        .ligacoes-acoes {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            min-height: 38px;
+            white-space: nowrap;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <main class="container-fluid">
+            <div class="d-flex justify-content-between mb-4 align-items-center border-bottom pb-3">
+                <div>
+                    <button class="btn btn-sm btn-soft-secondary mb-2" @click="voltar">← Voltar para equipes</button>
+                    <h3 class="mb-0">Equipe: <span class="text-primary">{{ (equipe && equipe.nome) || '-' }}</span></h3>
+                    <p class="text-muted small mb-0">Montagem: {{ numeroParaRomano((montagem && montagem.numero_ejc) || '') }} EJC</p>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <ul class="nav nav-tabs mb-3">
+                        <li class="nav-item">
+                            <button class="nav-link" :class="{active: abaEquipe==='titulares'}" @click="abaEquipe='titulares'">Titulares</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" :class="{active: abaEquipe==='reservas'}" @click="abaEquipe='reservas'">Reservas</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" :class="{active: abaEquipe==='presenca'}" @click="abrirPresenca">Controle de Presença</button>
+                        </li>
+                    </ul>
+
+                    <div v-if="abaEquipe==='titulares'">
+                        <h6 class="mb-3">Adicionar Membro (Titular)</h6>
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-4">
+                                <label class="form-label small text-muted mb-1">Fonte</label>
+                                <select class="form-select form-select-sm" v-model="fonteSelecionada">
+                                    <option value="LISTA_MESTRE">Lista Mestre</option>
+                                    <option value="TIOS">Tios</option>
+                                    <option value="OUTRO_EJC">Jovens de outro EJC</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4" v-if="fonteSelecionada === 'OUTRO_EJC'">
+                                <label class="form-label small text-muted mb-1">Selecionar EJC</label>
+                                <select class="form-select form-select-sm" v-model.number="outroEjcSelecionado" @change="onOutroEjcChange">
+                                    <option :value="0">Selecione o EJC...</option>
+                                    <option v-for="oe in outrosEjcs" :key="`oe-${oe.id}`" :value="oe.id">
+                                        {{ [oe.paroquia, oe.nome].filter(Boolean).join(' - ') || ('EJC #' + oe.id) }}
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small text-muted mb-1">Função</label>
+                                <select class="form-select form-select-sm" v-model.number="funcaoSelecionada">
+                                    <option :value="0">Selecione...</option>
+                                    <option v-for="f in funcoes" :key="`f-${f.id}`" :value="f.id">{{ f.nome }}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <button class="btn btn-sm btn-outline-primary" @click="abrirBusca('titular')" :disabled="!funcaoSelecionada || (fonteSelecionada === 'OUTRO_EJC' && !outroEjcSelecionado)">Adicionar membro</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div v-else-if="abaEquipe==='reservas'">
+                        <h6 class="mb-3">Adicionar Membro (Reserva)</h6>
+                        <div class="row g-2 align-items-end">
+                            <div class="col-md-4">
+                                <label class="form-label small text-muted mb-1">Fonte</label>
+                                <select class="form-select form-select-sm" v-model="fonteSelecionada">
+                                    <option value="LISTA_MESTRE">Lista Mestre</option>
+                                    <option value="TIOS">Tios</option>
+                                    <option value="OUTRO_EJC">Jovens de outro EJC</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4" v-if="fonteSelecionada === 'OUTRO_EJC'">
+                                <label class="form-label small text-muted mb-1">Selecionar EJC</label>
+                                <select class="form-select form-select-sm" v-model.number="outroEjcSelecionado" @change="onOutroEjcChange">
+                                    <option :value="0">Selecione o EJC...</option>
+                                    <option v-for="oe in outrosEjcs" :key="`oe-r-${oe.id}`" :value="oe.id">
+                                        {{ [oe.paroquia, oe.nome].filter(Boolean).join(' - ') || ('EJC #' + oe.id) }}
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label small text-muted mb-1">Função</label>
+                                <select class="form-select form-select-sm" v-model.number="funcaoReservaSelecionada">
+                                    <option :value="0">Selecione...</option>
+                                    <option v-for="f in funcoes" :key="`f-r-${f.id}`" :value="f.id">{{ f.nome }}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <button class="btn btn-sm btn-outline-primary" @click="abrirBusca('reserva')" :disabled="!funcaoReservaSelecionada || (fonteSelecionada === 'OUTRO_EJC' && !outroEjcSelecionado)">Adicionar reserva</button>
+                            </div>
+                        </div>
+
+                        <div class="table-responsive mt-3">
+                            <div class="text-muted small mb-2">Total de pessoas nesta lista: {{ totalPessoasLista(reservas) }}</div>
+                            <table class="table table-sm table-hover align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Nome</th>
+                                        <th>Função</th>
+                                        <th>Telefone</th>
+                                        <th class="text-end"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="r in reservas" :key="`res-${r.membro_id}`">
+                                        <td class="fw-semibold">{{ r.jovem_nome || r.nome_externo }}</td>
+                                        <td>{{ r.funcao_nome }}</td>
+                                        <td>{{ telefoneExibicao(r) }}</td>
+                                        <td class="text-end">
+                                            <button class="btn btn-sm btn-outline-success me-2" @click="moverParaTitular(r)">Tornar titular</button>
+                                            <button class="btn btn-sm btn-outline-danger" @click="removerMembro(r.membro_id)">Remover</button>
+                                        </td>
+                                    </tr>
+                                    <tr v-if="!reservas.length">
+                                        <td colspan="4" class="text-muted text-center py-3">Nenhuma reserva cadastrada.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div v-else>
+                        <h6 class="mb-3">Controle de Presença</h6>
+                        <div v-if="carregandoPresenca" class="text-center py-3">
+                            <div class="spinner-border spinner-border-sm text-primary me-2"></div>Carregando...
+                        </div>
+                        <div v-else>
+                            <div v-if="reunioes.length">
+                                <div class="table-responsive">
+                                    <table class="table table-sm table-hover align-middle">
+                                        <thead>
+                                            <tr>
+                                                <th style="min-width: 220px;">Membro</th>
+                                                <th v-for="r in reunioes" :key="`pres-${r.id}`" class="text-center">
+                                                    {{ formatarData(r.data_reuniao) }}
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="j in membrosPresenca" :key="`j-pres-${j.id}`">
+                                                <td class="fw-semibold">{{ j.nome_completo }}</td>
+                                                <td v-for="r in reunioes" :key="`p-${r.id}-${j.id}`" class="text-center">
+                                                    <button class="btn btn-sm" :class="presencasLocal[`${r.id}-${j.id}`] ? 'btn-success' : 'btn-outline-secondary'"
+                                                        @click="togglePresenca(r.id, j.id)">
+                                                        <i v-if="presencasLocal[`${r.id}-${j.id}`]" class="fa-solid fa-circle icon-accent"></i>
+                                                        <i v-else class="fa-regular fa-circle icon-accent"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                            <tr v-if="!membrosPresenca.length">
+                                                <td :colspan="reunioes.length + 1" class="text-muted text-center py-3">Nenhum membro apto.</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="text-end">
+                                    <button class="btn btn-sm btn-primary" @click="salvarPresencas" :disabled="salvandoPresenca">Salvar</button>
+                                </div>
+                            </div>
+                            <div v-else class="text-muted text-center py-3">Nenhuma reunião cadastrada.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm" v-if="abaEquipe==='titulares'">
+                <div class="card-body">
+                    <h5 class="mb-2">Ligações (Titulares)</h5>
+                    <p class="text-muted mb-1">Selecione o status e salve.</p>
+                    <p class="text-muted small mb-3">Total de pessoas nesta lista: {{ totalPessoasLista(membros) }}</p>
+
+                    <ul class="nav nav-tabs mb-3">
+                        <li class="nav-item">
+                            <button class="nav-link" :class="{active: abaLigacoes==='ativas'}" @click="abaLigacoes='ativas'">Ligações</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" :class="{active: abaLigacoes==='recusas'}" @click="abaLigacoes='recusas'">Recusas</button>
+                        </li>
+                    </ul>
+
+                    <div v-if="abaLigacoes==='ativas'">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover align-middle table-fixed">
+                            <colgroup>
+                                <col style="width: 18%;">
+                                <col style="width: 8%;">
+                                <col style="width: 16%;">
+                                <col style="width: 12%;">
+                                <col style="width: 14%;">
+                                <col style="width: 12%;">
+                                <col style="width: 12%;">
+                                <col style="width: 8%;">
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th>Membro</th>
+                                    <th>Idade</th>
+                                    <th>EJC</th>
+                                    <th>Telefone</th>
+                                    <th>Subfunção</th>
+                                    <th>Status</th>
+                                    <th>Observação</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="m in membros" :key="`m-${m.membro_id}`">
+                                    <td class="fw-semibold">{{ m.jovem_nome || m.nome_externo }}</td>
+                                    <td>
+                                        {{
+                                            (m.jovem_idade !== null && m.jovem_idade !== undefined)
+                                                ? (m.jovem_idade + ' anos')
+                                                : (calcularIdade(m.jovem_data_nascimento) ? (calcularIdade(m.jovem_data_nascimento) + ' anos') : '-')
+                                        }}
+                                    </td>
+                                    <td>
+                                        <span v-if="(m.origem_ejc_tipo || '').toUpperCase() === 'OUTRO_EJC'">
+                                            {{ [m.outro_ejc_numero, m.outro_ejc_paroquia, m.outro_ejc_nome].filter(Boolean).join(' - ') || 'Outro EJC' }}
+                                        </span>
+                                        <span v-else>{{ nomeMeuEJC }}</span>
+                                    </td>
+                                    <td>{{ telefoneExibicao(m) }}</td>
+                                    <td>{{ m.funcao_nome || '-' }}</td>
+                                    <td>
+                                        <select class="form-select form-select-sm" v-model="m.status_ligacao" @change="onStatusChange(m)" :disabled="m.confirmado">
+                                            <option value="">Selecionar</option>
+                                            <option value="ACEITOU">Aceitou</option>
+                                            <option value="RECUSOU">Recusou</option>
+                                            <option value="LIGAR_MAIS_TARDE">Ligar depois</option>
+                                            <option value="TELEFONE_INCORRETO">Telefone incorreto</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <input class="form-control form-control-sm" v-model.trim="m.motivo_recusa" placeholder="Observação" :disabled="m.confirmado">
+                                    </td>
+                                    <td>
+                                        <div class="ligacoes-acoes">
+                                            <span v-if="m.confirmado" class="text-success fw-semibold">Salvo</span>
+                                            <button v-else class="btn btn-sm btn-outline-primary" @click="salvarObservacao(m)">Salvar</button>
+                                            <button class="btn btn-sm btn-outline-danger" @click="removerMembro(m.membro_id)">Remover</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr v-if="!membros.length">
+                                    <td colspan="8" class="text-muted text-center py-3">Nenhum jovem alocado.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    </div>
+
+                    <div v-else>
+                        <div v-if="!recusas.length" class="text-muted text-center py-3">Nenhuma recusa registrada.</div>
+                        <div v-else class="table-responsive">
+                            <div class="text-muted small mb-2">Total de pessoas nesta lista: {{ totalPessoasLista(recusas) }}</div>
+                            <table class="table table-sm table-hover align-middle">
+                                <thead>
+                                    <tr>
+                                        <th>Função</th>
+                                        <th>Nome</th>
+                                        <th>Telefone</th>
+                                        <th>Motivo</th>
+                                        <th class="text-end"></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="r in recusas" :key="`rec-${r.membro_id}`">
+                                        <td>{{ r.funcao_nome }}</td>
+                                        <td class="fw-semibold">{{ r.jovem_nome || r.nome_externo }}</td>
+                                        <td>{{ telefoneExibicao(r) }}</td>
+                                        <td>{{ r.motivo_recusa || '-' }}</td>
+                                        <td class="text-end">
+                                            <button class="btn btn-sm btn-outline-warning" @click="removerRecusa(r)">Remover recusa</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <div class="modal fade" id="modalBuscarJovem" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-light">
+                        <h5 class="modal-title">Adicionar membro</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="position-relative">
+                            <label class="form-label text-muted small">Buscar pelo nome</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white"><i class="fas fa-search"></i></span>
+                                <input type="text" class="form-control" placeholder="Digite o nome..."
+                                    v-model="searchQuery" @input="onSearchInput" autocomplete="off">
+                            </div>
+                            <div v-if="searchResults.length > 0" class="busca-resultados bg-white border">
+                                <div v-for="jovem in searchResults" :key="jovem.id || jovem.jovem_id"
+                                    class="busca-item d-flex justify-content-between" @click="alocarJovem(jovem)">
+                                    <span>{{ jovem.nome_completo }}</span>
+                                    <span class="text-muted small">
+                                        {{ (jovem.idade !== null && jovem.idade !== undefined) ? (jovem.idade + ' anos') : (calcularIdade(jovem.data_nascimento) || '-') }}
+                                        • {{ jovem.estado_civil || '-' }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div v-if="searchQuery.trim().length >= 2 && searchResults.length === 0"
+                                class="busca-resultados bg-white border p-3 text-center text-muted small">
+                                Nenhum membro encontrado.
+                            </div>
+                            <div v-if="searchErroMsg" class="alert alert-warning py-2 px-3 small mt-2 mb-0">
+                                {{ searchErroMsg }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            injetarMenu('#app');
+            ativarMenu('/gestaodoencontro/montarencontro');
+        });
+
+        const { createApp } = Vue;
+        createApp({
+            data() {
+                return {
+                    montagemId: 0,
+                    equipeId: 0,
+                    montagem: null,
+                    equipe: null,
+                    funcoes: [],
+                    funcaoSelecionada: 0,
+                    membros: [],
+                    reservas: [],
+                    recusas: [],
+                    membrosPresenca: [],
+                    reunioes: [],
+                    presencasLocal: {},
+                    presencasOrig: {},
+                    carregandoPresenca: false,
+                    salvandoPresenca: false,
+                    abaLigacoes: 'ativas',
+                    abaEquipe: 'titulares',
+                    outrosEjcs: [],
+                    outroEjcSelecionado: 0,
+                    nomeMeuEJC: (window.__NOME_EJC_ATUAL && String(window.__NOME_EJC_ATUAL).trim()) || 'Inconfidentes',
+                    searchQuery: '',
+                    searchResults: [],
+                    searchTimer: null,
+                    searchErroMsg: '',
+                    modalBuscaInstance: null,
+                    buscaDestino: 'titular',
+                    funcaoReservaSelecionada: 0,
+                    fonteSelecionada: 'LISTA_MESTRE'
+                };
+            },
+            methods: {
+                voltar() {
+                    const id = this.montagemId || '';
+                    window.location.href = id ? `/gestaodoencontro/montarencontro?montagem_id=${id}` : '/gestaodoencontro/montarencontro';
+                },
+                numeroParaRomano(num) {
+                    if (!num) return '';
+                    const roman = [
+                        { value: 1000, numeral: 'M' }, { value: 900, numeral: 'CM' }, { value: 500, numeral: 'D' },
+                        { value: 400, numeral: 'CD' }, { value: 100, numeral: 'C' }, { value: 90, numeral: 'XC' },
+                        { value: 50, numeral: 'L' }, { value: 40, numeral: 'XL' }, { value: 10, numeral: 'X' },
+                        { value: 9, numeral: 'IX' }, { value: 5, numeral: 'V' }, { value: 4, numeral: 'IV' }, { value: 1, numeral: 'I' }
+                    ];
+                    let result = '';
+                    let n = parseInt(num, 10);
+                    if (isNaN(n) || n <= 0) return '';
+                    for (const item of roman) {
+                        while (n >= item.value) {
+                            result += item.numeral;
+                            n -= item.value;
+                        }
+                    }
+                    return result;
+                },
+                calcularIdade(dataNascimento) {
+                    if (!dataNascimento) return '';
+                    const nascimento = new Date(dataNascimento);
+                    if (Number.isNaN(nascimento.getTime())) return '';
+                    const hoje = new Date();
+                    let idade = hoje.getFullYear() - nascimento.getFullYear();
+                    const m = hoje.getMonth() - nascimento.getMonth();
+                    if (m < 0 || (m === 0 && hoje.getDate() < nascimento.getDate())) idade--;
+                    return idade >= 0 ? idade : '';
+                },
+                async carregarMontagem() {
+                    const res = await fetch('/api/montar-encontro');
+                    const lista = res.ok ? await res.json() : [];
+                    this.montagem = (lista || []).find(m => Number(m.id) === Number(this.montagemId)) || null;
+                },
+                async carregarEstruturaEquipe() {
+                    const res = await fetch(`/api/montar-encontro/${this.montagemId}/estrutura`);
+                    const estrutura = res.ok ? await res.json() : [];
+                    this.equipe = (estrutura || []).find(e => Number(e.id) === Number(this.equipeId)) || null;
+                    this.funcoes = this.equipe ? (this.equipe.funcoes || []) : [];
+                },
+                async carregarMembros() {
+                    const res = await fetch(`/api/montar-encontro/${this.montagemId}/ligacoes`);
+                    const data = res.ok ? await res.json() : {};
+                    const equipes = Array.isArray(data.equipes) ? data.equipes : [];
+                    const eq = equipes.find(e => Number(e.id) === Number(this.equipeId));
+                    this.membros = eq ? (eq.membros || []).map((m) => ({
+                        ...m,
+                        confirmado: String(m.status_ligacao || '').toUpperCase() === 'ACEITOU'
+                    })) : [];
+                    this.recusas = (Array.isArray(data.recusas) ? data.recusas : []).filter(r => Number(r.equipe_id) === Number(this.equipeId));
+                    await this.carregarReservas();
+                },
+                async carregarReservas() {
+                    const res = await fetch(`/api/montar-encontro/${this.montagemId}/equipes/${this.equipeId}/detalhes`);
+                    const data = res.ok ? await res.json().catch(() => ({})) : {};
+                    this.reservas = Array.isArray(data.substituicoes) ? data.substituicoes : [];
+                },
+                async carregarOutrosEjcs() {
+                    const res = await fetch('/api/outros-ejcs');
+                    this.outrosEjcs = res.ok ? await res.json() : [];
+                    if (!this.outroEjcSelecionado && this.outrosEjcs.length) {
+                        this.outroEjcSelecionado = Number(this.outrosEjcs[0].id) || 0;
+                    }
+                },
+                telefoneExibicao(membro) {
+                    if (!membro) return '-';
+                    const lista = [membro.jovem_telefone, membro.telefone_tio, membro.telefone_tia, membro.telefone_externo]
+                        .map((valor) => String(valor || '').trim())
+                        .filter(Boolean);
+                    return lista.length ? Array.from(new Set(lista)).join(' / ') : '-';
+                },
+                pesoMembro(membro) {
+                    if (!membro) return 0;
+                    if (!membro.jovem_id && (String(membro.telefone_tio || '').trim() || String(membro.telefone_tia || '').trim())) {
+                        return 2;
+                    }
+                    return 1;
+                },
+                totalPessoasLista(lista) {
+                    return (Array.isArray(lista) ? lista : []).reduce((total, membro) => total + this.pesoMembro(membro), 0);
+                },
+                onOutroEjcChange() {},
+                abrirBusca(destino) {
+                    this.buscaDestino = destino || 'titular';
+                    if (!this.modalBuscaInstance) {
+                        this.modalBuscaInstance = new bootstrap.Modal(document.getElementById('modalBuscarJovem'));
+                    }
+                    this.searchQuery = '';
+                    this.searchResults = [];
+                    this.searchErroMsg = '';
+                    this.modalBuscaInstance.show();
+                },
+                onSearchInput() {
+                    clearTimeout(this.searchTimer);
+                    this.searchErroMsg = '';
+                    if (!this.searchQuery || this.searchQuery.trim().length < 2) {
+                        this.searchResults = [];
+                        return;
+                    }
+                    this.searchTimer = setTimeout(() => this.executarBusca(), 250);
+                },
+                async executarBusca() {
+                    try {
+                        const params = new URLSearchParams();
+                        params.set('q', this.searchQuery.trim());
+                        const fonte = String(this.fonteSelecionada || 'LISTA_MESTRE').toUpperCase();
+                        params.set('fonte', fonte);
+                        if (fonte === 'OUTRO_EJC') {
+                            if (!this.outroEjcSelecionado) {
+                                this.searchErroMsg = 'Selecione o EJC.';
+                                return;
+                            }
+                            params.set('outro_ejc_id', String(this.outroEjcSelecionado));
+                        }
+                        const res = await fetch(`/api/montar-encontro/${this.montagemId}/jovens-para-servir/search?${params.toString()}`);
+                        const rows = res.ok ? await res.json() : [];
+                        this.searchResults = (rows || []).map((r) => ({ ...r, _fonte: fonte }));
+                    } catch (err) {
+                        console.error(err);
+                        this.searchResults = [];
+                    }
+                },
+                async alocarJovem(jovem) {
+                    const jovemId = Number((jovem && (jovem.id || jovem.jovem_id)) || 0);
+                    try {
+                        const funcaoId = this.buscaDestino === 'reserva' ? this.funcaoReservaSelecionada : this.funcaoSelecionada;
+                        if (!funcaoId) {
+                            this.searchErroMsg = 'Selecione a função antes de adicionar.';
+                            return;
+                        }
+                        const fonte = String((jovem && jovem._fonte) || this.fonteSelecionada || 'LISTA_MESTRE').toUpperCase();
+                        let res;
+                        if (fonte === 'TIOS') {
+                            const nome = String(jovem.nome_completo || '').trim();
+                            if (!nome) {
+                                this.searchErroMsg = 'Nome do tio não encontrado.';
+                                return;
+                            }
+                            res = await fetch(`/api/montar-encontro/${this.montagemId}/membros-externos`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    equipe_id: this.equipeId,
+                                    funcao_id: funcaoId,
+                                    nome_completo: nome,
+                                    telefone: jovem.telefone || null,
+                                    origem_tipo: 'TIOS',
+                                    tio_casal_id: jovem.id || null,
+                                    eh_substituicao: this.buscaDestino === 'reserva'
+                                })
+                            });
+                        } else {
+                            if (!jovemId) return;
+                            res = await fetch(`/api/montar-encontro/${this.montagemId}/membros`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    equipe_id: this.equipeId,
+                                    funcao_id: funcaoId,
+                                    jovem_id: jovemId,
+                                    eh_substituicao: this.buscaDestino === 'reserva'
+                                })
+                            });
+                        }
+                        if (!res.ok) {
+                            const err = await res.json().catch(() => ({}));
+                            const msg = err.error || 'Erro ao adicionar jovem.';
+                            this.searchErroMsg = msg;
+                            if (res.status === 409 && err.conflict && this.buscaDestino === 'reserva') {
+                                const ok = await uiConfirm(`${msg} Deseja remover da equipe atual e passar para reserva aqui?`);
+                                if (ok && err.conflict.membro_id) {
+                                    await fetch(`/api/montar-encontro/membro/${err.conflict.membro_id}`, { method: 'DELETE' });
+                                    return await this.alocarJovem(jovem);
+                                }
+                            } else {
+                                alert(msg);
+                            }
+                            return;
+                        }
+                        this.modalBuscaInstance.hide();
+                        await this.carregarEstruturaEquipe();
+                        await this.carregarMembros();
+                    } catch (err) {
+                        console.error(err);
+                        this.searchErroMsg = 'Erro ao adicionar jovem.';
+                    }
+                },
+                async onStatusChange(membro) {
+                    if (!membro || !membro.membro_id) return;
+                    const status = String(membro.status_ligacao || '').trim().toUpperCase();
+                    if (!status) return;
+                    let motivo = String(membro.motivo_recusa || '').trim();
+                    if (status === 'RECUSOU') {
+                        const motivoPrompt = window.showFloatingPrompt
+                            ? await window.showFloatingPrompt('O jovem informou o motivo da recusa?', { title: 'Recusa', placeholder: 'Motivo da recusa' })
+                            : await uiPrompt('Motivo da recusa?', { title: 'Recusa' });
+                        if (!motivoPrompt || !String(motivoPrompt).trim()) {
+                            alert('O motivo da recusa é obrigatório.');
+                            membro.status_ligacao = '';
+                            return;
+                        }
+                        motivo = String(motivoPrompt).trim();
+                        membro.motivo_recusa = motivo;
+                    }
+                },
+                async removerRecusa(item) {
+                    if (!item || !item.membro_id) return;
+                    if (!(await uiConfirm('Remover a recusa deste jovem e torná-lo apto novamente?'))) return;
+                    try {
+                        const res = await fetch(`/api/montar-encontro/membro/${item.membro_id}/remover-recusa`, {
+                            method: 'PATCH'
+                        });
+                        if (!res.ok) {
+                            const err = await res.json().catch(() => ({}));
+                            alert(err.error || 'Erro ao remover recusa.');
+                            return;
+                        }
+                        await this.carregarMembros();
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao remover recusa.');
+                    }
+                },
+                async salvarObservacao(membro) {
+                    if (!membro || !membro.membro_id) return;
+                    if (membro.confirmado) return;
+                    let status = String(membro.status_ligacao || '').trim().toUpperCase();
+                    if (!status) {
+                        status = 'ACEITOU';
+                        membro.status_ligacao = 'ACEITOU';
+                    }
+                    const motivo = String(membro.motivo_recusa || '').trim() || null;
+                    const ok = await this.salvarStatus(membro, status, motivo);
+                    if (ok) {
+                        if (String(status).toUpperCase() === 'ACEITOU') membro.confirmado = true;
+                        await this.carregarMembros();
+                    }
+                },
+                async salvarStatus(membro, status, motivo) {
+                    try {
+                        const res = await fetch(`/api/montar-encontro/membro/${membro.membro_id}/ligacao`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ status_ligacao: status, motivo_recusa: motivo || '' })
+                        });
+                        if (!res.ok) {
+                            const err = await res.json().catch(() => ({}));
+                            alert(err.error || 'Erro ao atualizar ligação.');
+                            return false;
+                        }
+                        return true;
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao atualizar ligação.');
+                        return false;
+                    }
+                },
+                async removerMembro(membroId) {
+                    if (!(await uiConfirm('Deseja retirar este jovem da equipe?'))) return;
+                    try {
+                        const res = await fetch(`/api/montar-encontro/membro/${membroId}`, { method: 'DELETE' });
+                        if (res.ok) {
+                            await this.carregarMembros();
+                        }
+                    } catch (err) {
+                        console.error(err);
+                    }
+                },
+                async moverParaTitular(membro) {
+                    if (!membro || !membro.membro_id) return;
+                    try {
+                        let res = await fetch(`/api/montar-encontro/membro/${membro.membro_id}/mover-titular`, {
+                            method: 'PATCH'
+                        });
+                        if (res.status === 409) {
+                            const err = await res.json().catch(() => ({}));
+                            const msg = err.error || 'Esse jovem já está em outra equipe. Deseja mover para esta?';
+                            if (!(await uiConfirm(msg))) return;
+                            res = await fetch(`/api/montar-encontro/membro/${membro.membro_id}/mover-titular`, {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ forcar: true })
+                            });
+                        }
+                        if (!res.ok) {
+                            const err = await res.json().catch(() => ({}));
+                            alert(err.error || 'Erro ao mover para titular.');
+                            return;
+                        }
+                        await this.carregarMembros();
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao mover para titular.');
+                    }
+                },
+                async abrirPresenca() {
+                    this.abaEquipe = 'presenca';
+                    await this.ensureReunioesConfiguradas();
+                    await this.carregarPresencas();
+                },
+                async ensureReunioesConfiguradas() {
+                    if (!this.montagem || !this.montagemId) return;
+                    const res = await fetch(`/api/montar-encontro/${this.montagemId}/reunioes`);
+                    const data = await res.json().catch(() => ({}));
+                    const existe = Array.isArray(data.reunioes) && data.reunioes.length;
+                    if (existe) return;
+                    const diRaw = this.montagem.data_inicio_reunioes || '';
+                    const dfRaw = this.montagem.data_fim_reunioes || '';
+                    const di = String(diRaw).includes('T') ? String(diRaw).split('T')[0] : String(diRaw);
+                    const df = String(dfRaw).includes('T') ? String(dfRaw).split('T')[0] : String(dfRaw);
+                    const diaSemana = Number.isFinite(Number(this.montagem.dia_semana_reunioes)) ? Number(this.montagem.dia_semana_reunioes) : 0;
+                    if (!di || !df) return;
+                    await fetch(`/api/montar-encontro/${this.montagemId}/reunioes/gerar`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            data_inicio: di,
+                            data_fim: df,
+                            dia_semana: diaSemana,
+                            periodo: null
+                        })
+                    });
+                },
+                async carregarPresencas() {
+                    if (!this.montagemId) return;
+                    this.carregandoPresenca = true;
+                    try {
+                        const res = await fetch(`/api/montar-encontro/${this.montagemId}/reunioes`);
+                        const data = await res.json().catch(() => ({}));
+                        this.reunioes = Array.isArray(data.reunioes) ? data.reunioes : [];
+                        const equipe = (Array.isArray(data.equipes) ? data.equipes : []).find(e => Number(e.id) === Number(this.equipeId));
+                        this.membrosPresenca = equipe ? (equipe.membros || []) : [];
+                        const map = {};
+                        (data.presencas || []).forEach(p => {
+                            const membroRef = Number(p.membro_ref || p.membro_id || p.jovem_id || 0);
+                            if (!membroRef) return;
+                            map[`${p.reuniao_id}-${membroRef}`] = !!p.presente;
+                        });
+                        this.presencasOrig = { ...map };
+                        this.presencasLocal = { ...map };
+                    } catch (err) {
+                        console.error(err);
+                        this.reunioes = [];
+                        this.membrosPresenca = [];
+                        this.presencasOrig = {};
+                        this.presencasLocal = {};
+                    } finally {
+                        this.carregandoPresenca = false;
+                    }
+                },
+                togglePresenca(reuniaoId, jovemId) {
+                    const key = `${reuniaoId}-${jovemId}`;
+                    this.presencasLocal[key] = !this.presencasLocal[key];
+                },
+                async salvarPresencas() {
+                    if (!this.montagemId) return;
+                    this.salvandoPresenca = true;
+                    try {
+                        const changes = Object.entries(this.presencasLocal).filter(([k, v]) => this.presencasOrig[k] !== v);
+                        for (const [key, val] of changes) {
+                            const [reuniaoId, jovemId] = key.split('-').map(Number);
+                            await fetch(`/api/montar-encontro/${this.montagemId}/reunioes/${reuniaoId}/presencas/${jovemId}`, {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ presente: val })
+                            });
+                        }
+                        await this.carregarPresencas();
+                        alert('Presenças salvas.');
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao salvar presenças.');
+                    } finally {
+                        this.salvandoPresenca = false;
+                    }
+                },
+                formatarData(d) {
+                    if (!d) return '--/--/----';
+                    const data = new Date(d);
+                    if (isNaN(data.getTime())) return '--/--/----';
+                    return data.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+                },
+                initParams() {
+                    const params = new URLSearchParams(window.location.search);
+                    this.montagemId = Number(params.get('montagem_id') || 0);
+                    this.equipeId = Number(params.get('equipe_id') || 0);
+                }
+            },
+            async mounted() {
+                this.initParams();
+                await this.carregarOutrosEjcs();
+                await this.carregarMontagem();
+                await this.carregarEstruturaEquipe();
+                await this.carregarMembros();
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

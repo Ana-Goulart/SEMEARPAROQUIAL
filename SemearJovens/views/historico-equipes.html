@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>EJC - EJC</title>
+    <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
+    <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/velzon-theme.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/ui-kit.js"></script>
+    <script src="/js/menu.js"></script>
+    <script src="/js/excel-utils.js"></script>
+</head>
+
+<body>
+    <div id="app">
+            <!-- Menu injetado via JS -->
+
+
+            <main class="container-fluid">
+                <div class="d-flex justify-content-between mb-4 align-items-center">
+                    <h3 class="mb-0"><i class="fa-solid fa-bullseye icon-accent"></i> EJC</h3>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-outline-success" @click="exportarExcel">Exportar Excel</button>
+                        <label class="btn btn-outline-primary mb-0">
+                            Importar Excel
+                            <input type="file" class="d-none" accept=".xlsx" @change="importarExcel">
+                        </label>
+                        <button class="btn btn-primary" @click="abrirModalAdicionar"><i class="fa-solid fa-plus icon-accent"></i> Novo EJC</button>
+                    </div>
+                </div>
+                <div class="mb-2 text-muted small">
+                    Total: <strong class="text-dark">{{ ejcs.length }}</strong>
+                    • Filtrados: <strong class="text-dark">{{ ejcsFiltrados.length }}</strong>
+                </div>
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-body">
+                        <label class="form-label small text-muted">Filtrar EJCs</label>
+                        <input v-model.trim="filtroEjc" class="form-control" placeholder="Número, ano ou paróquia">
+                    </div>
+                </div>
+
+                <!-- Lista de EJCs como acordeão -->
+                <div class="accordion corporate-accordion shadow-sm" id="acordeaoEJCs">
+                    <div v-if="ejcs.length === 0" class="alert alert-info d-flex justify-content-between align-items-center">
+                        <span>Nenhum EJC cadastrado.</span>
+                        <button class="btn btn-sm btn-primary" @click="abrirModalAdicionar">Criar Primeiro EJC</button>
+                    </div>
+
+                    <div v-for="(ejc, index) in ejcsOrdenados" :key="ejc.id" class="accordion-item">
+                        <h2 class="accordion-header">
+                            <button class="accordion-button" :class="{ collapsed: index !== 0 }" type="button"
+                                data-bs-toggle="collapse"
+                                :data-bs-target="`#collapse${ejc.isMontagem ? 'mont_' : ''}${ejc.id}`"
+                                :aria-expanded="index === 0">
+                                <strong>{{ numeroParaRomano(ejc.numero) }}º EJC</strong>
+                                <span v-if="ejc.isMontagem" class="badge bg-warning text-dark ms-2"><i class="fa-solid fa-puzzle-piece icon-accent"></i> Montagem</span>
+                                <span v-else>&nbsp;—&nbsp;{{ nomeMeuEJC || ejc.paroquia }}&nbsp;<span class="text-muted">({{ ejc.ano
+                                        || 'Ano não informado' }})</span></span>
+                            </button>
+                        </h2>
+                        <div :id="`collapse${ejc.isMontagem ? 'mont_' : ''}${ejc.id}`"
+                            class="accordion-collapse collapse" :class="{ show: index === 0 }"
+                            data-bs-parent="#acordeaoEJCs">
+                            <div class="accordion-body">
+                                <!-- Tabela com todas as equipes -->
+                                <table class="table table-hover table-sm">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Equipe</th>
+                                            <th class="text-center">Visualizar</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody v-if="ejc.isMontagem">
+                                        <tr v-for="equipe in ejc.estrutura" :key="equipe.id">
+                                            <td><strong>{{ equipe.nome }}</strong></td>
+                                            <td class="text-center">
+                                                <button class="btn btn-corporate-view btn-sm"
+                                                    @click="abrirModalMontagem(ejc, equipe)"
+                                                    title="Ver dados dessa equipe">
+                                                    <i class="fas fa-eye me-1"></i>Ver
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                    <tbody v-else>
+                                        <tr v-if="equipesDoEJC(ejc.id).length === 0">
+                                            <td colspan="2" class="text-muted text-center py-3">Nenhuma equipe vinculada a este EJC.</td>
+                                        </tr>
+                                        <tr v-for="equipe in equipesDoEJC(ejc.id)" :key="equipe.id">
+                                            <td><strong>{{ equipe.nome }}</strong></td>
+                                            <td class="text-center">
+                                                <button class="btn btn-corporate-view btn-sm"
+                                                    @click="abrirModalJovens(ejc, equipe)"
+                                                    title="Ver integrantes dessa equipe">
+                                                    <i class="fas fa-eye me-1"></i>Ver
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+
+                                <!-- Info do EJC -->
+                                <div class="mt-4 corporate-soft-panel" v-if="!ejc.isMontagem">
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="mb-0">Informações da Edição</h6>
+                                        <div class="d-flex gap-2">
+                                            <button class="btn btn-corporate-view btn-sm" @click="abrirModalEncontristas(ejc)"><i class="fas fa-eye me-1"></i>Encontristas</button>
+                                            <span class="badge bg-soft-secondary text-muted d-inline-flex align-items-center">Histórico congelado</span>
+                                        </div>
+                                    </div>
+                                    <div class="row text-sm">
+                                        <div class="col-md-3"><small><strong>Paróquia:</strong> {{ nomeMeuEJC || ejc.paroquia
+                                                }}</small></div>
+                                        <div class="col-md-3"><small><strong>Ano:</strong> {{ ejc.ano || '-' }}</small>
+                                        </div>
+                                        <div class="col-md-3"><small><strong>Data Início:</strong> {{
+                                                formatarData(ejc.data_inicio) }}</small></div>
+                                        <div class="col-md-3"><small><strong>Data Fim:</strong> {{
+                                                formatarData(ejc.data_fim) }}</small></div>
+                                    </div>
+                                    <div class="mt-2" v-if="ejc.descricao">
+                                        <small><strong>Descrição:</strong> {{ ejc.descricao }}</small>
+                                    </div>
+                                </div>
+                                <div class="mt-4 corporate-soft-panel" v-else>
+                                    <div class="d-flex justify-content-between align-items-center mb-2">
+                                        <h6 class="mb-0">Status da Montagem</h6>
+                                        <button class="btn btn-corporate-view btn-sm" @click="abrirModalEncontristas(ejc)">
+                                            <i class="fas fa-eye me-1"></i>Encontristas
+                                        </button>
+                                    </div>
+                                    <div class="row text-sm">
+                                        <div class="col-md-6"><small><strong>Data Início:</strong> {{
+                                                formatarData(ejc.data_inicio || ejc.data_encontro) }}</small></div>
+                                        <div class="col-md-6"><small><strong>Data Fim:</strong> {{
+                                                formatarData(ejc.data_fim || ejc.data_encontro) }}</small></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Modal Encontristas -->
+            <div class="modal fade" id="modalEncontristas" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content border-0 shadow">
+                        <div class="modal-header bg-info text-white">
+                            <h5 class="modal-title"><i class="fas fa-eye me-2"></i>Encontristas <span v-if="ejcSelecionado">({{
+                                    numeroParaRomano(ejcSelecionado.numero) }} EJC)</span></h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body p-0">
+                            <div v-if="carregandoEncontristas" class="text-center py-5">
+                                <div class="spinner-border text-info" role="status"></div>
+                                <div class="mt-2 text-muted">Carregando encontristas...</div>
+                            </div>
+                            <div v-else-if="encontristas.length === 0" class="text-center text-muted py-5">
+                                <p>Nenhum encontrista registrado para este EJC.</p>
+                            </div>
+                            <div v-else class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                                <table class="table table-hover table-sm text-center align-middle mb-0">
+                                    <thead class="table-light sticky-top shadow-sm">
+                                        <tr>
+                                            <th class="text-start ps-3">Nome</th>
+                                            <th>Círculo</th>
+                                            <th>Função de Moita</th>
+                                            <th>Telefone</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="enc in encontristas" :key="enc.id">
+                                            <td class="text-start ps-3 fw-medium">
+                                                {{ enc.nome_completo }}
+                                                <span v-if="enc.foi_moita" class="badge bg-success ms-2">Moita</span>
+                                            </td>
+                                            <td><span class="badge bg-secondary">{{ enc.circulo || '-' }}</span></td>
+                                            <td>{{ enc.moita_funcao || '-' }}</td>
+                                            <td>{{ enc.telefone || '-' }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="modal-footer d-flex justify-content-between bg-light">
+                            <span class="text-muted fw-bold">Total: <span class="text-primary">{{ encontristas.length
+                                    }}</span></span>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Adicionar/Editar EJC -->
+            <div class="modal fade" id="modalEJC" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content border-0 shadow">
+                        <div class="modal-header bg-primary text-white">
+                            <h5 class="modal-title"><i :class="editando ? 'fas fa-pen-to-square me-2' : 'fas fa-plus me-2'"></i>{{ editando ? 'Editar EJC' : 'Novo EJC' }}</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form @submit.prevent="salvarEJC">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Número do EJC *</label>
+                                        <input type="number" v-model.number="formulario.numero" class="form-control"
+                                            required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Paróquia *</label>
+                                        <select v-model="formulario.paroquia" class="form-select" required>
+                                            <option value="">Selecione a paróquia</option>
+                                            <option :value="nomeMeuEJC">{{ nomeMeuEJC }}</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Ano</label>
+                                        <input type="number" v-model.number="formulario.ano" class="form-control">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Música Tema</label>
+                                        <input type="text" v-model="formulario.musica_tema" class="form-control" placeholder="Ex: Nome da música">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Data Início</label>
+                                        <input type="text" v-model="formulario.data_inicio" class="form-control date-br" placeholder="dd/mm/aaaa">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Data Fim</label>
+                                        <input type="text" v-model="formulario.data_fim" class="form-control date-br" placeholder="dd/mm/aaaa">
+                                    </div>
+                                    <div class="col-md-12">
+                                        <label class="form-label">Descrição</label>
+                                        <textarea v-model="formulario.descricao" class="form-control"
+                                            rows="3"></textarea>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-soft-secondary" data-bs-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-danger me-auto" v-if="editando"
+                                @click="deletarEJCModal"><i class="fa-solid fa-trash icon-accent"></i> Deletar</button>
+                            <button type="button" class="btn btn-primary" @click="salvarEJC">{{ editando ? 'Atualizar' :
+                                'Criar' }}</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Visualizar Integrantes da Equipe -->
+            <div class="modal fade" id="modalJovens" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content border-0 shadow">
+                        <div class="modal-header bg-info text-white">
+                            <h5 class="modal-title"><i class="fas fa-eye me-2"></i>{{ nomeEquipeSelecionada }} - {{ nomeEJCSelecionado }}</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <table class="table table-hover table-sm">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Nome completo</th>
+                                        <th>Qual EJC</th>
+                                        <th>Telefone</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-if="!jovensEquipe.length">
+                                        <td colspan="3" class="text-muted text-center py-3">Nenhum integrante nessa equipe
+                                        </td>
+                                    </tr>
+                                    <tr v-for="jovem in jovensEquipe" :key="jovem.id">
+                                        <td>
+                                            <strong>{{ jovem.nome_completo }}</strong>
+                                        </td>
+                                        <td>
+                                            {{ formatarOrigemEquipe(jovem) }}
+                                        </td>
+                                        <td>{{ jovem.telefone || '-' }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-soft-secondary" data-bs-dismiss="modal">Fechar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // Injetar menu lateral
+            document.addEventListener('DOMContentLoaded', () => {
+                injetarMenu('#app');
+                ativarMenu('/historico-equipes');
+            });
+
+            const { createApp } = Vue;
+            createApp({
+                data() {
+                    return {
+                        ejcs: [],
+                        editando: false,
+                        nomeMeuEJC: (window.__NOME_EJC_ATUAL && String(window.__NOME_EJC_ATUAL).trim()) || 'Inconfidentes',
+                        filtroEjc: '',
+                        formulario: {
+                            id: null,
+                            numero: null,
+                            paroquia: '',
+                            ano: new Date().getFullYear(),
+                            musica_tema: '',
+                            data_inicio: '',
+                            data_fim: '',
+                            descricao: ''
+                        },
+                        encontristas: [],
+                        ejcSelecionado: null,
+                        carregandoEncontristas: false,
+                        jovensEquipe: [],
+                        nomeEquipeSelecionada: '',
+                        nomeEJCSelecionado: '',
+                        todasEquipes: [],
+                        equipesPorEJC: {}
+                    }
+                },
+            computed: {
+                ejcsFiltrados() {
+                    const termo = String(this.filtroEjc || '').trim().toLowerCase();
+                    if (!termo) return this.ejcs || [];
+                    return (this.ejcs || []).filter((e) => {
+                        const base = [
+                            e.numero,
+                            e.ano,
+                            e.paroquia,
+                            e.nome
+                        ].map(v => String(v || '').toLowerCase()).join(' ');
+                        return base.includes(termo);
+                    });
+                },
+                ejcsOrdenados() {
+                        return [...this.ejcsFiltrados].sort((a, b) => {
+                            let numA = parseFloat(a.numero) || 0;
+                            let numB = parseFloat(b.numero) || 0;
+                            if (numA === numB) return a.isMontagem ? -1 : 1;
+                            return numA - numB;
+                        });
+                    }
+                },
+                methods: {
+                    async exportarExcel() {
+                        const lista = this.ejcsOrdenados || [];
+                        if (!lista.length) {
+                            alert('Não há dados para exportar.');
+                            return;
+                        }
+                        const rowsEjcs = lista.map(e => ({
+                            Numero: e.numero || '',
+                            Paroquia: e.paroquia || '',
+                            Ano: e.ano || '',
+                            DataInicio: e.data_inicio || '',
+                            DataFim: e.data_fim || '',
+                            Descricao: e.descricao || '',
+                            Montagem: e.isMontagem ? 'Sim' : 'Não'
+                        }));
+
+                        const rowsServicos = [];
+                        for (const ejc of lista) {
+                            if (ejc.isMontagem) continue;
+                            const equipes = this.equipesDoEJC(ejc.id);
+                            for (const eq of equipes) {
+                                // eslint-disable-next-line no-await-in-loop
+                                const res = await fetch(`/api/historico-equipes/${eq.id}/jovens/${ejc.id}`);
+                                if (!res.ok) continue;
+                                // eslint-disable-next-line no-await-in-loop
+                                const jovens = await res.json();
+                                (jovens || []).forEach(j => {
+                                    rowsServicos.push({
+                                        EJCNumero: ejc.numero || '',
+                                        Equipe: eq.nome || '',
+                                        Jovem: j.nome_completo || '',
+                                        Telefone: j.telefone || '',
+                                        Papel: j.papel || '',
+                                        Subfuncao: j.subfuncao || ''
+                                    });
+                                });
+                            }
+                        }
+
+                        ExcelUtils.exportMultiSheet({
+                            filename: 'edicoes_ejc.xlsx',
+                            sheets: [
+                                { name: 'EJCs', rows: rowsEjcs },
+                                { name: 'Servicos', rows: rowsServicos }
+                            ]
+                        });
+                    },
+                    async importarExcel(evt) {
+                        const file = evt.target.files && evt.target.files[0] ? evt.target.files[0] : null;
+                        evt.target.value = '';
+                        if (!file) return;
+                        if (!String(file.name || '').toLowerCase().endsWith('.xlsx')) {
+                            alert('Selecione um arquivo Excel (.xlsx).');
+                            return;
+                        }
+                        try {
+                            const rows = await ExcelUtils.readXlsxFile(file);
+                            if (!rows.length) {
+                                alert('Arquivo vazio.');
+                                return;
+                            }
+                            await this.buscarEJCs();
+                            const mapPorNumero = new Map((this.ejcs || []).filter(e => !e.isMontagem).map(e => [String(e.numero || '').trim(), e]));
+                            for (const r of rows) {
+                                const numero = String(r.Numero || r.numero || '').trim();
+                                if (!numero) continue;
+                                const payload = {
+                                    numero: Number(numero) || numero,
+                                    paroquia: r.Paroquia || r.paroquia || this.nomeMeuEJC,
+                                    ano: r.Ano || r.ano || new Date().getFullYear(),
+                                    data_inicio: r.DataInicio || r.data_inicio || null,
+                                    data_fim: r.DataFim || r.data_fim || null,
+                                    descricao: r.Descricao || r.descricao || '',
+                                    musica_tema: r.MusicaTema || r.musica_tema || ''
+                                };
+                                const existente = mapPorNumero.get(String(numero));
+                                const url = existente ? `/api/ejc/${existente.id}` : '/api/ejc';
+                                const method = existente ? 'PUT' : 'POST';
+                                // eslint-disable-next-line no-await-in-loop
+                                await fetch(url, {
+                                    method,
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(payload)
+                                });
+                            }
+                            await this.buscarEJCs();
+                            alert('Importação concluída.');
+                        } catch (err) {
+                            console.error(err);
+                            alert('Erro ao importar Excel.');
+                        }
+                    },
+                    async abrirModalEncontristas(ejc) {
+                        this.ejcSelecionado = ejc;
+                        this.encontristas = [];
+                        this.carregandoEncontristas = true;
+                        const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('modalEncontristas'));
+                        modal.show();
+
+                        try {
+                            const url = ejc && ejc.isMontagem
+                                ? `/api/montar-encontro/${ejc.id}/encontristas-selecionados`
+                                : `/api/ejc/${ejc.id}/encontristas`;
+                            const res = await fetch(url);
+                            if (res.ok) {
+                                const data = await res.json();
+                                this.encontristas = Array.isArray(data)
+                                    ? data.map((item) => ({
+                                        id: item.id,
+                                        nome_completo: item.nome_completo || item.nome_referencia || '-',
+                                        circulo: item.circulo || (item.resposta && item.resposta.circulo) || '-',
+                                        foi_moita: !!item.foi_moita,
+                                        moita_funcao: item.moita_funcao || '-',
+                                        telefone: item.telefone || item.telefone_referencia || '-'
+                                    }))
+                                    : [];
+                            } else {
+                                alert("Erro ao carregar encontristas");
+                            }
+                        } catch (err) {
+                            console.error(err);
+                            alert("Erro de conexão ao buscar encontristas");
+                        } finally {
+                            this.carregandoEncontristas = false;
+                        }
+                    },
+                    abrirModalAdicionar() {
+                        this.editando = false;
+                        this.formulario = {
+                            id: null,
+                            numero: null,
+                            paroquia: this.nomeMeuEJC,
+                            ano: new Date().getFullYear(),
+                            musica_tema: '',
+                            data_inicio: '',
+                            data_fim: '',
+                            descricao: ''
+                        };
+                        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalEJC')).show();
+                    },
+                    abrirModalEditar(ejc) {
+                        this.editando = true;
+                        this.formulario = { ...ejc };
+                        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalEJC')).show();
+                    },
+                    async salvarEJC() {
+                        try {
+                            const url = this.editando ? `/api/ejc/${this.formulario.id}` : '/api/ejc';
+                            const metodo = this.editando ? 'PUT' : 'POST';
+
+                            const res = await fetch(url, {
+                                method: metodo,
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(this.formulario)
+                            });
+
+                            if (!res.ok) {
+                                const erro = await res.json();
+                                alert(erro.error || "Erro ao salvar EJC");
+                                return;
+                            }
+
+                            alert(this.editando ? "EJC atualizado com sucesso!" : "EJC criado com sucesso!");
+                            bootstrap.Modal.getInstance(document.getElementById('modalEJC')).hide();
+                            await this.buscarEJCs();
+                        } catch (err) {
+                            console.error("Erro ao salvar:", err);
+                            alert("Erro ao salvar EJC");
+                        }
+                    },
+                    async deletarEJCModal() {
+                        if (!(await window.showFloatingConfirm(`Tem certeza que deseja deletar o EJC ${this.numeroParaRomano(this.formulario.numero)}? Esta ação não pode ser desfeita.`))) return;
+
+                        try {
+                            const res = await fetch(`/api/ejc/${this.formulario.id}`, { method: 'DELETE' });
+                            if (!res.ok) {
+                                const erro = await res.json();
+                                alert(erro.error || "Erro ao deletar EJC");
+                                return;
+                            }
+
+                            alert("EJC deletado com sucesso!");
+                            bootstrap.Modal.getInstance(document.getElementById('modalEJC')).hide();
+                            await this.buscarEJCs();
+                        } catch (err) {
+                            console.error("Erro ao deletar:", err);
+                            alert("Erro ao deletar EJC");
+                        }
+                    },
+                    async buscarEJCs() {
+                        try {
+                            const [resEjcs, resMontagens] = await Promise.all([
+                                fetch('/api/ejcs').then(res => res.json()),
+                                fetch('/api/montar-encontro').then(res => res.json())
+                            ]);
+
+                            const combined = [];
+                            for (let ejc of resEjcs) {
+                                combined.push({ ...ejc, isMontagem: false });
+                            }
+                            for (let mont of resMontagens) {
+                                combined.push({
+                                    ...mont,
+                                    numero: mont.numero_ejc,
+                                    isMontagem: true,
+                                    estrutura: []
+                                });
+                            }
+                            this.ejcs = combined;
+
+                            // Buscar equipes de cada EJC ou Montagem
+                            for (let item of this.ejcs) {
+                                if (item.isMontagem) {
+                                    try {
+                                        const r = await fetch(`/api/montar-encontro/${item.id}/estrutura`);
+                                        if (r.ok) item.estrutura = await r.json();
+                                    } catch (e) { }
+                                } else {
+                                    await this.buscarEquipesDoEJC(item.id);
+                                }
+                            }
+                        } catch (err) {
+                            console.error("Erro ao buscar EJCs combinados:", err);
+                            alert("Erro ao buscar dados do histórico.");
+                        }
+                    },
+                    async buscarEquipesDoEJC(ejcId) {
+                        try {
+                            const res = await fetch(`/api/equipes/por-ejc/${ejcId}`);
+                            if (!res.ok) {
+                                throw new Error(`HTTP ${res.status}`);
+                            }
+                            const data = await res.json();
+                            this.equipesPorEJC = {
+                                ...this.equipesPorEJC,
+                                [ejcId]: Array.isArray(data) ? data : []
+                            };
+                            return data;
+                        } catch (err) {
+                            console.error(`Erro ao buscar equipes do EJC ${ejcId}:`, err);
+                            this.equipesPorEJC = {
+                                ...this.equipesPorEJC,
+                                [ejcId]: []
+                            };
+                            return [];
+                        }
+                    },
+                    equipesDoEJC(ejcId) {
+                        return this.equipesPorEJC[ejcId] || [];
+                    },
+                    async buscarTodasEquipes() {
+                        try {
+                            const res = await fetch('/api/todas-equipes');
+                            if (res.ok) {
+                                this.todasEquipes = await res.json();
+                            }
+                        } catch (err) {
+                            console.error("Erro ao buscar todas as equipes:", err);
+                        }
+                    },
+                    equipePertenceAoEJC(ejcId, equipeId) {
+                        const equipes = this.equipesDoEJC(ejcId);
+                        return equipes.some(e => e.id === equipeId);
+                    },
+                    async adicionarEquipeAoEJC(ejcId, equipe) {
+                        try {
+                            const res = await fetch('/api/equipes', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    nome: equipe.nome,
+                                    descricao: equipe.descricao,
+                                    ejc_id: ejcId
+                                })
+                            });
+
+                            if (!res.ok) {
+                                const erro = await res.json();
+                                alert(erro.error || "Erro ao adicionar equipe");
+                                return;
+                            }
+
+                            await this.buscarEquipesDoEJC(ejcId);
+                        } catch (err) {
+                            console.error("Erro ao adicionar equipe:", err);
+                            alert("Erro ao adicionar equipe");
+                        }
+                    },
+                    async removerEquipeDoEJC(ejcId, equipeId) {
+                        if (!(await window.showFloatingConfirm("Tem certeza que deseja remover essa equipe?"))) return;
+
+                        try {
+                            const res = await fetch(`/api/equipes-ejc/${ejcId}/${equipeId}`, { method: 'DELETE' });
+
+                            if (!res.ok) {
+                                const erro = await res.json();
+                                alert(erro.error || "Erro ao remover equipe");
+                                return;
+                            }
+
+                            await this.buscarEquipesDoEJC(ejcId);
+                        } catch (err) {
+                            console.error("Erro ao remover equipe:", err);
+                            alert("Erro ao remover equipe");
+                        }
+                    },
+                    formatarData(d) {
+                        if (!d) return '--/--/----';
+                        const data = new Date(d);
+                        if (isNaN(data.getTime())) return '--/--/----';
+                        return data.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+                    },
+                    async abrirModalJovens(ejc, equipe) {
+                        this.nomeEquipeSelecionada = equipe.nome;
+                        this.nomeEJCSelecionado = `${this.numeroParaRomano(ejc.numero)}º EJC`;
+                        this.jovensEquipe = []; // Limpa dados anteriores
+
+                        // Abre o modal
+                        const modalEl = document.getElementById('modalJovens');
+                        const modal = bootstrap.Modal.getOrCreateInstance(modalEl); // Usa getOrCreateInstance para evitar duplicidade
+                        modal.show();
+
+                        try {
+                            const res = await fetch(`/api/historico-equipes/${equipe.id}/jovens/${ejc.id}`);
+                            if (res.ok) {
+                                const jovens = await res.json();
+                                const normalizarNome = (valor) => String(valor || '')
+                                    .trim()
+                                    .toLowerCase()
+                                    .normalize('NFD')
+                                    .replace(/[\u0300-\u036f]/g, '');
+                                const normalizarTelefone = (valor) => String(valor || '').replace(/\D/g, '');
+                                const possuiOrigemOutroEJC = (item) => {
+                                    return String(item?.origem_ejc_tipo || '').toUpperCase() === 'OUTRO_EJC'
+                                        || !!item?.outro_ejc_id
+                                        || !!item?.outro_ejc_nome
+                                        || !!item?.outro_ejc_paroquia
+                                        || !!item?.outro_ejc_numero;
+                                };
+
+                                try {
+                                    const resOutro = await fetch('/api/lista-mestre/jovens-outro-ejc');
+                                    if (resOutro.ok) {
+                                        const listaOutro = await resOutro.json();
+                                        const indicePorNome = new Map();
+                                        const indicePorNomeTel = new Map();
+                                        (Array.isArray(listaOutro) ? listaOutro : []).forEach((item) => {
+                                            const nomeKey = normalizarNome(item.nome_completo);
+                                            const telKey = normalizarTelefone(item.telefone);
+                                            if (nomeKey && !indicePorNome.has(nomeKey)) indicePorNome.set(nomeKey, item);
+                                            if (nomeKey && telKey) indicePorNomeTel.set(`${nomeKey}|${telKey}`, item);
+                                        });
+
+                                        this.jovensEquipe = (Array.isArray(jovens) ? jovens : []).map((jovem) => {
+                                            if (possuiOrigemOutroEJC(jovem)) return jovem;
+                                            const nomeKey = normalizarNome(jovem.nome_completo);
+                                            const telKey = normalizarTelefone(jovem.telefone);
+                                            const match = (nomeKey && telKey && indicePorNomeTel.get(`${nomeKey}|${telKey}`))
+                                                || (nomeKey && indicePorNome.get(nomeKey))
+                                                || null;
+                                            if (!match) return jovem;
+                                            return {
+                                                ...jovem,
+                                                origem_ejc_tipo: 'OUTRO_EJC',
+                                                outro_ejc_id: jovem.outro_ejc_id || match.outro_ejc_id || null,
+                                                outro_ejc_nome: jovem.outro_ejc_nome || match.outro_ejc_nome || null,
+                                                outro_ejc_paroquia: jovem.outro_ejc_paroquia || match.outro_ejc_paroquia || null,
+                                                outro_ejc_numero: jovem.outro_ejc_numero || match.outro_ejc_numero || null
+                                            };
+                                        });
+                                    } else {
+                                        this.jovensEquipe = Array.isArray(jovens) ? jovens : [];
+                                    }
+                                } catch (_) {
+                                    this.jovensEquipe = Array.isArray(jovens) ? jovens : [];
+                                }
+                            } else {
+                                console.error("Erro ao buscar jovens");
+                                alert("Não foi possível carregar os integrantes da equipe.");
+                            }
+                        } catch (error) {
+                            console.error("Erro na requisição:", error);
+                            alert("Erro de conexão ao buscar integrantes.");
+                        }
+                    },
+                    abrirModalMontagem(ejc, equipe) {
+                        this.nomeEquipeSelecionada = equipe.nome;
+                        this.nomeEJCSelecionado = `${this.numeroParaRomano(ejc.numero)}º EJC (Montagem)`;
+                        this.jovensEquipe = [];
+
+                        let membrosFlat = [];
+                        if (equipe.funcoes) {
+                            for (let f of equipe.funcoes) {
+                                if (f.membros) {
+                                    for (let m of f.membros) {
+                                        membrosFlat.push({
+                                            id: m.membro_id,
+                                            nome_completo: m.jovem_nome,
+                                            telefone: m.telefone || '-',
+                                            papel: f.papel_base || 'Membro',
+                                            subfuncao: f.nome || null
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                        this.jovensEquipe = membrosFlat;
+
+                        const modalEl = document.getElementById('modalJovens');
+                        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                        modal.show();
+                    },
+                    numeroParaRomano(num) {
+                        if (!num) return '';
+                        const roman = [
+                            { value: 1000, numeral: 'M' },
+                            { value: 900, numeral: 'CM' },
+                            { value: 500, numeral: 'D' },
+                            { value: 400, numeral: 'CD' },
+                            { value: 100, numeral: 'C' },
+                            { value: 90, numeral: 'XC' },
+                            { value: 50, numeral: 'L' },
+                            { value: 40, numeral: 'XL' },
+                            { value: 10, numeral: 'X' },
+                            { value: 9, numeral: 'IX' },
+                            { value: 5, numeral: 'V' },
+                            { value: 4, numeral: 'IV' },
+                            { value: 1, numeral: 'I' }
+                        ];
+                        let result = '';
+                        let n = parseInt(num);
+                        for (let i = 0; i < roman.length; i++) {
+                            while (n >= roman[i].value) {
+                                result += roman[i].numeral;
+                                n -= roman[i].value;
+                            }
+                        }
+                        return result;
+                    },
+                    formatarOrigemEquipe(jovem) {
+                        if (String(jovem?.papel || '').toUpperCase() === 'TIOS') {
+                            if (jovem?.ecc_numero) {
+                                return `${jovem.ecc_numero} ${jovem?.ecc_tipo || 'ECC'}`.trim();
+                            }
+                            if (jovem?.outro_ejc_nome) {
+                                return jovem.outro_ejc_nome;
+                            }
+                            return this.nomeMeuEJC;
+                        }
+                        const ehOutro = String(jovem?.origem_ejc_tipo || '').toUpperCase() === 'OUTRO_EJC'
+                            || !!jovem?.outro_ejc_id
+                            || !!jovem?.outro_ejc_nome
+                            || !!jovem?.outro_ejc_paroquia
+                            || !!jovem?.outro_ejc_numero;
+                        if (ehOutro) {
+                            const numeroOutro = jovem?.outro_ejc_numero ? this.numeroParaRomano(jovem.outro_ejc_numero) : '';
+                            if (numeroOutro && jovem?.outro_ejc_nome) return `${numeroOutro} (${jovem.outro_ejc_nome})`;
+                            return jovem?.outro_ejc_nome || numeroOutro || 'Outro EJC';
+                        }
+                        const numeroProprio = jovem?.numero_ejc_fez ? `${this.numeroParaRomano(jovem.numero_ejc_fez)}º EJC` : '';
+                        return [numeroProprio, this.nomeMeuEJC].filter(Boolean).join(' ') || this.nomeMeuEJC;
+                    },
+                    async carregarNomeMeuEJC() {
+                        try {
+                            const res = await fetch('/api/meu-ejc');
+                            if (!res.ok) return;
+                            const data = await res.json().catch(() => ({}));
+                            const nome = data && data.nome ? String(data.nome).trim() : '';
+                            if (nome) {
+                                this.nomeMeuEJC = nome;
+                                if (!this.formulario.paroquia || this.formulario.paroquia === 'Inconfidentes') {
+                                    this.formulario.paroquia = nome;
+                                }
+                            }
+                        } catch (_) { }
+                    }
+                },
+                mounted() {
+                    this.equipesPorEJC = {};
+                    this.buscarEJCs();
+                    this.buscarTodasEquipes();
+                    this.carregarNomeMeuEJC();
+                }
+            }).mount('#app');
+        </script>
+</body>
+
+</html>

@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EJC - Calendário</title>
+    <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
+    <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/locales-all.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+    <link rel="stylesheet" href="/css/velzon-theme.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/ui-kit.js"></script>
+    <script src="/js/menu.js"></script>
+    <style>
+        :root {
+            --calendar-ink: #1f3558;
+            --calendar-accent: #c58b2a;
+            --calendar-accent-soft: rgba(197, 139, 42, 0.14);
+            --calendar-border: rgba(31, 53, 88, 0.12);
+            --calendar-surface: #fffdfa;
+            --calendar-surface-strong: #fff7e8;
+            --calendar-shadow: 0 18px 45px rgba(31, 53, 88, 0.12);
+        }
+
+        .planner-cell {
+            min-width: 120px;
+            height: 48px;
+            cursor: pointer;
+        }
+
+        .planner-label {
+            display: inline-block;
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+
+        #calendar {
+            min-height: 620px;
+        }
+
+        .fc-toolbar-title {
+            font-size: clamp(1.45rem, 2vw, 2.1rem) !important;
+            font-weight: 700;
+            color: var(--calendar-ink);
+            letter-spacing: -0.03em;
+        }
+
+        .calendar-shell {
+            border: 1px solid rgba(197, 139, 42, 0.16);
+            border-radius: 26px;
+            overflow: hidden;
+            background:
+                radial-gradient(circle at top left, rgba(197, 139, 42, 0.12), transparent 28%),
+                linear-gradient(180deg, #fffefb 0%, #fffaf0 100%);
+            box-shadow: var(--calendar-shadow);
+        }
+
+        .calendar-shell .fc {
+            --fc-border-color: var(--calendar-border);
+            --fc-page-bg-color: transparent;
+            --fc-neutral-bg-color: rgba(255, 255, 255, 0.72);
+            --fc-list-event-hover-bg-color: rgba(197, 139, 42, 0.08);
+            --fc-today-bg-color: transparent;
+            padding: 1.2rem;
+            color: var(--calendar-ink);
+        }
+
+        .calendar-shell .fc .fc-toolbar.fc-header-toolbar {
+            margin-bottom: 1rem;
+            padding: 0.35rem 0 0.9rem;
+            border-bottom: 1px solid rgba(197, 139, 42, 0.14);
+            gap: 0.85rem;
+        }
+
+        .calendar-shell .fc .fc-toolbar-chunk {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            flex-wrap: wrap;
+        }
+
+        .calendar-shell .fc .fc-button {
+            border: 0;
+            border-radius: 14px;
+            background: linear-gradient(180deg, #304968 0%, #223750 100%);
+            color: #fff;
+            box-shadow: 0 10px 20px rgba(31, 53, 88, 0.16);
+            padding: 0.72rem 1rem;
+            font-size: 0.96rem;
+            font-weight: 600;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+        }
+
+        .calendar-shell .fc .fc-button:hover,
+        .calendar-shell .fc .fc-button:focus {
+            background: linear-gradient(180deg, #38557b 0%, #29425f 100%);
+            box-shadow: 0 14px 28px rgba(31, 53, 88, 0.2);
+            transform: translateY(-1px);
+        }
+
+        .calendar-shell .fc .fc-button:disabled {
+            opacity: 0.55;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .calendar-shell .fc .fc-button-primary:not(:disabled).fc-button-active,
+        .calendar-shell .fc .fc-button-primary:not(:disabled):active {
+            background: linear-gradient(180deg, #1c2f47 0%, #142538 100%);
+            box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.12);
+        }
+
+        .calendar-shell .fc .fc-toolbar-chunk:last-child .fc-button {
+            background: #ffffff;
+            color: var(--calendar-ink);
+            border: 1px solid rgba(31, 53, 88, 0.14);
+            box-shadow: 0 8px 18px rgba(31, 53, 88, 0.08);
+        }
+
+        .calendar-shell .fc .fc-toolbar-chunk:last-child .fc-button:hover,
+        .calendar-shell .fc .fc-toolbar-chunk:last-child .fc-button:focus {
+            background: #fef5e5;
+            border-color: rgba(197, 139, 42, 0.34);
+            color: #7c5314;
+        }
+
+        .calendar-shell .fc .fc-toolbar-chunk:last-child .fc-button.fc-button-active {
+            background: linear-gradient(180deg, #2e4767 0%, #1d314a 100%);
+            color: #fff;
+            border-color: transparent;
+            box-shadow: 0 12px 24px rgba(31, 53, 88, 0.18);
+        }
+
+        .calendar-shell .fc .fc-col-header-cell {
+            background: rgba(255, 255, 255, 0.82);
+            border-bottom: 1px solid rgba(197, 139, 42, 0.12);
+            padding: 0.55rem 0;
+        }
+
+        .calendar-shell .fc .fc-col-header-cell-cushion {
+            color: #7c5314;
+            font-weight: 700;
+            text-decoration: none;
+            text-transform: lowercase;
+        }
+
+        .calendar-shell .fc .fc-daygrid-day-frame {
+            min-height: 120px;
+            padding: 0.35rem 0.4rem;
+            transition: background-color 0.2s ease;
+        }
+
+        .calendar-shell .fc .fc-daygrid-day:hover .fc-daygrid-day-frame {
+            background: rgba(197, 139, 42, 0.05);
+        }
+
+        .calendar-shell .fc .fc-daygrid-day-number {
+            width: 2rem;
+            height: 2rem;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 999px;
+            margin: 0.15rem 0.15rem 0 0;
+            color: var(--calendar-ink);
+            font-weight: 700;
+            text-decoration: none;
+            transition: background-color 0.18s ease, color 0.18s ease;
+        }
+
+        .calendar-shell .fc .fc-day-other .fc-daygrid-day-number {
+            color: rgba(31, 53, 88, 0.32);
+        }
+
+        .calendar-shell .fc .fc-day-today {
+            background: linear-gradient(180deg, rgba(255, 249, 232, 0.85) 0%, rgba(255, 244, 210, 0.65) 100%) !important;
+        }
+
+        .calendar-shell .fc .fc-day-today .fc-daygrid-day-number {
+            background: linear-gradient(180deg, #d79a34 0%, #b57618 100%);
+            color: #fff;
+            box-shadow: 0 8px 18px rgba(181, 118, 24, 0.26);
+        }
+
+        .calendar-shell .fc .fc-event {
+            border: 0;
+            border-radius: 12px;
+            padding: 0.2rem 0.42rem;
+            box-shadow: 0 8px 16px rgba(31, 53, 88, 0.12);
+        }
+
+        .calendar-shell .fc .fc-daygrid-event {
+            margin-top: 0.24rem;
+        }
+
+        .calendar-shell .fc .fc-event-title {
+            font-weight: 600;
+        }
+
+        .calendar-shell .fc .fc-scrollgrid,
+        .calendar-shell .fc .fc-scrollgrid table {
+            border-radius: 18px;
+            overflow: hidden;
+        }
+
+        .calendar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.1rem;
+            padding: 1rem 1.15rem;
+            border-radius: 22px;
+            background: linear-gradient(135deg, rgba(255, 247, 229, 0.92), rgba(255, 255, 255, 0.95));
+            border: 1px solid rgba(197, 139, 42, 0.15);
+        }
+
+        .calendar-header-main {
+            min-width: 220px;
+        }
+
+        .calendar-header-main-title {
+            margin: 0;
+            color: var(--calendar-ink);
+            font-size: 1.08rem;
+            font-weight: 700;
+        }
+
+        .calendar-header-main-text {
+            margin: 0.2rem 0 0;
+            color: #6e7a8d;
+            font-size: 0.92rem;
+        }
+
+        .calendar-kicker {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.38rem 0.8rem;
+            border-radius: 999px;
+            background: rgba(197, 139, 42, 0.12);
+            color: #8b5b16;
+            font-size: 0.84rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .calendar-subtitle {
+            margin: 0.35rem 0 0;
+            color: #6e7a8d;
+            font-size: 0.95rem;
+        }
+
+        .calendar-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .calendar-actions .btn {
+            min-height: 46px;
+            padding-inline: 1rem;
+            border-radius: 14px;
+            font-weight: 600;
+        }
+
+        .calendar-actions .btn-primary {
+            border: 0;
+            background: linear-gradient(180deg, #2c4d78 0%, #1f3654 100%);
+            box-shadow: 0 12px 24px rgba(31, 53, 88, 0.18);
+        }
+
+        .calendar-actions .btn-outline-secondary {
+            border-color: rgba(31, 53, 88, 0.16);
+            color: var(--calendar-ink);
+            background: rgba(255, 255, 255, 0.92);
+        }
+
+        @media (max-width: 991.98px) {
+            .calendar-shell .fc {
+                padding: 0.8rem;
+            }
+
+            .calendar-shell .fc .fc-toolbar.fc-header-toolbar {
+                padding-bottom: 0.75rem;
+            }
+
+            .calendar-shell .fc .fc-toolbar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .calendar-shell .fc .fc-toolbar-chunk {
+                justify-content: center;
+            }
+
+            .calendar-shell .fc .fc-button {
+                padding: 0.62rem 0.86rem;
+            }
+
+            .calendar-shell .fc .fc-daygrid-day-frame {
+                min-height: 96px;
+            }
+        }
+
+        @media (max-width: 575.98px) {
+            .calendar-header {
+                padding: 0.9rem;
+            }
+
+            .calendar-actions {
+                width: 100%;
+            }
+
+            .calendar-actions .btn {
+                flex: 1 1 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <main class="container-fluid">
+            <div class="card border-0 shadow-sm">
+                <div class="card-body p-4">
+                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+                        <div>
+                            <h3 class="mb-1">Calendário</h3>
+                            <p class="text-muted mb-0">Organize seu planejamento e divulgação.</p>
+                        </div>
+                    </div>
+
+                    <ul class="nav nav-tabs mb-3">
+                        <li class="nav-item">
+                            <button class="nav-link" :class="{active: aba==='calendario'}"
+                                @click="aba='calendario'">Calendário</button>
+                        </li>
+                        <li class="nav-item">
+                            <button class="nav-link" :class="{active: aba==='divulgacao'}"
+                                @click="aba='divulgacao'">Divulgação</button>
+                        </li>
+                    </ul>
+
+                    <div v-if="aba==='calendario'">
+                        <div class="calendar-header">
+                            <div class="calendar-header-main">
+                                <p class="calendar-header-main-title">Calendário do EJC</p>
+                                <p class="calendar-header-main-text">Agenda central para reuniões, formações e ações do encontro.</p>
+                            </div>
+                            <div>
+                                <div class="calendar-kicker">Planejamento do EJC</div>
+                                <p class="calendar-subtitle">Visual mais limpo para acompanhar reuniões, formações, encontros e divulgação.</p>
+                            </div>
+                            <div class="calendar-actions">
+                                <button class="btn btn-primary btn-sm" type="button" @click="abrirModalEvento">
+                                    + Adicionar evento
+                                </button>
+                                <button class="btn btn-outline-secondary btn-sm" type="button"
+                                    @click="abrirModalExportacao">
+                                    Exportar PDF
+                                </button>
+                            </div>
+                        </div>
+                        <div id="calendar" class="calendar-shell"></div>
+                    </div>
+
+                    <div v-else-if="aba==='divulgacao'">
+                        <div class="d-flex flex-wrap align-items-center justify-content-between mb-3">
+                            <div>
+                                <div class="fw-semibold">Planner semanal (fixo)</div>
+                                <div class="text-muted small">De 07:00 às 22:00, todos os dias da semana.</div>
+                            </div>
+                        </div>
+                        <div class="card border-0 shadow-sm mb-3">
+                            <div class="card-body p-3">
+                                <div class="row g-3 align-items-end">
+                                    <div class="col-12 col-lg-6">
+                                        <label class="form-label mb-1">Coordenação</label>
+                                        <select class="form-select" v-model="coordSelecionada">
+                                            <option value="">Selecione uma coordenação</option>
+                                            <option v-for="c in coordenacoes" :key="c.id" :value="c.id">
+                                                {{ c.label }}
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div class="col-6 col-lg-3">
+                                        <label class="form-label mb-1">Cor</label>
+                                        <input type="color" class="form-control form-control-color" v-model="corSelecionada"
+                                            title="Cor da coordenação">
+                                    </div>
+                                    <div class="col-6 col-lg-3 d-grid">
+                                        <button type="button" class="btn btn-outline-secondary"
+                                            :class="{active: modoLimpar}" @click="modoLimpar = !modoLimpar">
+                                            {{ modoLimpar ? 'Modo limpar ativo' : 'Ativar modo limpar' }}
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="text-muted small mt-2">
+                                    Clique em uma célula do planner para aplicar a coordenação escolhida. Use o modo limpar para remover.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-bordered align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th scope="col" style="min-width: 90px;">Hora</th>
+                                        <th scope="col" v-for="dia in dias" :key="dia">{{ dia }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="hora in horas" :key="hora">
+                                        <th scope="row" class="text-nowrap fw-semibold">{{ hora }}</th>
+                                        <td v-for="dia in dias" :key="dia + '-' + hora"
+                                            class="planner-cell"
+                                            :style="getCellStyle(dia, hora)"
+                                            @click="aplicarNaCelula(dia, hora)">
+                                            <span v-if="planner[dia + '|' + hora]" class="planner-label"
+                                                :style="{ color: getTextColor(planner[dia + '|' + hora].color) }">
+                                                {{ planner[dia + '|' + hora].label }}
+                                            </span>
+                                            <span v-else class="text-muted small">—</span>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+        <div class="modal fade" id="modalEvento" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Adicionar evento/reunião</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label">Título *</label>
+                                <input type="text" class="form-control" v-model="novoEvento.titulo"
+                                    placeholder="Ex: Reunião de coordenação">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label">Início *</label>
+                                <input type="datetime-local" class="form-control" v-model="novoEvento.inicio">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label">Fim</label>
+                                <input type="datetime-local" class="form-control" v-model="novoEvento.fim">
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label">Tipo</label>
+                                <select class="form-select" v-model="novoEvento.tipo">
+                                    <option>Evento</option>
+                                    <option>Reunião</option>
+                                    <option>Formação</option>
+                                    <option>Encontro</option>
+                                </select>
+                            </div>
+                            <div class="col-6">
+                                <label class="form-label">Cor</label>
+                                <input type="color" class="form-control form-control-color" v-model="novoEvento.cor">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Espaços</label>
+                                <div class="d-flex flex-wrap gap-3">
+                                    <div class="form-check" v-for="e in espacosIgreja" :key="e.id">
+                                        <input class="form-check-input" type="checkbox" :id="'espaco-' + e.id"
+                                            :value="e.nome" v-model="novoEvento.espacos">
+                                        <label class="form-check-label" :for="'espaco-' + e.id">{{ e.nome }}</label>
+                                    </div>
+                                </div>
+                                <div class="text-muted small mt-1">Você pode selecionar mais de um espaço.</div>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Descrição</label>
+                                <textarea class="form-control" rows="3" v-model="novoEvento.descricao"
+                                    placeholder="Detalhes do evento"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button v-if="editandoEventoId" type="button" class="btn btn-outline-danger"
+                        @click="excluirEventoAtual">Excluir</button>
+                    <button type="button" class="btn btn-primary" @click="salvarEvento">
+                        {{ editandoEventoId ? 'Salvar alterações' : 'Salvar' }}
+                    </button>
+                </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal fade" id="modalExportacao" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-md modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Exportar PDF</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label">Data início</label>
+                                <input type="date" class="form-control" v-model="exportInicio" lang="pt-BR">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Data fim</label>
+                                <input type="date" class="form-control" v-model="exportFim" lang="pt-BR">
+                            </div>
+                        </div>
+                        <div class="text-muted small mt-2">
+                            O PDF inclui nome do evento, data/horário e espaços selecionados.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" @click="exportarPDF">
+                            Gerar PDF
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            injetarMenu('#app');
+            ativarMenu('/calendario');
+
+            const dias = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo'];
+            const horas = [];
+            for (let h = 7; h <= 22; h += 1) {
+                horas.push(String(h).padStart(2, '0') + ':00');
+            }
+
+            const { createApp } = Vue;
+            createApp({
+                data() {
+                    return {
+                        aba: 'calendario',
+                        dias,
+                        horas,
+                        coordenacoes: [],
+                        coordSelecionada: '',
+                        corSelecionada: '#f19ac1',
+                        planner: {},
+                        modoLimpar: false,
+                        calendar: null,
+                        eventos: [],
+                        novoEvento: {
+                            titulo: '',
+                            inicio: '',
+                            fim: '',
+                            tipo: 'Evento',
+                            descricao: '',
+                            cor: '#2f6ad9',
+                            espacos: []
+                        },
+                        editandoEventoId: null,
+                        espacosIgreja: [],
+                        exportInicio: '',
+                        exportFim: ''
+                    };
+                },
+                mounted() {
+                    this.recarregarDadosTenant();
+                    this.iniciarCalendario();
+                    window.addEventListener('meu-ejc-atualizado', this.recarregarDadosTenant);
+                },
+                beforeUnmount() {
+                    window.removeEventListener('meu-ejc-atualizado', this.recarregarDadosTenant);
+                },
+                methods: {
+                    storageKey(base) {
+                        const tenantId = window.__TENANT_ID ? `tenant_${window.__TENANT_ID}` : null;
+                        const nomeEjc = (window.__NOME_EJC_ATUAL && String(window.__NOME_EJC_ATUAL).trim())
+                            ? String(window.__NOME_EJC_ATUAL).trim().toLowerCase().replace(/[^a-z0-9]+/gi, '_')
+                            : 'ejc';
+                        return `${base}_${tenantId || nomeEjc}`;
+                    },
+                    recarregarDadosTenant() {
+                        this.carregarPlanner();
+                        this.carregarCoordenacoes();
+                        this.carregarEventos();
+                        this.carregarEspacosIgreja();
+                        if (this.calendar) {
+                            this.calendar.removeAllEvents();
+                            this.normalizarEventos(this.eventos).forEach((ev) => this.calendar.addEvent(ev));
+                        }
+                    },
+                    formatarParaInput(data) {
+                        if (!data) return '';
+                        const pad = (n) => String(n).padStart(2, '0');
+                        const d = new Date(data);
+                        const ano = d.getFullYear();
+                        const mes = pad(d.getMonth() + 1);
+                        const dia = pad(d.getDate());
+                        const hora = pad(d.getHours());
+                        const min = pad(d.getMinutes());
+                        return `${ano}-${mes}-${dia}T${hora}:${min}`;
+                    },
+                    iniciarCalendario() {
+                        const calendarEl = document.getElementById('calendar');
+                        if (!calendarEl) return;
+                        this.eventos = this.normalizarEventos(this.eventos);
+                        this.calendar = new FullCalendar.Calendar(calendarEl, {
+                            initialView: 'dayGridMonth',
+                            locale: 'pt-br',
+                            height: 'auto',
+                            headerToolbar: {
+                                left: 'prev,next today',
+                                center: 'title',
+                                right: 'dayGridMonth,timeGridWeek,timeGridDay'
+                            },
+                            buttonText: {
+                                today: 'Hoje',
+                                month: 'Mês',
+                                week: 'Semana',
+                                day: 'Dia'
+                            },
+                            events: this.eventos,
+                            eventClick: (info) => {
+                                this.abrirModalEdicao(info.event);
+                            }
+                        });
+                        this.calendar.render();
+                    },
+                    abrirModalEvento() {
+                        const modalEl = document.getElementById('modalEvento');
+                        if (!modalEl) return;
+                        const modal = new bootstrap.Modal(modalEl);
+                        this.novoEvento = {
+                            titulo: '',
+                            inicio: '',
+                            fim: '',
+                            tipo: 'Evento',
+                            descricao: '',
+                            cor: '#2f6ad9',
+                            espacos: []
+                        };
+                        this.editandoEventoId = null;
+                        modal.show();
+                    },
+                    abrirModalExportacao() {
+                        const modalEl = document.getElementById('modalExportacao');
+                        if (!modalEl) return;
+                        if (!this.exportInicio || !this.exportFim) {
+                            const hoje = new Date();
+                            const pad = (n) => String(n).padStart(2, '0');
+                            const yyyy = hoje.getFullYear();
+                            const mm = pad(hoje.getMonth() + 1);
+                            const dd = pad(hoje.getDate());
+                            const hojeStr = `${yyyy}-${mm}-${dd}`;
+                            this.exportInicio = this.exportInicio || hojeStr;
+                            this.exportFim = this.exportFim || hojeStr;
+                        }
+                        const modal = new bootstrap.Modal(modalEl);
+                        modal.show();
+                    },
+                    abrirModalEdicao(evento) {
+                        const modalEl = document.getElementById('modalEvento');
+                        if (!modalEl) return;
+                        const modal = new bootstrap.Modal(modalEl);
+                        if (!evento.id) {
+                            const novoId = this.gerarIdEvento();
+                            try {
+                                evento.setProp('id', novoId);
+                            } catch (_) {
+                                // fallback: ignore
+                            }
+                            this.editandoEventoId = novoId;
+                        } else {
+                            this.editandoEventoId = evento.id || null;
+                        }
+                        this.novoEvento = {
+                            titulo: evento.title || '',
+                            inicio: this.formatarParaInput(evento.start),
+                            fim: this.formatarParaInput(evento.end),
+                            tipo: evento.extendedProps?.tipo || 'Evento',
+                            descricao: evento.extendedProps?.descricao || '',
+                            cor: evento.backgroundColor || '#2f6ad9',
+                            espacos: Array.isArray(evento.extendedProps?.espacos) ? evento.extendedProps.espacos : []
+                        };
+                        modal.show();
+                    },
+                    salvarEvento() {
+                        if (!this.novoEvento.titulo || !this.novoEvento.inicio) {
+                            alert('Preencha pelo menos o título e a data de início.');
+                            return;
+                        }
+                        if (this.calendar) {
+                            if (this.editandoEventoId) {
+                                const existente = this.calendar.getEventById(this.editandoEventoId);
+                                if (existente) {
+                                    existente.setProp('title', this.novoEvento.titulo);
+                                    existente.setStart(this.novoEvento.inicio);
+                                    existente.setEnd(this.novoEvento.fim || null);
+                                    existente.setProp('backgroundColor', this.novoEvento.cor);
+                                    existente.setProp('borderColor', this.novoEvento.cor);
+                                    existente.setExtendedProp('tipo', this.novoEvento.tipo);
+                                    existente.setExtendedProp('descricao', this.novoEvento.descricao);
+                                    existente.setExtendedProp('espacos', this.novoEvento.espacos || []);
+                                }
+                            } else {
+                                const ev = {
+                                    id: this.gerarIdEvento(),
+                                    title: this.novoEvento.titulo,
+                                    start: this.novoEvento.inicio,
+                                    end: this.novoEvento.fim || null,
+                                    backgroundColor: this.novoEvento.cor,
+                                    borderColor: this.novoEvento.cor,
+                                    extendedProps: {
+                                        tipo: this.novoEvento.tipo,
+                                        descricao: this.novoEvento.descricao,
+                                        espacos: this.novoEvento.espacos || []
+                                    }
+                                };
+                                this.calendar.addEvent(ev);
+                            }
+                            this.salvarEventos();
+                        }
+                        const modalEl = document.getElementById('modalEvento');
+                        if (modalEl) bootstrap.Modal.getInstance(modalEl)?.hide();
+                    },
+                    async excluirEventoAtual() {
+                        if (!this.editandoEventoId || !this.calendar) return;
+                        const ev = this.calendar.getEventById(this.editandoEventoId);
+                        if (!ev) return;
+                        const confirmar = await uiConfirm(`Remover "${ev.title}"?`);
+                        if (!confirmar) return;
+                        ev.remove();
+                        this.salvarEventos();
+                        const modalEl = document.getElementById('modalEvento');
+                        if (modalEl) bootstrap.Modal.getInstance(modalEl)?.hide();
+                    },
+                    salvarEventos() {
+                        if (!this.calendar) return;
+                        const eventos = this.calendar.getEvents().map(e => ({
+                            id: e.id || this.gerarIdEvento(),
+                            title: e.title,
+                            start: e.start?.toISOString(),
+                            end: e.end ? e.end.toISOString() : null,
+                            backgroundColor: e.backgroundColor,
+                            borderColor: e.borderColor,
+                            extendedProps: e.extendedProps || {}
+                        }));
+                        this.eventos = eventos;
+                        try {
+                            localStorage.setItem(this.storageKey('calendarioEventos'), JSON.stringify(eventos));
+                        } catch (e) {
+                            console.error('Erro ao salvar eventos:', e);
+                        }
+                    },
+                    carregarEventos() {
+                        try {
+                            const raw = localStorage.getItem(this.storageKey('calendarioEventos'));
+                            const data = raw ? JSON.parse(raw) : [];
+                            this.eventos = this.normalizarEventos(data);
+                        } catch (e) {
+                            this.eventos = [];
+                        }
+                    },
+                    gerarIdEvento() {
+                        return `ev-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+                    },
+                    normalizarEventos(lista) {
+                        if (!Array.isArray(lista)) return [];
+                        return lista.map((e) => ({
+                            ...e,
+                            id: e && e.id ? String(e.id) : this.gerarIdEvento()
+                        }));
+                    },
+                    carregarEspacosIgreja() {
+                        try {
+                            const raw = localStorage.getItem(this.storageKey('espacosIgreja'));
+                            this.espacosIgreja = raw ? JSON.parse(raw) : [];
+                        } catch (e) {
+                            this.espacosIgreja = [];
+                        }
+                    },
+                    async carregarCoordenacoes() {
+                        try {
+                            const res = await fetch('/api/coordenadores/pastas');
+                            if (!res.ok) return;
+                            const data = await res.json();
+                            this.coordenacoes = (data || [])
+                                .filter(p => !p.parent_id)
+                                .map((p) => ({ id: p.id, label: p.nome }));
+                        } catch (err) {
+                            console.error('Erro ao carregar coordenações:', err);
+                        }
+                    },
+                    aplicarNaCelula(dia, hora) {
+                        const chave = `${dia}|${hora}`;
+                        if (this.modoLimpar) {
+                            if (this.planner[chave]) {
+                                delete this.planner[chave];
+                                this.salvarPlanner();
+                            }
+                            return;
+                        }
+                        if (!this.coordSelecionada) {
+                            alert('Selecione uma coordenação antes de aplicar.');
+                            return;
+                        }
+                        const coord = this.coordenacoes.find(c => String(c.id) === String(this.coordSelecionada));
+                        const label = coord ? coord.label : 'Coordenação';
+                        this.planner[chave] = { label, color: this.corSelecionada, coordId: this.coordSelecionada };
+                        this.salvarPlanner();
+                    },
+                    getCellStyle(dia, hora) {
+                        const chave = `${dia}|${hora}`;
+                        const item = this.planner[chave];
+                        if (!item) return {};
+                        return {
+                            backgroundColor: item.color,
+                            cursor: 'pointer'
+                        };
+                    },
+                    getTextColor(hexColor) {
+                        const hex = String(hexColor || '').replace('#', '');
+                        if (hex.length !== 6) return '#111';
+                        const r = parseInt(hex.substring(0, 2), 16);
+                        const g = parseInt(hex.substring(2, 4), 16);
+                        const b = parseInt(hex.substring(4, 6), 16);
+                        const luminance = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+                        return luminance < 0.55 ? '#fff' : '#111';
+                    },
+                    salvarPlanner() {
+                        try {
+                            localStorage.setItem(this.storageKey('plannerDivulgacao'), JSON.stringify(this.planner));
+                        } catch (e) {
+                            console.error('Erro ao salvar planner:', e);
+                        }
+                    },
+                    carregarPlanner() {
+                        try {
+                            const raw = localStorage.getItem(this.storageKey('plannerDivulgacao'));
+                            this.planner = raw ? JSON.parse(raw) : {};
+                        } catch (e) {
+                            this.planner = {};
+                        }
+                    },
+                    exportarPDF() {
+                        if (!this.exportInicio || !this.exportFim) {
+                            alert('Selecione a data início e a data fim.');
+                            return;
+                        }
+                        const inicio = new Date(this.exportInicio + 'T00:00:00');
+                        const fim = new Date(this.exportFim + 'T23:59:59');
+                        if (fim < inicio) {
+                            alert('A data fim não pode ser menor que a data início.');
+                            return;
+                        }
+                        const eventosFonte = this.calendar
+                            ? this.calendar.getEvents().map(e => ({
+                                title: e.title,
+                                start: e.start,
+                                end: e.end,
+                                extendedProps: e.extendedProps || {}
+                            }))
+                            : (this.eventos || []);
+
+                        const eventos = (eventosFonte || []).filter(e => {
+                            const start = e.start ? new Date(e.start) : null;
+                            const end = e.end ? new Date(e.end) : null;
+                            if (!start && !end) return false;
+                            const inicioEfetivo = start || end;
+                            const fimEfetivo = end || start;
+                            return fimEfetivo >= inicio && inicioEfetivo <= fim;
+                        });
+
+                        const { jsPDF } = window.jspdf || {};
+                        if (!jsPDF) {
+                            alert('Biblioteca de PDF não carregada.');
+                            return;
+                        }
+                        const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+                        const nomeEjc = window.__NOME_EJC_ATUAL || 'Inconfidentes';
+                        const titulo = `Calendário EJC ${nomeEjc}`;
+                        const formatarDataHora = (d) => {
+                            if (!d) return '-';
+                            const pad = (n) => String(n).padStart(2, '0');
+                            return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+                        };
+                        const formatarData = (iso) => {
+                            const d = new Date(iso + 'T00:00:00');
+                            return formatarDataHora(d).split(' ')[0];
+                        };
+
+                        doc.setFontSize(16);
+                        doc.text(titulo, 40, 44);
+                        doc.setFontSize(10);
+                        doc.setTextColor(90);
+                        doc.text(`Período: ${formatarData(this.exportInicio)} até ${formatarData(this.exportFim)}`, 40, 64);
+                        doc.setTextColor(20);
+
+                        const rows = [];
+                        eventos.forEach(e => {
+                            const startDate = e.start ? new Date(e.start) : null;
+                            const endDate = e.end ? new Date(e.end) : null;
+                            const espacos = Array.isArray(e.extendedProps?.espacos) && e.extendedProps.espacos.length
+                                ? e.extendedProps.espacos.join(', ')
+                                : '-';
+
+                            if (!startDate) {
+                                rows.push([e.title || '-', '-', espacos]);
+                                return;
+                            }
+
+                            if (!endDate || startDate.toDateString() === endDate.toDateString()) {
+                                rows.push([e.title || '-', formatarDataHora(startDate), espacos]);
+                                return;
+                            }
+
+                            const inicioDia = new Date(startDate);
+                            inicioDia.setHours(0, 0, 0, 0);
+                            const fimDia = new Date(endDate);
+                            fimDia.setHours(0, 0, 0, 0);
+
+                            const dias = [];
+                            for (let d = new Date(inicioDia); d <= fimDia; d.setDate(d.getDate() + 1)) {
+                                dias.push(new Date(d));
+                            }
+
+                            dias.forEach((dia, idx) => {
+                                let inicioStr = '00:00';
+                                let fimStr = '23:59';
+                                if (idx === 0) {
+                                    inicioStr = formatarDataHora(startDate).split(' ')[1];
+                                }
+                                if (idx === dias.length - 1) {
+                                    fimStr = formatarDataHora(endDate).split(' ')[1];
+                                }
+                                const dataDia = formatarDataHora(dia).split(' ')[0];
+                                const data = `${dataDia} ${inicioStr} até ${fimStr}`;
+                                rows.push([e.title || '-', data, espacos]);
+                            });
+                        });
+
+                        if (doc.autoTable) {
+                            doc.autoTable({
+                                head: [['Evento', 'Data e horário', 'Espaços']],
+                                body: rows.length ? rows : [['-', '-', '-']],
+                                startY: 84,
+                                styles: {
+                                    fontSize: 9,
+                                    cellPadding: 6,
+                                    overflow: 'linebreak'
+                                },
+                                headStyles: {
+                                    fillColor: [34, 79, 132],
+                                    textColor: 255,
+                                    fontStyle: 'bold'
+                                },
+                                columnStyles: {
+                                    0: { cellWidth: 180 },
+                                    1: { cellWidth: 170 },
+                                    2: { cellWidth: 170 }
+                                }
+                            });
+                        } else {
+                            let y = 90;
+                            doc.setFontSize(9);
+                            doc.text('Evento | Data/Horário | Espaços', 40, y);
+                            y += 16;
+                            (rows.length ? rows : [['-', '-', '-']]).forEach(r => {
+                                doc.text(`${r[0]} | ${r[1]} | ${r[2]}`, 40, y);
+                                y += 14;
+                                if (y > 780) {
+                                    doc.addPage();
+                                    y = 40;
+                                }
+                            });
+                        }
+
+                        doc.save(`calendario_${this.exportInicio}_a_${this.exportFim}.pdf`);
+                    }
+                }
+            }).mount('#app');
+        });
+    </script>
+
+</body>
+
+</html>

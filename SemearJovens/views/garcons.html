@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>EJC - Garçons</title>
+    <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
+    <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="/css/velzon-theme.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/ui-kit.js"></script>
+    <script src="/js/menu.js"></script>
+    <script src="/js/excel-utils.js"></script>
+    <style>
+        .equipe-card {
+            border: 1px solid rgba(154, 104, 27, 0.14);
+            border-radius: 12px;
+            background: #fff;
+            box-shadow: 0 14px 34px rgba(126, 97, 39, 0.07);
+        }
+
+        .equipe-header {
+            padding: 14px 16px;
+            border-bottom: 1px solid rgba(154, 104, 27, 0.12);
+            background: linear-gradient(180deg, #fffdf9 0%, #fff8ee 100%);
+        }
+
+        .busca-resultados {
+            position: absolute;
+            z-index: 1000;
+            width: 100%;
+            max-height: 260px;
+            overflow-y: auto;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+            border-radius: 0 0 8px 8px;
+            border: 1px solid #dee2e6;
+            border-top: 0;
+            background: #fff;
+        }
+
+        .busca-item {
+            padding: 10px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .busca-item:hover {
+            background: #fff8ee;
+        }
+
+        .garcom-btn-main {
+            background: #5f8758;
+            border-color: #5f8758;
+            color: #fff;
+        }
+
+        .garcom-btn-main:hover,
+        .garcom-btn-main:focus {
+            background: #52764d;
+            border-color: #52764d;
+            color: #fff;
+        }
+
+        .garcom-btn-soft {
+            background: #f8f2e6;
+            border-color: #efe3cf;
+            color: #9a681b;
+            box-shadow: 0 8px 20px rgba(126, 97, 39, 0.08);
+        }
+
+        .garcom-btn-soft:hover,
+        .garcom-btn-soft:focus {
+            background: #f3ead9;
+            border-color: #e7d4b3;
+            color: #8b5d18;
+        }
+
+        .garcom-btn-outline {
+            border-color: #d9c3a1;
+            color: #8b5d18;
+            background: #fff;
+        }
+
+        .garcom-btn-outline:hover,
+        .garcom-btn-outline:focus {
+            border-color: #c9ab7f;
+            background: #fff8ee;
+            color: #7d5417;
+        }
+
+        .garcom-btn-danger {
+            border-color: #f0d9d9;
+            background: #fff;
+            color: #e14c4c;
+            box-shadow: 0 8px 18px rgba(225, 76, 76, 0.08);
+        }
+
+        .garcom-btn-danger:hover,
+        .garcom-btn-danger:focus {
+            background: #fff5f5;
+            border-color: #e9bcbc;
+            color: #ca3c3c;
+        }
+
+        .garcom-badge {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 999px;
+            padding: 0.42rem 0.8rem;
+            font-size: 0.82rem;
+            font-weight: 600;
+            background: #fff4de;
+            color: #9a681b;
+        }
+
+        .garcom-badge-reserva {
+            background: #f5ead8;
+            color: #8b5d18;
+        }
+
+        .garcom-table thead {
+            background: #fffaf1;
+        }
+
+        .garcom-table thead th {
+            color: #9a681b;
+            font-weight: 600;
+        }
+
+        .garcom-modal-header {
+            background: linear-gradient(135deg, #234462 0%, #172f45 100%);
+            color: #fff;
+        }
+
+        .garcom-modal-header .btn-close {
+            filter: invert(1) grayscale(1) brightness(2);
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <main class="container-fluid">
+            <div class="d-flex justify-content-between mb-4 align-items-center">
+                <div>
+                    <h3><i class="fa-solid fa-utensils icon-accent"></i> Garçons</h3>
+                    <p class="text-muted mb-0">Crie equipes de garçom por EJC e gerencie os jovens com os mesmos papéis das equipes.</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-success" @click="exportarExcel">Exportar Excel</button>
+                    <button class="btn btn-primary" @click="abrirModalNovaEquipe"><i class="fa-solid fa-plus icon-accent"></i> Nova Equipe de Garçom</button>
+                </div>
+            </div>
+            <div class="mb-2 text-muted small">
+                Total: <strong class="text-dark">{{ equipes.length }}</strong>
+                • Filtrados: <strong class="text-dark">{{ equipesFiltradas.length }}</strong>
+            </div>
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-body">
+                    <label class="form-label small text-muted">Filtrar equipes</label>
+                    <input v-model.trim="filtroEquipe" class="form-control" placeholder="Ex: número do EJC, paróquia ou nome do jovem">
+                </div>
+            </div>
+
+            <div v-if="carregando" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+            </div>
+
+            <div v-else-if="!equipes.length" class="card border-0 shadow-sm">
+                <div class="card-body text-muted">Nenhuma equipe de garçom cadastrada.</div>
+            </div>
+
+            <div v-else class="row g-3">
+                <div class="col-12" v-for="equipe in equipesFiltradas" :key="equipe.id">
+                    <div class="equipe-card">
+                        <div class="equipe-header d-flex justify-content-between align-items-start">
+                            <div>
+                                <h5 class="mb-1">Equipe de Garçom - {{ equipe.ejc_numero }}º EJC</h5>
+                                <div class="small text-muted">
+                                    <strong>{{ equipe.outro_ejc_nome }}</strong>
+                                    <span v-if="equipe.outro_ejc_paroquia"> • {{ equipe.outro_ejc_paroquia }}</span>
+                                    <span v-if="equipe.data_inicio || equipe.data_fim">
+                                        • {{ formatarData(equipe.data_inicio) || '-' }} a {{ formatarData(equipe.data_fim) || 'Atual' }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-sm garcom-btn-soft" @click="toggleMembros(equipe.id)" :title="membrosAbertos[equipe.id] ? 'Ocultar jovens' : 'Ver jovens'">
+                                    {{ membrosAbertos[equipe.id] ? '▾ Integrantes' : '▸ Integrantes' }}
+                                </button>
+                                <button class="btn btn-sm garcom-btn-soft" @click="abrirModalAdicionarJovem(equipe)"><i class="fa-solid fa-plus icon-accent"></i> Adicionar Jovem</button>
+                                <button class="btn btn-sm garcom-btn-soft" @click="abrirModalAdicionarTio(equipe)"><i class="fa-solid fa-plus icon-accent"></i> Adicionar Tios</button>
+                                <button v-if="equipe.reserva_ativa" class="btn btn-sm garcom-btn-soft" @click="abrirModalAdicionarJovem(equipe, 'RESERVA')"><i class="fa-solid fa-plus icon-accent"></i> Adicionar Reserva</button>
+                                <button v-if="equipe.reserva_ativa" class="btn btn-sm garcom-btn-soft" @click="abrirModalAdicionarTio(equipe, 'RESERVA')"><i class="fa-solid fa-plus icon-accent"></i> Adicionar Tios na Reserva</button>
+                                <button v-if="!equipe.reserva_ativa" class="btn btn-sm garcom-btn-outline" @click="criarListaReserva(equipe)"><i class="fa-solid fa-folder-tree icon-accent"></i> Criar Lista de Reserva</button>
+                                <button class="btn btn-sm garcom-btn-main" @click="exportarEquipeExcel(equipe)"><i class="fa-solid fa-file-lines icon-accent"></i> Exportar equipe</button>
+                                <button class="btn btn-sm garcom-btn-danger" @click="removerEquipe(equipe)"><i class="fa-solid fa-trash icon-accent"></i></button>
+                            </div>
+                        </div>
+                        <div class="p-3">
+                            <div v-if="!membrosAbertos[equipe.id]" class="text-muted small">Integrantes ocultos. Clique em "Integrantes" para visualizar.</div>
+                            <div v-else-if="!equipe.membros || !equipe.membros.length" class="text-muted small">Nenhum integrante nesta equipe.</div>
+                            <div v-else>
+                                <h6 class="mb-2">Titulares</h6>
+                                <div v-if="!membrosTitulares(equipe).length" class="text-muted small mb-3">Nenhum titular.</div>
+                                <div v-else class="table-responsive mb-3">
+                                    <table class="table table-sm align-middle mb-0 garcom-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Nome</th>
+                                                <th>Papel</th>
+                                                <th>Telefone</th>
+                                                <th>Tipo</th>
+                                                <th class="text-end">Ações</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="m in membrosTitulares(equipe)" :key="`tit-${m.id}`">
+                                                <td>{{ m.nome_completo }}</td>
+                                                <td><span class="garcom-badge">{{ m.papel }}</span></td>
+                                                <td>{{ m.telefone || '-' }}</td>
+                                                <td>{{ membroTipoLabel(m) }}</td>
+                                                <td class="text-end">
+                                                    <button class="btn btn-sm garcom-btn-danger" @click="removerMembro(m.id, m)">Remover</button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                <h6 class="mb-2">Reserva</h6>
+                                <div v-if="!equipe.reserva_ativa && !membrosReserva(equipe).length" class="text-muted small">
+                                    Lista de reserva ainda não criada.
+                                </div>
+                                <div v-else-if="!membrosReserva(equipe).length" class="text-muted small">Nenhum jovem na reserva.</div>
+                                <div v-else class="table-responsive">
+                                    <table class="table table-sm align-middle mb-0 garcom-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Nome</th>
+                                                <th>Papel</th>
+                                                <th>Telefone</th>
+                                                <th>Tipo</th>
+                                                <th class="text-end">Ações</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="m in membrosReserva(equipe)" :key="`res-${m.id}`">
+                                                <td>{{ m.nome_completo }}</td>
+                                                <td><span class="garcom-badge garcom-badge-reserva">{{ m.papel }}</span></td>
+                                                <td>{{ m.telefone || '-' }}</td>
+                                                <td>{{ membroTipoLabel(m) }}</td>
+                                                <td class="text-end">
+                                                    <button class="btn btn-sm garcom-btn-main me-1" @click="alterarSituacaoMembro(m.id, 'TITULAR')">Promover</button>
+                                                    <button class="btn btn-sm garcom-btn-danger" @click="removerMembro(m.id, m)">Remover</button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <div class="modal fade" id="modalEquipeGarcom" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header garcom-modal-header">
+                        <h5 class="modal-title">Nova Equipe de Garçom</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Número do EJC *</label>
+                            <input type="number" min="1" class="form-control" v-model.number="formEquipe.ejc_numero" placeholder="Ex: 25">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Qual EJC? *</label>
+                            <select class="form-select" v-model.number="formEquipe.outro_ejc_id">
+                                <option :value="null">Selecione...</option>
+                                <option v-for="oe in outrosEjcs" :key="oe.id" :value="oe.id">
+                                    {{ oe.nome }}<span v-if="oe.paroquia"> - {{ oe.paroquia }}</span>
+                                </option>
+                            </select>
+                        </div>
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <label class="form-label">Data Início</label>
+                                <input type="text" class="form-control date-br" v-model="formEquipe.data_inicio" placeholder="dd/mm/aaaa">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Data Fim</label>
+                                <input type="text" class="form-control date-br" v-model="formEquipe.data_fim" placeholder="dd/mm/aaaa">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" @click="salvarEquipe">Salvar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="modalAdicionarJovemGarcom" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-light">
+                        <h5 class="modal-title">Adicionar {{ tipoBuscaMembro === 'TIO' ? 'tios' : 'jovem' }} na equipe</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Papel *</label>
+                            <select class="form-select" v-model="formMembro.papel">
+                                <option value="">Selecione...</option>
+                                <option v-for="p in papeis" :key="p.id || p.nome" :value="p.nome">{{ p.nome }}</option>
+                            </select>
+                        </div>
+                        <div class="position-relative">
+                            <label class="form-label text-muted small">Buscar {{ tipoBuscaMembro === 'TIO' ? 'casal de tios' : 'jovem' }}</label>
+                            <input type="text" class="form-control" v-model="searchQuery" @input="onSearchInput" :placeholder="tipoBuscaMembro === 'TIO' ? 'Digite o nome do tio ou da tia...' : 'Digite o nome...'">
+                            <div v-if="searchResults.length" class="busca-resultados">
+                                <div class="busca-item d-flex justify-content-between" v-for="item in searchResults" :key="`${tipoBuscaMembro}-${item.id}`" @click="adicionarMembro(item)">
+                                    <span>
+                                        {{ tipoBuscaMembro === 'TIO' ? formatarNomeCasal(item) : item.nome_completo }}
+                                    </span>
+                                    <span class="small text-muted">
+                                        <template v-if="tipoBuscaMembro === 'TIO'">
+                                            {{ formatarTelefoneCasal(item) || '-' }}
+                                        </template>
+                                        <template v-else>
+                                            {{ (item.idade !== null && item.idade !== undefined) ? (item.idade + ' anos') : '-' }}
+                                            • {{ item.estado_civil || '-' }}
+                                        </template>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            injetarMenu('#app');
+            ativarMenu('/garcons');
+        });
+
+        const { createApp } = Vue;
+        createApp({
+            data() {
+                return {
+                    carregando: true,
+                    equipes: [],
+                    filtroEquipe: '',
+                    outrosEjcs: [],
+                    papeis: [],
+                    formEquipe: { ejc_numero: null, outro_ejc_id: null, data_inicio: '', data_fim: '' },
+                    formMembro: { papel: '', situacao: 'TITULAR' },
+                    equipeSelecionada: null,
+                    tipoBuscaMembro: 'JOVEM',
+                    modalEquipe: null,
+                    modalAdicionar: null,
+                    membrosAbertos: {},
+                    searchQuery: '',
+                    searchResults: [],
+                    searchTimer: null,
+                    tiosCasais: []
+                };
+            },
+            computed: {
+                equipesFiltradas() {
+                    const termo = String(this.filtroEquipe || '').trim().toLowerCase();
+                    if (!termo) return this.equipes || [];
+                    return (this.equipes || []).filter((e) => {
+                        const base = [
+                            e.ejc_numero,
+                            e.outro_ejc_nome,
+                            e.outro_ejc_paroquia,
+                            e.outro_ejc_bairro
+                        ].map(v => String(v || '').toLowerCase()).join(' ');
+                        const membros = (e.membros || []).map(m => String(m.nome_completo || '').toLowerCase()).join(' ');
+                        return base.includes(termo) || membros.includes(termo);
+                    });
+                }
+            },
+            methods: {
+                exportarExcel() {
+                    const fonte = this.equipesFiltradas || [];
+                    if (!fonte.length) {
+                        alert('Não há dados para exportar.');
+                        return;
+                    }
+                    const rows = [];
+                    fonte.forEach((e) => {
+                        if (!e.membros || !e.membros.length) {
+                            rows.push({
+                                Equipe: `Equipe de Garçom - ${e.ejc_numero}º EJC`,
+                                Paroquia: e.outro_ejc_paroquia || '',
+                                Jovem: '',
+                                Papel: '',
+                                Situacao: '',
+                                Telefone: ''
+                            });
+                            return;
+                        }
+                        e.membros.forEach((m) => {
+                            rows.push({
+                                Equipe: `Equipe de Garçom - ${e.ejc_numero}º EJC`,
+                                Paroquia: e.outro_ejc_paroquia || '',
+                                Jovem: m.nome_completo || '',
+                                Papel: m.papel || '',
+                                Situacao: m.situacao || 'TITULAR',
+                                Telefone: m.telefone || ''
+                            });
+                        });
+                    });
+                    ExcelUtils.exportJsonToXlsx({
+                        filename: 'garcons.xlsx',
+                        sheetName: 'Garçons',
+                        rows
+                    });
+                },
+                toggleMembros(id) {
+                    this.membrosAbertos[id] = !this.membrosAbertos[id];
+                },
+                membrosTitulares(equipe) {
+                    return (equipe?.membros || []).filter(m => String(m.situacao || 'TITULAR').toUpperCase() === 'TITULAR');
+                },
+                membrosReserva(equipe) {
+                    return (equipe?.membros || []).filter(m => String(m.situacao || 'TITULAR').toUpperCase() === 'RESERVA');
+                },
+                async carregarTudo() {
+                    this.carregando = true;
+                    try {
+                        const [resEquipes, resOutros, resPapeis, resTios] = await Promise.all([
+                            fetch('/api/garcons/equipes'),
+                            fetch('/api/outros-ejcs'),
+                            fetch('/api/equipes/papeis'),
+                            fetch('/api/tios/casais')
+                        ]);
+                        this.equipes = resEquipes.ok ? await resEquipes.json() : [];
+                        this.outrosEjcs = resOutros.ok ? await resOutros.json() : [];
+                        this.papeis = resPapeis.ok ? await resPapeis.json() : [];
+                        this.tiosCasais = resTios.ok ? await resTios.json() : [];
+                    } finally {
+                        this.carregando = false;
+                    }
+                },
+                membroTipoLabel(membro) {
+                    return String(membro?.membro_tipo || 'JOVEM').toUpperCase() === 'TIO' ? 'Tios' : 'Jovem';
+                },
+                formatarNomeCasal(casal) {
+                    return [casal?.nome_tio, casal?.nome_tia].filter(Boolean).join(' e ') || '-';
+                },
+                formatarTelefoneCasal(casal) {
+                    return [casal?.telefone_tio, casal?.telefone_tia].filter(Boolean).join(' / ');
+                },
+                formatarData(d) {
+                    if (!d) return '';
+                    const dt = new Date(d);
+                    if (Number.isNaN(dt.getTime())) return '';
+                    return dt.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+                },
+                abrirModalNovaEquipe() {
+                    this.formEquipe = { ejc_numero: null, outro_ejc_id: null, data_inicio: '', data_fim: '' };
+                    if (!this.modalEquipe) this.modalEquipe = new bootstrap.Modal(document.getElementById('modalEquipeGarcom'));
+                    this.modalEquipe.show();
+                },
+                async salvarEquipe() {
+                    if (!this.formEquipe.ejc_numero || !this.formEquipe.outro_ejc_id) {
+                        alert('Preencha número do EJC e qual EJC.');
+                        return;
+                    }
+                    const res = await fetch('/api/garcons/equipes', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(this.formEquipe)
+                    });
+                    if (!res.ok) {
+                        const err = await res.json().catch(() => ({}));
+                        alert(err.error || 'Erro ao criar equipe.');
+                        return;
+                    }
+                    this.modalEquipe.hide();
+                    await this.carregarTudo();
+                },
+                async removerEquipe(equipe) {
+                    if (!(await window.showFloatingConfirm(`Remover equipe de garçom do ${equipe.ejc_numero}º EJC?`))) return;
+                    const res = await fetch(`/api/garcons/equipes/${equipe.id}`, { method: 'DELETE' });
+                    if (!res.ok) {
+                        const err = await res.json().catch(() => ({}));
+                        alert(err.error || 'Erro ao remover equipe.');
+                        return;
+                    }
+                    await this.carregarTudo();
+                },
+                abrirModalAdicionarJovem(equipe, situacao = 'TITULAR') {
+                    this.equipeSelecionada = equipe;
+                    this.tipoBuscaMembro = 'JOVEM';
+                    this.formMembro = { papel: this.papeis[0]?.nome || '', situacao };
+                    this.searchQuery = '';
+                    this.searchResults = [];
+                    if (!this.modalAdicionar) this.modalAdicionar = new bootstrap.Modal(document.getElementById('modalAdicionarJovemGarcom'));
+                    this.modalAdicionar.show();
+                },
+                abrirModalAdicionarTio(equipe, situacao = 'TITULAR') {
+                    this.equipeSelecionada = equipe;
+                    this.tipoBuscaMembro = 'TIO';
+                    this.formMembro = { papel: this.papeis[0]?.nome || '', situacao };
+                    this.searchQuery = '';
+                    this.searchResults = [];
+                    if (!this.modalAdicionar) this.modalAdicionar = new bootstrap.Modal(document.getElementById('modalAdicionarJovemGarcom'));
+                    this.modalAdicionar.show();
+                },
+                async criarListaReserva(equipe) {
+                    const res = await fetch(`/api/garcons/equipes/${equipe.id}/reserva`, { method: 'PATCH' });
+                    if (!res.ok) {
+                        const err = await res.json().catch(() => ({}));
+                        alert(err.error || 'Erro ao criar lista de reserva.');
+                        return;
+                    }
+                    await this.carregarTudo();
+                    const equipeAtualizada = this.equipes.find(e => Number(e.id) === Number(equipe.id)) || equipe;
+                    this.abrirModalAdicionarJovem(equipeAtualizada, 'RESERVA');
+                },
+                onSearchInput() {
+                    clearTimeout(this.searchTimer);
+                    if (!this.searchQuery || this.searchQuery.trim().length < 2) {
+                        this.searchResults = [];
+                        return;
+                    }
+                    if (this.tipoBuscaMembro === 'TIO') {
+                        const termo = String(this.searchQuery || '').trim().toLowerCase();
+                        this.searchResults = (this.tiosCasais || []).filter((casal) => {
+                            const nome = `${casal.nome_tio || ''} ${casal.nome_tia || ''}`.toLowerCase();
+                            return nome.includes(termo);
+                        });
+                        return;
+                    }
+                    this.searchTimer = setTimeout(() => this.executarBusca(), 250);
+                },
+                async executarBusca() {
+                    const res = await fetch(`/api/jovens/search?q=${encodeURIComponent(this.searchQuery)}`);
+                    this.searchResults = res.ok ? await res.json() : [];
+                },
+                async adicionarMembro(item) {
+                    if (!this.equipeSelecionada) return;
+                    if (!this.formMembro.papel) {
+                        alert('Selecione o papel antes de adicionar.');
+                        return;
+                    }
+                    const res = await fetch(`/api/garcons/equipes/${this.equipeSelecionada.id}/membros`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(
+                            this.tipoBuscaMembro === 'TIO'
+                                ? { membro_tipo: 'TIO', tio_casal_id: item.id, papel: this.formMembro.papel, situacao: this.formMembro.situacao }
+                                : { membro_tipo: 'JOVEM', jovem_id: item.id, papel: this.formMembro.papel, situacao: this.formMembro.situacao }
+                        )
+                    });
+                    if (!res.ok) {
+                        const err = await res.json().catch(() => ({}));
+                        alert(err.error || 'Erro ao adicionar integrante.');
+                        return;
+                    }
+                    this.searchResults = [];
+                    this.searchQuery = '';
+                    await this.carregarTudo();
+                },
+                async removerMembro(membroId, membro) {
+                    const label = this.membroTipoLabel(membro) === 'Tios' ? 'este casal de tios' : 'este jovem';
+                    if (!(await window.showFloatingConfirm(`Remover ${label} da equipe?`))) return;
+                    const res = await fetch(`/api/garcons/membros/${membroId}`, { method: 'DELETE' });
+                    if (!res.ok) {
+                        const err = await res.json().catch(() => ({}));
+                        alert(err.error || 'Erro ao remover integrante.');
+                        return;
+                    }
+                    await this.carregarTudo();
+                },
+                async alterarSituacaoMembro(membroId, situacao) {
+                    const res = await fetch(`/api/garcons/membros/${membroId}/situacao`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ situacao })
+                    });
+                    if (!res.ok) {
+                        const err = await res.json().catch(() => ({}));
+                        alert(err.error || 'Erro ao atualizar situação do jovem.');
+                        return;
+                    }
+                    await this.carregarTudo();
+                },
+                exportarEquipeExcel(equipe) {
+                    const membros = Array.isArray(equipe?.membros) ? equipe.membros : [];
+                    if (!membros.length) {
+                        alert('Essa equipe não possui integrantes para exportar.');
+                        return;
+                    }
+                    const rows = membros.map((m) => ({
+                        'Nome completo': m.nome_completo || '',
+                        Telefone: m.telefone || '',
+                        'Função': m.papel || ''
+                    }));
+                    ExcelUtils.exportJsonToXlsx({
+                        filename: `garcom_equipe_${equipe.ejc_numero || 'sem_numero'}_${equipe.id}.xlsx`,
+                        sheetName: 'Equipe',
+                        rows
+                    });
+                }
+            },
+            mounted() {
+                this.carregarTudo();
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

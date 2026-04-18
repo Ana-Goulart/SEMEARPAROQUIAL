@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Votação - EJC</title>
+    <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
+    <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/velzon-theme.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/ui-kit.js"></script>
+    <style>
+        [v-cloak] {
+            display: none;
+        }
+
+        .folder-card {
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .folder-card:hover {
+            transform: scale(1.02);
+            background-color: #f8f9fa;
+        }
+
+        .matrix-input {
+            width: 60px;
+            text-align: center;
+        }
+
+        .col-candidate {
+            min-width: 100px;
+            text-align: center;
+            font-weight: bold;
+            background-color: #f8f9fa;
+        }
+
+        .sticky-col {
+            position: sticky;
+            left: 0;
+            background-color: white;
+            z-index: 10;
+            border-right: 2px solid #dee2e6;
+        }
+
+        .table-responsive {
+            max-height: 70vh;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <!-- Menu injetado via JS -->
+
+        <main id="content" class="w-100 p-4" v-cloak>
+            <!-- BREADCRUMB NAV -->
+            <nav aria-label="breadcrumb" class="mb-4">
+                <ol class="breadcrumb fs-5">
+                    <li class="breadcrumb-item"><a href="#" @click.prevent="irParaInicio"><i class="fa-solid fa-folder-open icon-accent"></i> Pastas</a></li>
+                    <li v-if="pastaSelecionada" class="breadcrumb-item"><a href="#"
+                            @click.prevent="irParaPasta(pastaSelecionada)">{{ pastaSelecionada.nome }}</a></li>
+                    <li v-if="votacaoSelecionada" class="breadcrumb-item active" aria-current="page">{{
+                        votacaoSelecionada.votacao.titulo }}</li>
+                </ol>
+            </nav>
+
+            <!-- TELA 1: LISTA DE PASTAS -->
+            <div v-if="!pastaSelecionada && !votacaoSelecionada">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3>Minhas Pastas de Votação</h3>
+                    <div class="input-group w-auto">
+                        <input type="text" class="form-control" v-model="novaPastaNome"
+                            placeholder="Nome da nova pasta">
+                        <button class="btn btn-primary" @click="criarPasta" :disabled="!novaPastaNome"><i class="fa-solid fa-plus icon-accent"></i> Criar
+                            Pasta</button>
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-3" v-for="p in pastas" :key="p.id">
+                        <div class="card folder-card h-100 shadow-sm" @click="irParaPasta(p)">
+                            <div class="card-body text-center p-4">
+                                <div class="fs-1"><i class="fa-solid fa-folder icon-accent"></i></div>
+                                <h5 class="card-title mt-2">{{ p.nome }}</h5>
+                                <p class="card-text text-muted small">{{ new Date(p.data_criacao).toLocaleDateString()
+                                    }}</p>
+                                <button class="btn btn-sm btn-danger mt-2" @click.stop="excluirPasta(p.id)"><i class="fa-solid fa-trash icon-accent"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div v-if="pastas.length === 0" class="col-12 text-center text-muted py-5">
+                        Nenhuma pasta criada. Crie uma para começar.
+                    </div>
+                </div>
+            </div>
+
+            <!-- TELA 2: DENTRO DA PASTA (LISTA DE VOTAÇÕES) -->
+            <div v-else-if="pastaSelecionada && !votacaoSelecionada">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3><i class="fa-solid fa-folder icon-accent"></i> {{ pastaSelecionada.nome }}</h3>
+                    <button class="btn btn-success" @click="modalNovaVotacao = true"><i class="fa-solid fa-plus icon-accent"></i> Criar Votação</button>
+                </div>
+
+                <div class="list-group">
+                    <button v-for="v in votacoesDaPasta" :key="v.id"
+                        class="list-group-item list-group-item-action p-3 d-flex justify-content-between align-items-center"
+                        @click="abrirVotacao(v.id)">
+                        <div>
+                            <h5 class="mb-1">{{ v.titulo }}</h5>
+                            <small class="text-muted">Criado em: {{ new Date(v.data_criacao).toLocaleString() }}</small>
+                        </div>
+                        <div>
+                            <span class="badge bg-primary rounded-pill me-2">Abrir Matrix</span>
+                            <span class="btn btn-sm btn-outline-danger" @click.stop="excluirVotacao(v.id)"><i class="fa-solid fa-trash icon-accent"></i></span>
+                        </div>
+                    </button>
+                    <div v-if="votacoesDaPasta.length === 0" class="p-4 text-center text-muted border rounded bg-light">
+                        Nenhuma votação nesta pasta. Clique em "Criar Votação".
+                    </div>
+                </div>
+            </div>
+
+            <!-- TELA 3: MATRIZ DE VOTAÇÃO -->
+            <div v-else-if="votacaoSelecionada">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4 class="m-0"><i class="fa-solid fa-note-sticky icon-accent"></i> {{ votacaoSelecionada.votacao.titulo }}</h4>
+                    <div>
+                        <button class="btn btn-soft-secondary me-2" @click="carregarRankingModal"><i class="fa-solid fa-trophy icon-accent"></i> Ver Resultado</button>
+                        <button class="btn btn-primary" @click="salvarMatriz"><i class="fa-solid fa-floppy-disk icon-accent"></i> Salvar Votos</button>
+                    </div>
+                </div>
+
+                <div class="alert alert-info py-2 small">
+                    <i class="bi bi-info-circle"></i> Instruções: Insira as notas/pontos nas células. As alterações não
+                    são salvas automaticamente, clique em "Salvar Votos".
+                </div>
+
+                <div class="card shadow-sm">
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-sm m-0">
+                                <thead>
+                                    <tr>
+                                        <th class="sticky-col bg-light p-3" style="min-width: 200px;">Eleitor (Usuário)
+                                        </th>
+                                        <th v-for="cand in votacaoSelecionada.candidatos" :key="cand.id"
+                                            class="col-candidate p-2" :title="cand.nome_completo">
+                                            {{ getPrimeiroNome(cand.nome_completo) }}<br>
+                                            <small class="fw-normal text-muted">{{ getRestoNome(cand.nome_completo)
+                                                }}</small>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="eleitor in votacaoSelecionada.eleitores" :key="eleitor.id">
+                                        <td class="sticky-col ps-3 fw-bold align-middle">{{ eleitor.nome_completo }}
+                                        </td>
+                                        <td v-for="cand in votacaoSelecionada.candidatos" :key="cand.id"
+                                            class="text-center p-1">
+                                            <input type="number"
+                                                class="form-control form-control-sm matrix-input mx-auto"
+                                                v-model="matriz[eleitor.id + '_' + cand.id]" min="0" placeholder="-">
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL: NOVA VOTAÇÃO -->
+            <div v-if="modalNovaVotacao" class="modal fade show d-block" style="background: rgba(0,0,0,0.5)">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Nova Votação</h5>
+                            <button type="button" class="btn-close" @click="modalNovaVotacao = false"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label">Título da Votação</label>
+                                <input type="text" class="form-control" v-model="novaVotacao.titulo"
+                                    placeholder="Ex: Coordenação Geral">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Selecionar Candidatos (Colunas da Tabela)</label>
+                                <input type="text" class="form-control mb-2" v-model="termoBuscaCandidato"
+                                    @input="buscarCandidatos" placeholder="Buscar Jovem...">
+
+                                <!-- Lista de Busca -->
+                                <div v-if="resultadosBusca.length" class="list-group mb-3 border"
+                                    style="max-height: 200px; overflow-y: auto;">
+                                    <button v-for="j in resultadosBusca" class="list-group-item list-group-item-action"
+                                        @click="adicionarCandidato(j)">
+                                        <i class="fa-solid fa-plus icon-accent"></i> {{ j.nome_completo }}
+                                        <span class="text-muted small ms-2">
+                                            {{ (j.idade !== null && j.idade !== undefined) ? (j.idade + ' anos') : '-' }}
+                                            • {{ j.estado_civil || '-' }}
+                                        </span>
+                                    </button>
+                                </div>
+
+                                <!-- Selecionados -->
+                                <div class="card bg-light">
+                                    <div class="card-body p-2">
+                                        <small class="text-muted d-block mb-2">Candidatos Selecionados:</small>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            <span v-for="cand in novaVotacao.candidatos" :key="cand.id"
+                                                class="badge bg-primary fs-6">
+                                                {{ cand.nome_completo }}
+                                                <span class="ms-2" style="cursor:pointer"
+                                                    @click="removerCandidato(cand.id)"><i class="fa-solid fa-xmark icon-accent"></i></span>
+                                            </span>
+                                            <span v-if="novaVotacao.candidatos.length === 0"
+                                                class="text-muted small fst-italic">Nenhum candidato selecionado.</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-soft-secondary"
+                                @click="modalNovaVotacao = false">Cancelar</button>
+                            <button type="button" class="btn btn-primary" @click="criarVotacao"
+                                :disabled="!novaVotacao.titulo || novaVotacao.candidatos.length === 0">Confirmar
+                                Criação</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MODAL: RANKING/RESULTADO -->
+            <div v-if="modalRanking" class="modal fade show d-block" style="background: rgba(0,0,0,0.5)">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title"><i class="fa-solid fa-trophy icon-accent"></i> Resultado da Votação</h5>
+                            <button type="button" class="btn-close" @click="modalRanking = false"></button>
+                        </div>
+                        <div class="modal-body">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Candidato</th>
+                                        <th class="text-center">Total de Pontos</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="(r, i) in ranking" :key="i" :class="{'fw-bold table-warning': i === 0}">
+                                        <td>{{ i + 1 }}º</td>
+                                        <td>{{ r.nome }}</td>
+                                        <td class="text-center fs-5">{{ r.total_pontos || 0 }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-soft-secondary"
+                                @click="modalRanking = false">Fechar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="/js/menu.js"></script>
+    <script>
+        const { createApp } = Vue;
+
+        try {
+            if (typeof injetarMenu === 'function') {
+                injetarMenu('#app');
+                ativarMenu('Votação');
+            }
+        } catch (e) { console.warn(e); }
+
+        createApp({
+            data() {
+                return {
+                    // Navegação
+                    pastas: [],
+                    pastaSelecionada: null, // Objeto pasta
+                    votacoesDaPasta: [],
+                    votacaoSelecionada: null, // Dados completos da votação aberta
+
+                    // Inputs e Modais
+                    novaPastaNome: '',
+                    modalNovaVotacao: false,
+                    modalRanking: false,
+
+                    // Nova Votação
+                    novaVotacao: {
+                        titulo: '',
+                        candidatos: []
+                    },
+                    termoBuscaCandidato: '',
+                    resultadosBusca: [],
+                    searchTimer: null,
+
+                    // Matrix Data
+                    // Chave: "eleitorID_candidatoID", Valor: pontos
+                    matriz: {},
+
+                    // Resultado
+                    ranking: []
+                }
+            },
+            async mounted() {
+                await this.listarPastas();
+            },
+            methods: {
+                // --- HELPERS ---
+                getPrimeiroNome(nome) {
+                    if (!nome) return '';
+                    return nome.split(' ')[0];
+                },
+                getRestoNome(nome) {
+                    if (!nome) return '';
+                    const parts = nome.split(' ');
+                    if (parts.length <= 1) return '';
+                    return parts.slice(1).join(' ');
+                },
+
+                // --- CRUD PASTAS ---
+                async listarPastas() {
+                    try {
+                        const res = await fetch('/api/votacao/pastas');
+                        this.pastas = await res.json();
+                    } catch (e) { console.error(e); }
+                },
+                async criarPasta() {
+                    if (!this.novaPastaNome) return;
+                    try {
+                        await fetch('/api/votacao/pastas', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ nome: this.novaPastaNome })
+                        });
+                        this.novaPastaNome = '';
+                        await this.listarPastas();
+                    } catch (e) { console.error(e); }
+                },
+                async excluirPasta(id) {
+                    if (!(await window.showFloatingConfirm("Tem certeza que deseja excluir esta pasta? Todas as votações dentro dela serão apagadas."))) return;
+                    try {
+                        await fetch(`/api/votacao/pastas/${id}`, { method: 'DELETE' });
+                        await this.listarPastas();
+                        this.irParaInicio();
+                    } catch (e) { console.error(e); }
+                },
+
+                // --- NAVEGAÇÃO ---
+                irParaInicio() {
+                    this.pastaSelecionada = null;
+                    this.votacaoSelecionada = null;
+                    this.votacoesDaPasta = [];
+                },
+                async irParaPasta(pasta) {
+                    this.pastaSelecionada = pasta;
+                    this.votacaoSelecionada = null;
+                    await this.listarVotacoes(pasta.id);
+                },
+                async listarVotacoes(pastaId) {
+                    try {
+                        const res = await fetch(`/api/votacao/pastas/${pastaId}/votacoes`);
+                        this.votacoesDaPasta = await res.json();
+                    } catch (e) { console.error(e); }
+                },
+
+                // --- CRUD VOTAÇÃO ---
+                buscarCandidatos() {
+                    clearTimeout(this.searchTimer);
+                    if (this.termoBuscaCandidato.length < 3) {
+                        this.resultadosBusca = [];
+                        return;
+                    }
+                    this.searchTimer = setTimeout(async () => {
+                        try {
+                            const res = await fetch(`/api/jovens/search?q=${encodeURIComponent(this.termoBuscaCandidato)}`);
+                            this.resultadosBusca = await res.json();
+                        } catch (e) { console.error(e); }
+                    }, 300);
+                },
+                adicionarCandidato(jovem) {
+                    if (!this.novaVotacao.candidatos.find(c => c.id === jovem.id)) {
+                        this.novaVotacao.candidatos.push(jovem);
+                    }
+                    this.termoBuscaCandidato = '';
+                    this.resultadosBusca = [];
+                },
+                removerCandidato(id) {
+                    this.novaVotacao.candidatos = this.novaVotacao.candidatos.filter(c => c.id !== id);
+                },
+                async criarVotacao() {
+                    if (!this.novaVotacao.titulo || this.novaVotacao.candidatos.length === 0) return;
+                    try {
+                        const payload = {
+                            titulo: this.novaVotacao.titulo,
+                            pasta_id: this.pastaSelecionada.id,
+                            candidatos_ids: this.novaVotacao.candidatos.map(c => c.id)
+                        };
+                        const res = await fetch('/api/votacao', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+
+                        if (res.ok) {
+                            this.modalNovaVotacao = false;
+                            this.novaVotacao.titulo = '';
+                            this.novaVotacao.candidatos = [];
+                            await this.listarVotacoes(this.pastaSelecionada.id);
+                        } else {
+                            alert("Erro ao criar votação");
+                        }
+                    } catch (e) { console.error(e); }
+                },
+                async excluirVotacao(id) {
+                    if (!(await window.showFloatingConfirm("Excluir votação?"))) return;
+                    try {
+                        await fetch(`/api/votacao/${id}`, { method: 'DELETE' });
+                        await this.listarVotacoes(this.pastaSelecionada.id);
+                    } catch (e) { console.error(e); }
+                },
+
+                // --- MATRIX E VOTOS ---
+                async abrirVotacao(id) {
+                    try {
+                        const res = await fetch(`/api/votacao/${id}`);
+                        const data = await res.json();
+
+                        if (data.error) throw new Error(data.error);
+
+                        this.votacaoSelecionada = data; // { votacao, candidatos, eleitores, votos }
+
+                        // Inicializar Matriz
+                        this.matriz = {};
+                        data.votos.forEach(v => {
+                            this.matriz[`${v.eleitor_id}_${v.candidato_id}`] = v.pontos;
+                        });
+
+                    } catch (e) {
+                        console.error(e);
+                        alert("Erro ao abrir votação");
+                    }
+                },
+                async salvarMatriz() {
+                    if (!this.votacaoSelecionada) return;
+
+                    // Converter objeto matriz para array de votos
+                    const votosParaSalvar = [];
+                    for (const key in this.matriz) {
+                        const [eleitorId, candId] = key.split('_');
+                        const pontos = this.matriz[key];
+                        // Envia mesmo se for vazio (para deletar no backend se necessário)
+                        votosParaSalvar.push({
+                            eleitor_id: parseInt(eleitorId),
+                            candidato_id: parseInt(candId),
+                            pontos: pontos === '' ? null : parseInt(pontos)
+                        });
+                    }
+
+                    try {
+                        const res = await fetch(`/api/votacao/${this.votacaoSelecionada.votacao.id}/votos_lote`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ votos: votosParaSalvar })
+                        });
+
+                        if (res.ok) {
+                            alert("Votos salvos com sucesso!");
+                        } else {
+                            alert("Erro ao salvar");
+                        }
+                    } catch (e) { console.error(e); alert("Erro de conexão"); }
+                },
+                async carregarRankingModal() {
+                    if (!this.votacaoSelecionada) return;
+                    try {
+                        const res = await fetch(`/api/votacao/${this.votacaoSelecionada.votacao.id}/ranking`);
+                        this.ranking = await res.json();
+                        this.modalRanking = true;
+                    } catch (e) { console.error(e); }
+                }
+            }
+        }).mount('#content');
+    </script>
+</body>
+
+</html>

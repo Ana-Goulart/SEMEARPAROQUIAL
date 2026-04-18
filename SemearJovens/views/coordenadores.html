@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>EJC - Cordenadores</title>
+    <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
+    <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/velzon-theme.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/ui-kit.js"></script>
+    <script src="/js/menu.js"></script>
+    <style>
+        .folder-item {
+            cursor: pointer;
+            transition: background-color 0.2s;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            padding: 12px;
+            background: #fff;
+            position: relative;
+        }
+
+        .folder-item:hover {
+            background-color: #e9ecef;
+            border-color: #dee2e6;
+        }
+
+        .item-icon {
+            font-size: 2.3rem;
+            margin-bottom: 5px;
+            text-align: center;
+            display: block;
+        }
+
+        .item-name {
+            font-size: 0.9rem;
+            word-break: break-word;
+            text-align: center;
+            display: block;
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: 6px;
+            right: 6px;
+            display: none;
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid #ddd;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            text-align: center;
+            line-height: 20px;
+            font-size: 0.8rem;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .folder-item:hover .delete-btn {
+            display: block;
+        }
+
+        .coord-card {
+            border: 1px solid #e6ecf5;
+            border-radius: 12px;
+            background: #fff;
+        }
+
+        .coord-header {
+            padding: 14px 16px;
+            border-bottom: 1px solid #eef2f7;
+        }
+
+        .busca-resultados {
+            position: absolute;
+            z-index: 1000;
+            width: 100%;
+            max-height: 250px;
+            overflow-y: auto;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 0 0 8px 8px;
+        }
+
+        .busca-item {
+            padding: 10px 12px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+            background: white;
+        }
+
+        .busca-item:hover {
+            background: #f8f9fa;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <main class="container-fluid">
+            <div class="d-flex justify-content-between mb-4 align-items-center">
+                <div>
+                    <h3><i class="fa-solid fa-compass icon-accent"></i> Cordenadores</h3>
+                    <p class="text-muted mb-0">Cada pasta é uma coordenação. Dentro dela, cadastre os períodos.</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button v-if="!pastaAtual" class="btn btn-soft-primary" @click="abrirModalNovaPasta"><i class="fa-solid fa-folder icon-accent"></i> Nova Coordenação</button>
+                    <button v-else class="btn btn-soft-secondary" @click="voltarRaiz">← Voltar</button>
+                    <button v-if="pastaAtual" class="btn btn-soft-primary" @click="abrirModalNovaPasta"><i class="fa-solid fa-folder-open icon-accent"></i> Nova Subpasta</button>
+                    <button v-if="pastaAtual" class="btn btn-primary" @click="abrirModalNova"><i class="fa-solid fa-plus icon-accent"></i> Novo Período</button>
+                </div>
+            </div>
+
+            <nav v-if="pastaAtual" aria-label="breadcrumb" class="mb-3">
+                <ol class="breadcrumb p-3 bg-light rounded-3">
+                    <li class="breadcrumb-item" @click="voltarRaiz" style="cursor: pointer;"><i class="fa-solid fa-house icon-accent"></i> Coordenações</li>
+                    <li class="breadcrumb-item"
+                        v-for="(b, idx) in caminhoPastas"
+                        :key="`bc-${b.id}`"
+                        :class="{ active: idx === (caminhoPastas.length - 1) }"
+                        @click="idx === (caminhoPastas.length - 1) ? null : irParaBreadcrumb(idx)"
+                        :style="{ cursor: idx === (caminhoPastas.length - 1) ? 'default' : 'pointer' }">
+                        {{ b.nome }}
+                    </li>
+                </ol>
+            </nav>
+
+            <div v-if="carregando" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+            </div>
+
+            <div v-else-if="!pastaAtual" class="row g-3">
+                <div v-if="!pastasRaiz.length" class="col-12 text-center text-muted py-5">
+                    <p class="mb-2">Nenhuma coordenação criada.</p>
+                    <button class="btn btn-soft-primary" @click="abrirModalNovaPasta">Criar primeira coordenação</button>
+                </div>
+
+                <div class="col-6 col-md-4 col-lg-3" v-for="p in pastasRaiz" :key="p.id">
+                    <div class="folder-item h-100 d-flex flex-column align-items-center" @click="entrarPasta(p)">
+                        <span class="delete-btn" @click.stop="deletarPasta(p)" title="Apagar coordenação">×</span>
+                        <span class="item-icon"><i class="fa-solid fa-folder icon-accent"></i></span>
+                        <span class="item-name">{{ p.nome }}</span>
+                        <div class="mt-1 d-flex gap-1">
+                            <button class="btn btn-edit-standard btn-sm" @click.stop="abrirModalEditarPasta(p)">Editar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div v-else>
+                <div class="row g-3 mb-3" v-if="subpastasDaPasta.length">
+                    <div class="col-6 col-md-4 col-lg-3" v-for="p in subpastasDaPasta" :key="`sub-${p.id}`">
+                        <div class="folder-item h-100 d-flex flex-column align-items-center" @click="entrarPasta(p)">
+                            <span class="delete-btn" @click.stop="deletarPasta(p)" title="Apagar subpasta">×</span>
+                            <span class="item-icon"><i class="fa-solid fa-folder-open icon-accent"></i></span>
+                            <span class="item-name">{{ p.nome }}</span>
+                            <div class="mt-1 d-flex gap-1">
+                                <button class="btn btn-edit-standard btn-sm" @click.stop="abrirModalEditarPasta(p)">Editar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-if="!subpastasDaPasta.length && !coordenacoesDaPasta.length" class="text-center text-muted py-5">
+                    Nenhuma subpasta ou período cadastrado aqui.
+                </div>
+
+                <div v-if="coordenacoesDaPasta.length" class="row g-3">
+                    <div class="col-12" v-for="c in coordenacoesDaPasta" :key="c.id">
+                        <div class="coord-card">
+                            <div class="coord-header d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h5 class="mb-1">{{ c.periodo || 'Sem período' }}</h5>
+                                    <div class="small text-muted">
+                                        <span>{{ c.pasta_nome || pastaAtual?.nome || c.nome }}</span>
+                                        <span v-if="c.descricao"> • {{ c.descricao }}</span>
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button class="btn btn-sm btn-soft-secondary" @click="toggleMembros(c.id)" :title="membrosAbertos[c.id] ? 'Ocultar membros' : 'Ver membros'">
+                                        {{ membrosAbertos[c.id] ? '▾ Membros' : '▸ Membros' }}
+                                    </button>
+                                    <button class="btn btn-edit-standard btn-sm" @click="abrirModalEditar(c)">Editar</button>
+                                    <button class="btn btn-sm btn-soft-primary" @click="abrirModalAdicionarJovem(c)"><i class="fa-solid fa-plus icon-accent"></i> Membro</button>
+                                    <button class="btn btn-sm btn-outline-danger" @click="deletarCoordenacao(c)"><i class="fa-solid fa-trash icon-accent"></i></button>
+                                </div>
+                            </div>
+                            <div class="p-3">
+                                <div v-if="!membrosAbertos[c.id]" class="text-muted small">Membros ocultos. Clique em "Membros" para visualizar.</div>
+                                <div v-else-if="!c.membros || !c.membros.length" class="text-muted small">Nenhum membro vinculado.</div>
+                                <div v-else class="table-responsive">
+                                    <table class="table table-sm align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Nome</th>
+                                                <th>Telefone</th>
+                                                <th>Círculo</th>
+                                                <th>Tipo</th>
+                                                <th class="text-end">Ações</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="m in c.membros" :key="m.id">
+                                                <td>{{ m.nome_completo }}</td>
+                                                <td>{{ m.telefone || '-' }}</td>
+                                                <td>{{ m.circulo || '-' }}</td>
+                                                <td>
+                                                    <span class="badge" :class="m.membro_tipo === 'TIO' ? 'text-bg-warning' : 'text-bg-info'">
+                                                        {{ m.membro_tipo === 'TIO' ? 'Tio' : 'Jovem' }}
+                                                    </span>
+                                                </td>
+                                                <td class="text-end">
+                                                    <button class="btn btn-sm btn-outline-danger" @click="removerMembro(m.id)">Remover</button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <div class="modal fade" id="modalCoord" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">{{ form.id ? 'Editar Período' : 'Novo Período' }}</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Período *</label>
+                            <input type="text" v-model="form.periodo" class="form-control" placeholder="Ex: 2025/2026">
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">Descrição</label>
+                            <textarea v-model="form.descricao" class="form-control" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" @click="salvarCoordenacao">Salvar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="modalAdicionarJovem" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-light">
+                        <h5 class="modal-title">Adicionar membro em {{ coordenacaoSelecionada?.nome }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label text-muted small">Tipo de membro</label>
+                            <select class="form-select form-select-sm" v-model="tipoMembro">
+                                <option value="JOVEM">Jovem</option>
+                                <option value="TIO">Tio</option>
+                            </select>
+                        </div>
+                        <div class="position-relative">
+                            <label class="form-label text-muted small">Buscar membro</label>
+                            <input type="text" class="form-control" placeholder="Digite o nome..." v-model="searchQuery" @input="onSearchInput">
+                            <div v-if="searchResults.length > 0" class="busca-resultados bg-white border">
+                                <div v-for="j in searchResults" :key="j.key" class="busca-item d-flex justify-content-between" @click="adicionarJovem(j)">
+                                    <span>{{ j.nome_completo }}</span>
+                                    <span class="text-muted small" v-if="j.tipo === 'JOVEM'">
+                                        {{ (j.idade !== null && j.idade !== undefined) ? (j.idade + ' anos') : '-' }}
+                                        • {{ j.estado_civil || '-' }}
+                                    </span>
+                                    <span class="text-muted small" v-else>
+                                        {{ j.ecc_label || '-' }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="modalPasta" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-soft-primary">
+                        <h5 class="modal-title">
+                            {{ formPasta.id ? 'Editar Pasta' : (formPasta.parent_id ? 'Nova Subpasta' : 'Nova Coordenação') }}
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-2">
+                            <label class="form-label">{{ formPasta.parent_id ? 'Nome da subpasta *' : 'Nome da coordenação *' }}</label>
+                            <input type="text" v-model="formPasta.nome" class="form-control"
+                                :placeholder="formPasta.parent_id ? 'Ex: Núcleo Jovens' : 'Ex: Coordenação do Terço'">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary" @click="salvarPasta">Salvar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            injetarMenu('#app');
+            ativarMenu('/coordenadores');
+        });
+
+        const { createApp } = Vue;
+        createApp({
+            data() {
+                return {
+                    carregando: true,
+                    coordenacoes: [],
+                    pastas: [],
+                    pastaAtual: null,
+                    caminhoPastas: [],
+                    form: { id: null, pasta_id: null, periodo: '', descricao: '' },
+                    formPasta: { id: null, nome: '', parent_id: null },
+                    modalCoord: null,
+                    modalPasta: null,
+                    modalAdicionar: null,
+                    modalHistorico: null,
+                    coordenacaoSelecionada: null,
+                    historicoCoord: { nome: '', gestoes: [] },
+                    membrosAbertos: {},
+                    searchQuery: '',
+                    searchResults: [],
+                    searchTimer: null,
+                    tipoMembro: 'JOVEM',
+                    tiosList: []
+                }
+            },
+            computed: {
+                coordenacoesDaPasta() {
+                    if (!this.pastaAtual) return [];
+                    return this.coordenacoes.filter(c => Number(c.pasta_id) === Number(this.pastaAtual.id));
+                },
+                pastasRaiz() {
+                    return this.pastas.filter(p => !p.parent_id);
+                },
+                subpastasDaPasta() {
+                    if (!this.pastaAtual) return [];
+                    return this.pastas.filter(p => Number(p.parent_id || 0) === Number(this.pastaAtual.id));
+                }
+            },
+            methods: {
+                toggleMembros(id) {
+                    this.membrosAbertos[id] = !this.membrosAbertos[id];
+                },
+                montarCaminhoPasta(pastaId) {
+                    if (!pastaId) return [];
+                    const mapa = new Map((this.pastas || []).map(p => [Number(p.id), p]));
+                    const caminho = [];
+                    let atual = mapa.get(Number(pastaId));
+                    const visitados = new Set();
+
+                    while (atual && !visitados.has(Number(atual.id))) {
+                        caminho.unshift(atual);
+                        visitados.add(Number(atual.id));
+                        const parentId = atual.parent_id ? Number(atual.parent_id) : null;
+                        atual = parentId ? mapa.get(parentId) : null;
+                    }
+                    return caminho;
+                },
+                async carregar() {
+                    this.carregando = true;
+                    try {
+                        const [resCoord, resPastas] = await Promise.all([
+                            fetch('/api/coordenadores'),
+                            fetch('/api/coordenadores/pastas')
+                        ]);
+                        this.coordenacoes = resCoord.ok ? await resCoord.json() : [];
+                        this.pastas = resPastas.ok ? await resPastas.json() : [];
+
+                        if (this.pastaAtual) {
+                            const aindaExiste = this.pastas.find(p => Number(p.id) === Number(this.pastaAtual.id));
+                            if (!aindaExiste) {
+                                this.pastaAtual = null;
+                                this.caminhoPastas = [];
+                            } else {
+                                this.pastaAtual = aindaExiste;
+                                this.caminhoPastas = this.montarCaminhoPasta(aindaExiste.id);
+                            }
+                        }
+                    } finally {
+                        this.carregando = false;
+                    }
+                },
+                entrarPasta(pasta) {
+                    this.pastaAtual = pasta;
+                    this.caminhoPastas = this.montarCaminhoPasta(pasta.id);
+                },
+                irParaBreadcrumb(idx) {
+                    const alvo = this.caminhoPastas[idx];
+                    if (!alvo) return;
+                    this.pastaAtual = alvo;
+                    this.caminhoPastas = this.montarCaminhoPasta(alvo.id);
+                },
+                voltarRaiz() {
+                    this.pastaAtual = null;
+                    this.caminhoPastas = [];
+                },
+                abrirModalNova() {
+                    if (!this.pastaAtual) {
+                        alert('Entre em uma coordenação para criar o período.');
+                        return;
+                    }
+                    this.form = { id: null, pasta_id: Number(this.pastaAtual.id), periodo: '', descricao: '' };
+                    if (!this.modalCoord) this.modalCoord = new bootstrap.Modal(document.getElementById('modalCoord'));
+                    this.modalCoord.show();
+                },
+                abrirModalEditar(c) {
+                    this.form = { id: c.id, pasta_id: c.pasta_id || Number(this.pastaAtual?.id || null), periodo: c.periodo || '', descricao: c.descricao || '' };
+                    if (!this.modalCoord) this.modalCoord = new bootstrap.Modal(document.getElementById('modalCoord'));
+                    this.modalCoord.show();
+                },
+                abrirModalNovaPasta() {
+                    this.formPasta = { id: null, nome: '', parent_id: this.pastaAtual ? Number(this.pastaAtual.id) : null };
+                    if (!this.modalPasta) this.modalPasta = new bootstrap.Modal(document.getElementById('modalPasta'));
+                    this.modalPasta.show();
+                },
+                abrirModalEditarPasta(p) {
+                    this.formPasta = { id: p.id, nome: p.nome || '', parent_id: p.parent_id || null };
+                    if (!this.modalPasta) this.modalPasta = new bootstrap.Modal(document.getElementById('modalPasta'));
+                    this.modalPasta.show();
+                },
+                async salvarPasta() {
+                    if (!this.formPasta.nome.trim()) {
+                        alert('Nome obrigatório.');
+                        return;
+                    }
+                    const url = this.formPasta.id ? `/api/coordenadores/pastas/${this.formPasta.id}` : '/api/coordenadores/pastas';
+                    const method = this.formPasta.id ? 'PUT' : 'POST';
+                    const res = await fetch(url, {
+                        method,
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(this.formPasta)
+                    });
+                    if (!res.ok) {
+                        const err = await res.json();
+                        alert(err.error || 'Erro ao salvar coordenação');
+                        return;
+                    }
+                    this.modalPasta.hide();
+                    await this.carregar();
+                },
+                async deletarPasta(p) {
+                    if (!(await window.showFloatingConfirm(`Remover a coordenação "${p.nome}"? Os períodos dentro dela ficarão sem coordenação.`))) return;
+                    const res = await fetch(`/api/coordenadores/pastas/${p.id}`, { method: 'DELETE' });
+                    if (!res.ok) {
+                        const err = await res.json();
+                        alert(err.error || 'Erro ao remover coordenação');
+                        return;
+                    }
+                    if (this.pastaAtual && Number(this.pastaAtual.id) === Number(p.id)) this.pastaAtual = null;
+                    await this.carregar();
+                },
+                async salvarCoordenacao() {
+                    if (!this.form.pasta_id) {
+                        alert('Período precisa estar dentro de uma coordenação.');
+                        return;
+                    }
+                    if (!String(this.form.periodo || '').trim()) {
+                        alert('Período obrigatório.');
+                        return;
+                    }
+                    const url = this.form.id ? `/api/coordenadores/${this.form.id}` : '/api/coordenadores';
+                    const method = this.form.id ? 'PUT' : 'POST';
+                    const res = await fetch(url, {
+                        method,
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(this.form)
+                    });
+                    if (!res.ok) {
+                        const err = await res.json();
+                        alert(err.error || 'Erro ao salvar coordenação');
+                        return;
+                    }
+                    this.modalCoord.hide();
+                    await this.carregar();
+                },
+                async deletarCoordenacao(c) {
+                    const periodo = c.periodo || 'Sem período';
+                    if (!(await window.showFloatingConfirm(`Remover o período "${periodo}"? Isso remove também das comissões dos jovens.`))) return;
+                    const res = await fetch(`/api/coordenadores/${c.id}`, { method: 'DELETE' });
+                    if (!res.ok) {
+                        const err = await res.json();
+                        alert(err.error || 'Erro ao remover coordenação');
+                        return;
+                    }
+                    await this.carregar();
+                },
+                abrirModalAdicionarJovem(c) {
+                    this.coordenacaoSelecionada = c;
+                    this.searchQuery = '';
+                    this.searchResults = [];
+                    this.tipoMembro = 'JOVEM';
+                    this.carregarTios();
+                    if (!this.modalAdicionar) this.modalAdicionar = new bootstrap.Modal(document.getElementById('modalAdicionarJovem'));
+                    this.modalAdicionar.show();
+                },
+                async abrirHistorico(c) {
+                    try {
+                        const res = await fetch(`/api/coordenadores/historico/${c.id}`);
+                        if (!res.ok) {
+                            const err = await res.json();
+                            alert(err.error || 'Erro ao abrir histórico');
+                            return;
+                        }
+                        this.historicoCoord = await res.json();
+                        if (!this.modalHistorico) this.modalHistorico = new bootstrap.Modal(document.getElementById('modalHistoricoCoord'));
+                        this.modalHistorico.show();
+                    } catch (e) {
+                        alert('Erro ao abrir histórico');
+                    }
+                },
+                onSearchInput() {
+                    clearTimeout(this.searchTimer);
+                    if (!this.searchQuery || this.searchQuery.trim().length < 2) {
+                        this.searchResults = [];
+                        return;
+                    }
+                    this.searchTimer = setTimeout(() => this.executarBusca(), 250);
+                },
+                async executarBusca() {
+                    if (this.tipoMembro === 'TIO') {
+                        const q = String(this.searchQuery || '').trim().toLowerCase();
+                        this.searchResults = (this.tiosList || []).filter(t => {
+                            const nome = `${t.nome_tio || ''} ${t.nome_tia || ''}`.toLowerCase();
+                            return nome.includes(q);
+                        }).map(t => ({
+                            key: `tio-${t.id}`,
+                            tipo: 'TIO',
+                            id: t.id,
+                            nome_completo: `${t.nome_tio} e ${t.nome_tia}`,
+                            ecc_label: t.ecc_numero ? `${t.ecc_numero} ${t.ecc_tipo || 'ECC'}` : ''
+                        }));
+                        return;
+                    }
+                    const res = await fetch(`/api/jovens/search?q=${encodeURIComponent(this.searchQuery)}`);
+                    const data = res.ok ? await res.json() : [];
+                    this.searchResults = (data || []).map(j => ({ ...j, key: `jovem-${j.id}`, tipo: 'JOVEM' }));
+                },
+                async adicionarJovem(jovem) {
+                    const c = this.coordenacaoSelecionada;
+                    if (!c) return;
+                    const payload = jovem.tipo === 'TIO'
+                        ? { tipo: 'TIO', tio_casal_id: jovem.id }
+                        : { tipo: 'JOVEM', jovem_id: jovem.id };
+                    const res = await fetch(`/api/coordenadores/${c.id}/membros`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!res.ok) {
+                        const err = await res.json();
+                        alert(err.error || 'Erro ao adicionar membro');
+                        return;
+                    }
+                    this.searchResults = [];
+                    this.searchQuery = '';
+                    await this.carregar();
+                },
+                async carregarTios() {
+                    if (this.tiosList.length) return;
+                    try {
+                        const res = await fetch('/api/tios/casais');
+                        const data = await res.json().catch(() => ([]));
+                        this.tiosList = res.ok && Array.isArray(data) ? data : [];
+                    } catch (e) {
+                        this.tiosList = [];
+                    }
+                },
+                async removerMembro(membroId) {
+                    if (!(await window.showFloatingConfirm('Remover este membro da coordenação?'))) return;
+                    const res = await fetch(`/api/coordenadores/membros/${membroId}`, { method: 'DELETE' });
+                    if (!res.ok) {
+                        const err = await res.json();
+                        alert(err.error || 'Erro ao remover membro');
+                        return;
+                    }
+                    await this.carregar();
+                }
+            },
+            mounted() {
+                this.carregar();
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

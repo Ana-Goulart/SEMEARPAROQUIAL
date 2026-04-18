@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atualizar Cadastro - EJC</title>
+    <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
+    <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/velzon-theme.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/ui-kit.js"></script>
+    <script src="/js/date-br.js" defer></script>
+</head>
+<body style="min-height:100vh;background:linear-gradient(155deg,#fbf5e9 0%,#f3e6cc 46%,#efe5d8 100%);">
+    <div id="app" class="container py-4 py-md-5">
+        <div class="row justify-content-center">
+            <div class="col-12 col-lg-8">
+                <div v-if="sucessoAtualizacao" class="card border-0 shadow">
+                    <div class="card-body p-4 p-md-5 text-center">
+                        <img src="/assets/logo-oficial.png" alt="Semear Paroquial" style="width:110px;height:110px;object-fit:contain;">
+                        <h2 class="mt-3 mb-2">Cadastro atualizado</h2>
+                        <p class="text-muted mb-4">Agradecemos a atualizacao dos seus dados.</p>
+                        <a href="/jovens/atualizar-cadastro" class="btn btn-outline-primary">Voltar ao formulario</a>
+                    </div>
+                </div>
+                <div v-if="!sucessoAtualizacao" class="card border-0 shadow">
+                    <div class="card-body p-4">
+                        <div class="text-center mb-3">
+                            <img src="/assets/logo-oficial.png" alt="Semear Paroquial" style="width:120px;height:120px;object-fit:contain;">
+                            <h4 class="mt-2 mb-1">Atualização de Cadastro</h4>
+                            <p class="text-muted mb-0">Confirme seus dados e atualize suas informações.</p>
+                        </div>
+
+                        <div class="alert alert-warning py-2 small">
+                            Preencha corretamente os dados de validação: nome completo, telefone, data de nascimento e última equipe em que você serviu. Se você nunca serviu em equipe, selecione "Nunca servi em nenhuma equipe".
+                        </div>
+
+                        <div class="row g-3" v-if="!naoEncontrado">
+                            <div class="col-12"><h6 class="text-muted mb-0">Validação</h6></div>
+                            <div class="col-md-6">
+                                <label class="form-label">Nome completo</label>
+                                <input class="form-control" v-model.trim="form.nome_completo" maxlength="180">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Telefone atual</label>
+                                <input class="form-control" v-model.trim="form.telefone" maxlength="30" placeholder="(31)99999-9999" @input="onTelefoneValidacaoInput">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Data de nascimento (apenas validação)</label>
+                                <input type="text" class="form-control date-br" v-model.trim="form.data_nascimento_br" placeholder="dd/mm/aaaa" inputmode="numeric">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Qual foi a última equipe que você serviu?</label>
+                                <select class="form-select" v-model="form.ultima_equipe">
+                                    <option value="">Selecione a equipe...</option>
+                                    <option value="__NENHUMA_EQUIPE__">Nunca servi em nenhuma equipe</option>
+                                    <option v-for="eq in equipes" :key="`eq-${eq}`" :value="eq">{{ eq }}</option>
+                                </select>
+                            </div>
+
+                            <div class="col-12 d-grid d-md-flex gap-2 pt-2">
+                                <button class="btn btn-outline-primary" :disabled="validando" @click="validarCadastro">
+                                    {{ validando ? 'Confirmando...' : 'Confirmar cadastro' }}
+                                </button>
+                                <span class="small align-self-center text-success" v-if="cadastroValidado">Cadastro confirmado. Agora você pode atualizar.</span>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="naoEncontrado" v-model="naoEncontrado">
+                                    <label class="form-check-label" for="naoEncontrado">Não foi encontrado meu registro</label>
+                                </div>
+                            </div>
+
+                            <div class="col-12 pt-2"><h6 class="text-muted mb-0">Dados para atualizar</h6></div>
+                            <div class="col-md-6">
+                                <label class="form-label">Nome completo</label>
+                                <input class="form-control" v-model.trim="form.nome_completo_novo" maxlength="180" :disabled="!cadastroValidado">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Telefone</label>
+                                <input class="form-control" v-model.trim="form.telefone_novo" maxlength="30" placeholder="(31)99999-9999" :disabled="!cadastroValidado" @input="onTelefoneNovoInput">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Apelido</label>
+                                <input class="form-control" v-model.trim="form.apelido" maxlength="120" :disabled="!cadastroValidado">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">E-mail</label>
+                                <input class="form-control" v-model.trim="form.email" maxlength="180" placeholder="email@exemplo.com" :disabled="!cadastroValidado">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Instagram</label>
+                                <input class="form-control" v-model.trim="form.instagram" maxlength="120" placeholder="@usuario" :disabled="!cadastroValidado">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Estado civil</label>
+                                <select class="form-select" v-model="form.estado_civil" :disabled="!cadastroValidado">
+                                    <option value="">Selecione</option>
+                                    <option value="Solteiro">Solteiro</option>
+                                    <option value="Casado">Casado</option>
+                                    <option value="Amasiado">Amasiado</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Data de nascimento</label>
+                                <input type="text" class="form-control date-br" v-model.trim="form.data_nascimento_novo" placeholder="dd/mm/aaaa" inputmode="numeric" :disabled="!cadastroValidado">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Participa de alguma pastoral?</label>
+                                <select class="form-select" v-model="form.participa_pastoral" :disabled="!cadastroValidado">
+                                    <option :value="false">Não</option>
+                                    <option :value="true">Sim</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6" v-if="form.participa_pastoral && cadastroValidado">
+                                <label class="form-label">Pastorais que participa</label>
+                                <div class="border rounded p-2 bg-white" :class="!cadastroValidado ? 'text-muted' : ''">
+                                    <div v-if="pastoraisDisponiveis.length" class="d-flex flex-wrap gap-2">
+                                        <div class="form-check" v-for="p in pastoraisDisponiveis" :key="`pastoral-upd-${p.id}`">
+                                            <input class="form-check-input" type="checkbox" :id="`pastoral-upd-${p.id}`" :value="p.id" v-model="form.pastorais" :disabled="!cadastroValidado">
+                                            <label class="form-check-label" :for="`pastoral-upd-${p.id}`">{{ p.nome }}</label>
+                                        </div>
+                                    </div>
+                                    <div v-else class="small text-muted">Nenhuma pastoral cadastrada.</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Casal de tios</label>
+                                <select class="form-select" v-model="form.tio_casal_id" :disabled="!cadastroValidado">
+                                    <option value="">Selecione</option>
+                                    <option v-for="casal in tiosDisponiveis" :key="`tio-upd-${casal.id}`" :value="casal.id">{{ casal.nome_tio || '-' }} e {{ casal.nome_tia || '-' }}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">É da equipe de saúde?</label>
+                                <select class="form-select" v-model="form.equipe_saude" :disabled="!cadastroValidado">
+                                    <option :value="false">Não</option>
+                                    <option :value="true">Sim, enfermeiro(a) ou médico(a)</option>
+                                </select>
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label">Possui deficiência?</label>
+                                <select class="form-select" v-model="form.deficiencia" :disabled="!cadastroValidado">
+                                    <option :value="false">Não</option>
+                                    <option :value="true">Sim</option>
+                                </select>
+                            </div>
+                            <div class="col-md-8" v-if="form.deficiencia && cadastroValidado">
+                                <label class="form-label">Qual deficiência</label>
+                                <input class="form-control" v-model.trim="form.qual_deficiencia" maxlength="200">
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label">Possui restrição alimentar?</label>
+                                <select class="form-select" v-model="form.restricao_alimentar" :disabled="!cadastroValidado">
+                                    <option :value="false">Não</option>
+                                    <option :value="true">Sim</option>
+                                </select>
+                            </div>
+                            <div class="col-md-8" v-if="form.restricao_alimentar && cadastroValidado">
+                                <label class="form-label">Qual restrição</label>
+                                <select class="form-select" v-model="form.detalhes_restricao">
+                                    <option disabled value="">Selecione uma restrição...</option>
+                                    <option v-for="r in restricoesDisponiveis" :key="`rest-${r}`" :value="r">{{ r }}</option>
+                                    <option value="Outras">Outras (Especifique abaixo)</option>
+                                </select>
+                                <input v-if="form.detalhes_restricao === 'Outras'" class="form-control mt-2" v-model.trim="form.outra_restricao" maxlength="220" placeholder="Descreva a restrição">
+                            </div>
+
+                            <div class="col-md-4">
+                                <label class="form-label">É músico?</label>
+                                <select class="form-select" v-model="form.eh_musico" :disabled="!cadastroValidado">
+                                    <option :value="false">Não</option>
+                                    <option :value="true">Sim</option>
+                                </select>
+                            </div>
+                            <div class="col-md-8" v-if="form.eh_musico && cadastroValidado">
+                                <label class="form-label">Instrumentos</label>
+                                <div class="d-flex flex-wrap gap-2 border rounded p-2 bg-light">
+                                    <div class="form-check" v-for="ins in instrumentosDisponiveis" :key="`ins-${ins}`">
+                                        <input class="form-check-input" type="checkbox" :id="`ins-upd-${ins}`" :value="ins" v-model="form.instrumentos_musicais">
+                                        <label class="form-check-label small" :for="`ins-upd-${ins}`">{{ ins }}</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">CEP</label>
+                                <input class="form-control" v-model.trim="form.endereco_cep" maxlength="10" placeholder="00000-000" :disabled="!cadastroValidado" @input="onCepInput">
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label">Rua</label>
+                                <input class="form-control" v-model.trim="form.endereco_rua" maxlength="180" :disabled="!cadastroValidado">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Número</label>
+                                <input class="form-control" v-model.trim="form.endereco_numero" maxlength="40" :disabled="!cadastroValidado">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Bairro</label>
+                                <input class="form-control" v-model.trim="form.endereco_bairro" maxlength="120" :disabled="!cadastroValidado">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Cidade</label>
+                                <input class="form-control" v-model.trim="form.endereco_cidade" maxlength="120" :disabled="!cadastroValidado">
+                            </div>
+
+                            <div class="col-12">
+                                <label class="form-label">Observações adicionais</label>
+                                <textarea class="form-control" rows="3" v-model.trim="form.comentario_adicional" maxlength="1000" :disabled="!cadastroValidado"></textarea>
+                            </div>
+                            <div class="col-12">
+                                <div class="p-3 bg-light border rounded">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="aceiteTermosAtualizacaoJovem" v-model="aceiteTermos">
+                                        <label class="form-check-label" for="aceiteTermosAtualizacaoJovem">Li e aceito os termos de uso</label>
+                                    </div>
+                                    <div class="small text-muted mt-2">{{ termosTexto }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row g-3" v-else>
+                            <div class="col-12"><h6 class="text-muted mb-0">Não encontrei meu registro</h6></div>
+                            <div class="col-md-6">
+                                <label class="form-label">Nome completo</label>
+                                <input class="form-control" v-model.trim="naoEncontradoForm.nome_completo" maxlength="180">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Telefone</label>
+                                <input class="form-control" v-model.trim="naoEncontradoForm.telefone" maxlength="30" placeholder="(31)99999-9999" @input="onTelefoneNaoEncontradoInput">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">EJC que fez</label>
+                                <input class="form-control" v-model.trim="naoEncontradoForm.ejc_que_fez" maxlength="180" placeholder="Ex: 15º EJC">
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Observações adicionais</label>
+                                <textarea class="form-control" rows="3" v-model.trim="naoEncontradoForm.observacoes_adicionais" maxlength="1000"></textarea>
+                            </div>
+                            <div class="col-12">
+                                <div class="p-3 bg-light border rounded">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="aceiteTermosNaoEncontradoJovem" v-model="aceiteTermos">
+                                        <label class="form-check-label" for="aceiteTermosNaoEncontradoJovem">Li e aceito os termos de uso</label>
+                                    </div>
+                                    <div class="small text-muted mt-2">{{ termosTexto }}</div>
+                                </div>
+                            </div>
+                            <div class="col-12 d-flex gap-2">
+                                <button class="btn btn-primary" :disabled="!aceiteTermos" @click="enviarNaoEncontrado">Enviar dados</button>
+                                <button class="btn btn-outline-secondary" @click="naoEncontrado = false">Voltar</button>
+                            </div>
+                        </div>
+
+                        <div class="d-grid mt-4" v-if="!naoEncontrado">
+                            <button class="btn btn-primary" :disabled="enviando || !cadastroValidado || !aceiteTermos" @click="enviar">
+                                {{ enviando ? 'Enviando...' : 'Atualizar meus dados' }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+        createApp({
+            data() {
+                return {
+                    enviando: false,
+                    validando: false,
+                    cadastroValidado: false,
+                    sucessoAtualizacao: false,
+                    validacaoToken: '',
+                    equipes: [],
+                    naoEncontrado: false,
+                    aceiteTermos: false,
+                    termosTexto: 'Ao enviar este formulário, você autoriza o EJC a armazenar e utilizar seus dados pessoais para contato e atualização cadastral. Você pode solicitar atualização ou remoção dos dados a qualquer momento.',
+                    restricoesDisponiveis: [
+                        'Alergia a amendoim',
+                        'Alergia a castanhas',
+                        'Alergia a frutos do mar',
+                        'APLV (Alergia à proteína do leite de vaca)',
+                        'Intolerante à lactose',
+                        'Intolerante a glúten (Celíaco)',
+                        'Não come carne vermelha',
+                        'Não come carne de porco',
+                        'Vegetariano',
+                        'Vegano'
+                    ],
+                    instrumentosDisponiveis: [
+                        'Voz',
+                        'Violao',
+                        'Guitarra',
+                        'Baixo',
+                        'Teclado',
+                        'Bateria',
+                        'Percussao',
+                        'Flauta',
+                        'Saxofone',
+                        'Violino',
+                        'Cajon',
+                        'Ukulele'
+                    ],
+                    pastoraisDisponiveis: [],
+                    tiosDisponiveis: [],
+                    form: {
+                        nome_completo: '',
+                        telefone: '',
+                        data_nascimento_br: '',
+                        ultima_equipe: '',
+                        nome_completo_novo: '',
+                        telefone_novo: '',
+                        apelido: '',
+                        email: '',
+                        instagram: '',
+                        estado_civil: '',
+                        data_nascimento_novo: '',
+                        endereco_cep: '',
+                        endereco_rua: '',
+                        endereco_numero: '',
+                        endereco_bairro: '',
+                        endereco_cidade: '',
+                        deficiencia: false,
+                        restricao_alimentar: false,
+                        eh_musico: false,
+                        qual_deficiencia: '',
+                        detalhes_restricao: '',
+                        outra_restricao: '',
+                        instrumentos_musicais: [],
+                        comentario_adicional: '',
+                        pastorais: [],
+                        participa_pastoral: false,
+                        tio_casal_id: '',
+                        equipe_saude: false
+                    },
+                    naoEncontradoForm: {
+                        nome_completo: '',
+                        telefone: '',
+                        ejc_que_fez: '',
+                        tenant_id: '',
+                        observacoes_adicionais: '',
+                        origem_formulario: 'Lista Mestre'
+                    }
+                };
+            },
+            computed: {},
+            methods: {
+                formatarTelefoneBr(valor) {
+                    const digits = String(valor || '').replace(/\D/g, '').slice(0, 11);
+                    if (digits.length <= 2) return digits ? `(${digits}` : '';
+                    if (digits.length <= 6) return `(${digits.slice(0, 2)})${digits.slice(2)}`;
+                    if (digits.length <= 10) return `(${digits.slice(0, 2)})${digits.slice(2, 6)}-${digits.slice(6)}`;
+                    return `(${digits.slice(0, 2)})${digits.slice(2, 7)}-${digits.slice(7)}`;
+                },
+                onTelefoneValidacaoInput() {
+                    this.form.telefone = this.formatarTelefoneBr(this.form.telefone);
+                },
+                onTelefoneNovoInput() {
+                    this.form.telefone_novo = this.formatarTelefoneBr(this.form.telefone_novo);
+                },
+                onTelefoneNaoEncontradoInput() {
+                    this.naoEncontradoForm.telefone = this.formatarTelefoneBr(this.naoEncontradoForm.telefone);
+                },
+                formatarCep(cep) {
+                    const digits = String(cep || '').replace(/\D/g, '').slice(0, 8);
+                    if (digits.length <= 5) return digits;
+                    return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+                },
+                async onCepInput() {
+                    this.form.endereco_cep = this.formatarCep(this.form.endereco_cep);
+                    const digits = String(this.form.endereco_cep || '').replace(/\D/g, '');
+                    if (digits.length !== 8 || !this.cadastroValidado) return;
+                    try {
+                        const res = await fetch(`/api/cep/${digits}`);
+                        const data = await res.json().catch(() => ({}));
+                        if (data.logradouro) this.form.endereco_rua = data.logradouro;
+                        if (data.bairro) this.form.endereco_bairro = data.bairro;
+                        if (data.localidade) this.form.endereco_cidade = data.localidade;
+                    } catch (_) { }
+                },
+                parseDateBrToIso(valor) {
+                    if (!valor) return null;
+                    const txt = String(valor || '').trim();
+                    if (!txt) return null;
+                    if (/^\d{4}-\d{2}-\d{2}$/.test(txt)) return txt;
+                    const match = txt.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})$/);
+                    if (!match) return null;
+                    const dia = Number(match[1]);
+                    const mes = Number(match[2]);
+                    const ano = Number(match[3]);
+                    if (!dia || !mes || !ano) return null;
+                    return `${String(ano).padStart(4, '0')}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+                },
+                async carregarEquipes() {
+                    try {
+                        const res = await fetch('/api/jovens-public/equipes');
+                        const data = await res.json().catch(() => ([]));
+                        this.equipes = res.ok && Array.isArray(data) ? data : [];
+                    } catch (err) {
+                        console.error(err);
+                        this.equipes = [];
+                    }
+                },
+                async carregarPastorais() {
+                    if (!this.validacaoToken) return;
+                    try {
+                        const res = await fetch(`/api/jovens-public/pastorais?token=${encodeURIComponent(this.validacaoToken)}`);
+                        const data = await res.json().catch(() => ([]));
+                        this.pastoraisDisponiveis = res.ok && Array.isArray(data) ? data : [];
+                    } catch (err) {
+                        console.error(err);
+                        this.pastoraisDisponiveis = [];
+                    }
+                },
+                async carregarTios() {
+                    if (!this.validacaoToken) return;
+                    try {
+                        const res = await fetch(`/api/jovens-public/tios?token=${encodeURIComponent(this.validacaoToken)}`);
+                        const data = await res.json().catch(() => ([]));
+                        this.tiosDisponiveis = res.ok && Array.isArray(data) ? data : [];
+                    } catch (err) {
+                        console.error(err);
+                        this.tiosDisponiveis = [];
+                    }
+                },
+                async carregarDadosAtuais() {
+                    if (!this.validacaoToken) return;
+                    try {
+                        const res = await fetch(`/api/jovens-public/me?token=${encodeURIComponent(this.validacaoToken)}`);
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok || !data.jovem) return;
+                        const jovem = data.jovem;
+                        this.form.nome_completo_novo = jovem.nome_completo || this.form.nome_completo_novo;
+                        this.form.telefone_novo = jovem.telefone || this.form.telefone_novo;
+                        this.form.apelido = jovem.apelido || '';
+                        this.form.email = jovem.email || '';
+                        this.form.instagram = jovem.instagram || '';
+                        this.form.estado_civil = jovem.estado_civil || '';
+                        this.form.data_nascimento_novo = jovem.data_nascimento ? String(jovem.data_nascimento).split('-').reverse().join('/') : this.form.data_nascimento_novo;
+                        this.form.endereco_cep = jovem.endereco_cep || '';
+                        this.form.endereco_rua = jovem.endereco_rua || '';
+                        this.form.endereco_numero = jovem.endereco_numero || '';
+                        this.form.endereco_bairro = jovem.endereco_bairro || '';
+                        this.form.endereco_cidade = jovem.endereco_cidade || '';
+                        this.form.deficiencia = !!jovem.deficiencia;
+                        this.form.qual_deficiencia = jovem.qual_deficiencia || '';
+                        this.form.restricao_alimentar = !!jovem.restricao_alimentar;
+                        this.form.detalhes_restricao = jovem.detalhes_restricao || '';
+                        this.form.outra_restricao = '';
+                        this.form.eh_musico = !!jovem.eh_musico;
+                        this.form.instrumentos_musicais = Array.isArray(jovem.instrumentos_musicais) ? jovem.instrumentos_musicais : [];
+                        this.form.pastorais = Array.isArray(jovem.pastorais) ? jovem.pastorais : [];
+                        this.form.participa_pastoral = this.form.pastorais.length > 0;
+                        this.form.tio_casal_id = jovem.tio_casal_id ? Number(jovem.tio_casal_id) : '';
+                        this.form.equipe_saude = !!jovem.equipe_saude;
+                    } catch (err) {
+                        console.error(err);
+                    }
+                },
+                async validarCadastro() {
+                    if (!this.form.nome_completo || !this.form.telefone || !this.form.data_nascimento_br || !this.form.ultima_equipe) {
+                        alert('Preencha os 4 dados de validação.');
+                        return;
+                    }
+                    const dataIso = this.parseDateBrToIso(this.form.data_nascimento_br);
+                    if (!dataIso) {
+                        alert('Informe a data de nascimento no formato dd/mês/aaaa.');
+                        return;
+                    }
+                    this.validando = true;
+                    try {
+                        const res = await fetch('/api/jovens-public/validar-cadastro', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                nome_completo: this.form.nome_completo,
+                                telefone: this.form.telefone,
+                                data_nascimento: dataIso,
+                                ultima_equipe: this.form.ultima_equipe
+                            })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            this.cadastroValidado = false;
+                            this.validacaoToken = '';
+                            alert(data.error || 'Não foi possível confirmar seu cadastro.');
+                            return;
+                        }
+                        this.cadastroValidado = true;
+                        this.validacaoToken = String(data.token || '');
+                        this.form.data_nascimento_novo = this.form.data_nascimento_br || '';
+                        await Promise.all([this.carregarPastorais(), this.carregarTios()]);
+                        await this.carregarDadosAtuais();
+                        alert(data.message || 'Cadastro confirmado.');
+                    } catch (err) {
+                        console.error(err);
+                        this.cadastroValidado = false;
+                        this.validacaoToken = '';
+                        alert('Erro ao validar cadastro.');
+                    } finally {
+                        this.validando = false;
+                    }
+                },
+                async enviar() {
+                    if (!this.cadastroValidado || !this.validacaoToken) {
+                        alert('Confirme seu cadastro antes de atualizar.');
+                        return;
+                    }
+                    if (!this.aceiteTermos) {
+                        alert('Você precisa aceitar os termos de uso.');
+                        return;
+                    }
+                    this.enviando = true;
+                    try {
+                        const detalhesRestricaoFinal = this.form.restricao_alimentar
+                            ? (this.form.detalhes_restricao === 'Outras' ? (this.form.outra_restricao || 'Outras') : this.form.detalhes_restricao)
+                            : '';
+                        const pastoraisFinal = this.form.participa_pastoral ? this.form.pastorais : [];
+                        const res = await fetch('/api/jovens-public/atualizar', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                ...this.form,
+                                pastorais: pastoraisFinal,
+                                aceite_termos: this.aceiteTermos,
+                                detalhes_restricao: detalhesRestricaoFinal,
+                                observacoes_adicionais: this.form.comentario_adicional || null,
+                                validacao_token: this.validacaoToken
+                            })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Não foi possível atualizar seu cadastro.');
+                            return;
+                        }
+                        window.location.href = '/jovens/atualizar-cadastro?sucesso=1';
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao enviar atualização.');
+                    } finally {
+                        this.enviando = false;
+                    }
+                },
+                async enviarNaoEncontrado() {
+                    if (!this.naoEncontradoForm.nome_completo || !this.naoEncontradoForm.telefone || !this.naoEncontradoForm.ejc_que_fez) {
+                        alert('Preencha nome, telefone e EJC que fez.');
+                        return;
+                    }
+                    if (!this.aceiteTermos) {
+                        alert('Você precisa aceitar os termos de uso.');
+                        return;
+                    }
+                    try {
+                        const res = await fetch('/api/jovens-public/nao-encontrado', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                ...this.naoEncontradoForm
+                            })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao enviar dados.');
+                            return;
+                        }
+                        alert(data.message || 'Dados enviados com sucesso.');
+                        this.naoEncontrado = false;
+                        this.aceiteTermos = false;
+                        this.naoEncontradoForm = { nome_completo: '', telefone: '', ejc_que_fez: '', tenant_id: '', observacoes_adicionais: '', origem_formulario: 'Lista Mestre' };
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao enviar dados.');
+                    }
+                }
+            },
+            mounted() {
+                const params = new URLSearchParams(window.location.search);
+                this.sucessoAtualizacao = params.get('sucesso') === '1';
+                if (this.sucessoAtualizacao) return;
+                this.carregarEquipes();
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

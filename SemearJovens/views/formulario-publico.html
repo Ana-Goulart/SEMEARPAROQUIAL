@@ -1,0 +1,1070 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulario Publico</title>
+    <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
+    <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/ui-kit.js"></script>
+    <style>
+        body {
+            min-height: 100vh;
+            background: linear-gradient(150deg, #f8fafc 0%, #e2e8f0 40%, #dbeafe 100%);
+        }
+
+        .shell {
+            max-width: 820px;
+            margin: 0 auto;
+        }
+
+        .card-form {
+            border-radius: 16px;
+            border: 0;
+            box-shadow: 0 24px 42px rgba(15, 23, 42, 0.16);
+        }
+
+        .header {
+            background: linear-gradient(120deg, #0f172a 0%, #0ea5e9 100%);
+            color: #fff;
+            border-radius: 12px;
+            padding: 18px;
+        }
+
+        .font-serif { font-family: Georgia, "Times New Roman", serif; }
+        .font-mono { font-family: "Courier New", Courier, monospace; }
+        .compact .mb-3 { margin-bottom: .75rem !important; }
+        .compact .card-body { padding: 1rem !important; }
+    </style>
+</head>
+
+<body>
+    <div id="app" class="container py-4 py-md-5" :style="shellStyle" :class="[fontClass, { compact: isCompact }]">
+        <div class="shell">
+            <div class="card card-form" :style="cardStyle">
+                <div class="card-body p-4 p-md-5">
+                    <div class="header mb-4" :style="headerStyle">
+                        <h4 class="mb-1">{{ form.titulo || 'Inscricao' }}</h4>
+                        <p class="mb-0 opacity-75">{{ form.descricao || form.tema || 'Preencha os dados para concluir sua inscricao.' }}</p>
+                    </div>
+
+                    <div v-if="loading" class="text-muted">Carregando formulario...</div>
+                    <div v-else>
+                        <div v-if="campos.length" class="mb-4">
+                            <div class="mb-3" v-for="campo in campos" :key="campo.id">
+                                <label class="form-label">{{ campo.label }} <span v-if="campo.obrigatorio" class="text-danger">*</span></label>
+
+                                <div v-if="ehCampoRestricaoAlimentar(campo)">
+                                    <div class="d-flex gap-2 align-items-center flex-wrap">
+                                        <div class="form-check mb-0">
+                                            <input class="form-check-input" type="checkbox" :id="`restr-${campo.id}`"
+                                                v-model="camposSaude[campo.id].ativo"
+                                                @change="sincronizarCampoSaude(campo)">
+                                            <label class="form-check-label" :for="`restr-${campo.id}`">Sim</label>
+                                        </div>
+                                        <div v-if="camposSaude[campo.id] && camposSaude[campo.id].ativo" class="flex-grow-1" style="min-width: 280px;">
+                                            <select class="form-select" v-model="camposSaude[campo.id].detalhe" @change="sincronizarCampoSaude(campo)">
+                                                <option disabled value="">Selecione uma restrição...</option>
+                                                <option v-for="opcao in opcoesRestricaoAlimentar" :key="`${campo.id}-${opcao}`" :value="opcao">{{ opcao }}</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div v-else-if="ehCampoDeficiencia(campo)">
+                                    <div class="d-flex gap-2 align-items-center flex-wrap">
+                                        <div class="form-check mb-0">
+                                            <input class="form-check-input" type="checkbox" :id="`def-${campo.id}`"
+                                                v-model="camposSaude[campo.id].ativo"
+                                                @change="sincronizarCampoSaude(campo)">
+                                            <label class="form-check-label" :for="`def-${campo.id}`">Possui deficiência</label>
+                                        </div>
+                                        <input v-if="camposSaude[campo.id] && camposSaude[campo.id].ativo"
+                                            class="form-control flex-grow-1"
+                                            style="min-width: 260px;"
+                                            placeholder="Qual?"
+                                            v-model="camposSaude[campo.id].detalhe"
+                                            @input="sincronizarCampoSaude(campo)">
+                                    </div>
+                                </div>
+
+                                <div v-else-if="ehCampoMusico(campo)">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" :id="`mus-${campo.id}`"
+                                            v-model="camposSaude[campo.id].ativo"
+                                            @change="sincronizarCampoMusico(campo)">
+                                        <label class="form-check-label" :for="`mus-${campo.id}`">Sim, é músico</label>
+                                    </div>
+                                    <div v-if="camposSaude[campo.id] && camposSaude[campo.id].ativo" class="mt-2 border rounded p-2 bg-light">
+                                        <small class="text-muted d-block mb-1">Selecione os instrumentos (pode marcar mais de um):</small>
+                                        <div class="d-flex flex-wrap gap-2">
+                                            <div v-for="instrumento in instrumentosDisponiveis" :key="`${campo.id}-${instrumento}`" class="form-check">
+                                                <input class="form-check-input" type="checkbox"
+                                                    :id="`mus-${campo.id}-${instrumento}`"
+                                                    :value="instrumento"
+                                                    v-model="camposSaude[campo.id].detalhes"
+                                                    @change="sincronizarCampoMusico(campo)">
+                                                <label class="form-check-label small" :for="`mus-${campo.id}-${instrumento}`">{{ instrumento }}</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <input v-else-if="['texto','telefone','email','data','numero','cep'].includes(campo.tipo)"
+                                    class="form-control"
+                                    :type="inputType(campo.tipo)"
+                                    :placeholder="campo.placeholder || (campo.tipo==='cep' ? '00000-000' : '')"
+                                    v-model="respostas[campo.id]"
+                                    @input="onCampoInput(campo)"
+                                    @blur="onCampoInput(campo)">
+
+                                <textarea v-else-if="campo.tipo==='textarea'" class="form-control" rows="3" :placeholder="campo.placeholder || ''" v-model="respostas[campo.id]"></textarea>
+
+                                <select v-else-if="campo.tipo==='select'" class="form-select" v-model="respostas[campo.id]">
+                                    <option value="">Selecione...</option>
+                                    <option v-for="op in campo.opcoes" :key="op" :value="op">{{ op }}</option>
+                                </select>
+
+                                <div v-else-if="campo.tipo==='radio'">
+                                    <div class="form-check" v-for="op in campo.opcoes" :key="`${campo.id}-${op}`">
+                                        <input class="form-check-input" type="radio" :name="campo.id" :id="`${campo.id}-${op}`" :value="op" v-model="respostas[campo.id]">
+                                        <label class="form-check-label" :for="`${campo.id}-${op}`">{{ op }}</label>
+                                    </div>
+                                </div>
+
+                                <div v-else-if="campo.tipo==='checkbox'">
+                                    <div class="form-check" v-for="op in campo.opcoes" :key="`${campo.id}-${op}`">
+                                        <input class="form-check-input" type="checkbox" :id="`${campo.id}-${op}`" :value="op" v-model="respostas[campo.id]">
+                                        <label class="form-check-label" :for="`${campo.id}-${op}`">{{ op }}</label>
+                                    </div>
+                                </div>
+                                <div v-else-if="campo.tipo==='imagem'">
+                                    <input class="form-control" type="file" accept="image/*" @change="onArquivoSelecionado(campo.id, $event)">
+                                    <small class="text-muted d-block mt-1" v-if="respostas[campo.id]">Arquivo selecionado: {{ respostas[campo.id] }}</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div v-if="tipo==='INSCRICAO'">
+                            <div class="mb-3">
+                                <label class="form-label">E-mail <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" v-model.trim="email" placeholder="seuemail@exemplo.com">
+                            </div>
+                            <div class="mb-3 p-3 bg-light border rounded">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="aceiteTermosInscricao" v-model="aceiteTermos">
+                                    <label class="form-check-label" for="aceiteTermosInscricao">Li e aceito os termos de uso</label>
+                                </div>
+                                <div class="small text-muted mt-2">{{ termosTexto }}</div>
+                            </div>
+
+                            <button class="btn btn-primary w-100" :style="submitBtnStyle" @click="enviarInscricao" :disabled="saving">{{ saving ? 'Enviando...' : 'Enviar inscricao' }}</button>
+                        </div>
+
+                        <div v-else>
+                            <div class="mb-3">
+                                <div class="small text-muted">Evento</div>
+                                <div class="fw-semibold">{{ form.titulo || 'Evento' }}</div>
+                                <div class="text-muted small" v-if="form.evento_data || form.evento_hora">
+                                    <span v-if="form.evento_data">{{ formatarData(form.evento_data) }}</span>
+                                    <span v-if="form.evento_hora"> • {{ formatarHora(form.evento_hora) }}</span>
+                                </div>
+                                <div class="text-muted small" v-if="form.tema">Tema: {{ form.tema }}</div>
+                            </div>
+
+                            <div v-if="sucessoMensagem" class="alert alert-success">{{ sucessoMensagem }}</div>
+
+                            <div v-if="!tipoSelecionado" class="mb-4">
+                                <div class="mb-2 fw-semibold">Como você quer marcar presença?</div>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <button v-if="permitirEJC" class="btn btn-outline-primary" @click="selecionarTipo('EJC')">Fiz EJC</button>
+                                    <button v-if="permitirECC" class="btn btn-outline-primary" @click="selecionarTipo('ECC')">Fiz ECC/ECNA</button>
+                                    <button v-if="permitirVisitante" class="btn btn-outline-primary" @click="selecionarTipo('VISITANTE')">Sou visitante</button>
+                                </div>
+                            </div>
+
+                            <div v-if="tipoSelecionado === 'EJC'">
+                                <div class="mb-3 d-flex justify-content-between align-items-center">
+                                    <div class="fw-semibold">EJC</div>
+                                    <button class="btn btn-sm btn-link" @click="resetarFluxo">Trocar opção</button>
+                                </div>
+                                <div class="mb-3">
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" id="ejcMeu" value="MEU" v-model="ejcOrigem">
+                                        <label class="form-check-label" for="ejcMeu">Fiz {{ meuEjcNome }}</label>
+                                    </div>
+                                    <div class="form-check form-check-inline">
+                                        <input class="form-check-input" type="radio" id="ejcOutro" value="OUTRO" v-model="ejcOrigem">
+                                        <label class="form-check-label" for="ejcOutro">Fiz outro EJC</label>
+                                    </div>
+                                </div>
+
+                                <div v-if="ejcOrigem === 'MEU'">
+                                    <div class="mb-3">
+                                        <label class="form-label">Selecione seu nome</label>
+                                        <select class="form-select" v-model="jovemSelecionado" @change="carregarDetalhesJovemSelecionado">
+                                            <option value="">Selecione...</option>
+                                            <option v-for="j in jovens" :key="j.id" :value="j.id">{{ j.nome_completo }}</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3 p-3 bg-light border rounded" v-if="jovemSelecionadoDados">
+                                        <div><strong>Nome:</strong> {{ jovemSelecionadoDados.nome_completo || '-' }}</div>
+                                        <div class="mt-1"><strong>Telefone:</strong> {{ jovemSelecionadoDados.telefone || '-' }}</div>
+                                    </div>
+                                    <button class="btn btn-primary w-100" :style="submitBtnStyle" @click="enviarPresencaEjcMeu" :disabled="saving">{{ saving ? 'Enviando...' : 'Confirmar presença' }}</button>
+                                </div>
+
+                                <div v-if="ejcOrigem === 'OUTRO'">
+                                    <div class="mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" id="outroPrimeiro" value="PRIMEIRA_VEZ" v-model="modoOutroEjc">
+                                            <label class="form-check-label" for="outroPrimeiro">Primeiro evento</label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" id="outroJa" value="JA_PARTICIPOU" v-model="modoOutroEjc">
+                                            <label class="form-check-label" for="outroJa">Já participei de outros eventos</label>
+                                        </div>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Qual EJC fez</label>
+                                        <select class="form-select" v-model="outroEjcSelecionado" @change="carregarParticipantesOutro">
+                                            <option value="">Selecione...</option>
+                                            <option v-for="oe in outrosEjcs" :key="oe.id" :value="oe.id">
+                                                {{ oe.paroquia }}<span v-if="oe.nome"> - {{ oe.nome }}</span>
+                                            </option>
+                                        </select>
+                                    </div>
+
+                                    <div v-if="modoOutroEjc === 'PRIMEIRA_VEZ'">
+                                        <div class="mb-3">
+                                            <label class="form-label">Nome completo</label>
+                                            <input class="form-control" v-model="nomeCompleto">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Telefone</label>
+                                            <input class="form-control" v-model="telefone" maxlength="30" placeholder="(31)99999-9999" @input="onTelefoneInput">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Data de nascimento</label>
+                                            <input class="form-control" type="date" v-model="outroPrimeiraDataNascimento">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Sexo</label>
+                                            <select class="form-select" v-model="outroPrimeiraSexo">
+                                                <option value="">Selecione...</option>
+                                                <option value="Feminino">Feminino</option>
+                                                <option value="Masculino">Masculino</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Estado civil</label>
+                                            <select class="form-select" v-model="outroPrimeiraEstadoCivil">
+                                                <option value="Solteiro">Solteiro</option>
+                                                <option value="Casado">Casado</option>
+                                                <option value="Amasiado">Amasiado</option>
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Instagram</label>
+                                            <input class="form-control" v-model.trim="outroPrimeiraInstagram" placeholder="@instagram">
+                                        </div>
+                                        <button class="btn btn-primary w-100" :style="submitBtnStyle" @click="enviarPresencaEjcOutroPrimeira" :disabled="saving">{{ saving ? 'Enviando...' : 'Confirmar presença' }}</button>
+                                    </div>
+
+                                    <div v-if="modoOutroEjc === 'JA_PARTICIPOU'">
+                                        <div class="mb-3">
+                                            <label class="form-label">Selecione seu nome</label>
+                                            <select class="form-select" v-model="participanteSelecionado">
+                                                <option value="">Selecione...</option>
+                                                <option v-for="p in participantesOutro" :key="p.id" :value="p.referencia || p.id">
+                                                    {{ p.nome_completo }} - {{ p.telefone }}
+                                                </option>
+                                            </select>
+                                            <div class="text-muted small mt-1" v-if="carregandoParticipantes">Carregando lista...</div>
+                                        </div>
+                                        <button class="btn btn-primary w-100" :style="submitBtnStyle" @click="enviarPresencaEjcOutroJa" :disabled="saving">{{ saving ? 'Enviando...' : 'Confirmar presença' }}</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div v-if="tipoSelecionado === 'ECC'">
+                                <div class="mb-3 d-flex justify-content-between align-items-center">
+                                    <div class="fw-semibold">ECC / ECNA</div>
+                                    <button class="btn btn-sm btn-link" @click="resetarFluxo">Trocar opção</button>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Você é tio de</label>
+                                    <select class="form-select" v-model="origemTio" @change="onOrigemTioChange">
+                                        <option value="EJC">EJC origem</option>
+                                        <option value="OUTRO_EJC">Outro EJC</option>
+                                    </select>
+                                </div>
+                                <template v-if="origemTio === 'EJC'">
+                                    <div class="mb-3">
+                                        <label class="form-label">Você fez</label>
+                                        <select class="form-select" v-model="eccTipo">
+                                            <option value="ECC">ECC</option>
+                                            <option value="ECNA">ECNA</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label">Encontro</label>
+                                        <select class="form-select" v-model="eccSelecionado" @change="carregarTios">
+                                            <option value="">Selecione...</option>
+                                            <option v-for="e in encontrosFiltrados" :key="e.id" :value="e.id">
+                                                {{ e.numero }} {{ e.tipo }}
+                                                <span v-if="e.descricao">- {{ e.descricao }}</span>
+                                            </option>
+                                        </select>
+                                    </div>
+                                </template>
+                                <template v-else>
+                                    <div class="mb-3">
+                                        <label class="form-label">Paróquia</label>
+                                        <select class="form-select" v-model="outroEjcTioSelecionado" @change="carregarTios">
+                                            <option value="">Selecione...</option>
+                                            <option v-for="e in outrosEjcs" :key="`outro-tio-${e.id}`" :value="e.id">
+                                                {{ e.paroquia }}<span v-if="e.nome"> - {{ e.nome }}</span>
+                                            </option>
+                                        </select>
+                                    </div>
+                                </template>
+                                <div class="mb-3">
+                                    <label class="form-label">Selecione o casal de tios</label>
+                                    <select class="form-select" v-model="tioSelecionado">
+                                        <option value="">Selecione...</option>
+                                        <option v-for="t in tios" :key="t.id" :value="t.id">{{ t.nome_tio }} e {{ t.nome_tia }}</option>
+                                    </select>
+                                    <div class="text-muted small mt-1" v-if="carregandoTios">Carregando tios...</div>
+                                </div>
+                                <button class="btn btn-primary w-100" :style="submitBtnStyle" @click="enviarPresencaEcc" :disabled="saving">{{ saving ? 'Enviando...' : 'Confirmar presença' }}</button>
+                            </div>
+
+                            <div v-if="tipoSelecionado === 'VISITANTE'">
+                                <div class="mb-3 d-flex justify-content-between align-items-center">
+                                    <div class="fw-semibold">Visitante</div>
+                                    <button class="btn btn-sm btn-link" @click="resetarFluxo">Trocar opção</button>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Nome completo</label>
+                                    <input class="form-control" v-model="nomeCompleto">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Telefone</label>
+                                    <input class="form-control" v-model="telefone">
+                                </div>
+                                <button class="btn btn-primary w-100" :style="submitBtnStyle" @click="enviarPresencaVisitante" :disabled="saving">{{ saving ? 'Enviando...' : 'Confirmar presença' }}</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    loading: false,
+                    saving: false,
+                    token: '',
+                    form: {},
+                    tipo: 'INSCRICAO',
+                    campos: [],
+                    respostas: {},
+                    camposSaude: {},
+                    arquivosSelecionados: {},
+                    opcoesRestricaoAlimentar: [
+                        'Alergia a amendoim',
+                        'Alergia a castanhas',
+                        'Alergia a frutos do mar',
+                        'APLV (Alergia à proteína do leite de vaca)',
+                        'Intolerante à lactose',
+                        'Intolerante a glúten (Celíaco)',
+                        'Não come carne vermelha',
+                        'Não come carne de porco',
+                        'Vegetariano',
+                        'Vegano',
+                        'Outras'
+                    ],
+                    instrumentosDisponiveis: [
+                        'Voz',
+                        'Violao',
+                        'Guitarra',
+                        'Baixo',
+                        'Teclado',
+                        'Bateria',
+                        'Percussao',
+                        'Flauta',
+                        'Saxofone',
+                        'Violino',
+                        'Cajon',
+                        'Ukulele'
+                    ],
+                    jovens: [],
+                    outrosEjcs: [],
+                    encontros: [],
+                    meuEjcNome: 'Meu EJC',
+                    email: '',
+                    aceiteTermos: false,
+                    termosTexto: '',
+                    tipoSelecionado: '',
+                    ejcOrigem: '',
+                    modoOutroEjc: '',
+                    jovemSelecionado: '',
+                    outroEjcSelecionado: '',
+                    participantesOutro: [],
+                    participanteSelecionado: '',
+                    carregandoParticipantes: false,
+                    nomeCompleto: '',
+                    telefone: '',
+                    outroPrimeiraDataNascimento: '',
+                    outroPrimeiraSexo: '',
+                    outroPrimeiraEstadoCivil: 'Solteiro',
+                    outroPrimeiraInstagram: '',
+                    origemTio: 'EJC',
+                    outroEjcTioSelecionado: '',
+                    eccTipo: 'ECC',
+                    eccSelecionado: '',
+                    tios: [],
+                    tioSelecionado: '',
+                    carregandoTios: false,
+                    jovemDetalhes: {},
+                    sucessoMensagem: ''
+                };
+            },
+            computed: {
+                visualConfig() {
+                    const cfg = this.form && this.form.visual_config ? this.form.visual_config : {};
+                    return {
+                        cor_primaria: String(cfg.cor_primaria || '#0EA5E9'),
+                        cor_fundo: String(cfg.cor_fundo || '#F1F5F9'),
+                        cor_texto: String(cfg.cor_texto || '#0F172A'),
+                        cor_card: String(cfg.cor_card || '#FFFFFF'),
+                        fonte: String(cfg.fonte || 'sans'),
+                        rounded_cards: cfg.rounded_cards !== undefined ? !!cfg.rounded_cards : true,
+                        compact_layout: cfg.compact_layout !== undefined ? !!cfg.compact_layout : false
+                    };
+                },
+                shellStyle() {
+                    return {
+                        color: this.visualConfig.cor_texto,
+                        background: this.visualConfig.cor_fundo
+                    };
+                },
+                cardStyle() {
+                    return {
+                        backgroundColor: this.visualConfig.cor_card,
+                        borderRadius: this.visualConfig.rounded_cards ? '16px' : '8px'
+                    };
+                },
+                headerStyle() {
+                    return {
+                        background: `linear-gradient(120deg, ${this.visualConfig.cor_primaria} 0%, #0F172A 100%)`,
+                        borderRadius: this.visualConfig.rounded_cards ? '12px' : '6px'
+                    };
+                },
+                submitBtnStyle() {
+                    return {
+                        backgroundColor: this.visualConfig.cor_primaria,
+                        borderColor: this.visualConfig.cor_primaria
+                    };
+                },
+                fontClass() {
+                    if (this.visualConfig.fonte === 'serif') return 'font-serif';
+                    if (this.visualConfig.fonte === 'mono') return 'font-mono';
+                    return '';
+                },
+                isCompact() {
+                    return !!this.visualConfig.compact_layout;
+                },
+                permitirEJC() {
+                    return Number(this.form.permitir_ja_fez_ejc || 0) === 1;
+                },
+                permitirECC() {
+                    return Number(this.form.permitir_ecc_ecna || 0) === 1;
+                },
+                permitirVisitante() {
+                    return Number(this.form.permitir_visitante || 0) === 1 || Number(this.form.permitir_nao_fez_ejc || 0) === 1;
+                },
+                encontrosFiltrados() {
+                    const tipo = String(this.eccTipo || '').toUpperCase();
+                    return (this.encontros || []).filter(e => String(e.tipo || '').toUpperCase() === tipo);
+                },
+                jovemSelecionadoDados() {
+                    const id = Number(this.jovemSelecionado || 0);
+                    if (!id) return null;
+                    const base = (this.jovens || []).find((j) => Number(j.id) === id) || null;
+                    if (!base) return null;
+                    const detalhe = this.jovemDetalhes[String(id)] || {};
+                    return { ...base, ...detalhe };
+                }
+            },
+            methods: {
+                getTokenFromPath() {
+                    const parts = window.location.pathname.split('/').filter(Boolean);
+                    return parts[parts.length - 1] || '';
+                },
+                inputType(tipo) {
+                    if (tipo === 'telefone') return 'tel';
+                    if (tipo === 'email') return 'email';
+                    if (tipo === 'data') return 'date';
+                    if (tipo === 'numero') return 'number';
+                    return 'text';
+                },
+                normalizarTextoComparacao(valor) {
+                    return String(valor || '')
+                        .normalize('NFD')
+                        .replace(/[\u0300-\u036f]/g, '')
+                        .toLowerCase();
+                },
+                ehCampoRestricaoAlimentar(campo) {
+                    const id = this.normalizarTextoComparacao(campo && campo.id);
+                    const label = this.normalizarTextoComparacao(campo && campo.label);
+                    return id === 'restricao_alimentar' || (label.includes('restricao alimentar') && label.includes('qual'));
+                },
+                ehCampoDeficiencia(campo) {
+                    const id = this.normalizarTextoComparacao(campo && campo.id);
+                    const label = this.normalizarTextoComparacao(campo && campo.label);
+                    return id === 'deficiencia' || (label.includes('deficiencia') && label.includes('qual'));
+                },
+                ehCampoMusico(campo) {
+                    const id = this.normalizarTextoComparacao(campo && campo.id);
+                    const label = this.normalizarTextoComparacao(campo && campo.label);
+                    return id === 'musico' || (label.includes('musico') && label.includes('instrumento'));
+                },
+                inicializarCampoSaude(campo) {
+                    const atual = String(this.respostas[campo.id] || '').trim();
+                    if (this.ehCampoRestricaoAlimentar(campo)) {
+                        this.camposSaude[campo.id] = {
+                            ativo: !!atual,
+                            detalhe: atual
+                        };
+                        return;
+                    }
+                    if (this.ehCampoDeficiencia(campo)) {
+                        this.camposSaude[campo.id] = {
+                            ativo: !!atual,
+                            detalhe: atual
+                        };
+                        return;
+                    }
+                    if (this.ehCampoMusico(campo)) {
+                        this.camposSaude[campo.id] = {
+                            ativo: !!atual,
+                            detalhes: atual
+                                ? atual.split(',').map((item) => String(item || '').trim()).filter(Boolean)
+                                : []
+                        };
+                    }
+                },
+                sincronizarCampoSaude(campo) {
+                    const estado = this.camposSaude[campo.id] || { ativo: false, detalhe: '' };
+                    if (!estado.ativo) {
+                        estado.detalhe = '';
+                        this.respostas[campo.id] = '';
+                        this.camposSaude[campo.id] = estado;
+                        return;
+                    }
+                    this.respostas[campo.id] = String(estado.detalhe || '').trim();
+                    this.camposSaude[campo.id] = estado;
+                },
+                sincronizarCampoMusico(campo) {
+                    const estado = this.camposSaude[campo.id] || { ativo: false, detalhes: [] };
+                    if (!estado.ativo) {
+                        estado.detalhes = [];
+                        this.respostas[campo.id] = '';
+                        this.camposSaude[campo.id] = estado;
+                        return;
+                    }
+                    const detalhes = Array.isArray(estado.detalhes)
+                        ? estado.detalhes.map((item) => String(item || '').trim()).filter(Boolean)
+                        : [];
+                    estado.detalhes = detalhes;
+                    this.respostas[campo.id] = detalhes.join(', ');
+                    this.camposSaude[campo.id] = estado;
+                },
+                resetarCamposPersonalizados() {
+                    this.camposSaude = {};
+                    this.arquivosSelecionados = {};
+                    this.campos.forEach((c) => {
+                        this.respostas[c.id] = c.tipo === 'checkbox' ? [] : '';
+                        if (this.ehCampoRestricaoAlimentar(c) || this.ehCampoDeficiencia(c) || this.ehCampoMusico(c)) {
+                            this.inicializarCampoSaude(c);
+                        }
+                    });
+                },
+                validarCamposPersonalizados() {
+                    for (const campo of this.campos) {
+                        const valor = this.respostas[campo.id];
+                        if (!campo.obrigatorio) continue;
+                        if (campo.tipo === 'checkbox') {
+                            if (!Array.isArray(valor) || !valor.length) return `Preencha: ${campo.label}`;
+                            continue;
+                        }
+                        if (campo.tipo === 'imagem' && this.tipo === 'INSCRICAO') {
+                            const file = this.arquivosSelecionados[campo.id];
+                            if (!file) return `Envie a imagem: ${campo.label}`;
+                            continue;
+                        }
+                        if (!String(valor || '').trim()) return `Preencha: ${campo.label}`;
+                    }
+                    return '';
+                },
+                formatarTelefoneBr(valor) {
+                    const digits = String(valor || '').replace(/\D/g, '').slice(0, 11);
+                    if (digits.length <= 2) return digits ? `(${digits}` : '';
+                    if (digits.length <= 6) return `(${digits.slice(0, 2)})${digits.slice(2)}`;
+                    if (digits.length <= 10) return `(${digits.slice(0, 2)})${digits.slice(2, 6)}-${digits.slice(6)}`;
+                    return `(${digits.slice(0, 2)})${digits.slice(2, 7)}-${digits.slice(7)}`;
+                },
+                onTelefoneInput() {
+                    this.telefone = this.formatarTelefoneBr(this.telefone);
+                },
+                onCampoInput(campo) {
+                    if (!campo) return;
+                    const tipo = String(campo.tipo || '').toLowerCase();
+                    const id = String(campo.id || '').toLowerCase();
+                    const label = String(campo.label || '').toLowerCase();
+                    const isCep = tipo === 'cep'
+                        || id.endsWith('_cep')
+                        || id === 'cep'
+                        || id.includes('cep')
+                        || label.includes('cep');
+                    if (!isCep) return;
+                    const raw = String(this.respostas[campo.id] || '');
+                    const cep = raw.replace(/\D/g, '');
+                    if (cep.length !== 8) return;
+                    this.buscarEnderecoPorCep(cep, id);
+                },
+                async buscarEnderecoPorCep(cep, campoId) {
+                    try {
+                        const res = await fetch(`/api/cep/${cep}`);
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok || data.erro) return;
+                        const prefix = campoId && campoId.endsWith('_cep')
+                            ? campoId.slice(0, -4)
+                            : '';
+                        const ruaKey = `${prefix}rua`;
+                        const bairroKey = `${prefix}bairro`;
+                        const cidadeKey = `${prefix}cidade`;
+                        const setValue = (key, value) => {
+                            if (!key) return;
+                            const atual = this.respostas[key];
+                            if (atual !== undefined && String(atual || '').trim()) return;
+                            if (this.$set) this.$set(this.respostas, key, value);
+                            else this.respostas[key] = value;
+                        };
+                        if (data.logradouro) setValue(ruaKey, data.logradouro);
+                        if (data.bairro) setValue(bairroKey, data.bairro);
+                        if (data.localidade) setValue(cidadeKey, data.localidade);
+
+                        // Fallback por label (caso ids não sigam o padrão)
+                        const byLabel = (txt) => {
+                            const t = String(txt || '').toLowerCase();
+                            return (this.campos || []).find((c) => String(c.label || '').toLowerCase().includes(t));
+                        };
+                        if (data.logradouro) {
+                            const campoRua = byLabel('rua');
+                            if (campoRua) setValue(campoRua.id, data.logradouro);
+                        }
+                        if (data.bairro) {
+                            const campoBairro = byLabel('bairro');
+                            if (campoBairro) setValue(campoBairro.id, data.bairro);
+                        }
+                        if (data.localidade) {
+                            const campoCidade = byLabel('cidade');
+                            if (campoCidade) setValue(campoCidade.id, data.localidade);
+                        }
+                    } catch (err) {
+                        console.error('Erro ao buscar CEP:', err);
+                    }
+                },
+                onArquivoSelecionado(campoId, event) {
+                    const file = event && event.target && event.target.files ? event.target.files[0] : null;
+                    if (!file) {
+                        this.arquivosSelecionados[campoId] = null;
+                        this.respostas[campoId] = '';
+                        return;
+                    }
+                    this.arquivosSelecionados[campoId] = file;
+                    this.respostas[campoId] = file.name;
+                },
+                formatarData(data) {
+                    if (!data) return '';
+                    const dt = new Date(`${data}T00:00:00`);
+                    return Number.isNaN(dt.getTime()) ? data : dt.toLocaleDateString('pt-BR');
+                },
+                formatarHora(hora) {
+                    if (!hora) return '';
+                    const txt = String(hora);
+                    return txt.slice(0, 5);
+                },
+                selecionarTipo(tipo) {
+                    this.tipoSelecionado = tipo;
+                    this.sucessoMensagem = '';
+                },
+                resetarFluxo() {
+                    this.tipoSelecionado = '';
+                    this.ejcOrigem = '';
+                    this.modoOutroEjc = '';
+                    this.jovemSelecionado = '';
+                    this.outroEjcSelecionado = '';
+                    this.participanteSelecionado = '';
+                    this.participantesOutro = [];
+                    this.nomeCompleto = '';
+                    this.telefone = '';
+                    this.outroPrimeiraDataNascimento = '';
+                    this.outroPrimeiraSexo = '';
+                    this.outroPrimeiraEstadoCivil = 'Solteiro';
+                    this.outroPrimeiraInstagram = '';
+                    this.eccTipo = 'ECC';
+                    this.eccSelecionado = '';
+                    this.tioSelecionado = '';
+                    this.tios = [];
+                    this.email = '';
+                    this.aceiteTermos = false;
+                    this.resetarCamposPersonalizados();
+                },
+                async carregarFormulario() {
+                    this.loading = true;
+                    try {
+                        const res = await fetch(`/api/formularios/public/${encodeURIComponent(this.token)}`);
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            const detalhe = data && data.code ? ` (${data.code})` : '';
+                            this.uiAlert((data.error || 'Formulario invalido.') + detalhe);
+                            return;
+                        }
+                        this.form = data.formulario || {};
+                        this.tipo = String(this.form.tipo || '').toUpperCase();
+                        this.campos = Array.isArray(this.form.campos_config) ? this.form.campos_config : [];
+                        this.ordenarCamposEndereco();
+                        this.jovens = Array.isArray(data.jovens) ? data.jovens : [];
+                        this.outrosEjcs = Array.isArray(data.outros_ejcs) ? data.outros_ejcs : [];
+                        this.encontros = Array.isArray(data.encontros) ? data.encontros : [];
+                        this.meuEjcNome = data.meu_ejc_nome || 'Meu EJC';
+                        this.termosTexto = `Ao enviar este formulário, você autoriza o ${this.meuEjcNome} a armazenar e utilizar seus dados pessoais para contato e convites para eventos da igreja. Informações poderão ser enviadas para o e-mail informado. Você pode solicitar atualização ou remoção dos dados a qualquer momento.`;
+                        this.respostas = {};
+                        this.resetarCamposPersonalizados();
+                    } catch (err) {
+                        console.error(err);
+                        this.uiAlert('Erro ao carregar formulario.');
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                validarEmail(email) {
+                    const txt = String(email || '').trim();
+                    if (!txt) return false;
+                    const re = /^\S+@\S+\.\S+$/;
+                    return re.test(txt);
+                },
+                validarTermos(requireEmail = true) {
+                    const emailTxt = String(this.email || '').trim();
+                    if (requireEmail) {
+                        if (!this.validarEmail(emailTxt)) return 'Informe um e-mail válido.';
+                    } else if (emailTxt && !this.validarEmail(emailTxt)) {
+                        return 'Informe um e-mail válido.';
+                    }
+                    if (!this.aceiteTermos) return 'Você precisa aceitar os termos de uso.';
+                    return '';
+                },
+                uiAlert(msg) {
+                    if (window.uiAlert) return window.uiAlert(msg);
+                    alert(msg);
+                },
+                ordenarCamposEndereco() {
+                    const campos = Array.isArray(this.campos) ? this.campos.slice() : [];
+                    const rankEndereco = (c) => {
+                        const id = String(c.id || '').toLowerCase();
+                        const label = String(c.label || '').toLowerCase();
+                        if (id.includes('cep') || label.includes('cep')) return 1;
+                        if (id.includes('rua') || label.includes('rua')) return 2;
+                        if (id.includes('numero') || label.includes('número') || label.includes('numero')) return 3;
+                        if (id.includes('bairro') || label.includes('bairro')) return 4;
+                        if (id.includes('cidade') || label.includes('cidade')) return 5;
+                        return 999;
+                    };
+                    const temEndereco = campos.some((c) => rankEndereco(c) < 999);
+                    if (!temEndereco) return;
+                    const endereco = campos.filter((c) => rankEndereco(c) < 999);
+                    const outros = campos.filter((c) => rankEndereco(c) === 999);
+                    endereco.sort((a, b) => rankEndereco(a) - rankEndereco(b));
+                    this.campos = [...endereco, ...outros];
+                },
+                async carregarParticipantesOutro() {
+                    this.participanteSelecionado = '';
+                    this.participantesOutro = [];
+                    if (!this.outroEjcSelecionado) return;
+                    this.carregandoParticipantes = true;
+                    try {
+                        const res = await fetch(`/api/formularios/public/${encodeURIComponent(this.token)}/outro-ejc-jovens?outro_ejc_id=${this.outroEjcSelecionado}`);
+                        const data = await res.json().catch(() => ([]));
+                        this.participantesOutro = Array.isArray(data) ? data : [];
+                    } catch (err) {
+                        console.error(err);
+                        this.participantesOutro = [];
+                    } finally {
+                        this.carregandoParticipantes = false;
+                    }
+                },
+                async carregarDetalhesJovemSelecionado() {
+                    const jovemId = Number(this.jovemSelecionado || 0);
+                    if (!jovemId) return;
+                    const base = (this.jovens || []).find((j) => Number(j.id) === jovemId) || null;
+                    if (base && base.telefone) {
+                        this.jovemDetalhes[String(jovemId)] = { telefone: base.telefone };
+                    }
+                    try {
+                        const res = await fetch(`/api/formularios/public/${encodeURIComponent(this.token)}/jovens/${jovemId}`);
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) return;
+                        this.jovemDetalhes[String(jovemId)] = {
+                            nome_completo: data.nome_completo || (base && base.nome_completo) || '',
+                            telefone: data.telefone || (base && base.telefone) || ''
+                        };
+                    } catch (_) { }
+                },
+                async carregarTios() {
+                    this.tioSelecionado = '';
+                    this.tios = [];
+                    if (this.origemTio === 'OUTRO_EJC') {
+                        if (!this.outroEjcTioSelecionado) return;
+                    } else if (!this.eccSelecionado) {
+                        return;
+                    }
+                    this.carregandoTios = true;
+                    try {
+                        const params = new URLSearchParams();
+                        params.set('origem_tipo', this.origemTio);
+                        if (this.origemTio === 'OUTRO_EJC') {
+                            params.set('outro_ejc_id', this.outroEjcTioSelecionado);
+                        } else {
+                            params.set('ecc_id', this.eccSelecionado);
+                        }
+                        const res = await fetch(`/api/formularios/public/${encodeURIComponent(this.token)}/tios?${params.toString()}`);
+                        const data = await res.json().catch(() => ([]));
+                        this.tios = Array.isArray(data) ? data : [];
+                    } catch (err) {
+                        console.error(err);
+                        this.tios = [];
+                    } finally {
+                        this.carregandoTios = false;
+                    }
+                },
+                onOrigemTioChange() {
+                    this.tioSelecionado = '';
+                    this.tios = [];
+                    if (this.origemTio === 'OUTRO_EJC') {
+                        this.eccSelecionado = '';
+                    } else {
+                        this.outroEjcTioSelecionado = '';
+                    }
+                },
+                validarInscricao() {
+                    const erroCampos = this.validarCamposPersonalizados();
+                    if (erroCampos) return erroCampos;
+                    const termos = this.validarTermos();
+                    if (termos) return termos;
+                    return '';
+                },
+                async enviarInscricao() {
+                    const erro = this.validarInscricao();
+                    if (erro) {
+                        this.uiAlert(erro);
+                        return;
+                    }
+                    this.saving = true;
+                    try {
+                        for (const campo of this.campos) {
+                            if (campo.tipo !== 'imagem') continue;
+                            const file = this.arquivosSelecionados[campo.id];
+                            if (campo.obrigatorio && !file) {
+                                this.uiAlert(`Envie a imagem: ${campo.label}`);
+                                this.saving = false;
+                                return;
+                            }
+                            if (file) {
+                                const fd = new FormData();
+                                fd.append('arquivo', file);
+                                const up = await fetch(`/api/formularios/public/${encodeURIComponent(this.token)}/upload`, {
+                                    method: 'POST',
+                                    body: fd
+                                });
+                                const upData = await up.json().catch(() => ({}));
+                                if (!up.ok) {
+                                    this.uiAlert(upData.error || 'Erro ao enviar imagem.');
+                                    this.saving = false;
+                                    return;
+                                }
+                                this.respostas[campo.id] = upData.url || '';
+                            }
+                        }
+
+                        const res = await fetch(`/api/formularios/public/${encodeURIComponent(this.token)}/respostas`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                respostas: this.respostas,
+                                email: this.email,
+                                aceite_termos: this.aceiteTermos
+                            })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            this.uiAlert(data.error || 'Erro ao enviar inscricao.');
+                            return;
+                        }
+                        this.uiAlert('Inscricao enviada com sucesso.');
+                        this.resetarCamposPersonalizados();
+                        this.email = '';
+                        this.aceiteTermos = false;
+                    } catch (err) {
+                        console.error(err);
+                        this.uiAlert('Erro ao enviar inscricao.');
+                    } finally {
+                        this.saving = false;
+                    }
+                },
+                async registrarPresenca(payload) {
+                    const erroCampos = this.validarCamposPersonalizados();
+                    if (erroCampos) {
+                        this.uiAlert(erroCampos);
+                        return false;
+                    }
+                    this.saving = true;
+                    try {
+                        const res = await fetch(`/api/formularios/public/${encodeURIComponent(this.token)}/presencas`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                ...payload,
+                                email: this.email,
+                                respostas: this.respostas
+                            })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            this.uiAlert(data.error || 'Erro ao registrar presenca.');
+                            return false;
+                        }
+                        this.sucessoMensagem = 'Presença registrada com sucesso.';
+                        return true;
+                    } catch (err) {
+                        console.error(err);
+                        this.uiAlert('Erro ao registrar presenca.');
+                        return false;
+                    } finally {
+                        this.saving = false;
+                    }
+                },
+                async enviarPresencaEjcMeu() {
+                    if (!this.jovemSelecionado) {
+                        this.uiAlert('Selecione seu nome.');
+                        return;
+                    }
+                    const ok = await this.registrarPresenca({
+                        status_ejc: 'JA_FIZ',
+                        origem_ja_fez: 'INCONFIDENTES',
+                        jovem_id: this.jovemSelecionado
+                    });
+                    if (ok) this.resetarFluxo();
+                },
+                async enviarPresencaEjcOutroPrimeira() {
+                    if (!this.outroEjcSelecionado || !this.nomeCompleto || !this.telefone) {
+                        this.uiAlert('Preencha o EJC, nome e telefone.');
+                        return;
+                    }
+                    const ok = await this.registrarPresenca({
+                        status_ejc: 'JA_FIZ',
+                        origem_ja_fez: 'OUTRO_EJC',
+                        primeira_vez_outro_ejc: 'PRIMEIRA_VEZ',
+                        outro_ejc_id: this.outroEjcSelecionado,
+                        nome_completo: this.nomeCompleto,
+                        telefone: this.telefone,
+                        data_nascimento: this.outroPrimeiraDataNascimento || null,
+                        sexo: this.outroPrimeiraSexo || null,
+                        estado_civil: this.outroPrimeiraEstadoCivil || 'Solteiro',
+                        instagram: this.outroPrimeiraInstagram || null
+                    });
+                    if (ok) this.resetarFluxo();
+                },
+                async enviarPresencaEjcOutroJa() {
+                    if (!this.outroEjcSelecionado || !this.participanteSelecionado) {
+                        this.uiAlert('Selecione o EJC e seu nome.');
+                        return;
+                    }
+                    const ok = await this.registrarPresenca({
+                        status_ejc: 'JA_FIZ',
+                        origem_ja_fez: 'OUTRO_EJC',
+                        primeira_vez_outro_ejc: 'JA_PARTICIPOU',
+                        outro_ejc_id: this.outroEjcSelecionado,
+                        participante_referencia: this.participanteSelecionado
+                    });
+                    if (ok) this.resetarFluxo();
+                },
+                async enviarPresencaEcc() {
+                    let payload = null;
+                    if (this.origemTio === 'OUTRO_EJC') {
+                        if (!this.outroEjcTioSelecionado || !this.tioSelecionado) {
+                            this.uiAlert('Selecione a paróquia e o casal de tios.');
+                            return;
+                        }
+                        payload = {
+                            tipo_participante: 'TIO_OUTRO_EJC',
+                            origem_tio: 'OUTRO_EJC',
+                            outro_ejc_id: this.outroEjcTioSelecionado,
+                            tio_casal_id: this.tioSelecionado
+                        };
+                    } else {
+                        if (!this.eccSelecionado || !this.tioSelecionado) {
+                            this.uiAlert('Selecione o encontro e o casal de tios.');
+                            return;
+                        }
+                        payload = {
+                            tipo_participante: this.eccTipo === 'ECNA' ? 'FEZ_ECNA' : 'FEZ_ECC',
+                            origem_tio: 'EJC',
+                            ecc_tipo: this.eccTipo,
+                            ecc_id: this.eccSelecionado,
+                            tio_casal_id: this.tioSelecionado
+                        };
+                    }
+                    const ok = await this.registrarPresenca(payload);
+                    if (ok) this.resetarFluxo();
+                },
+                async enviarPresencaVisitante() {
+                    if (!this.nomeCompleto || !this.telefone) {
+                        this.uiAlert('Preencha nome e telefone.');
+                        return;
+                    }
+                    const ok = await this.registrarPresenca({
+                        status_ejc: 'NAO_FIZ',
+                        nome_completo: this.nomeCompleto,
+                        telefone: this.telefone
+                    });
+                    if (ok) this.resetarFluxo();
+                }
+            },
+            mounted() {
+                this.token = this.getTokenFromPath();
+                if (!this.token) {
+                    this.uiAlert('Link invalido.');
+                    return;
+                }
+                this.carregarFormulario();
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

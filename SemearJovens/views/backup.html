@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>EJC - Backup</title>
+    <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
+    <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="/css/velzon-theme.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/ui-kit.js"></script>
+    <script src="/js/menu.js"></script>
+    <style>
+        .backup-card {
+            border: 1px solid #e6ecf5;
+            border-radius: 14px;
+            background: #fff;
+            padding: 20px;
+        }
+        .backup-card h5 {
+            margin-bottom: 6px;
+        }
+        .backup-desc {
+            color: #64748b;
+            font-size: 0.95rem;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <main class="container-fluid">
+            <div class="d-flex justify-content-between mb-4 align-items-center">
+                <div>
+                    <h3><i class="fa-solid fa-puzzle-piece icon-accent"></i> Backup</h3>
+                    <p class="text-muted mb-0">Faça backup completo do banco ou exporte planilhas por menu.</p>
+                </div>
+            </div>
+
+            <div class="row g-3">
+                <div class="col-12 col-lg-6">
+                    <div class="backup-card h-100">
+                        <h5>Backup completo (Banco)</h5>
+                        <p class="backup-desc">Gera um arquivo .sql com todos os dados do sistema (inclui tabelas e relações).</p>
+                        <button class="btn btn-primary" @click="baixarBackup" :disabled="backupLoading">
+                            {{ backupLoading ? 'Gerando...' : 'Fazer backup' }}
+                        </button>
+                        <div class="small text-muted mt-2">Esse backup não inclui arquivos físicos de anexos.</div>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-6">
+                    <div class="backup-card h-100">
+                        <h5>Exportar planilhas por menu</h5>
+                        <p class="backup-desc">Gera um Excel com abas separadas para cada menu de dados.</p>
+                        <button class="btn btn-outline-primary" @click="exportarPlanilha" :disabled="exportando">
+                            {{ exportando ? 'Exportando...' : 'Exportar planilha' }}
+                        </button>
+                        <div class="small text-muted mt-2">Menus sem dados exportáveis (ex: Anexos) ficam apenas no backup do banco.</div>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-6">
+                    <div class="backup-card h-100">
+                        <h5>Importar backup (Banco)</h5>
+                        <p class="backup-desc">Restaura um arquivo .sql completo no banco de dados.</p>
+                        <input type="file" class="form-control mb-2" accept=".sql" @change="onBackupFileChange">
+                        <button class="btn btn-danger" @click="importarBackup" :disabled="importBackupLoading || !backupFile">
+                            {{ importBackupLoading ? 'Importando...' : 'Importar backup' }}
+                        </button>
+                        <div class="small text-muted mt-2">Use somente arquivos .sql gerados pelo backup do sistema.</div>
+                    </div>
+                </div>
+                <div class="col-12 col-lg-6">
+                    <div class="backup-card h-100">
+                        <h5>Importar planilha</h5>
+                        <p class="backup-desc">Importa dados da aba “Cadastro Jovens” do Excel de backup.</p>
+                        <input type="file" class="form-control mb-2" accept=".xlsx" @change="onPlanilhaFileChange">
+                        <button class="btn btn-outline-danger" @click="importarPlanilha" :disabled="importPlanilhaLoading || !planilhaFile">
+                            {{ importPlanilhaLoading ? 'Importando...' : 'Importar planilha' }}
+                        </button>
+                        <div class="small text-muted mt-2">Para restaurar todos os dados, use o backup do banco.</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.injetarMenu) injetarMenu('#app');
+            if (window.ativarMenu) ativarMenu('/administrativo/backup');
+        });
+        createApp({
+            data() {
+                return {
+                    backupLoading: false,
+                    exportando: false,
+                    importBackupLoading: false,
+                    importPlanilhaLoading: false,
+                    backupFile: null,
+                    planilhaFile: null
+                };
+            },
+            methods: {
+                async baixarBackup() {
+                    this.backupLoading = true;
+                    try {
+                        const res = await fetch('/api/backup/database');
+                        if (!res.ok) {
+                            const data = await res.json().catch(() => ({}));
+                            throw new Error(data.error || 'Erro ao gerar backup.');
+                        }
+                        const blob = await res.blob();
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        const dispo = res.headers.get('Content-Disposition') || '';
+                        let filename = 'backup.sql';
+                        const match = dispo.match(/filename="?([^";]+)"?/i);
+                        if (match) filename = match[1];
+                        a.href = url;
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                        URL.revokeObjectURL(url);
+                    } catch (err) {
+                        if (window.uiAlert) window.uiAlert(err.message || 'Erro ao gerar backup.');
+                    } finally {
+                        this.backupLoading = false;
+                    }
+                },
+                onBackupFileChange(e) {
+                    const file = e && e.target && e.target.files ? e.target.files[0] : null;
+                    this.backupFile = file || null;
+                },
+                async importarBackup() {
+                    if (!this.backupFile) return;
+                    if (window.showFloatingConfirm) {
+                        const ok = await window.showFloatingConfirm('Deseja importar este backup? Isso substituirá os dados atuais.');
+                        if (!ok) return;
+                    }
+                    this.importBackupLoading = true;
+                    try {
+                        const fd = new FormData();
+                        fd.append('arquivo', this.backupFile);
+                        const res = await fetch('/api/backup/database/import', { method: 'POST', body: fd });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) throw new Error(data.error || 'Erro ao importar backup.');
+                        if (window.uiAlert) await window.uiAlert(data.message || 'Backup importado com sucesso.');
+                        this.backupFile = null;
+                    } catch (err) {
+                        if (window.uiAlert) await window.uiAlert(err.message || 'Erro ao importar backup.');
+                    } finally {
+                        this.importBackupLoading = false;
+                    }
+                },
+                onPlanilhaFileChange(e) {
+                    const file = e && e.target && e.target.files ? e.target.files[0] : null;
+                    this.planilhaFile = file || null;
+                },
+                normalizarHeader(valor) {
+                    return String(valor || '')
+                        .normalize('NFD')
+                        .replace(/[\u0300-\u036f]/g, '')
+                        .toLowerCase()
+                        .replace(/[^a-z0-9]+/g, '_')
+                        .replace(/^_+|_+$/g, '');
+                },
+                mapRowToJovem(row) {
+                    const r = row || {};
+                    const get = (...keys) => {
+                        for (const k of keys) {
+                            if (r[k] !== undefined && r[k] !== null && String(r[k]).trim() !== '') return r[k];
+                        }
+                        return null;
+                    };
+                    const val = (v) => (v === undefined || v === null) ? null : String(v).trim();
+                    const yn = (v) => ['YES', 'SIM', 'TRUE', '1'].includes(String(v || '').trim().toUpperCase());
+                    const jovem = {
+                        nome_completo: val(get('nome_completo', 'nome', 'full_name', 'full name', 'nome completo')),
+                        apelido: val(get('apelido')),
+                        telefone: val(get('telefone', 'phone', 'celular')),
+                        email: val(get('email', 'e-mail', 'e_mail')),
+                        data_nascimento: val(get('data_nascimento', 'data nascimento', 'birthdate', 'birth_date')),
+                        sexo: val(get('sexo', 'gender')),
+                        estado_civil: val(get('estado_civil', 'estado civil', 'civilstatus')),
+                        data_casamento: val(get('data_casamento', 'data casamento', 'marriagedate', 'marriage_date')),
+                        circulo: val(get('circulo', 'círculo', 'circle')),
+                        instagram: val(get('instagram')),
+                        deficiencia: yn(get('deficiencia', 'hasdisability', 'has_disability')),
+                        qual_deficiencia: val(get('qual_deficiencia', 'disabilitydetail', 'disability_detail')),
+                        restricao_alimentar: yn(get('restricao_alimentar', 'hasfoodrestriction', 'has_food_restriction')),
+                        detalhes_restricao: val(get('detalhes_restricao', 'foodrestrictiondetail', 'food_restriction_detail')),
+                        eh_musico: yn(get('eh_musico', 'ismusician', 'is_musician')),
+                        instrumentos_musicais: val(get('instrumentos', 'instrumentos_musicais', 'instrumentos musicais')),
+                        numero_ejc_fez: val(get('numero_ejc_fez', 'ejcnumber', 'numero ejc', 'ejc number')),
+                        conjuge_nome: val(get('conjuge_nome', 'conjuge', 'spouse')),
+                        conjuge_telefone: val(get('conjuge_telefone', 'spouse_phone')),
+                        observacoes_extras: val(get('observacoes', 'observacoes_extras', 'obs'))
+                    };
+                    if (jovem.nome_completo) {
+                        const invalido = ['null', 'undefined', '0', 'na', 'n/a'].includes(jovem.nome_completo.toLowerCase());
+                        if (invalido) jovem.nome_completo = null;
+                    }
+                    return jovem;
+                },
+                async importarPlanilha() {
+                    if (!this.planilhaFile) return;
+                    this.importPlanilhaLoading = true;
+                    try {
+                        const data = await this.planilhaFile.arrayBuffer();
+                        const workbook = XLSX.read(data, { type: 'array' });
+                        const sheetName = workbook.SheetNames.find(n => this.normalizarHeader(n) === 'cadastro_jovens');
+                        if (!sheetName) {
+                            throw new Error('A planilha não contém a aba \"Cadastro Jovens\".');
+                        }
+                        const ws = workbook.Sheets[sheetName];
+                        const json = XLSX.utils.sheet_to_json(ws, { defval: '' });
+                        const payload = json.map(row => {
+                            const normalized = {};
+                            Object.keys(row || {}).forEach(k => {
+                                normalized[this.normalizarHeader(k)] = row[k];
+                                normalized[String(k || '').trim().toLowerCase()] = row[k];
+                            });
+                            return this.mapRowToJovem(normalized);
+                        }).filter(j => j && j.nome_completo && String(j.nome_completo).trim() !== '');
+                        if (!payload.length) throw new Error('Nenhum registro válido encontrado na planilha.');
+
+                        const res = await fetch('/api/lista-mestre/importacao', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        const resp = await res.json().catch(() => ({}));
+                        if (!res.ok) throw new Error(resp.error || 'Erro ao importar planilha.');
+                        if (window.uiAlert) await window.uiAlert('Planilha importada com sucesso.');
+                        this.planilhaFile = null;
+                    } catch (err) {
+                        if (window.uiAlert) await window.uiAlert(err.message || 'Erro ao importar planilha.');
+                    } finally {
+                        this.importPlanilhaLoading = false;
+                    }
+                },
+                normalizarValor(v) {
+                    if (v === null || v === undefined) return '';
+                    if (Array.isArray(v)) return v.join(', ');
+                    if (typeof v === 'object') {
+                        try { return JSON.stringify(v); } catch (_) { return String(v); }
+                    }
+                    return v;
+                },
+                sheetFromJson(data, sheetName) {
+                    const rows = Array.isArray(data) ? data : [];
+                    const keys = new Set();
+                    rows.forEach(r => Object.keys(r || {}).forEach(k => keys.add(k)));
+                    const headers = Array.from(keys);
+                    const aoa = [headers];
+                    rows.forEach(r => {
+                        aoa.push(headers.map(h => this.normalizarValor(r[h])));
+                    });
+                    const ws = XLSX.utils.aoa_to_sheet(aoa);
+                    XLSX.utils.book_append_sheet(this.workbook, ws, sheetName.slice(0, 31));
+                },
+                async fetchJson(url) {
+                    const res = await fetch(url);
+                    if (!res.ok) return [];
+                    const data = await res.json().catch(() => ([]));
+                    return Array.isArray(data) ? data : [];
+                },
+                async exportarPlanilha() {
+                    this.exportando = true;
+                    try {
+                        this.workbook = XLSX.utils.book_new();
+
+                        const jovens = await this.fetchJson('/api/lista-mestre');
+                        this.sheetFromJson(jovens, 'Cadastro Jovens');
+
+                        const jovensOutro = await this.fetchJson('/api/lista-mestre/jovens-outro-ejc');
+                        this.sheetFromJson(jovensOutro, 'Jovens Outro EJC');
+
+                        const tiosCasais = await this.fetchJson('/api/tios/casais');
+                        this.sheetFromJson(tiosCasais, 'Tios');
+
+                        const tiosEcc = await this.fetchJson('/api/tios/ecc');
+                        this.sheetFromJson(tiosEcc, 'ECC-ECNA');
+
+                        const outrosEjcs = await this.fetchJson('/api/outros-ejcs');
+                        this.sheetFromJson(outrosEjcs, 'Outros EJCs');
+
+                        const edicoesEjc = await this.fetchJson('/api/ejc');
+                        this.sheetFromJson(edicoesEjc, 'Edicoes EJC');
+
+                        const visitantes = await this.fetchJson('/api/visitantes');
+                        this.sheetFromJson(visitantes, 'Visitantes');
+
+                        const moitaRegistros = await this.fetchJson('/api/moita/registros');
+                        this.sheetFromJson(moitaRegistros, 'Moita Registros');
+
+                        const moitaReservas = await this.fetchJson('/api/moita/reservas');
+                        this.sheetFromJson(moitaReservas, 'Moita Reservas');
+
+                        const garcons = await this.fetchJson('/api/garcons/equipes');
+                        this.sheetFromJson(garcons, 'Garcons');
+
+                        const coordenacoes = await this.fetchJson('/api/coordenadores');
+                        this.sheetFromJson(coordenacoes, 'Coordenacoes');
+
+                        const funcoesDir = await this.fetchJson('/api/funcoes-dirigencia');
+                        this.sheetFromJson(funcoesDir, 'Funcoes Dirigencia');
+
+                        const equipes = await this.fetchJson('/api/equipes');
+                        this.sheetFromJson(equipes, 'Equipes');
+
+                        const usuarios = await this.fetchJson('/api/usuarios');
+                        this.sheetFromJson(usuarios, 'Usuarios');
+
+                        const circulos = await this.fetchJson('/api/circulos');
+                        this.sheetFromJson(circulos, 'Circulos');
+
+                        const pastorais = await this.fetchJson('/api/pastorais');
+                        this.sheetFromJson(pastorais, 'Pastorais');
+
+                        const contatos = await this.fetchJson('/api/contatos');
+                        this.sheetFromJson(contatos, 'Contatos');
+
+                        const financeiro = await this.fetchJson('/api/financeiro/movimentacoes');
+                        this.sheetFromJson(financeiro, 'Financeiro');
+
+                        XLSX.writeFile(this.workbook, 'backup_planilhas.xlsx');
+                    } catch (err) {
+                        console.error(err);
+                        if (window.uiAlert) window.uiAlert('Erro ao exportar planilhas.');
+                    } finally {
+                        this.exportando = false;
+                    }
+                }
+            },
+            mounted() {
+                if (window.ativarMenu) window.ativarMenu('/administrativo/backup');
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

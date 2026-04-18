@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EJC - Eventos e Presença</title>
+    <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
+    <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="/css/velzon-theme.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/ui-kit.js"></script>
+    <script src="/js/menu.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        body {
+            background: radial-gradient(circle at 20% 20%, #fff7ed 0%, #f8fafc 45%, #e2e8f0 100%);
+        }
+
+        .title-wrap {
+            background: linear-gradient(120deg, #0f172a 0%, #1e293b 40%, #0ea5e9 100%);
+            color: #fff;
+            border-radius: 14px;
+            padding: 22px;
+            box-shadow: 0 18px 38px rgba(2, 6, 23, 0.18);
+        }
+
+        .grid-card {
+            border-radius: 14px;
+            border: 1px solid #dbe1ea;
+            background: #fff;
+            padding: 16px;
+            height: 100%;
+            cursor: pointer;
+            transition: transform .15s ease, box-shadow .15s ease;
+        }
+
+        .grid-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 24px rgba(15, 23, 42, 0.08);
+        }
+
+        .chip {
+            display: inline-block;
+            border: 1px solid #cbd5e1;
+            padding: 3px 10px;
+            border-radius: 999px;
+            font-size: .76rem;
+            color: #334155;
+        }
+
+        .builder-box {
+            border: 1px dashed #94a3b8;
+            border-radius: 12px;
+            padding: 12px;
+            background: #f8fafc;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <main class="container-fluid">
+            <div class="title-wrap mb-4">
+                <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                    <div>
+                        <h3 class="mb-1">Eventos e Presença</h3>
+                        <p class="mb-0 opacity-75">Crie eventos com lista de presença, gere link/QR Code e acompanhe as presenças.</p>
+                    </div>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button class="btn btn-light" @click="criarPasta">Nova pasta</button>
+                        <button class="btn btn-warning" @click="abrirNovoFormulario">Nova lista de presença</button>
+                        <button class="btn btn-outline-light" @click="voltarPasta" :disabled="currentPath.length===0">Voltar</button>
+                        <button class="btn btn-outline-light" @click="carregarConteudo">Atualizar</button>
+                    </div>
+                </div>
+            </div>
+
+            <nav aria-label="breadcrumb" class="mb-3">
+                <ol class="breadcrumb bg-white p-2 rounded border">
+                    <li class="breadcrumb-item" :class="{active: currentPath.length===0}" @click="navegarPara(null)">Inicio</li>
+                    <li v-for="(folder, idx) in currentPath" :key="folder.id" class="breadcrumb-item" :class="{active: idx===currentPath.length-1}" @click="navegarPara(folder, idx)">{{ folder.nome }}</li>
+                </ol>
+            </nav>
+
+            <div v-if="loading" class="text-center py-5"><div class="spinner-border"></div></div>
+            <div v-else class="row g-3">
+                <div v-if="pastas.length===0 && formularios.length===0" class="col-12 text-center text-muted py-5">Pasta vazia</div>
+
+                <div v-for="pasta in pastas" :key="`p-${pasta.id}`" class="col-6 col-md-4 col-lg-2">
+                    <div class="grid-card" @click="entrarPasta(pasta)">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div class="fs-3"><i class="fa-solid fa-folder icon-accent"></i></div>
+                            <button class="btn btn-sm btn-outline-danger" @click.stop="deletarPasta(pasta)">X</button>
+                        </div>
+                        <div class="fw-semibold small">{{ pasta.nome }}</div>
+                    </div>
+                </div>
+
+                <div v-for="form in formularios" :key="`f-${form.id}`" class="col-12 col-md-6 col-lg-4">
+                    <div class="grid-card" @click="abrirFormulario(form)">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="chip">{{ labelTipo(form) }}</span>
+                            <button class="btn btn-sm btn-outline-danger" @click.stop="deletarFormulario(form)">X</button>
+                        </div>
+                        <h6 class="mb-1">{{ form.titulo }}</h6>
+                        <p class="text-muted small mb-2">{{ form.descricao || form.tema || 'Sem descricao' }}</p>
+                        <div class="small text-muted">{{ form.evento_data ? formatarData(form.evento_data) : '' }}</div>
+                        <div class="d-flex gap-2 mt-2">
+                            <button class="btn btn-sm btn-outline-primary" @click.stop="copiarLink(form)">Copiar link</button>
+                            <button class="btn btn-sm btn-outline-secondary" @click.stop="abrirQr(form)">QR</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <div class="modal fade" id="modalForm" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header">
+                        <h5 class="modal-title">{{ modoEdicao ? 'Editar formulario' : 'Novo formulario' }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <ul v-if="modoEdicao" class="nav nav-tabs mb-3">
+                            <li class="nav-item"><button class="nav-link" :class="{active: abaEdicao==='dados'}" @click="abaEdicao='dados'">Dados</button></li>
+                            <li class="nav-item"><button class="nav-link" :class="{active: abaEdicao==='respostas'}" @click="carregarRespostasEdicao">Respostas</button></li>
+                        </ul>
+
+                        <div v-if="!modoEdicao || abaEdicao==='dados'">
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-4">
+                                    <label class="form-label">Tipo</label>
+                                    <select class="form-select" v-model="formDraft.tipo">
+                                        <option value="LISTA_PRESENCA">Lista de presença</option>
+                                        <option value="INSCRICAO">Formulário personalizado</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-8">
+                                    <label class="form-label">Titulo</label>
+                                    <input type="text" class="form-control" v-model.trim="formDraft.titulo" maxlength="180">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Tema</label>
+                                    <input type="text" class="form-control" v-model.trim="formDraft.tema" maxlength="200">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Dia</label>
+                                    <input type="date" class="form-control" v-model="formDraft.evento_data">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Horário</label>
+                                    <input type="time" class="form-control" v-model="formDraft.evento_hora">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label">Descricao</label>
+                                    <textarea class="form-control" rows="2" v-model.trim="formDraft.descricao"></textarea>
+                                </div>
+                            </div>
+
+                            <div v-if="formDraft.tipo==='LISTA_PRESENCA'" class="builder-box mb-3">
+                                <strong class="d-block mb-2">Quem pode marcar presença?</strong>
+                                <div class="d-flex flex-wrap gap-3">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="permEJC" v-model="formDraft.permitir_ja_fez_ejc">
+                                        <label class="form-check-label" for="permEJC">Fiz EJC</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="permECC" v-model="formDraft.permitir_ecc_ecna">
+                                        <label class="form-check-label" for="permECC">Fiz ECC/ECNA</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" id="permVis" v-model="formDraft.permitir_visitante">
+                                        <label class="form-check-label" for="permVis">Sou visitante</label>
+                                    </div>
+                                </div>
+                                <div class="row g-2 mt-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label small">Lista disponível a partir de</label>
+                                        <input type="time" class="form-control" v-model="formDraft.link_inicio_hora">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small">Lista disponível até</label>
+                                        <input type="time" class="form-control" v-model="formDraft.link_fim_hora">
+                                    </div>
+                                </div>
+                                <div class="small text-muted mt-2">A lista só pode ser preenchida dentro desse intervalo.</div>
+                            </div>
+
+                            <div v-if="formDraft.tipo==='INSCRICAO'" class="builder-box mb-3">
+                                <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+                                    <strong>Campos do formulario</strong>
+                                    <div class="d-flex gap-2 flex-wrap">
+                                        <button class="btn btn-sm btn-outline-primary" @click="addCampoPersonalizado('texto')">Texto</button>
+                                        <button class="btn btn-sm btn-outline-primary" @click="addCampoPersonalizado('textarea')">Textarea</button>
+                                        <button class="btn btn-sm btn-outline-primary" @click="addCampoPersonalizado('select')">Selecao</button>
+                                        <button class="btn btn-sm btn-outline-primary" @click="addCampoPersonalizado('checkbox')">Checkbox</button>
+                                        <button class="btn btn-sm btn-outline-primary" @click="addCampoPersonalizado('data')">Data</button>
+                                        <button class="btn btn-sm btn-outline-primary" @click="addCampoPersonalizado('imagem')">Imagem</button>
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-2 flex-wrap mb-2">
+                                    <button v-for="base in camposBase" :key="base.id" class="btn btn-sm btn-light border" @click="addCampoBase(base)">+ {{ base.label }}</button>
+                                </div>
+
+                                <div v-for="(campo, idx) in formDraft.campos" :key="campo.uid" class="card mb-2">
+                                    <div class="card-body">
+                                        <div class="row g-2 align-items-end">
+                                            <div class="col-md-4">
+                                                <label class="form-label small">Pergunta</label>
+                                                <input class="form-control" v-model.trim="campo.label" maxlength="180">
+                                            </div>
+                                            <div class="col-md-2">
+                                                <label class="form-label small">Tipo</label>
+                                                <select class="form-select" v-model="campo.tipo">
+                                                    <option value="texto">Texto</option>
+                                                    <option value="textarea">Textarea</option>
+                                                    <option value="telefone">Telefone</option>
+                                                    <option value="email">Email</option>
+                                                    <option value="data">Data</option>
+                                                    <option value="numero">Numero</option>
+                                                    <option value="select">Selecao</option>
+                                                    <option value="radio">Radio</option>
+                                                    <option value="checkbox">Checkbox</option>
+                                                    <option value="imagem">Imagem (upload)</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-3">
+                                                <label class="form-label small">Placeholder</label>
+                                                <input class="form-control" v-model.trim="campo.placeholder" maxlength="140">
+                                            </div>
+                                            <div class="col-md-2 form-check mb-2">
+                                                <input class="form-check-input" type="checkbox" :id="`ob-${campo.uid}`" v-model="campo.obrigatorio">
+                                                <label class="form-check-label" :for="`ob-${campo.uid}`">Obrigatorio</label>
+                                            </div>
+                                            <div class="col-md-1 text-end">
+                                                <button class="btn btn-sm btn-outline-danger" @click="removerCampo(idx)">X</button>
+                                            </div>
+                                        </div>
+                                        <div v-if="['select','radio','checkbox'].includes(campo.tipo)" class="mt-2">
+                                            <label class="form-label small">Opcoes (uma por linha)</label>
+                                            <textarea class="form-control" rows="2" v-model="campo.opcoesTexto"></textarea>
+                                        </div>
+                                        <div v-else-if="campo.tipo==='imagem'" class="mt-2 text-muted small">
+                                            Será mostrado um campo para upload de imagem no formulário público.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div v-if="modoEdicao && abaEdicao==='respostas'">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <button class="btn btn-outline-primary btn-sm" @click="exportarPresencas" :disabled="exportando">
+                                    {{ exportando ? 'Exportando...' : 'Exportar' }}
+                                </button>
+                            </div>
+                            <div v-if="loadingRespostas" class="text-muted">Carregando...</div>
+                            <div v-else-if="respostasEdicao.length===0" class="text-muted">Nenhuma resposta registrada.</div>
+                            <div v-else class="list-group">
+                                <div class="list-group-item" v-for="resp in respostasEdicao" :key="resp.id">
+                                    <div class="fw-semibold">{{ nomePresenca(resp) }}</div>
+                                    <div class="small text-muted mb-2">{{ resp.telefone_referencia || resp.telefone || '-' }} • {{ formatarDataHora(resp.registrado_em) }}</div>
+                                    <div v-if="resp.tipo_participante || resp.status_ejc" class="small text-muted mb-2">
+                                        Tipo: {{ formatarTipoPresenca(resp) }}
+                                    </div>
+                                    <div v-if="resp.resposta && Array.isArray(resp.resposta.campos)">
+                                        <div v-for="item in resp.resposta.campos" :key="`${resp.id}-${item.id}`" class="small">
+                                            <strong>{{ item.label }}:</strong>
+                                            <span>{{ formatarValorResposta(item.valor) }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
+                        <button class="btn btn-primary" @click="salvarFormulario" :disabled="saving">{{ saving ? 'Salvando...' : 'Salvar' }}</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="modalQr" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header">
+                        <h5 class="modal-title">QR Code</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body text-center">
+                        <img v-if="qrDataUrl" :src="qrDataUrl" class="img-fluid border rounded p-2 bg-white">
+                        <div class="mt-3">
+                            <label class="form-label small text-muted d-block text-start">Link do evento</label>
+                            <div class="input-group">
+                                <input class="form-control form-control-sm" type="text" :value="qrLink" readonly>
+                                <button class="btn btn-outline-primary btn-sm" type="button" @click="copiarTexto(qrLink)">Copiar</button>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-center gap-2 mt-3">
+                            <a v-if="qrLink" class="btn btn-outline-secondary btn-sm" :href="qrLink" target="_blank">Abrir link</a>
+                            <button class="btn btn-primary btn-sm" type="button" @click="baixarQr" :disabled="!qrDataUrl">Baixar QR</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            injetarMenu('#app');
+            ativarMenu('/planejamento/eventos');
+        });
+
+        createApp({
+            data() {
+                return {
+                    loading: false,
+                    saving: false,
+                    pastas: [],
+                    formularios: [],
+                    currentFolderId: null,
+                    currentPath: [],
+                    formModal: null,
+                    qrModal: null,
+                    novoJovemListaModal: null,
+                    modoEdicao: false,
+                    abaEdicao: 'dados',
+                    editId: null,
+                    formDraft: {
+                        tipo: 'LISTA_PRESENCA',
+                        titulo: '',
+                        tema: '',
+                        descricao: '',
+                        evento_data: '',
+                        evento_hora: '',
+                        link_inicio_hora: '',
+                        link_fim_hora: '',
+                        permitir_ja_fez_ejc: true,
+                        permitir_ecc_ecna: false,
+                        permitir_visitante: true,
+                        campos: [],
+                        visual: {
+                            cor_primaria: '#0EA5E9',
+                            cor_fundo: '#F1F5F9',
+                            cor_texto: '#0F172A',
+                            cor_card: '#FFFFFF',
+                            fonte: 'sans',
+                            rounded_cards: true,
+                            compact_layout: false
+                        }
+                    },
+                    respostasEdicao: [],
+                    loadingRespostas: false,
+                    exportando: false,
+                    qrDataUrl: '',
+                    qrLink: '',
+                    salvandoNovoJovemLista: false,
+                    meuEjcNomeListaMestre: '',
+                    ejcsListaMestre: [],
+                    outrosEjcsListaMestre: [],
+                    coresListaMestre: [],
+                    tiosCasaisListaMestre: [],
+                    pastoraisListaMestre: [],
+                    eccEncontrosListaMestre: [],
+                    instrumentosListaMestre: [
+                        'Violao',
+                        'Guitarra',
+                        'Baixo',
+                        'Teclado',
+                        'Bateria',
+                        'Percussao',
+                        'Flauta',
+                        'Saxofone',
+                        'Violino',
+                        'Cajon',
+                        'Ukulele'
+                    ],
+                    restricoesAlimentaresListaMestre: [
+                        'Alergia a amendoim',
+                        'Alergia a castanhas',
+                        'Alergia a frutos do mar',
+                        'APLV (Alergia à proteína do leite de vaca)',
+                        'Intolerante à lactose',
+                        'Intolerante a glúten (Celíaco)',
+                        'Não come carne vermelha',
+                        'Não come carne de porco',
+                        'Vegetariano',
+                        'Vegano',
+                        'Outras'
+                    ],
+                    novoJovemLista: {
+                        nome_completo: '',
+                        apelido: '',
+                        telefone: '',
+                        email: '',
+                        instagram: '',
+                        data_nascimento: '',
+                        numero_ejc_fez: '',
+                        estado_civil: 'Solteiro',
+                        data_casamento: '',
+                        sexo: '',
+                        circulo: '',
+                        endereco_cep: '',
+                        endereco_rua: '',
+                        endereco_numero: '',
+                        endereco_bairro: '',
+                        endereco_cidade: '',
+                        deficiencia: false,
+                        qual_deficiencia: '',
+                        restricao_alimentar: false,
+                        detalhes_restricao: '',
+                        eh_musico: false,
+                        instrumentos_musicais: [],
+                        pastorais: [],
+                        tio_casal_id: null,
+                        conjuge_nome: '',
+                        conjuge_telefone: '',
+                        conjuge_outro_ejc_id: '',
+                        conjuge_paroquia: '',
+                        conjuge_ecc_tipo: '',
+                        conjuge_ecc_numero: '',
+                        observacoes_extras: ''
+                    },
+                    camposBase: [
+                        { id: 'nome_completo', label: 'Nome completo', tipo: 'texto', obrigatorio: true },
+                        { id: 'telefone', label: 'Telefone', tipo: 'telefone', obrigatorio: true },
+                        { id: 'sexo', label: 'Sexo', tipo: 'select', obrigatorio: true, opcoes: ['Masculino', 'Feminino'] },
+                        { id: 'data_nascimento', label: 'Data de nascimento', tipo: 'data', obrigatorio: true },
+                        { id: 'estado_civil', label: 'Estado civil', tipo: 'select', obrigatorio: false, opcoes: ['Solteiro(a)', 'Casado(a)', 'Outro'] },
+                        { id: 'deficiencia', label: 'Possui deficiencia? Qual?', tipo: 'texto', obrigatorio: false },
+                        { id: 'restricao_alimentar', label: 'Possui restricao alimentar? Qual?', tipo: 'texto', obrigatorio: false },
+                        { id: 'musico', label: 'E musico? Qual instrumento?', tipo: 'texto', obrigatorio: false },
+                        { id: 'endereco_completo', label: 'Endereco completo (rua, numero, bairro, cidade, CEP)', tipo: 'endereco', obrigatorio: true },
+                        { id: 'batizado', label: 'Foi batizado na Igreja Catolica?', tipo: 'radio', obrigatorio: true, opcoes: ['Sim', 'Nao'] },
+                        { id: 'crisma', label: 'Fez Crisma?', tipo: 'radio', obrigatorio: true, opcoes: ['Sim', 'Nao'] }
+                    ]
+                };
+            },
+            methods: {
+                formatarData(data) {
+                    if (!data) return '';
+                    const dt = new Date(`${data}T00:00:00`);
+                    return Number.isNaN(dt.getTime()) ? data : dt.toLocaleDateString('pt-BR');
+                },
+                formatarDataHora(dataHora) {
+                    if (!dataHora) return '-';
+                    const dt = new Date(dataHora);
+                    return Number.isNaN(dt.getTime()) ? dataHora : dt.toLocaleString('pt-BR');
+                },
+                formatarValorResposta(valor) {
+                    if (Array.isArray(valor)) return valor.join(', ');
+                    return valor || '-';
+                },
+                normalizarInstrumentosListaMestre(valor) {
+                    if (Array.isArray(valor)) {
+                        return Array.from(new Set(valor.map((item) => String(item || '').trim()).filter(Boolean)));
+                    }
+                    if (!valor) return [];
+                    return Array.from(new Set(String(valor).split(',').map((item) => item.trim()).filter(Boolean)));
+                },
+                resetNovoJovemListaMestre() {
+                    this.novoJovemLista = {
+                        nome_completo: '',
+                        apelido: '',
+                        telefone: '',
+                        email: '',
+                        instagram: '',
+                        data_nascimento: '',
+                        numero_ejc_fez: '',
+                        estado_civil: 'Solteiro',
+                        data_casamento: '',
+                        sexo: '',
+                        circulo: '',
+                        endereco_cep: '',
+                        endereco_rua: '',
+                        endereco_numero: '',
+                        endereco_bairro: '',
+                        endereco_cidade: '',
+                        deficiencia: false,
+                        qual_deficiencia: '',
+                        restricao_alimentar: false,
+                        detalhes_restricao: '',
+                        eh_musico: false,
+                        instrumentos_musicais: [],
+                        pastorais: [],
+                        tio_casal_id: null,
+                        conjuge_nome: '',
+                        conjuge_telefone: '',
+                        conjuge_outro_ejc_id: '',
+                        conjuge_paroquia: '',
+                        conjuge_ecc_tipo: '',
+                        conjuge_ecc_numero: '',
+                        observacoes_extras: ''
+                    };
+                },
+                async carregarRecursosNovoJovemListaMestre() {
+                    const requisicoes = [
+                        fetch('/api/meu-ejc').then((res) => res.ok ? res.json().catch(() => ({})) : {}).catch(() => ({})),
+                        fetch('/api/lista-mestre/ejcs-opcoes').then((res) => res.ok ? res.json().catch(() => ([])) : []).catch(() => ([])),
+                        fetch('/api/outros-ejcs').then((res) => res.ok ? res.json().catch(() => ([])) : []).catch(() => ([])),
+                        fetch('/api/circulos').then((res) => res.ok ? res.json().catch(() => ([])) : []).catch(() => ([])),
+                        fetch('/api/tios/casais').then((res) => res.ok ? res.json().catch(() => ([])) : []).catch(() => ([])),
+                        fetch('/api/pastorais').then((res) => res.ok ? res.json().catch(() => ([])) : []).catch(() => ([])),
+                        fetch('/api/tios/ecc').then((res) => res.ok ? res.json().catch(() => ([])) : []).catch(() => ([]))
+                    ];
+                    const [meuEjc, ejcs, outrosEjcs, circulos, tiosCasais, pastorais, ecc] = await Promise.all(requisicoes);
+                    this.meuEjcNomeListaMestre = String((meuEjc && meuEjc.nome) || '').trim() || 'Inconfidentes';
+                    this.ejcsListaMestre = Array.isArray(ejcs) ? ejcs : [];
+                    this.outrosEjcsListaMestre = Array.isArray(outrosEjcs) ? outrosEjcs : [];
+                    this.coresListaMestre = Array.isArray(circulos) ? circulos.map((item) => String(item && item.nome ? item.nome : '').trim()).filter(Boolean) : [];
+                    this.tiosCasaisListaMestre = Array.isArray(tiosCasais) ? tiosCasais : [];
+                    this.pastoraisListaMestre = Array.isArray(pastorais) ? pastorais : [];
+                    this.eccEncontrosListaMestre = Array.isArray(ecc) ? ecc : [];
+                },
+                async abrirNovoJovemListaMestre() {
+                    this.resetNovoJovemListaMestre();
+                    await this.carregarRecursosNovoJovemListaMestre();
+                    if (!this.novoJovemListaModal) {
+                        this.novoJovemListaModal = new bootstrap.Modal(document.getElementById('modalNovoJovemListaMestre'));
+                    }
+                    this.novoJovemListaModal.show();
+                },
+                onMusicoToggleNovoJovemLista() {
+                    if (!this.novoJovemLista.eh_musico) {
+                        this.novoJovemLista.instrumentos_musicais = [];
+                    }
+                },
+                async onCepInputNovoJovemLista() {
+                    const cep = String(this.novoJovemLista.endereco_cep || '').replace(/\D/g, '');
+                    if (cep.length !== 8) return;
+                    try {
+                        const res = await fetch(`/api/cep/${cep}`);
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok || data.erro) return;
+                        if (data.logradouro && !this.novoJovemLista.endereco_rua) this.novoJovemLista.endereco_rua = data.logradouro;
+                        if (data.bairro && !this.novoJovemLista.endereco_bairro) this.novoJovemLista.endereco_bairro = data.bairro;
+                        if (data.localidade && !this.novoJovemLista.endereco_cidade) this.novoJovemLista.endereco_cidade = data.localidade;
+                    } catch (err) {
+                        console.error('Erro ao buscar CEP do novo jovem:', err);
+                    }
+                },
+                async salvarNovoJovemListaMestre() {
+                    const jovem = this.novoJovemLista;
+                    if (!String(jovem.nome_completo || '').trim() || !String(jovem.telefone || '').trim()) {
+                        await uiAlert('Nome completo e telefone são obrigatórios.');
+                        return;
+                    }
+                    if (!['Casado', 'Amasiado'].includes(jovem.estado_civil)) {
+                        jovem.data_casamento = '';
+                        jovem.conjuge_nome = '';
+                        jovem.conjuge_telefone = '';
+                        jovem.conjuge_outro_ejc_id = '';
+                        jovem.conjuge_paroquia = '';
+                        jovem.conjuge_ecc_tipo = '';
+                        jovem.conjuge_ecc_numero = '';
+                    }
+                    if (!jovem.deficiencia) jovem.qual_deficiencia = '';
+                    if (!jovem.restricao_alimentar) jovem.detalhes_restricao = '';
+                    if (!jovem.eh_musico) jovem.instrumentos_musicais = [];
+
+                    this.salvandoNovoJovemLista = true;
+                    try {
+                        const payloadCriacao = {
+                            origem_ejc_tipo: 'INCONFIDENTES',
+                            nome_completo: String(jovem.nome_completo || '').trim(),
+                            apelido: String(jovem.apelido || '').trim() || null,
+                            telefone: String(jovem.telefone || '').trim(),
+                            email: String(jovem.email || '').trim() || null,
+                            data_nascimento: jovem.data_nascimento || null,
+                            numero_ejc_fez: jovem.numero_ejc_fez || null,
+                            instagram: String(jovem.instagram || '').trim() || null,
+                            estado_civil: jovem.estado_civil || 'Solteiro',
+                            data_casamento: jovem.data_casamento || null,
+                            sexo: jovem.sexo || null,
+                            circulo: jovem.circulo || null,
+                            deficiencia: !!jovem.deficiencia,
+                            qual_deficiencia: String(jovem.qual_deficiencia || '').trim() || null,
+                            restricao_alimentar: !!jovem.restricao_alimentar,
+                            detalhes_restricao: String(jovem.detalhes_restricao || '').trim() || null,
+                            eh_musico: !!jovem.eh_musico,
+                            instrumentos_musicais: this.normalizarInstrumentosListaMestre(jovem.instrumentos_musicais),
+                            endereco_rua: String(jovem.endereco_rua || '').trim() || null,
+                            endereco_numero: String(jovem.endereco_numero || '').trim() || null,
+                            endereco_bairro: String(jovem.endereco_bairro || '').trim() || null,
+                            endereco_cidade: String(jovem.endereco_cidade || '').trim() || null,
+                            endereco_cep: String(jovem.endereco_cep || '').trim() || null
+                        };
+
+                        const resCriacao = await fetch('/api/lista-mestre', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payloadCriacao)
+                        });
+                        const dataCriacao = await resCriacao.json().catch(() => ({}));
+                        if (!resCriacao.ok || !dataCriacao.id) {
+                            await uiAlert(dataCriacao.error || 'Erro ao criar jovem na Lista Mestre.');
+                            return;
+                        }
+
+                        const jovemId = Number(dataCriacao.id);
+                        const payloadComplementar = {
+                            tio_casal_id: jovem.tio_casal_id || null,
+                            conjuge_nome: String(jovem.conjuge_nome || '').trim() || null,
+                            conjuge_telefone: String(jovem.conjuge_telefone || '').trim() || null,
+                            conjuge_outro_ejc_id: jovem.conjuge_outro_ejc_id || null,
+                            conjuge_paroquia: String(jovem.conjuge_paroquia || '').trim() || null,
+                            conjuge_ecc_tipo: jovem.conjuge_ecc_tipo || null,
+                            conjuge_ecc_numero: jovem.conjuge_ecc_numero || null,
+                            observacoes_extras: String(jovem.observacoes_extras || '').trim() || null
+                        };
+                        const resComplementar = await fetch(`/api/lista-mestre/${jovemId}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payloadComplementar)
+                        });
+                        const dataComplementar = await resComplementar.json().catch(() => ({}));
+                        if (!resComplementar.ok) {
+                            await uiAlert(dataComplementar.error || 'O jovem foi criado, mas faltou salvar os dados complementares.');
+                            return;
+                        }
+
+                        const pastorais = Array.isArray(jovem.pastorais) ? jovem.pastorais.map((id) => Number(id)).filter((id) => Number.isFinite(id) && id > 0) : [];
+                        if (pastorais.length) {
+                            const resPastorais = await fetch(`/api/lista-mestre/${jovemId}/pastorais`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ pastorais })
+                            });
+                            const dataPastorais = await resPastorais.json().catch(() => ({}));
+                            if (!resPastorais.ok) {
+                                await uiAlert(dataPastorais.error || 'O jovem foi criado, mas faltou salvar as pastorais.');
+                                return;
+                            }
+                        }
+
+                        if (String(jovem.observacoes_extras || '').trim()) {
+                            const resObservacao = await fetch('/api/lista-mestre/observacoes', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    jovem_id: jovemId,
+                                    texto: String(jovem.observacoes_extras || '').trim()
+                                })
+                            });
+                            const dataObservacao = await resObservacao.json().catch(() => ({}));
+                            if (!resObservacao.ok) {
+                                await uiAlert(dataObservacao.error || 'O jovem foi criado, mas faltou salvar a observação.');
+                                return;
+                            }
+                        }
+
+                        if (this.novoJovemListaModal) this.novoJovemListaModal.hide();
+                        this.resetNovoJovemListaMestre();
+                        await uiAlert('Jovem criado com sucesso na Lista Mestre.');
+                    } catch (err) {
+                        console.error('Erro ao salvar novo jovem pela tela de formulários:', err);
+                        await uiAlert('Erro ao criar jovem na Lista Mestre.');
+                    } finally {
+                        this.salvandoNovoJovemLista = false;
+                    }
+                },
+                labelTipo(form) {
+                    const tipo = String(form.tipo || '').toUpperCase();
+                    if (tipo === 'INSCRICAO') return 'Formulario personalizado';
+                    if (tipo === 'LISTA_PRESENCA') return 'Lista de presenca';
+                    return 'Lista de presenca';
+                },
+                formatarTipoPresenca(resp) {
+                    const tipo = String(resp.tipo_participante || resp.status_ejc || '').toUpperCase();
+                    if (tipo === 'FEZ_EJC') return 'Fez EJC';
+                    if (tipo === 'FEZ_OUTRO_EJC' || tipo === 'JA_FIZ') return 'Fez outro EJC';
+                    if (tipo === 'FEZ_ECC') return 'Fez ECC';
+                    if (tipo === 'FEZ_ECNA') return 'Fez ECNA';
+                    if (tipo === 'TIO_OUTRO_EJC') return 'Tio de outro EJC';
+                    if (tipo === 'NAO_FIZ') return 'Visitante';
+                    return tipo || '-';
+                },
+                nomePresenca(resp) {
+                    const tioNome = resp && resp.tio_nome ? String(resp.tio_nome) : '';
+                    const tiaNome = resp && resp.tia_nome ? String(resp.tia_nome) : '';
+                    if (tioNome || tiaNome) return `${tioNome}${tioNome && tiaNome ? ' e ' : ''}${tiaNome}`;
+                    return resp.nome_referencia || resp.jovem_nome || resp.nome_completo || 'Sem nome';
+                },
+                async exportarPresencas() {
+                    if (!this.editId) return;
+                    const tipo = String(this.formDraft.tipo || '').toUpperCase();
+                    this.exportando = true;
+                    try {
+                        const url = tipo === 'INSCRICAO'
+                            ? `/api/formularios/forms/${this.editId}/respostas`
+                            : `/api/formularios/forms/${this.editId}/presencas`;
+                        const res = await fetch(url);
+                        const data = await res.json().catch(() => ([]));
+                        if (!res.ok) {
+                            await uiAlert((data && data.error) || 'Erro ao exportar.');
+                            return;
+                        }
+                        if (tipo === 'INSCRICAO') {
+                            await this.exportarInscricoesPdf(Array.isArray(data) ? data : []);
+                        } else {
+                            await this.exportarPresencasPdf(Array.isArray(data) ? data : []);
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        await uiAlert('Erro ao exportar.');
+                    } finally {
+                        this.exportando = false;
+                    }
+                },
+                async exportarPresencasPdf(lista) {
+                    const { jsPDF } = window.jspdf || {};
+                    if (!jsPDF) {
+                        await uiAlert('Biblioteca de PDF não carregada.');
+                        return;
+                    }
+                    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+                    const titulo = this.formDraft.titulo || 'Lista de presença';
+                    doc.setFontSize(14);
+                    doc.text(titulo, 14, 12);
+                    const rows = (lista || []).map((r) => ([
+                        this.nomePresenca(r),
+                        r.telefone || '-',
+                        this.formatarTipoPresenca(r),
+                        this.formatarDataHora(r.registrado_em)
+                    ]));
+                    doc.autoTable({
+                        startY: 18,
+                        head: [['Nome', 'Telefone', 'Tipo', 'Registrado em']],
+                        body: rows,
+                        styles: { fontSize: 9 }
+                    });
+                    doc.save(`presencas_${Date.now()}.pdf`);
+                },
+                async exportarInscricoesPdf(lista) {
+                    const { jsPDF } = window.jspdf || {};
+                    if (!jsPDF) {
+                        await uiAlert('Biblioteca de PDF não carregada.');
+                        return;
+                    }
+                    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+                    const titulo = this.formDraft.titulo || 'Formulários personalizados';
+                    const itens = Array.isArray(lista) ? lista : [];
+                    for (let i = 0; i < itens.length; i++) {
+                        const resp = itens[i];
+                        if (i > 0) doc.addPage();
+                        doc.setFontSize(14);
+                        doc.text(titulo, 14, 14);
+                        doc.setFontSize(11);
+                        doc.text(`Resposta ${i + 1}`, 14, 22);
+                        doc.setFontSize(9);
+                        doc.text(`Enviada em: ${this.formatarDataHora(resp.registrado_em)}`, 14, 28);
+
+                        const campos = resp.resposta && Array.isArray(resp.resposta.campos) ? resp.resposta.campos : [];
+                        let y = 36;
+                        for (const item of campos) {
+                            if (y > 260) {
+                                doc.addPage();
+                                y = 14;
+                            }
+                            const label = String(item.label || '').trim() || 'Campo';
+                            if (item.tipo === 'imagem' && item.valor) {
+                                doc.setFontSize(10);
+                                doc.text(`${label}:`, 14, y);
+                                y += 4;
+                                const imgUrl = String(item.valor || '').trim();
+                                const imgInfo = await this.fetchImageAsDataUrl(imgUrl);
+                                if (imgInfo && imgInfo.data) {
+                                    const imgWidth = 120;
+                                    const imgHeight = 80;
+                                    doc.addImage(imgInfo.data, imgInfo.type || 'JPEG', 14, y, imgWidth, imgHeight);
+                                    y += imgHeight + 6;
+                                } else {
+                                    doc.setFontSize(9);
+                                    doc.text('Imagem indisponível', 14, y);
+                                    y += 6;
+                                }
+                            } else {
+                                const valor = Array.isArray(item.valor) ? item.valor.join(', ') : String(item.valor || '').trim();
+                                doc.setFontSize(10);
+                                doc.text(`${label}:`, 14, y);
+                                doc.setFontSize(9);
+                                doc.text(valor || '-', 40, y);
+                                y += 6;
+                            }
+                        }
+                    }
+                    doc.save(`inscricoes_${Date.now()}.pdf`);
+                },
+                async fetchImageAsDataUrl(url) {
+                    try {
+                        const res = await fetch(url);
+                        if (!res.ok) return null;
+                        const blob = await res.blob();
+                        if (!blob.type.startsWith('image/')) return null;
+                        const data = await new Promise((resolve) => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => resolve(reader.result);
+                            reader.onerror = () => resolve(null);
+                            reader.readAsDataURL(blob);
+                        });
+                        if (!data) return null;
+                        const type = blob.type.includes('png') ? 'PNG' : 'JPEG';
+                        return { data, type };
+                    } catch (_) {
+                        return null;
+                    }
+                },
+                novoCampo(c) {
+                    return {
+                        uid: `${Date.now()}-${Math.random()}`,
+                        id: c.id || '',
+                        label: c.label || '',
+                        tipo: c.tipo || 'texto',
+                        obrigatorio: !!c.obrigatorio,
+                        placeholder: c.placeholder || '',
+                        opcoesTexto: Array.isArray(c.opcoes) ? c.opcoes.join('\n') : ''
+                    };
+                },
+                addCampoBase(base) {
+                    if (base && base.tipo === 'endereco') {
+                        const camposEndereco = [
+                            { id: 'endereco_cep', label: 'CEP', tipo: 'cep', obrigatorio: true, placeholder: '00000-000' },
+                            { id: 'endereco_rua', label: 'Rua', tipo: 'texto', obrigatorio: true },
+                            { id: 'endereco_numero', label: 'Numero', tipo: 'texto', obrigatorio: true },
+                            { id: 'endereco_bairro', label: 'Bairro', tipo: 'texto', obrigatorio: true },
+                            { id: 'endereco_cidade', label: 'Cidade', tipo: 'texto', obrigatorio: true }
+                        ];
+                        camposEndereco.forEach((c) => this.formDraft.campos.push(this.novoCampo(c)));
+                        return;
+                    }
+                    this.formDraft.campos.push(this.novoCampo(base));
+                },
+                addCampoPersonalizado(tipo) {
+                    this.formDraft.campos.push(this.novoCampo({ label: 'Nova pergunta', tipo }));
+                },
+                removerCampo(idx) {
+                    this.formDraft.campos.splice(idx, 1);
+                },
+                prepararPayload() {
+                    const payload = {
+                        tipo: this.formDraft.tipo,
+                        titulo: String(this.formDraft.titulo || '').trim(),
+                        tema: String(this.formDraft.tema || '').trim() || null,
+                        descricao: String(this.formDraft.descricao || '').trim() || null,
+                        evento_data: this.formDraft.evento_data || null,
+                        evento_hora: this.formDraft.evento_hora || null,
+                        link_inicio_hora: this.formDraft.link_inicio_hora || null,
+                        link_fim_hora: this.formDraft.link_fim_hora || null,
+                        pastaId: this.currentFolderId,
+                        visualConfig: { ...this.formDraft.visual }
+                    };
+                    if (this.formDraft.tipo === 'INSCRICAO') {
+                        payload.campos = this.formDraft.campos.map((c) => ({
+                            id: String(c.id || '').trim() || null,
+                            label: String(c.label || '').trim(),
+                            tipo: c.tipo,
+                            obrigatorio: !!c.obrigatorio,
+                            placeholder: String(c.placeholder || '').trim() || null,
+                            opcoes: ['select', 'radio', 'checkbox'].includes(c.tipo)
+                                ? String(c.opcoesTexto || '').split('\n').map((v) => v.trim()).filter(Boolean)
+                                : []
+                        }));
+                        payload.link_inicio_hora = null;
+                        payload.link_fim_hora = null;
+                    } else {
+                        payload.criarListaPresenca = true;
+                        payload.permitirJaFezEJC = !!this.formDraft.permitir_ja_fez_ejc;
+                        payload.permitirEccEcna = !!this.formDraft.permitir_ecc_ecna;
+                        payload.permitirVisitante = !!this.formDraft.permitir_visitante;
+                    }
+                    return payload;
+                },
+                async salvarFormulario() {
+                    const payload = this.prepararPayload();
+                    if (!payload.titulo) {
+                        alert('Informe o titulo.');
+                        return;
+                    }
+                    this.saving = true;
+                    try {
+                        const url = this.modoEdicao ? `/api/formularios/forms/${this.editId}` : '/api/formularios/forms';
+                        const method = this.modoEdicao ? 'PUT' : 'POST';
+                        const res = await fetch(url, {
+                            method,
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao salvar.');
+                            return;
+                        }
+                        if (this.formModal) this.formModal.hide();
+                        await this.carregarConteudo();
+                        if (!this.modoEdicao && data.token) {
+                            await this.abrirQr({ token: data.token });
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao salvar.');
+                    } finally {
+                        this.saving = false;
+                    }
+                },
+                async carregarRespostasEdicao() {
+                    if (!this.editId) return;
+                    this.abaEdicao = 'respostas';
+                    this.loadingRespostas = true;
+                    try {
+                        const tipo = String(this.formDraft.tipo || '').toUpperCase();
+                        const url = tipo === 'INSCRICAO'
+                            ? `/api/formularios/forms/${this.editId}/respostas`
+                            : `/api/formularios/forms/${this.editId}/presencas`;
+                        const res = await fetch(url);
+                        const data = await res.json().catch(() => ([]));
+                        this.respostasEdicao = res.ok && Array.isArray(data) ? data : [];
+                    } finally {
+                        this.loadingRespostas = false;
+                    }
+                },
+                resetDraft() {
+                    this.formDraft = {
+                        tipo: 'LISTA_PRESENCA',
+                        titulo: '',
+                        tema: '',
+                        descricao: '',
+                        evento_data: '',
+                        evento_hora: '',
+                        link_inicio_hora: '',
+                        link_fim_hora: '',
+                        permitir_ja_fez_ejc: true,
+                        permitir_ecc_ecna: false,
+                        permitir_visitante: true,
+                        campos: [],
+                        visual: {
+                            cor_primaria: '#0EA5E9',
+                            cor_fundo: '#F1F5F9',
+                            cor_texto: '#0F172A',
+                            cor_card: '#FFFFFF',
+                            fonte: 'sans',
+                            rounded_cards: true,
+                            compact_layout: false
+                        }
+                    };
+                    this.editId = null;
+                    this.modoEdicao = false;
+                    this.abaEdicao = 'dados';
+                    this.respostasEdicao = [];
+                },
+                abrirNovoFormulario() {
+                    this.resetDraft();
+                    this.formModal.show();
+                },
+                async abrirFormulario(form) {
+                    const res = await fetch(`/api/formularios/forms/${form.id}`);
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok) {
+                        alert(data.error || 'Erro ao abrir formulario.');
+                        return;
+                    }
+                    this.modoEdicao = true;
+                    this.editId = form.id;
+                    const tipoAtual = String(data.tipo || 'INSCRICAO').toUpperCase();
+                    this.formDraft.tipo = tipoAtual === 'EVENTO' ? 'LISTA_PRESENCA' : tipoAtual;
+                    this.formDraft.titulo = data.titulo || '';
+                    this.formDraft.tema = data.tema || '';
+                    this.formDraft.descricao = data.descricao || '';
+                    this.formDraft.evento_data = data.evento_data || '';
+                    this.formDraft.evento_hora = data.evento_hora || '';
+                    this.formDraft.link_inicio_hora = data.link_inicio_hora || '';
+                    this.formDraft.link_fim_hora = data.link_fim_hora || '';
+                    this.formDraft.permitir_ja_fez_ejc = data.permitir_ja_fez_ejc !== undefined ? !!data.permitir_ja_fez_ejc : true;
+                    this.formDraft.permitir_ecc_ecna = data.permitir_ecc_ecna !== undefined ? !!data.permitir_ecc_ecna : false;
+                    this.formDraft.permitir_visitante = data.permitir_visitante !== undefined ? !!data.permitir_visitante : true;
+                    this.formDraft.campos = (Array.isArray(data.campos_config) ? data.campos_config : []).map((c) => this.novoCampo(c));
+                    this.formDraft.visual = {
+                        cor_primaria: String(data.visual_config?.cor_primaria || '#0EA5E9'),
+                        cor_fundo: String(data.visual_config?.cor_fundo || '#F1F5F9'),
+                        cor_texto: String(data.visual_config?.cor_texto || '#0F172A'),
+                        cor_card: String(data.visual_config?.cor_card || '#FFFFFF'),
+                        fonte: String(data.visual_config?.fonte || 'sans'),
+                        rounded_cards: data.visual_config?.rounded_cards !== undefined ? !!data.visual_config.rounded_cards : true,
+                        compact_layout: data.visual_config?.compact_layout !== undefined ? !!data.visual_config.compact_layout : false
+                    };
+                    this.abaEdicao = 'dados';
+                    this.respostasEdicao = [];
+                    this.formModal.show();
+                },
+                getPublicLink(form) {
+                    const token = String((form && form.token) || '').trim();
+                    return `${window.location.origin}/eventos/public/${token}`;
+                },
+                async copiarTexto(texto) {
+                    if (!texto) return;
+                    try {
+                        await navigator.clipboard.writeText(texto);
+                        if (window.uiAlert) await window.uiAlert('Link copiado.');
+                    } catch (_) {
+                        if (window.uiAlert) {
+                            await window.uiAlert(`Copie o link:\\n${texto}`, { title: 'Link do evento' });
+                        } else {
+                            alert(`Copie o link:\\n${texto}`);
+                        }
+                    }
+                },
+                async copiarLink(form) {
+                    const link = this.getPublicLink(form);
+                    try {
+                        await navigator.clipboard.writeText(link);
+                        alert('Link copiado.');
+                    } catch (_) {
+                        if (window.uiAlert) {
+                            await window.uiAlert(`Copie o link:\n${link}`, { title: 'Link do evento' });
+                        } else {
+                            alert(`Copie o link:\n${link}`);
+                        }
+                    }
+                },
+                async abrirQr(form) {
+                    const link = this.getPublicLink(form);
+                    this.qrLink = link;
+                    const qrLib = window.QRCode || window.qrcode;
+                    if (!qrLib || typeof qrLib.toDataURL !== 'function') {
+                        // Fallback: gera QR via serviço externo
+                        const encoded = encodeURIComponent(link);
+                        this.qrDataUrl = `https://api.qrserver.com/v1/create-qr-code/?size=420x420&data=${encoded}`;
+                        this.qrModal.show();
+                        return;
+                    }
+                    try {
+                        this.qrDataUrl = await qrLib.toDataURL(link, { width: 420, margin: 2 });
+                    } catch (err) {
+                        console.error('Erro ao gerar QRCode:', err);
+                        this.qrDataUrl = '';
+                    }
+                    this.qrModal.show();
+                },
+                baixarQr() {
+                    if (!this.qrDataUrl) return;
+                    const a = document.createElement('a');
+                    a.href = this.qrDataUrl;
+                    a.download = `qr_evento_${Date.now()}.png`;
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                },
+                async carregarConteudo() {
+                    this.loading = true;
+                    try {
+                        const query = this.currentFolderId ? `?parentId=${this.currentFolderId}` : '';
+                        const queryForms = this.currentFolderId ? `?pastaId=${this.currentFolderId}` : '';
+                        const [r1, r2] = await Promise.all([
+                            fetch(`/api/formularios/pastas${query}`),
+                            fetch(`/api/formularios/forms${queryForms}`)
+                        ]);
+                        this.pastas = r1.ok ? await r1.json() : [];
+                        const forms = r2.ok ? await r2.json() : [];
+                        this.formularios = Array.isArray(forms) ? forms : [];
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                entrarPasta(pasta) {
+                    this.currentPath.push(pasta);
+                    this.currentFolderId = pasta.id;
+                    this.carregarConteudo();
+                },
+                voltarPasta() {
+                    if (!this.currentPath.length) return;
+                    this.currentPath.pop();
+                    this.currentFolderId = this.currentPath.length ? this.currentPath[this.currentPath.length - 1].id : null;
+                    this.carregarConteudo();
+                },
+                navegarPara(folder, idx) {
+                    if (!folder) {
+                        this.currentPath = [];
+                        this.currentFolderId = null;
+                    } else {
+                        this.currentPath = this.currentPath.slice(0, idx + 1);
+                        this.currentFolderId = folder.id;
+                    }
+                    this.carregarConteudo();
+                },
+                async criarPasta() {
+                    const nome = await uiPrompt('Nome da pasta:');
+                    if (!nome) return;
+                    const res = await fetch('/api/formularios/pastas', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ nome, parentId: this.currentFolderId })
+                    });
+                    if (res.ok) this.carregarConteudo();
+                },
+                async deletarPasta(pasta) {
+                    if (!(await uiConfirm(`Apagar pasta "${pasta.nome}"?`))) return;
+                    const res = await fetch(`/api/formularios/pastas/${pasta.id}`, { method: 'DELETE' });
+                    if (res.ok) this.carregarConteudo();
+                },
+                async deletarFormulario(form) {
+                    if (!(await uiConfirm(`Apagar formulario "${form.titulo}"?`))) return;
+                    const res = await fetch(`/api/formularios/forms/${form.id}`, { method: 'DELETE' });
+                    if (res.ok) this.carregarConteudo();
+                }
+            },
+            mounted() {
+                this.formModal = new bootstrap.Modal(document.getElementById('modalForm'));
+                this.qrModal = new bootstrap.Modal(document.getElementById('modalQr'));
+                this.carregarConteudo();
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

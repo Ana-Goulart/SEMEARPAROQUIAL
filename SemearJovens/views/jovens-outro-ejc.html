@@ -1,0 +1,2875 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>EJC - Membros de Outro EJC</title>
+    <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
+    <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/velzon-theme.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/ui-kit.js"></script>
+    <script src="/js/menu.js"></script>
+    <script src="/js/excel-utils.js"></script>
+    <style>
+        .outro-novo-jovem-modal .modal-content,
+        .outro-casal-modal .modal-content {
+            border-radius: 24px;
+            overflow: hidden;
+        }
+
+        .outro-modal-header {
+            background: linear-gradient(135deg, #234462 0%, #172f45 100%);
+            color: #fff;
+            padding: 1.1rem 1.4rem;
+            border-bottom: 0;
+        }
+
+        .outro-modal-header .modal-title {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            font-size: 1.35rem;
+            font-weight: 700;
+        }
+
+        .outro-modal-badge {
+            width: 40px;
+            height: 40px;
+            border-radius: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.16);
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+        }
+
+        .outro-modal-body {
+            background: linear-gradient(180deg, #fffdf9 0%, #fff8ee 100%);
+            padding: 1.35rem;
+        }
+
+        .outro-helper-box {
+            border: 1px solid rgba(197, 139, 42, 0.22);
+            border-radius: 18px;
+            background: linear-gradient(180deg, #fffaf1 0%, #fff3df 100%);
+            padding: 1rem 1.05rem;
+            margin-bottom: 1rem;
+        }
+
+        .outro-helper-box strong {
+            color: #223750;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .outro-helper-box span {
+            color: #8b6d33;
+            font-size: 0.92rem;
+        }
+
+        .outro-panel {
+            border: 1px solid rgba(34, 55, 80, 0.08);
+            border-radius: 20px;
+            background: #fff;
+            padding: 1.15rem;
+            box-shadow: 0 12px 28px rgba(34, 55, 80, 0.05);
+        }
+
+        .outro-panel-title {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            margin-bottom: 0.9rem;
+        }
+
+        .outro-panel-title strong {
+            color: #223750;
+            font-size: 1rem;
+        }
+
+        .outro-panel-title span {
+            color: #7b8797;
+            font-size: 0.9rem;
+        }
+
+        .outro-panel-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #fff4de;
+            color: #9a681b;
+            font-size: 0.95rem;
+        }
+
+        .outro-modal-footer {
+            background: #eef3f8;
+            border-top: 1px solid rgba(34, 55, 80, 0.08);
+            padding: 1.1rem 1.4rem;
+        }
+
+        .ficha-outro-jovem-modal .modal-content {
+            border-radius: 24px;
+            overflow: hidden;
+        }
+
+        .ficha-avatar-box {
+            width: 140px;
+            height: 140px;
+            border-radius: 16px;
+            background: #e9eef4;
+            color: #6f7a87;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 3.5rem;
+            box-shadow: 0 10px 20px rgba(34, 55, 80, 0.08);
+        }
+
+        .ficha-side-label {
+            color: #6e6e6e;
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 0.2rem;
+        }
+
+        .ficha-subtabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            margin-bottom: 1rem;
+            padding: 0.85rem;
+            border: 1px solid rgba(31, 53, 88, 0.08);
+            border-radius: 16px;
+            background: linear-gradient(180deg, #fffdf9 0%, #fff8ef 100%);
+        }
+
+        .ficha-subtab {
+            border: 1px solid rgba(31, 53, 88, 0.12);
+            border-radius: 999px;
+            background: #fff;
+            color: #4d596c;
+            font-size: 0.92rem;
+            font-weight: 600;
+            padding: 0.5rem 0.95rem;
+            transition: all 0.18s ease;
+        }
+
+        .ficha-subtab:hover {
+            border-color: rgba(197, 139, 42, 0.28);
+            background: #fff8ed;
+            color: #8b5b16;
+        }
+
+        .ficha-subtab.active {
+            border-color: transparent;
+            background: linear-gradient(180deg, #355173 0%, #223750 100%);
+            color: #fff;
+            box-shadow: 0 10px 22px rgba(34, 55, 80, 0.18);
+        }
+
+        .ficha-subpane {
+            border: 1px solid rgba(31, 53, 88, 0.08);
+            border-radius: 18px;
+            background: #fff;
+            padding: 1rem;
+            margin-bottom: 0.9rem;
+        }
+
+        .ficha-pane-title {
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid rgba(31, 53, 88, 0.08);
+        }
+
+        .ficha-pane-title h6 {
+            margin: 0;
+            color: #223750;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .ficha-pane-title p {
+            margin: 0.25rem 0 0;
+            color: #7b8797;
+            font-size: 0.9rem;
+        }
+
+        .ficha-aside-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .ficha-aside-item label {
+            display: block;
+            margin-bottom: 0.2rem;
+            color: #6c757d;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .ficha-aside-item div {
+            min-height: 2.2rem;
+            padding: 0.45rem 0.65rem;
+            border: 1px solid rgba(31, 53, 88, 0.08);
+            border-radius: 8px;
+            background: #f7f2e8;
+            color: #3d4451;
+        }
+
+        .ficha-avatar-card {
+            width: 110px;
+            height: 110px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 1px solid rgba(31, 53, 88, 0.08);
+            background: #f8f9fa;
+        }
+
+        .ficha-dados-shell {
+            border: 1px solid rgba(31, 53, 88, 0.08);
+            border-radius: 20px;
+            background: #fff;
+            padding: 0.85rem;
+        }
+
+        .ficha-aside-shell {
+            padding: 0.25rem 0.5rem 0.25rem 0.25rem;
+        }
+
+        .ficha-avatar-trigger {
+            cursor: pointer;
+        }
+
+        #modalCasal fieldset[disabled] .form-control,
+        #modalCasal fieldset[disabled] .form-select,
+        #modalCasal fieldset[disabled] .form-control.date-br {
+            background: #f7f2e8;
+            border-color: rgba(31, 53, 88, 0.08);
+            color: #3d4451;
+            opacity: 1;
+            box-shadow: none;
+            pointer-events: none;
+        }
+
+        #modalCasal .nav-tabs {
+            border-bottom: 0;
+        }
+
+        #modalCasal .list-group-item-action {
+            cursor: pointer;
+        }
+
+        .section-label-corporate {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            margin-bottom: 0.75rem;
+            color: #223750;
+            font-weight: 700;
+        }
+
+        .history-panel {
+            border: 1px solid rgba(31, 53, 88, 0.08);
+            border-radius: 18px;
+            background: linear-gradient(180deg, #fffdf9 0%, #fff8ef 100%);
+            padding: 1rem;
+        }
+
+        .history-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+        }
+
+        .history-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.8rem;
+            padding: 0.9rem 1rem;
+            border: 1px solid rgba(31, 53, 88, 0.08);
+            border-radius: 18px;
+            background: #fff;
+        }
+
+        .history-entry-main {
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+            min-width: 0;
+            flex: 1;
+        }
+
+        .history-entry-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #f6f0e5;
+            color: #223750;
+            font-size: 1.05rem;
+        }
+
+        .history-entry-content {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .history-entry-title {
+            font-weight: 700;
+            color: #223750;
+        }
+
+        .history-entry-subtitle {
+            color: #7b8797;
+            font-size: 0.9rem;
+        }
+
+        .history-entry-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .badge-role {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 34px;
+            padding: 0.35rem 0.9rem;
+            border-radius: 999px;
+            border: 1px solid rgba(197, 139, 42, 0.35);
+            background: #fbf2e3;
+            color: #8b6d33;
+            font-weight: 700;
+        }
+
+        .btn-icon-delete {
+            width: 40px;
+            height: 40px;
+            border-radius: 14px;
+            border: 1px solid rgba(215, 109, 85, 0.24);
+            background: #fff;
+            color: #a790b6;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 20px rgba(34, 55, 80, 0.05);
+        }
+
+        .history-add-row {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid rgba(31, 53, 88, 0.08);
+        }
+
+        .history-add-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 1.2fr 0.9fr 1fr auto;
+            gap: 0.75rem;
+        }
+
+        @media (max-width: 991.98px) {
+            .history-add-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .ficha-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .ficha-list-item {
+            border: 1px solid rgba(34, 55, 80, 0.08);
+            border-radius: 16px;
+            background: #fff;
+            padding: 0.9rem 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <main class="container-fluid">
+            <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
+                <div>
+                    <h3 class="mb-1">Membros de Outro EJC</h3>
+                    <p class="text-muted mb-0">Cadastros de jovens e tios de outros EJCs que participaram do EJC {{ nomeMeuEJC }}.</p>
+                </div>
+                <div class="d-flex flex-wrap gap-2 ms-auto justify-content-end">
+                    <button class="btn btn-success d-flex align-items-center gap-1" @click="abrirEscolhaNovoOutroEjc">
+                        <span><i class="fa-solid fa-plus icon-accent"></i></span> Novo
+                    </button>
+                    <button class="btn btn-soft-secondary d-flex align-items-center gap-1" @click="exportarExcel">
+                        <span><i class="fa-solid fa-folder-open icon-accent"></i></span> Exportar
+                    </button>
+                    <label class="btn btn-soft-primary d-flex align-items-center gap-1 text-nowrap mb-0">
+                        <span><i class="fa-solid fa-file-import icon-accent"></i></span> Importar
+                        <input type="file" class="d-none" accept=".xlsx" @change="importarExcel">
+                    </label>
+                    <div class="vr mx-1"></div>
+                    <div class="btn-group">
+                        <button class="btn btn-soft-secondary dropdown-toggle" data-bs-toggle="dropdown"><i class="fa-solid fa-gear icon-accent"></i> Colunas</button>
+                        <ul class="dropdown-menu p-3" style="min-width: 280px;">
+                            <template v-if="aba==='jovens'">
+                                <li v-for="(val, col) in colunasVisiveisJovens" :key="`col-j-${col}`" class="mb-1">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" v-model="colunasVisiveisJovens[col]">
+                                        <label class="form-check-label">{{ labelColunaOutroEjc(col) }}</label>
+                                    </div>
+                                </li>
+                            </template>
+                            <template v-else>
+                                <li v-for="(val, col) in colunasVisiveisTios" :key="`col-t-${col}`" class="mb-1">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" v-model="colunasVisiveisTios[col]">
+                                        <label class="form-check-label">{{ labelColunaOutroEjc(col) }}</label>
+                                    </div>
+                                </li>
+                            </template>
+                        </ul>
+                    </div>
+                    <button class="btn" :class="mostrarFiltros ? 'btn-primary' : 'btn-soft-primary'" @click="mostrarFiltros = !mostrarFiltros">
+                        <i class="fa-solid fa-magnifying-glass icon-accent"></i> Filtros
+                    </button>
+                </div>
+            </div>
+
+            <div class="mb-2 text-muted small">
+                Total: <strong class="text-dark">{{ totalAbaAtual }}</strong>
+                • Filtrados: <strong class="text-dark">{{ totalFiltradoAbaAtual }}</strong>
+            </div>
+
+            <ul class="nav nav-tabs mb-3">
+                <li class="nav-item"><button class="nav-link" :class="{active: aba==='jovens'}" @click="aba='jovens'">Jovens de Outro EJC</button></li>
+                <li class="nav-item"><button class="nav-link" :class="{active: aba==='tios'}" @click="aba='tios'">Tios de Outro EJC</button></li>
+            </ul>
+
+            <div v-if="aba==='jovens'">
+                <div v-if="mostrarFiltros" class="card border-0 shadow-sm mb-3">
+                    <div class="card-body">
+                        <div class="row g-2">
+                            <div class="col-md-4">
+                                <label class="form-label small text-muted">Nome</label>
+                                <input v-model="filtroNome" class="form-control" placeholder="Buscar por nome">
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label small text-muted">Telefone</label>
+                                <input v-model="filtroTelefone" class="form-control" placeholder="Buscar por telefone">
+                            </div>
+                            <div class="col-md-5">
+                                <label class="form-label small text-muted">EJC de origem</label>
+                                <input v-model="filtroEjcOrigem" class="form-control" placeholder="Paróquia ou nome do EJC">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th v-if="colunasVisiveisJovens.Nome">Nome</th>
+                                    <th v-if="colunasVisiveisJovens.Telefone">Telefone</th>
+                                    <th v-if="colunasVisiveisJovens.EjcOrigem">EJC de Origem</th>
+                                    <th v-if="colunasVisiveisJovens.Musico">Músico</th>
+                                    <th v-if="colunasVisiveisJovens.TermosUso">Termos de uso</th>
+                                    <th style="width: 120px;">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="item in itensFiltrados" :key="item.jovem_id || (item.nome_completo + '|' + item.telefone)">
+                                    <td v-if="colunasVisiveisJovens.Nome">{{ item.nome_completo }}</td>
+                                    <td v-if="colunasVisiveisJovens.Telefone">{{ item.telefone || '-' }}</td>
+                                    <td v-if="colunasVisiveisJovens.EjcOrigem">{{ formatarOrigem(item) }}</td>
+                                    <td v-if="colunasVisiveisJovens.Musico">{{ item.eh_musico ? 'Sim' : 'Não' }}</td>
+                                    <td v-if="colunasVisiveisJovens.TermosUso">{{ item.termos_aceitos_em ? 'Aceito' : 'Não' }}</td>
+                                    <td>
+                                        <div v-if="item.jovem_id" class="d-flex gap-1 flex-wrap">
+                                            <button class="btn btn-edit-standard btn-sm" @click="abrirModalEditar(item)">Editar</button>
+                                        </div>
+                                        <div v-else class="d-flex gap-1 flex-wrap align-items-center">
+                                            <button class="btn btn-edit-standard btn-sm" @click="abrirModalEditar(item)">Editar</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr v-if="!carregandoJovens && !itensFiltrados.length">
+                                    <td :colspan="totalColunasVisiveisJovens" class="text-center text-muted py-4">Nenhum jovem encontrado.</td>
+                                </tr>
+                                <tr v-if="carregandoJovens">
+                                    <td :colspan="totalColunasVisiveisJovens" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Carregando...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div v-else>
+                <div v-if="mostrarFiltros" class="card border-0 shadow-sm mb-3">
+                    <div class="card-body">
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <label class="form-label small text-muted">Buscar casal</label>
+                                <input class="form-control" v-model.trim="filtroNomeTios" placeholder="Nome do tio ou tia">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small text-muted">Buscar telefone</label>
+                                <input class="form-control" v-model.trim="filtroTelefoneTios" placeholder="Telefone do tio ou tia">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card border-0 shadow-sm">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th v-if="colunasVisiveisTios.Casal">Casal</th>
+                                    <th v-if="colunasVisiveisTios.Telefones">Telefones</th>
+                                    <th v-if="colunasVisiveisTios.EjcOrigem">EJC de Origem</th>
+                                    <th style="width: 120px;">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="c in casaisOutrosFiltrados" :key="`outro-${c.id}`">
+                                    <td v-if="colunasVisiveisTios.Casal"><div class="fw-semibold">{{ c.nome_tio }}</div><div class="text-muted">{{ c.nome_tia }}</div></td>
+                                    <td v-if="colunasVisiveisTios.Telefones"><div>{{ c.telefone_tio || '-' }}</div><div class="text-muted">{{ c.telefone_tia || '-' }}</div></td>
+                                    <td v-if="colunasVisiveisTios.EjcOrigem">{{ [c.outro_ejc_paroquia, c.outro_ejc_nome].filter(Boolean).join(' - ') || '-' }}</td>
+                                    <td>
+                                        <div class="d-flex gap-2 flex-wrap">
+                                            <button class="btn btn-edit-standard btn-sm" @click="abrirEditarCasal(c)">Editar</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                                <tr v-if="loadingCasais">
+                                    <td :colspan="totalColunasVisiveisTios" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Carregando...</td>
+                                </tr>
+                                <tr v-else-if="!casaisOutrosFiltrados.length">
+                                    <td :colspan="totalColunasVisiveisTios" class="text-center text-muted py-4">Nenhum casal de outro EJC encontrado.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <div class="modal fade" id="modalNovoOutroJovem" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable outro-novo-jovem-modal">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header outro-modal-header">
+                        <h5 class="modal-title">
+                            <span class="outro-modal-badge">{{ editandoJovemOutro ? 'E' : '+' }}</span>
+                            <span>{{ editandoJovemOutro ? 'Editar jovem de outro EJC' : 'Novo jovem de outro EJC' }}</span>
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body outro-modal-body">
+                        <div class="outro-helper-box">
+                            <strong>{{ editandoJovemOutro ? 'Atualize os dados do jovem de outro EJC' : 'Cadastro de jovem que serve ou contribui, mas não pertence ao seu EJC' }}</strong>
+                            <span>{{ editandoJovemOutro ? 'Altere as informações necessárias e salve sem sair da tela de Membros de Outro EJC.' : 'Preencha a paróquia de origem e os dados principais para criar esse cadastro dentro de Membros de Outro EJC.' }}</span>
+                        </div>
+
+                        <div class="row g-4">
+                            <div class="col-12">
+                                <div class="outro-panel">
+                                    <div class="outro-panel-title">
+                                        <span class="outro-panel-icon"><i class="fa-solid fa-user icon-accent"></i></span>
+                                        <div>
+                                            <strong>Identificação e contato</strong>
+                                            <span class="d-block">As informações principais do jovem ficam aqui.</span>
+                                        </div>
+                                    </div>
+                                    <div class="row g-3">
+                                        <div class="col-lg-6">
+                                            <label class="form-label">Nome completo *</label>
+                                            <input class="form-control" v-model.trim="novo.nome_completo" maxlength="180" placeholder="Nome completo">
+                                        </div>
+                                        <div class="col-lg-3">
+                                            <label class="form-label">Telefone *</label>
+                                            <input class="form-control" v-model.trim="novo.telefone" maxlength="30" placeholder="(31)99999-9999">
+                                        </div>
+                                        <div class="col-lg-3">
+                                            <label class="form-label">Data de nascimento</label>
+                                            <input type="text" class="form-control date-br" v-model="novo.data_nascimento" placeholder="dd/mm/aaaa">
+                                        </div>
+                                        <div class="col-lg-4">
+                                            <label class="form-label">Paróquia / EJC de origem *</label>
+                                            <select class="form-select" v-model="novo.outro_ejc_id">
+                                                <option value="">Selecione...</option>
+                                                <option v-for="oe in outrosEjcs" :key="`novo-oe-${oe.id}`" :value="oe.id">
+                                                    {{ [oe.paroquia, oe.nome].filter(Boolean).join(' - ') }}
+                                                </option>
+                                            </select>
+                                        </div>
+                                        <div class="col-lg-2">
+                                            <label class="form-label">Número do EJC</label>
+                                            <input class="form-control" v-model.trim="novo.outro_ejc_numero" maxlength="30" placeholder="Ex: 14">
+                                        </div>
+                                        <div class="col-lg-3">
+                                            <label class="form-label">Apelido</label>
+                                            <input class="form-control" v-model.trim="novo.apelido" maxlength="120">
+                                        </div>
+                                        <div class="col-lg-3">
+                                            <label class="form-label">E-mail</label>
+                                            <input class="form-control" v-model.trim="novo.email" maxlength="180" placeholder="email@exemplo.com">
+                                        </div>
+                                        <div class="col-lg-4">
+                                            <label class="form-label">Instagram</label>
+                                            <input class="form-control" v-model.trim="novo.instagram" maxlength="120" placeholder="@instagram">
+                                        </div>
+                                        <div class="col-lg-4">
+                                            <label class="form-label">Estado civil</label>
+                                            <select class="form-select" v-model="novo.estado_civil">
+                                                <option value="Solteiro">Solteiro</option>
+                                                <option value="Casado">Casado</option>
+                                                <option value="Amasiado">Amasiado</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-lg-4">
+                                            <label class="form-label">Sexo</label>
+                                            <select class="form-select" v-model="novo.sexo">
+                                                <option value="">Selecione...</option>
+                                                <option value="Feminino">Feminino</option>
+                                                <option value="Masculino">Masculino</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="outro-panel">
+                                    <div class="outro-panel-title">
+                                        <span class="outro-panel-icon"><i class="fa-solid fa-bullseye icon-accent"></i></span>
+                                        <div>
+                                            <strong>Participação no encontro</strong>
+                                            <span class="d-block">Dados do círculo, perfil e histórico de moita.</span>
+                                        </div>
+                                    </div>
+                                    <div class="row g-3">
+                                        <div class="col-lg-4">
+                                            <label class="form-label">Círculo</label>
+                                            <input class="form-control" v-model.trim="novo.circulo" maxlength="120" placeholder="Ex: Azul">
+                                        </div>
+                                        <div class="col-lg-4">
+                                            <label class="form-label">É músico?</label>
+                                            <select class="form-select" v-model="novo.eh_musico">
+                                                <option :value="false">Não</option>
+                                                <option :value="true">Sim</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" id="checkNovoMoitaOutroEjc" v-model="novo.ja_foi_moita_inconfidentes" :true-value="1" :false-value="0">
+                                                <label class="form-check-label" for="checkNovoMoitaOutroEjc">Já foi moita no EJC {{ nomeMeuEJC }}</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-6" v-if="novo.ja_foi_moita_inconfidentes">
+                                            <label class="form-label">Qual EJC no {{ nomeMeuEJC }}</label>
+                                            <select class="form-select" v-model="novo.moita_ejc_id">
+                                                <option value="">Selecione...</option>
+                                                <option v-for="ejc in ejcs" :key="`ejc-novo-outro-${ejc.id}`" :value="ejc.id">{{ formatarEjcOption(ejc) }}</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-lg-6" v-if="novo.ja_foi_moita_inconfidentes">
+                                            <label class="form-label">Função de moita</label>
+                                            <select class="form-select" v-model="novo.moita_funcao">
+                                                <option value="">Selecione...</option>
+                                                <option v-for="f in funcoesMoita" :key="`func-novo-outro-${f.id || f.nome}`" :value="f.nome">{{ f.nome }}</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="outro-panel">
+                                    <div class="outro-panel-title">
+                                        <span class="outro-panel-icon"><i class="fa-solid fa-heart icon-accent"></i></span>
+                                        <div>
+                                            <strong>Saúde e alimentação</strong>
+                                            <span class="d-block">Deficiência e restrição alimentar organizadas em um bloco próprio.</span>
+                                        </div>
+                                    </div>
+                                    <div class="row g-3">
+                                        <div class="col-lg-4">
+                                            <label class="form-label">Possui deficiência?</label>
+                                            <select class="form-select" v-model="novo.deficiencia">
+                                                <option :value="false">Não</option>
+                                                <option :value="true">Sim</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-lg-8" v-if="novo.deficiencia">
+                                            <label class="form-label">Qual deficiência?</label>
+                                            <input class="form-control" v-model.trim="novo.qual_deficiencia" maxlength="220">
+                                        </div>
+                                        <div class="col-lg-4">
+                                            <label class="form-label">Restrição alimentar?</label>
+                                            <select class="form-select" v-model="novo.restricao_alimentar">
+                                                <option :value="false">Não</option>
+                                                <option :value="true">Sim</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-lg-8" v-if="novo.restricao_alimentar">
+                                            <label class="form-label">Qual restrição alimentar?</label>
+                                            <select class="form-select" v-model="novo.detalhes_restricao">
+                                                <option disabled value="">Selecione...</option>
+                                                <option v-for="item in opcoesRestricaoAlimentar" :key="`rest-novo-${item}`" :value="item">{{ item }}</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer outro-modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-success" @click="salvarNovoJovemOutroEjc">{{ editandoJovemOutro ? 'Salvar alterações' : 'Salvar' }}</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal fade" id="modalEditarOutroJovem" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable ficha-outro-jovem-modal">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-light border-bottom">
+                        <h5 class="modal-title">{{ jovemOutroFicha.nome_completo || 'Jovem de Outro EJC' }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="d-flex justify-content-between border-bottom mb-3">
+                            <ul class="nav nav-tabs border-bottom-0 mb-0">
+                                <li class="nav-item">
+                                    <button class="nav-link" :class="{ active: abaFichaOutro === 'dados' }" @click="abaFichaOutro = 'dados'; subAbaDadosOutro = 'cadastro'">
+                                        <i class="fas fa-user me-1"></i> Dados Pessoais
+                                    </button>
+                                </li>
+                                <li class="nav-item">
+                                    <button class="nav-link" :class="{ active: abaFichaOutro === 'observacoes' }" @click="carregarObservacoesOutro(); abaFichaOutro = 'observacoes'">
+                                        <i class="fas fa-note-sticky me-1"></i> Observações
+                                    </button>
+                                </li>
+                                <li class="nav-item">
+                                    <button class="nav-link" :class="{ active: abaFichaOutro === 'presencas' }" @click="carregarPresencasOutro(); abaFichaOutro = 'presencas'">
+                                        <i class="fas fa-square-check me-1"></i> Presença
+                                    </button>
+                                </li>
+                            </ul>
+
+                            <div v-show="abaFichaOutro === 'dados'" class="pb-1 align-self-end">
+                                <button v-if="!isEditingOutroFicha" type="button" class="btn btn-edit-standard btn-sm" @click="iniciarEdicaoOutroFicha">Editar</button>
+                                <button v-else type="button" class="btn btn-sm btn-outline-dark" @click="cancelarEdicaoOutroFicha"><i class="fa-solid fa-xmark icon-accent"></i> Cancelar Edição</button>
+                            </div>
+                        </div>
+
+                        <div v-show="abaFichaOutro === 'dados'" class="clearfix">
+                            <div class="float-md-start me-md-3 mb-4 mt-2 d-flex flex-column align-items-center" style="width: 180px;">
+                                <div class="ficha-avatar-box">
+                                    {{ iniciaisOutroJovem }}
+                                </div>
+                                <div class="w-100 px-3 mt-4 text-start">
+                                    <div class="mb-1">
+                                        <label class="text-muted small fw-bold mb-0">Círculo</label>
+                                        <div v-if="!isEditingOutroFicha" class="py-1 px-2 bg-light border rounded">{{ jovemOutroFicha.circulo || 'Não informado' }}</div>
+                                        <input v-else class="form-control form-control-sm" v-model.trim="jovemOutroFicha.circulo" placeholder="Círculo">
+                                    </div>
+                                    <div class="mb-1">
+                                        <label class="text-muted small fw-bold mb-0">Origem no EJC</label>
+                                        <div class="py-1 px-2 bg-light border rounded">Fez outro EJC</div>
+                                    </div>
+                                    <div class="mb-1">
+                                        <label class="text-muted small fw-bold mb-0">EJC de origem</label>
+                                        <div v-if="!isEditingOutroFicha" class="py-1 px-2 bg-light border rounded">{{ jovemOutroFicha.outro_ejc_nome || 'Não informado' }}</div>
+                                        <select v-else class="form-select form-select-sm" v-model="jovemOutroFicha.outro_ejc_id">
+                                            <option value="">Selecione...</option>
+                                            <option v-for="oe in outrosEjcs" :key="`ficha-oe-${oe.id}`" :value="oe.id">{{ oe.nome }}</option>
+                                        </select>
+                                    </div>
+                                    <div class="mb-1">
+                                        <label class="text-muted small fw-bold mb-0">Nº EJC que fez</label>
+                                        <div v-if="!isEditingOutroFicha" class="py-1 px-2 bg-light border rounded">{{ formatarNumeroOutroFicha(jovemOutroFicha.outro_ejc_numero) }}</div>
+                                        <input v-else class="form-control form-control-sm" v-model.trim="jovemOutroFicha.outro_ejc_numero" placeholder="Número do EJC">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="pt-2">
+                                    <div class="ficha-subtabs mb-3">
+                                        <button type="button" class="ficha-subtab" :class="{ active: subAbaDadosOutro === 'cadastro' }" @click="subAbaDadosOutro = 'cadastro'">Cadastro</button>
+                                        <button type="button" class="ficha-subtab" :class="{ active: subAbaDadosOutro === 'familia' }" @click="subAbaDadosOutro = 'familia'; carregarFamiliaresOutroJovem(jovemOutroFicha.id)">Família</button>
+                                        <button type="button" class="ficha-subtab" :class="{ active: subAbaDadosOutro === 'saude' }" @click="subAbaDadosOutro = 'saude'">Saúde e Apoio</button>
+                                    </div>
+
+                                <div class="ficha-subpane">
+                                    <div class="ficha-pane-title" v-if="subAbaDadosOutro === 'cadastro'">
+                                        <h6>Cadastro do jovem</h6>
+                                        <p>Identificação, contato e endereço em um só lugar.</p>
+                                    </div>
+                                    <div class="ficha-pane-title" v-else-if="subAbaDadosOutro === 'familia'">
+                                        <h6>Família</h6>
+                                        <p>Estado civil e familiares que fizeram o EJC {{ nomeMeuEJC }}.</p>
+                                    </div>
+                                    <div class="ficha-pane-title" v-else-if="subAbaDadosOutro === 'saude'">
+                                        <h6>Saúde e Apoio</h6>
+                                        <p>Deficiência e restrição alimentar desse jovem.</p>
+                                    </div>
+
+                                    <div class="row g-1">
+                                        <template v-if="subAbaDadosOutro === 'cadastro'">
+                                            <div class="col-12">
+                                                <label class="text-muted small mb-0">Nome Completo</label>
+                                                <div v-if="!isEditingOutroFicha" class="py-1 px-2 bg-light border rounded">{{ jovemOutroFicha.nome_completo || 'Não informado' }}</div>
+                                                <input v-else class="form-control" v-model.trim="jovemOutroFicha.nome_completo">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="text-muted small mb-0">Apelido</label>
+                                                <div v-if="!isEditingOutroFicha" class="py-1 px-2 bg-light border rounded">{{ jovemOutroFicha.apelido || 'Não informado' }}</div>
+                                                <input v-else class="form-control" v-model.trim="jovemOutroFicha.apelido">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="text-muted small mb-0">Telefone</label>
+                                                <div v-if="!isEditingOutroFicha" class="py-1 px-2 bg-light border rounded">{{ jovemOutroFicha.telefone || 'Não informado' }}</div>
+                                                <input v-else class="form-control" v-model.trim="jovemOutroFicha.telefone">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="text-muted small mb-0">E-mail</label>
+                                                <div v-if="!isEditingOutroFicha" class="py-1 px-2 bg-light border rounded">{{ jovemOutroFicha.email || 'Não informado' }}</div>
+                                                <input v-else class="form-control" v-model.trim="jovemOutroFicha.email">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="text-muted small mb-0">Termos de uso</label>
+                                                <div class="py-1 px-2 bg-light border rounded">{{ jovemOutroFicha.termos_aceitos_em ? `Aceito em ${formatarDataHora(jovemOutroFicha.termos_aceitos_em)}` : 'Não aceito' }}</div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="text-muted small mb-0">Sexo</label>
+                                                <div v-if="!isEditingOutroFicha" class="py-1 px-2 bg-light border rounded">{{ jovemOutroFicha.sexo || 'Não informado' }}</div>
+                                                <select v-else class="form-select" v-model="jovemOutroFicha.sexo">
+                                                    <option value="">Selecione...</option>
+                                                    <option value="Feminino">Feminino</option>
+                                                    <option value="Masculino">Masculino</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="text-muted small mb-0">Idade</label>
+                                                <div class="py-1 px-2 bg-light border rounded">{{ idadeOutroJovem }}</div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="text-muted small mb-0">Data de Nascimento</label>
+                                                <div v-if="!isEditingOutroFicha" class="py-1 px-2 bg-light border rounded">{{ formatarDataFicha(jovemOutroFicha.data_nascimento) }}</div>
+                                                <input v-else type="text" class="form-control date-br" v-model="jovemOutroFicha.data_nascimento" placeholder="dd/mm/aaaa">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="text-muted small mb-0">Instagram</label>
+                                                <div v-if="!isEditingOutroFicha" class="py-1 px-2 bg-light border rounded">{{ jovemOutroFicha.instagram || 'Não informado' }}</div>
+                                                <input v-else class="form-control" v-model.trim="jovemOutroFicha.instagram">
+                                            </div>
+                                        </template>
+
+                                        <template v-else-if="subAbaDadosOutro === 'familia'">
+                                            <div class="col-md-6">
+                                                <label class="text-muted small mb-0">Estado civil</label>
+                                                <div v-if="!isEditingOutroFicha" class="py-1 px-2 bg-light border rounded">{{ jovemOutroFicha.estado_civil || 'Não informado' }}</div>
+                                                <select v-else class="form-select" v-model="jovemOutroFicha.estado_civil">
+                                                    <option value="Solteiro">Solteiro</option>
+                                                    <option value="Casado">Casado</option>
+                                                    <option value="Amasiado">Amasiado</option>
+                                                </select>
+                                            </div>
+                                            <div class="col-12">
+                                                <label class="text-muted small mb-1">Familiares que fizeram o EJC {{ nomeMeuEJC }}</label>
+                                                <div class="p-2 bg-light border rounded">
+                                                    <div v-if="!familiaresOutroJovem.length" class="text-muted small">Nenhum parentesco informado.</div>
+                                                    <div v-else class="d-flex flex-column gap-2">
+                                                        <div v-for="rel in familiaresOutroJovem" :key="`rel-outro-jovem-${rel.id}`" class="d-flex justify-content-between align-items-start gap-2 p-2 bg-white border rounded">
+                                                            <div>
+                                                                <div class="fw-semibold">{{ rel.nome_exibicao || '-' }}</div>
+                                                                <div class="small text-muted">
+                                                                    {{ rel.relation_label || '-' }}
+                                                                    <span v-if="rel.descricao"> • {{ rel.descricao }}</span>
+                                                                </div>
+                                                                <div v-if="rel.telefone" class="small text-muted">{{ rel.telefone }}</div>
+                                                            </div>
+                                                            <button v-if="isEditingOutroFicha" type="button" class="btn btn-outline-danger btn-sm" @click="removerRelacaoFamiliarOutroJovem(rel.id)">Remover</button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div v-if="isEditingOutroFicha" class="col-12">
+                                                <label class="text-muted small mb-1">Adicionar parentesco</label>
+                                                <div class="p-2 bg-light border rounded">
+                                                    <div v-if="sugestoesFamiliaOutroJovem.length" class="mb-3">
+                                                        <div class="small fw-semibold text-muted mb-2">Possíveis parentes por sobrenome</div>
+                                                        <div class="d-flex flex-column gap-2">
+                                                            <div v-for="item in sugestoesFamiliaOutroJovem" :key="`sug-familia-outro-${item.entity_type}-${item.entity_id}`" class="p-2 bg-white border rounded d-flex justify-content-between align-items-start gap-2">
+                                                                <div>
+                                                                    <div class="fw-semibold">{{ item.nome_exibicao }}</div>
+                                                                    <div class="small text-muted">
+                                                                        {{ item.descricao || '-' }}
+                                                                        <span v-if="item.sobrenomes_iguais && item.sobrenomes_iguais.length"> • Sobrenomes iguais: {{ item.sobrenomes_iguais.join(', ') }}</span>
+                                                                    </div>
+                                                                </div>
+                                                                <button type="button" class="btn btn-outline-primary btn-sm" @click="buscaFamiliaOutroJovem = item.nome_exibicao; adicionarRelacaoFamiliarOutroJovem(item)">Vincular</button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div class="row g-2">
+                                                        <div class="col-md-4">
+                                                            <select v-model="novoParentescoOutroJovem" class="form-select form-select-sm">
+                                                                <option v-for="opcao in opcoesParentescoOutroJovem" :key="`opcao-par-outro-${opcao.value}`" :value="opcao.value">{{ opcao.label }}</option>
+                                                            </select>
+                                                        </div>
+                                                        <div class="col-md-8">
+                                                            <input type="text" v-model.trim="buscaFamiliaOutroJovem" @input="buscarRelacionaveisOutroJovem" @focus="buscarRelacionaveisOutroJovem" class="form-control form-control-sm" placeholder="Pesquisar em todos os cadastros do sistema...">
+                                                        </div>
+                                                    </div>
+                                                    <ul class="list-group mt-2" v-if="resultadosBuscaFamiliaOutroJovem.length" style="max-height: 280px; overflow-y: auto;">
+                                                        <li class="list-group-item list-group-item-action small" v-for="item in resultadosBuscaFamiliaOutroJovem" :key="`busca-familia-outro-${item.entity_type}-${item.entity_id}`" @click="adicionarRelacaoFamiliarOutroJovem(item)">
+                                                            <div class="fw-semibold">{{ item.nome_exibicao }}</div>
+                                                            <div class="text-muted">
+                                                                {{ item.descricao || '-' }}
+                                                                <span v-if="item.telefone"> • {{ item.telefone }}</span>
+                                                            </div>
+                                                        </li>
+                                                    </ul>
+                                                </div>
+                                            </div>
+                                        </template>
+
+                                        <template v-else-if="subAbaDadosOutro === 'saude'">
+                                            <div class="col-md-4">
+                                                <label class="text-muted small mb-0">Deficiência</label>
+                                                <div v-if="!isEditingOutroFicha" class="py-1 px-2 bg-light border rounded">{{ jovemOutroFicha.deficiencia ? (jovemOutroFicha.qual_deficiencia || 'Sim') : 'Não' }}</div>
+                                                <div v-else>
+                                                    <select class="form-select mb-2" v-model="jovemOutroFicha.deficiencia">
+                                                        <option :value="false">Não</option>
+                                                        <option :value="true">Sim</option>
+                                                    </select>
+                                                    <input v-if="jovemOutroFicha.deficiencia" class="form-control" v-model.trim="jovemOutroFicha.qual_deficiencia" placeholder="Qual deficiência?">
+                                                </div>
+                                            </div>
+                                            <div class="col-md-8">
+                                                <label class="text-muted small mb-0">Restrição alimentar</label>
+                                                <div v-if="!isEditingOutroFicha" class="py-1 px-2 bg-light border rounded">{{ jovemOutroFicha.restricao_alimentar ? (jovemOutroFicha.detalhes_restricao || 'Sim') : 'Não' }}</div>
+                                                <div v-else>
+                                                    <select class="form-select mb-2" v-model="jovemOutroFicha.restricao_alimentar">
+                                                        <option :value="false">Não</option>
+                                                        <option :value="true">Sim</option>
+                                                    </select>
+                                                    <select v-if="jovemOutroFicha.restricao_alimentar" class="form-select" v-model="jovemOutroFicha.detalhes_restricao">
+                                                        <option disabled value="">Selecione...</option>
+                                                        <option v-for="item in opcoesRestricaoAlimentar" :key="`ficha-rest-${item}`" :value="item">{{ item }}</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div v-show="abaFichaOutro === 'observacoes'" class="ficha-card">
+                            <div class="ficha-pane-title">
+                                <h6>Observações</h6>
+                                <p>Informações importantes registradas para este jovem.</p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="text-muted small mb-1">Observação geral</label>
+                                <div class="ficha-field-value align-items-start">{{ jovemOutroFicha.observacoes_extras || 'Nenhuma observação geral cadastrada.' }}</div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="text-muted small mb-1">Nova observação</label>
+                                <textarea class="form-control" rows="3" v-model.trim="novaObservacaoOutroJovem" placeholder="Escreva uma observação"></textarea>
+                            </div>
+                            <div class="mb-3">
+                                <button type="button" class="btn btn-success btn-sm" @click="adicionarObservacaoOutroJovem">Salvar observação</button>
+                            </div>
+                            <div v-if="loadingObservacoesOutro" class="text-muted">Carregando observações...</div>
+                            <div v-else-if="!observacoesOutroJovem.length" class="text-muted">Nenhuma observação registrada.</div>
+                            <div v-else class="ficha-list">
+                                <div class="ficha-list-item" v-for="obs in observacoesOutroJovem" :key="`obs-outro-${obs.id}`">
+                                    <div class="fw-semibold">{{ obs.texto }}</div>
+                                    <div class="small text-muted">{{ formatarDataHora(obs.created_at) }}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div v-show="abaFichaOutro === 'presencas'" class="ficha-card">
+                            <div class="ficha-pane-title">
+                                <h6>Presença</h6>
+                                <p>Eventos em que este jovem teve presença registrada.</p>
+                            </div>
+                            <div v-if="loadingPresencas" class="text-muted">Carregando presenças...</div>
+                            <div v-else-if="!presencasOutro.length" class="text-muted">Nenhuma presença registrada.</div>
+                            <div v-else class="ficha-list">
+                                <div class="ficha-list-item" v-for="pres in presencasOutro" :key="`pres-ficha-jovem-${pres.id}`">
+                                    <div class="fw-semibold">{{ pres.evento_titulo || 'Evento' }}</div>
+                                    <div class="small text-muted">
+                                        {{ formatarDataPresenca(pres.evento_data) }}
+                                        <span v-if="pres.registrado_em"> • {{ formatarDataHora(pres.registrado_em) }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button v-if="abaFichaOutro === 'dados' && isEditingOutroFicha" type="button" class="btn btn-success" @click="salvarFichaOutroJovem">Salvar alterações</button>
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal fade" id="modalPresencasOutro" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-light">
+                        <h5 class="modal-title">Presenças</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div v-if="loadingPresencas" class="text-muted">Carregando presenças...</div>
+                        <div v-else-if="!presencasOutro.length" class="text-muted">Nenhuma presença registrada.</div>
+                        <div v-else class="list-group">
+                            <div class="list-group-item" v-for="pres in presencasOutro" :key="`pres-jovem-${pres.id}`">
+                                <div class="fw-semibold">{{ pres.evento_titulo || 'Evento' }}</div>
+                                <div class="small text-muted">
+                                    {{ formatarDataPresenca(pres.evento_data) }}
+                                    <span v-if="pres.registrado_em"> • {{ formatarDataHora(pres.registrado_em) }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal fade" id="modalCasal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable outro-casal-modal">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header outro-modal-header">
+                        <h5 class="modal-title">
+                            <span class="outro-modal-badge">{{ formCasal.id ? 'C' : '+' }}</span>
+                            <span>{{ formCasal.id ? ((formCasal.nome_tio || 'Tio') + ' e ' + (formCasal.nome_tia || 'Tia')) : 'Novo casal de outro EJC' }}</span>
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body outro-modal-body">
+                        <div v-if="!formCasal.id" class="outro-helper-box">
+                            <strong>Cadastro de casal de outro EJC</strong>
+                            <span>Preencha os dados principais do tio e da tia, depois complemente saúde, família e histórico de serviço conforme necessário.</span>
+                        </div>
+                        <div class="d-flex justify-content-between border-bottom mb-3">
+                            <ul class="nav nav-tabs border-bottom-0 mb-0">
+                                <li class="nav-item"><button class="nav-link" :class="{active: abaCasal==='dados'}" @click="abaCasal='dados'; subAbaCasalDados='cadastro'"><i class="fa-solid fa-user icon-accent"></i> Dados Pessoais</button></li>
+                                <li class="nav-item"><button class="nav-link" :class="{active: abaCasal==='jovens'}" @click="abaCasal='jovens'; carregarJovensCasal()"><i class="fa-solid fa-people-roof icon-accent"></i> Jovens</button></li>
+                                <li class="nav-item"><button class="nav-link" :class="{active: abaCasal==='presencas'}" @click="abaCasal='presencas'; carregarPresencasCasal()"><i class="fa-solid fa-square-check icon-accent"></i> Presença</button></li>
+                            </ul>
+                            <div class="pb-1 align-self-end" v-if="formCasal.id && abaCasal === 'dados'">
+                                <button v-if="!isEditingCasal" type="button" class="btn btn-edit-standard btn-sm" @click="iniciarEdicaoCasal">Editar</button>
+                            </div>
+                        </div>
+
+                        <div v-if="abaCasal==='dados'" class="ficha-dados-shell">
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <div class="ficha-aside-shell">
+                                        <div class="d-flex flex-column align-items-center">
+                                            <div class="position-relative mb-3">
+                                                <img :src="formCasal.foto_url || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(((formCasal.nome_tio || 'Tio') + ' e ' + (formCasal.nome_tia || 'Tia')).trim()) + '&background=e9ecef&color=6c757d&size=160')"
+                                                    alt="Foto do casal"
+                                                    class="ficha-avatar-card shadow-sm"
+                                                    :class="{ 'ficha-avatar-trigger': !isEditingCasal }">
+                                                <label v-if="isEditingCasal"
+                                                    class="position-absolute bottom-0 end-0 bg-primary text-white rounded-circle d-flex justify-content-center align-items-center shadow cursor-pointer"
+                                                    style="width: 32px; height: 32px; cursor: pointer; transform: translate(15%, 15%);"
+                                                    title="Trocar foto">
+                                                    <span style="font-size: 14px;"><i class="fa-solid fa-camera icon-accent"></i></span>
+                                                    <input type="file" class="d-none" accept="image/*" @change="uploadFotoCasal" :disabled="!formCasal.id">
+                                                </label>
+                                            </div>
+                                            <div v-if="isEditingCasal" class="small text-muted mt-1 text-center px-1">
+                                                Clique no ícone de câmera<br>para alterar a foto.
+                                            </div>
+                                            <div class="small text-muted mt-1 text-center" v-if="isEditingCasal && !formCasal.id">Salve o casal antes de enviar a foto.</div>
+                                        </div>
+                                        <div class="ficha-aside-list mt-4">
+                                            <div class="ficha-aside-item">
+                                                <label>Origem</label>
+                                                <div>Tios de outro EJC</div>
+                                            </div>
+                                            <div class="ficha-aside-item">
+                                                <label>Casal</label>
+                                                <div>{{ formCasal.nome_tio || '-' }} e {{ formCasal.nome_tia || '-' }}</div>
+                                            </div>
+                                            <div class="ficha-aside-item">
+                                                <label>Contato</label>
+                                                <div>{{ formCasal.telefone_tio || '-' }} / {{ formCasal.telefone_tia || '-' }}</div>
+                                            </div>
+                                            <div class="ficha-aside-item">
+                                                <label>Encontro</label>
+                                                <div>{{ outroEjcLabelAtualCasal }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-9">
+                                    <div class="ficha-subtabs">
+                                        <button type="button" class="ficha-subtab" :class="{ active: subAbaCasalDados === 'cadastro' }" @click="subAbaCasalDados = 'cadastro'">Cadastro</button>
+                                        <button type="button" class="ficha-subtab" :class="{ active: subAbaCasalDados === 'participacao' }" @click="subAbaCasalDados = 'participacao'">Participação no EJC</button>
+                                        <button type="button" class="ficha-subtab" :class="{ active: subAbaCasalDados === 'familia' }" @click="subAbaCasalDados = 'familia'; carregarFamiliaresCasal()">Família</button>
+                                        <button type="button" class="ficha-subtab" :class="{ active: subAbaCasalDados === 'saude' }" @click="subAbaCasalDados = 'saude'">Saúde e Apoio</button>
+                                    </div>
+                                    <fieldset :disabled="!isEditingCasal" class="border-0 p-0 m-0">
+                                        <div class="ficha-subpane" v-show="subAbaCasalDados === 'cadastro'">
+                                            <div class="ficha-pane-title">
+                                                <h6>Cadastro do casal</h6>
+                                                <p>Identificação e contato do tio e da tia em um só lugar.</p>
+                                            </div>
+                                            <div class="row g-3">
+                                                <div class="col-12"><h6 class="text-muted mb-0">Dados do Tio</h6></div>
+                                                <div class="col-md-6"><label class="form-label">Nome do tio</label><input class="form-control" v-model.trim="formCasal.nome_tio" maxlength="180"></div>
+                                                <div class="col-md-3"><label class="form-label">Telefone</label><input class="form-control" v-model.trim="formCasal.telefone_tio" maxlength="30"></div>
+                                                <div class="col-md-3"><label class="form-label">Nascimento</label><input type="text" class="form-control date-br" v-model="formCasal.data_nascimento_tio" placeholder="dd/mm/aaaa"></div>
+
+                                                <div class="col-12 pt-2"><h6 class="text-muted mb-0">Dados da Tia</h6></div>
+                                                <div class="col-md-6"><label class="form-label">Nome da tia</label><input class="form-control" v-model.trim="formCasal.nome_tia" maxlength="180"></div>
+                                                <div class="col-md-3"><label class="form-label">Telefone</label><input class="form-control" v-model.trim="formCasal.telefone_tia" maxlength="30"></div>
+                                                <div class="col-md-3"><label class="form-label">Nascimento</label><input type="text" class="form-control date-br" v-model="formCasal.data_nascimento_tia" placeholder="dd/mm/aaaa"></div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Qual EJC fez</label>
+                                                    <select class="form-select" v-model="formCasal.outro_ejc_id">
+                                                        <option :value="null">Selecione...</option>
+                                                        <option v-for="o in outrosEjcs" :key="`outro-ejc-${o.id}`" :value="o.id">
+                                                            {{ o.paroquia }}{{ o.nome ? ` - ${o.nome}` : '' }}
+                                                        </option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="text-muted small mb-0">Termos de uso</label>
+                                                    <div class="py-1 px-2 bg-light border rounded" v-if="formCasal.termos_aceitos_em">
+                                                        Aceito em {{ formatarDataHora(formCasal.termos_aceitos_em) }}
+                                                    </div>
+                                                    <div class="py-1 px-2 bg-light border rounded" v-else>Não</div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="ficha-subpane" v-show="subAbaCasalDados === 'participacao'">
+                                            <div class="ficha-pane-title">
+                                                <h6>Participação no EJC</h6>
+                                                <p>Encontro realizado e equipes em que o casal já serviu.</p>
+                                            </div>
+                                            <div class="row g-3">
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Paróquia</label>
+                                                    <select class="form-select" v-model="formCasal.outro_ejc_id">
+                                                        <option :value="null">Selecione...</option>
+                                                        <option v-for="o in outrosEjcs" :key="`outro-ejc-part-${o.id}`" :value="o.id">
+                                                            {{ o.paroquia }}{{ o.nome ? ` - ${o.nome}` : '' }}
+                                                        </option>
+                                                    </select>
+                                                </div>
+                                                <div class="col-12">
+                                                    <label class="section-label-corporate"><i class="fas fa-briefcase"></i> Equipes de Trabalho (EJC {{ nomeMeuEJC }})</label>
+                                                    <div class="history-panel">
+                                                        <div v-if="!servicosRegistradosCasalComIndice().length" class="text-muted small">Nenhuma equipe registrada.</div>
+                                                        <ul v-else class="history-list">
+                                                            <li v-for="item in servicosRegistradosCasalComIndice()" :key="`srv-casal-dados-${item.idx}`" class="history-item">
+                                                                <div class="history-entry-main">
+                                                                    <span class="history-entry-icon"><i class="fa-solid fa-users icon-accent"></i></span>
+                                                                    <div class="history-entry-content">
+                                                                        <span class="history-entry-title">{{ obterNomeEquipeServico(item.srv) }}</span>
+                                                                        <span class="history-entry-subtitle">{{ formatarEdicaoServico(item.srv) }}</span>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="history-entry-meta">
+                                                                    <span class="badge-role">Tios</span>
+                                                                    <span class="badge-role">{{ obterNomeEquipeServico(item.srv) }}</span>
+                                                                </div>
+                                                                <button v-if="isEditingCasal" class="btn btn-icon-delete" @click="removerServicoCasal(item.idx)" title="Remover equipe"><i class="fa-solid fa-trash icon-accent"></i></button>
+                                                            </li>
+                                                        </ul>
+                                                        <div class="history-add-row" v-if="isEditingCasal">
+                                                            <small class="text-muted d-block mb-1">Adicionar Equipe:</small>
+                                                            <div class="history-add-grid">
+                                                                <select v-model="novoServicoCasal.ejc_id" class="form-select form-select-sm">
+                                                                    <option :value="null">EJC...</option>
+                                                                    <option v-for="ejc in ejcs" :key="`ejc-casal-add-${ejc.id}`" :value="ejc.id">{{ formatarEjcOption(ejc) }}</option>
+                                                                </select>
+                                                                <select v-model="novoServicoCasal.equipe_id" class="form-select form-select-sm">
+                                                                    <option :value="null">Equipe...</option>
+                                                                    <option v-for="eq in equipes" :key="`eq-casal-add-${eq.id}`" :value="eq.id">{{ eq.nome }}</option>
+                                                                </select>
+                                                                <button type="button" class="btn btn-success btn-sm" @click="adicionarServicoCasal" :disabled="!novoServicoCasal.equipe_id || !novoServicoCasal.ejc_id"><i class="fa-solid fa-plus icon-accent"></i></button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="ficha-subpane" v-show="subAbaCasalDados === 'familia'">
+                                            <div class="ficha-pane-title">
+                                                <h6>Família e relacionamentos</h6>
+                                                <p>Parentes do casal que já fizeram EJC.</p>
+                                            </div>
+                                            <div class="row g-3">
+                                                <div class="col-12">
+                                                    <div class="p-2 bg-light border rounded">
+                                                        <div v-if="!familiaresCasal.length" class="text-muted small">Nenhum parentesco informado.</div>
+                                                        <div v-else class="d-flex flex-column gap-2">
+                                                            <div v-for="rel in familiaresCasal" :key="`rel-casal-${rel.id}`" class="d-flex justify-content-between align-items-start gap-2 p-2 bg-white border rounded">
+                                                                <div>
+                                                                    <div class="fw-semibold">{{ rel.nome_exibicao || '-' }}</div>
+                                                                    <div class="small text-muted">{{ rel.relation_label || '-' }} <span v-if="rel.descricao">• {{ rel.descricao }}</span></div>
+                                                                    <div v-if="rel.telefone" class="small text-muted">{{ rel.telefone }}</div>
+                                                                </div>
+                                                                <button v-if="formCasal.id" type="button" class="btn btn-outline-danger btn-sm" @click="removerRelacaoFamiliarCasal(rel.id)">Remover</button>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-12">
+                                                    <div class="p-2 bg-light border rounded">
+                                                        <div v-if="sugestoesFamiliaCasal.length" class="mb-3">
+                                                            <div class="small fw-semibold text-muted mb-2">Possíveis parentes por sobrenome</div>
+                                                            <div class="d-flex flex-column gap-2">
+                                                                <div v-for="item in sugestoesFamiliaCasal" :key="`sug-familia-casal-${item.entity_type}-${item.entity_id}`" class="p-2 bg-white border rounded d-flex justify-content-between align-items-start gap-2">
+                                                                    <div>
+                                                                        <div class="fw-semibold">{{ item.nome_exibicao }}</div>
+                                                                        <div class="small text-muted">{{ item.descricao || '-' }}<span v-if="item.sobrenomes_iguais && item.sobrenomes_iguais.length"> • Sobrenomes iguais: {{ item.sobrenomes_iguais.join(', ') }}</span></div>
+                                                                    </div>
+                                                                    <button type="button" class="btn btn-outline-primary btn-sm" @click="buscaFamiliaCasal = item.nome_exibicao; adicionarRelacaoFamiliarCasal(item)">Vincular</button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="row g-2">
+                                                            <div class="col-md-4">
+                                                                <select v-model="novoParentescoCasal" class="form-select form-select-sm">
+                                                                    <option v-for="opcao in opcoesParentescoCasal" :key="`opcao-par-casal-${opcao.value}`" :value="opcao.value">{{ opcao.label }}</option>
+                                                                </select>
+                                                            </div>
+                                                            <div class="col-md-8">
+                                                                <input type="text" v-model.trim="buscaFamiliaCasal" @input="buscarRelacionaveisCasal" @focus="buscarRelacionaveisCasal" class="form-control form-control-sm" :disabled="!formCasal.id" placeholder="Pesquisar em todos os cadastros do sistema...">
+                                                            </div>
+                                                        </div>
+                                                        <div class="small text-muted mt-2">Você pode adicionar quantos parentes precisar. O vínculo aparecerá automaticamente na ficha da outra pessoa.</div>
+                                                        <div v-if="!formCasal.id" class="small text-muted mt-2">Salve o casal antes de cadastrar parentescos.</div>
+                                                        <ul class="list-group mt-2" v-if="resultadosBuscaFamiliaCasal.length" style="max-height: 280px; overflow-y: auto;">
+                                                            <li class="list-group-item list-group-item-action small" v-for="item in resultadosBuscaFamiliaCasal" :key="`busca-familia-casal-${item.entity_type}-${item.entity_id}`" @click="adicionarRelacaoFamiliarCasal(item)">
+                                                                <div class="fw-semibold">{{ item.nome_exibicao }}</div>
+                                                                <div class="text-muted">{{ item.descricao || '-' }}<span v-if="item.telefone"> • {{ item.telefone }}</span></div>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="ficha-subpane" v-show="subAbaCasalDados === 'saude'">
+                                            <div class="ficha-pane-title">
+                                                <h6>Saúde e apoio</h6>
+                                                <p>Deficiências e restrições alimentares do tio e da tia.</p>
+                                            </div>
+                                            <div class="row g-3">
+                                                <div class="col-12 pt-2"><h6 class="text-muted mb-0">Saúde do Tio</h6></div>
+                                                <div class="col-md-12">
+                                                    <label class="form-label d-block">Possui deficiência?</label>
+                                                    <div class="d-flex gap-2 align-items-center flex-wrap">
+                                                        <div class="form-check mb-0">
+                                                            <input class="form-check-input" type="checkbox" id="checkDeficienciaTioOutro" v-model="formCasal.deficiencia_tio" :true-value="1" :false-value="0">
+                                                            <label class="form-check-label" for="checkDeficienciaTioOutro">Possui deficiência</label>
+                                                        </div>
+                                                        <input v-if="formCasal.deficiencia_tio" class="form-control flex-grow-1" style="min-width: 260px;" v-model.trim="formCasal.qual_deficiencia_tio" placeholder="Qual?">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-12">
+                                                    <label class="form-label d-block">O tio possui restrição alimentar?</label>
+                                                    <div class="d-flex gap-2 align-items-center flex-wrap">
+                                                        <div class="form-check mb-0">
+                                                            <input class="form-check-input" type="checkbox" id="checkRestricaoTioOutro" v-model="formCasal.restricao_alimentar_tio" :true-value="1" :false-value="0">
+                                                            <label class="form-check-label" for="checkRestricaoTioOutro">Sim</label>
+                                                        </div>
+                                                        <div v-if="formCasal.restricao_alimentar_tio" class="flex-grow-1" style="min-width: 280px;">
+                                                            <label class="form-label text-muted small mb-1">Qual restrição alimentar do tio?</label>
+                                                            <select class="form-select" v-model="formCasal.detalhes_restricao_tio">
+                                                                <option disabled value="">Selecione uma restrição...</option>
+                                                                <option v-for="opcao in opcoesRestricaoAlimentar" :key="'restr-tio-'+opcao" :value="opcao">{{ opcao }}</option>
+                                                                <option v-if="formCasal.detalhes_restricao_tio && !opcoesRestricaoAlimentar.includes(formCasal.detalhes_restricao_tio)" :value="formCasal.detalhes_restricao_tio">{{ formCasal.detalhes_restricao_tio }}</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-12 pt-2"><h6 class="text-muted mb-0">Saúde da Tia</h6></div>
+                                                <div class="col-md-12">
+                                                    <label class="form-label d-block">Possui deficiência?</label>
+                                                    <div class="d-flex gap-2 align-items-center flex-wrap">
+                                                        <div class="form-check mb-0">
+                                                            <input class="form-check-input" type="checkbox" id="checkDeficienciaTiaOutro" v-model="formCasal.deficiencia_tia" :true-value="1" :false-value="0">
+                                                            <label class="form-check-label" for="checkDeficienciaTiaOutro">Possui deficiência</label>
+                                                        </div>
+                                                        <input v-if="formCasal.deficiencia_tia" class="form-control flex-grow-1" style="min-width: 260px;" v-model.trim="formCasal.qual_deficiencia_tia" placeholder="Qual?">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-12">
+                                                    <label class="form-label d-block">A tia possui restrição alimentar?</label>
+                                                    <div class="d-flex gap-2 align-items-center flex-wrap">
+                                                        <div class="form-check mb-0">
+                                                            <input class="form-check-input" type="checkbox" id="checkRestricaoTiaOutro" v-model="formCasal.restricao_alimentar_tia" :true-value="1" :false-value="0">
+                                                            <label class="form-check-label" for="checkRestricaoTiaOutro">Sim</label>
+                                                        </div>
+                                                        <div v-if="formCasal.restricao_alimentar_tia" class="flex-grow-1" style="min-width: 280px;">
+                                                            <label class="form-label text-muted small mb-1">Qual restrição alimentar da tia?</label>
+                                                            <select class="form-select" v-model="formCasal.detalhes_restricao_tia">
+                                                                <option disabled value="">Selecione uma restrição...</option>
+                                                                <option v-for="opcao in opcoesRestricaoAlimentar" :key="'restr-tia-'+opcao" :value="opcao">{{ opcao }}</option>
+                                                                <option v-if="formCasal.detalhes_restricao_tia && !opcoesRestricaoAlimentar.includes(formCasal.detalhes_restricao_tia)" :value="formCasal.detalhes_restricao_tia">{{ formCasal.detalhes_restricao_tia }}</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-12">
+                                                    <label class="form-label">Observações</label>
+                                                    <textarea class="form-control" rows="3" v-model.trim="formCasal.observacoes" maxlength="255"></textarea>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </fieldset>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div v-else-if="abaCasal==='jovens'">
+                            <div v-if="!formCasal.id" class="text-muted">Salve o casal para vincular jovens.</div>
+                            <div v-else>
+                                <label class="form-label">Adicionar jovem</label>
+                                <input type="text" class="form-control form-control-sm" v-model="searchJovemQuery" @input="onSearchJovemInput" placeholder="Buscar jovem pelo nome...">
+                                <ul class="list-group mt-1" v-if="searchJovemResults.length">
+                                    <li class="list-group-item list-group-item-action small" v-for="s in searchJovemResults" :key="`jv-${s.id}`" @click="adicionarJovemCasal(s)">
+                                        {{ s.nome_completo }}
+                                        <span class="text-muted ms-2">
+                                            {{ (s.idade !== null && s.idade !== undefined) ? (s.idade + ' anos') : '-' }}
+                                            • {{ s.estado_civil || '-' }}
+                                        </span>
+                                    </li>
+                                </ul>
+                                <div class="mt-3">
+                                    <div v-if="loadingJovensCasal" class="text-muted">Carregando jovens...</div>
+                                    <div v-else-if="!jovensCasal.length" class="text-muted">Nenhum jovem vinculado.</div>
+                                    <div v-else class="list-group">
+                                        <div class="list-group-item d-flex justify-content-between align-items-center" v-for="j in jovensCasal" :key="`vinc-${j.id}`">
+                                            <div>
+                                                <div class="fw-semibold">{{ j.nome_completo }}</div>
+                                                <div class="small text-muted">
+                                                    {{ j.telefone || '-' }} • {{ j.circulo || '-' }} • {{ formatarIdade(j.data_nascimento) }}
+                                                </div>
+                                            </div>
+                                            <button class="btn btn-sm btn-outline-danger" @click="removerJovemCasal(j)">Remover</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div v-else>
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <h6 class="m-0 mb-3">Eventos com Presença Registrada</h6>
+                                    <div v-if="loadingPresencasCasal" class="text-muted">Carregando presenças...</div>
+                                    <div v-else class="list-group">
+                                        <div class="list-group-item" v-for="pres in presencasCasal" :key="`pres-casal-${pres.id}`">
+                                            <div class="fw-semibold">{{ pres.evento_titulo || 'Evento sem título' }}</div>
+                                            <small class="text-muted d-block">Data do evento: {{ pres.evento_data ? formatarDataPresenca(pres.evento_data) : 'Não informada' }}</small>
+                                            <small class="text-muted">Registrado em: {{ pres.registrado_em ? formatarDataHora(pres.registrado_em) : 'Não informado' }}</small>
+                                        </div>
+                                        <div v-if="!presencasCasal.length" class="text-center p-3 text-muted bg-light border rounded">
+                                            Nenhuma presença registrada.
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button v-if="isEditingCasal" class="btn btn-outline-secondary" @click="cancelarEdicaoCasal">Cancelar</button>
+                        <button v-if="isEditingCasal" class="btn btn-success" @click="salvarCasal">Salvar alterações</button>
+                        <button v-else class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="modalEscolhaNovoOutroEjc" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-light">
+                        <h5 class="modal-title">Novo cadastro</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-muted mb-3">Qual tipo de cadastro você quer criar em <strong>Membros de Outro EJC</strong>?</p>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-success" @click="selecionarNovoTipo('jovem')"><i class="fa-solid fa-plus icon-accent"></i> Novo jovem</button>
+                            <button class="btn btn-outline-primary" @click="selecionarNovoTipo('tio')"><i class="fa-solid fa-plus icon-accent"></i> Novo tio</button>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            injetarMenu('#app');
+            ativarMenu('/gestaodoencontro/jovensoutroejc');
+        });
+
+        const { createApp } = Vue;
+        createApp({
+            data() {
+                return {
+                    nomeMeuEJC: (window.__NOME_EJC_ATUAL && String(window.__NOME_EJC_ATUAL).trim()) || 'Inconfidentes',
+                    aba: 'jovens',
+                    itens: [],
+                    carregandoJovens: false,
+                    filtroNome: '',
+                    filtroTelefone: '',
+                    filtroEjcOrigem: '',
+                    modalNovoInstance: null,
+                    modalEditarInstance: null,
+                    modalPresencasInstance: null,
+                    modalEscolhaNovo: null,
+                    isEditingOutroFicha: false,
+                    subAbaDadosOutro: 'cadastro',
+                    jovemOutroFichaOriginal: null,
+                    loadingObservacoesOutro: false,
+                    observacoesOutroJovem: [],
+                    novaObservacaoOutroJovem: '',
+                    historicoEquipesOutroJovem: [],
+                    familiaresOutroJovem: [],
+                    familiaresOutroJovemRequestSeq: 0,
+                    sugestoesFamiliaOutroJovem: [],
+                    buscaFamiliaOutroJovem: '',
+                    resultadosBuscaFamiliaOutroJovem: [],
+                    buscaFamiliaOutroJovemTimer: null,
+                    novoParentescoOutroJovem: 'IRMAO',
+                    opcoesParentescoOutroJovem: [
+                        { value: 'IRMAO', label: 'Irmão(ã)' },
+                        { value: 'PRIMO', label: 'Primo(a)' },
+                        { value: 'NAMORADO', label: 'Namorado(a)' },
+                        { value: 'NOIVO', label: 'Noivo(a)' },
+                        { value: 'TIO', label: 'Tio(a)' },
+                        { value: 'FILHO', label: 'Filho(a)' }
+                    ],
+                    jovemOutroFicha: {
+                        id: null,
+                        nome_completo: '',
+                        apelido: '',
+                        telefone: '',
+                        email: '',
+                        data_nascimento: '',
+                        instagram: '',
+                        estado_civil: 'Solteiro',
+                        sexo: '',
+                        circulo: '',
+                        deficiencia: false,
+                        qual_deficiencia: '',
+                        restricao_alimentar: false,
+                        detalhes_restricao: '',
+                        eh_musico: false,
+                        instrumentos_musicais: [],
+                        nao_serve_ejc: false,
+                        motivo_nao_serve_ejc: '',
+                        outro_ejc_id: '',
+                        outro_ejc_nome: '',
+                        outro_ejc_numero: '',
+                        observacoes_extras: '',
+                        termos_aceitos_em: null
+                    },
+                    presencasOutro: [],
+                    loadingPresencas: false,
+                    abaFichaOutro: 'dados',
+                    mostrarFiltros: false,
+                    outroHistoricoEquipes: [],
+                    todasEquipesOutro: [],
+                    papeisEquipeOutro: [],
+                    funcoesPorEquipeHistoricoOutro: {},
+                    novaEquipeHistoricoOutro: { equipe_id: '', equipe_nome: '', ejc_id: '', papel: 'Membro', subfuncao: '' },
+                    ejcs: [],
+                    outrosEjcs: [],
+                    funcoesMoita: [],
+                    instrumentosDisponiveis: ['Voz', 'Violao', 'Guitarra', 'Baixo', 'Teclado', 'Bateria', 'Percussao', 'Flauta', 'Saxofone', 'Violino', 'Cajon', 'Ukulele'],
+                    opcoesRestricaoAlimentar: ['Alergia a amendoim', 'Alergia a castanhas', 'Alergia a frutos do mar', 'APLV (Alergia à proteína do leite de vaca)', 'Intolerante à lactose', 'Intolerante a glúten (Celíaco)', 'Não come carne vermelha', 'Não come carne de porco', 'Vegetariano', 'Vegano', 'Outras'],
+                    cores: ['Rosa', 'Azul', 'Vermelho', 'Verde', 'Amarelo', 'Marrom'],
+                    editandoJovemOutro: false,
+                    novo: {
+                        id: null,
+                        origem_ejc_tipo: 'OUTRO_EJC',
+                        nome_completo: '',
+                        apelido: '',
+                        telefone: '',
+                        email: '',
+                        data_nascimento: '',
+                        outro_ejc_id: '',
+                        outro_ejc_numero: '',
+                        instagram: '',
+                        estado_civil: 'Solteiro',
+                        sexo: '',
+                        circulo: '',
+                        deficiencia: false,
+                        qual_deficiencia: '',
+                        restricao_alimentar: false,
+                        detalhes_restricao: '',
+                        eh_musico: false,
+                        ja_foi_moita_inconfidentes: 0,
+                        moita_ejc_id: '',
+                        moita_funcao: ''
+                    },
+                    edit: {},
+                    colunasVisiveisJovens: {
+                        Nome: true,
+                        Telefone: true,
+                        EjcOrigem: true,
+                        Musico: true,
+                        TermosUso: true
+                    },
+                    colunasVisiveisTios: {
+                        Casal: true,
+                        Telefones: true,
+                        EjcOrigem: true
+                    },
+                    loadingCasais: false,
+                    casais: [],
+                    equipes: [],
+                    filtroNomeTios: '',
+                    filtroTelefoneTios: '',
+                    modalCasal: null,
+                    modalPresencasCasal: null,
+                    presencasCasal: [],
+                    loadingPresencasCasal: false,
+                    jovensCasal: [],
+                    loadingJovensCasal: false,
+                    searchJovemQuery: '',
+                    searchJovemResults: [],
+                    searchJovemTimer: null,
+                    familiaresCasal: [],
+                    sugestoesFamiliaCasal: [],
+                    buscaFamiliaCasal: '',
+                    resultadosBuscaFamiliaCasal: [],
+                    buscaFamiliaCasalTimer: null,
+                    novoParentescoCasal: 'IRMAO',
+                    opcoesParentescoCasal: [
+                        { value: 'IRMAO', label: 'Irmão(ã)' },
+                        { value: 'PRIMO', label: 'Primo(a)' },
+                        { value: 'NAMORADO', label: 'Namorado(a)' },
+                        { value: 'NOIVO', label: 'Noivo(a)' },
+                        { value: 'TIO', label: 'Tio(a)' },
+                        { value: 'MAE_PAI', label: 'Mãe/Pai' }
+                    ],
+                    abaCasal: 'dados',
+                    subAbaCasalDados: 'cadastro',
+                    isEditingCasal: false,
+                    formCasalBackup: null,
+                    formCasal: {
+                        id: null,
+                        foto_url: '',
+                        nome_tio: '',
+                        telefone_tio: '',
+                        data_nascimento_tio: '',
+                        nome_tia: '',
+                        telefone_tia: '',
+                        data_nascimento_tia: '',
+                        origem_tipo: 'OUTRO_EJC',
+                        outro_ejc_id: null,
+                        ecc_id: null,
+                        equipe_ids: [],
+                        servicos: [],
+                        restricao_alimentar: false,
+                        deficiencia: false,
+                        restricao_alimentar_tio: false,
+                        detalhes_restricao_tio: '',
+                        deficiencia_tio: false,
+                        qual_deficiencia_tio: '',
+                        restricao_alimentar_tia: false,
+                        detalhes_restricao_tia: '',
+                        deficiencia_tia: false,
+                        qual_deficiencia_tia: '',
+                        observacoes: '',
+                        termos_aceitos_em: null
+                    },
+                    observacoesExtrasCasal: [],
+                    novaObservacaoCasal: '',
+                    novoServicoCasal: { equipe_id: null, ejc_id: null }
+                };
+            },
+            computed: {
+                itensFiltrados() {
+                    const nome = String(this.filtroNome || '').trim().toLowerCase();
+                    const tel = String(this.filtroTelefone || '').trim().toLowerCase();
+                    const origem = String(this.filtroEjcOrigem || '').trim().toLowerCase();
+                    return this.itens.filter((i) => {
+                        const txtNome = String(i.nome_completo || '').toLowerCase();
+                        const txtTel = String(i.telefone || '').toLowerCase();
+                        const txtOrigem = this.formatarOrigem(i).toLowerCase();
+                        return (!nome || txtNome.includes(nome)) && (!tel || txtTel.includes(tel)) && (!origem || txtOrigem.includes(origem));
+                    });
+                },
+                casaisOutros() {
+                    return (this.casais || []).filter((c) => String(c.origem_tipo || 'EJC').toUpperCase() === 'OUTRO_EJC');
+                },
+                casaisOutrosFiltrados() {
+                    const nome = String(this.filtroNomeTios || '').trim().toLowerCase();
+                    const tel = String(this.filtroTelefoneTios || '').trim().toLowerCase();
+                    return this.casaisOutros.filter((c) => {
+                        const nomeCasal = `${c.nome_tio || ''} ${c.nome_tia || ''}`.toLowerCase();
+                        const tels = `${c.telefone_tio || ''} ${c.telefone_tia || ''}`.toLowerCase();
+                        const origem = `${c.outro_ejc_paroquia || ''} ${c.outro_ejc_nome || ''}`.toLowerCase();
+                        return (!nome || nomeCasal.includes(nome) || origem.includes(nome)) && (!tel || tels.includes(tel));
+                    });
+                },
+                totalAbaAtual() {
+                    return this.aba === 'jovens' ? this.itens.length : this.casaisOutros.length;
+                },
+                totalFiltradoAbaAtual() {
+                    return this.aba === 'jovens' ? this.itensFiltrados.length : this.casaisOutrosFiltrados.length;
+                },
+                totalColunasVisiveisJovens() {
+                    return (Object.values(this.colunasVisiveisJovens || {}).filter(Boolean).length + 1) || 1;
+                },
+                totalColunasVisiveisTios() {
+                    return Math.max(1, Object.values(this.colunasVisiveisTios || {}).filter(Boolean).length + 1);
+                },
+                iniciaisOutroJovem() {
+                    const nome = String(this.jovemOutroFicha?.nome_completo || '').trim();
+                    if (!nome) return 'OJ';
+                    return nome.split(/\s+/).slice(0, 2).map((parte) => parte.charAt(0).toUpperCase()).join('');
+                },
+                idadeOutroJovem() {
+                    const idade = this.calcularIdadeFicha(this.jovemOutroFicha?.data_nascimento);
+                    return idade === null ? 'Não informada' : `${idade} anos`;
+                },
+                subfuncoesHistoricoOutroDisponiveis() {
+                    const equipeId = this.novaEquipeHistoricoOutro.equipe_id;
+                    if (!equipeId) return [];
+                    const funcoes = this.funcoesPorEquipeHistoricoOutro[equipeId] || [];
+                    const papelSelecionado = this.novaEquipeHistoricoOutro.papel || 'Membro';
+                    return funcoes.filter((f) => (f.papel_base || 'Membro') === papelSelecionado);
+                },
+                outroEjcLabelAtualCasal() {
+                    const outroId = Number(this.formCasal && this.formCasal.outro_ejc_id);
+                    const outro = (this.outrosEjcs || []).find((item) => Number(item.id) === outroId);
+                    if (!outro) return 'Não informado';
+                    return `${outro.paroquia || '-'}${outro.nome ? ` - ${outro.nome}` : ''}`;
+                }
+            },
+            methods: {
+                async carregarTudo() {
+                    await Promise.all([
+                        this.carregarNomeMeuEJC(),
+                        this.carregarOutrosEjcs(),
+                        this.carregarEjcs(),
+                        this.carregarEquipes(),
+                        this.carregarJovensOutroEjc(),
+                        this.carregarCasais()
+                    ]);
+                },
+                async carregarNomeMeuEJC() {
+                    try {
+                        const res = await fetch('/api/meu-ejc');
+                        if (!res.ok) return;
+                        const data = await res.json().catch(() => ({}));
+                        if (data && data.nome) this.nomeMeuEJC = String(data.nome).trim() || this.nomeMeuEJC;
+                    } catch (_) {}
+                },
+                async carregarOutrosEjcs() {
+                    try {
+                        const res = await fetch('/api/outros-ejcs');
+                        this.outrosEjcs = res.ok ? await res.json() : [];
+                    } catch (_) {
+                        this.outrosEjcs = [];
+                    }
+                },
+                async carregarEjcs() {
+                    try {
+                        const res = await fetch('/api/tios/ejcs');
+                        this.ejcs = res.ok ? await res.json() : [];
+                    } catch (_) {
+                        this.ejcs = [];
+                    }
+                },
+                async carregarEquipes() {
+                    try {
+                        const res = await fetch('/api/tios/equipes');
+                        this.equipes = res.ok ? await res.json() : [];
+                        this.todasEquipesOutro = Array.isArray(this.equipes) ? this.equipes.filter((i) => i) : [];
+                    } catch (_) {
+                        this.equipes = [];
+                        this.todasEquipesOutro = [];
+                    }
+                },
+                async carregarPapeisEquipeOutro() {
+                    try {
+                        const res = await fetch('/api/equipes/papeis');
+                        const data = res.ok ? await res.json() : [];
+                        this.papeisEquipeOutro = Array.isArray(data) ? data.filter((i) => i) : [];
+                    } catch (err) {
+                        console.error('Erro ao carregar papéis de equipe:', err);
+                        this.papeisEquipeOutro = [];
+                    } finally {
+                        if (!this.papeisEquipeOutro.length) {
+                            this.papeisEquipeOutro = [
+                                { id: 1, nome: 'Membro' },
+                                { id: 2, nome: 'Tio' },
+                                { id: 3, nome: 'Coordenador' }
+                            ];
+                        }
+                        if (!this.papeisEquipeOutro.some((p) => p.nome === this.novaEquipeHistoricoOutro.papel)) {
+                            this.novaEquipeHistoricoOutro.papel = this.papeisEquipeOutro[0].nome;
+                        }
+                    }
+                },
+                async carregarFuncoesEquipeHistoricoOutro(equipeId) {
+                    if (!equipeId || this.funcoesPorEquipeHistoricoOutro[equipeId]) return;
+                    try {
+                        const res = await fetch(`/api/equipes/${equipeId}/funcoes`);
+                        if (!res.ok) return;
+                        const data = await res.json();
+                        this.funcoesPorEquipeHistoricoOutro[equipeId] = Array.isArray(data) ? data.filter((i) => i) : [];
+                    } catch (err) {
+                        console.error('Erro ao carregar funções da equipe:', err);
+                        this.funcoesPorEquipeHistoricoOutro[equipeId] = [];
+                    }
+                },
+                onEquipeHistoricoOutroChange() {
+                    this.novaEquipeHistoricoOutro.subfuncao = '';
+                    this.carregarFuncoesEquipeHistoricoOutro(this.novaEquipeHistoricoOutro.equipe_id);
+                },
+                onPapelHistoricoOutroChange() {
+                    this.novaEquipeHistoricoOutro.subfuncao = '';
+                },
+                async carregarJovensOutroEjc() {
+                    this.carregandoJovens = true;
+                    try {
+                        const res = await fetch('/api/lista-mestre/jovens-outro-ejc');
+                        this.itens = res.ok ? await res.json() : [];
+                    } catch (err) {
+                        console.error(err);
+                        this.itens = [];
+                    } finally {
+                        this.carregandoJovens = false;
+                    }
+                },
+                async carregarCasais() {
+                    this.loadingCasais = true;
+                    try {
+                        const res = await fetch('/api/tios/casais?tipo=OUTRO_EJC');
+                        const data = await res.json().catch(() => ([]));
+                        this.casais = res.ok && Array.isArray(data) ? data : [];
+                    } catch (err) {
+                        console.error(err);
+                        this.casais = [];
+                    } finally {
+                        this.loadingCasais = false;
+                    }
+                },
+                formatarOrigem(item) {
+                    const partes = [item && item.outro_ejc_paroquia, item && item.outro_ejc_nome].filter(Boolean);
+                    return partes.length ? partes.join(' - ') : 'Não informado';
+                },
+                totalPresencas(item) {
+                    const detalhes = Array.isArray(item && item.detalhes) ? item.detalhes : [];
+                    return detalhes.filter((d) => String(d || '').toLowerCase().startsWith('presença em:')).length;
+                },
+                labelColunaOutroEjc(coluna) {
+                    const labels = {
+                        Nome: 'Nome',
+                        Telefone: 'Telefone',
+                        EjcOrigem: 'EJC de origem',
+                        Musico: 'Músico',
+                        TermosUso: 'Termos de uso',
+                        Casal: 'Casal',
+                        Telefones: 'Telefones'
+                    };
+                    return labels[coluna] || coluna;
+                },
+                numeroParaRomano(num) {
+                    const n0 = Number(num);
+                    if (!n0 || !Number.isFinite(n0) || n0 <= 0) return '';
+                    const roman = [{ value: 1000, numeral: 'M' }, { value: 900, numeral: 'CM' }, { value: 500, numeral: 'D' }, { value: 400, numeral: 'CD' }, { value: 100, numeral: 'C' }, { value: 90, numeral: 'XC' }, { value: 50, numeral: 'L' }, { value: 40, numeral: 'XL' }, { value: 10, numeral: 'X' }, { value: 9, numeral: 'IX' }, { value: 5, numeral: 'V' }, { value: 4, numeral: 'IV' }, { value: 1, numeral: 'I' }];
+                    let n = n0;
+                    let out = '';
+                    for (const i of roman) while (n >= i.value) { out += i.numeral; n -= i.value; }
+                    return out;
+                },
+                formatarServicoLabel(srv) {
+                    if (!srv) return '-';
+                    const equipe = String(srv.equipe_nome || srv.equipe || '').trim() || 'Equipe';
+                    if (srv.ejc_numero) {
+                        return `${equipe} - ${this.numeroParaRomano(srv.ejc_numero)} EJC ${this.nomeMeuEJC}`.trim();
+                    }
+                    return `${equipe} - edição não informada`;
+                },
+                formatarEjcOption(ejc) {
+                    if (!ejc) return '-';
+                    const numero = ejc.numero ? `${this.numeroParaRomano(ejc.numero)} EJC` : 'EJC';
+                    const local = [this.nomeMeuEJC || ejc.paroquia, ejc.ano].filter(Boolean).join(' - ');
+                    return [numero, local].filter(Boolean).join(' | ');
+                },
+                obterNomeEquipeServico(srv) {
+                    if (!srv) return 'Equipe não informada';
+                    const nomeDireto = String(srv.equipe_nome || srv.equipe || '').trim();
+                    if (nomeDireto) return nomeDireto;
+                    const equipeId = Number(srv.equipe_id || 0);
+                    const equipe = (this.equipes || []).find((e) => Number(e.id) === equipeId);
+                    return (equipe && equipe.nome) ? equipe.nome : 'Equipe não informada';
+                },
+                formatarEdicaoServico(srv) {
+                    if (!srv) return 'Edição não informada';
+                    const numeroBruto = Number(srv.ejc_numero || 0);
+                    if (Number.isInteger(numeroBruto) && numeroBruto > 0) {
+                        return `${this.numeroParaRomano(numeroBruto)} EJC ${this.nomeMeuEJC || srv.ejc_paroquia || ''}`.trim();
+                    }
+                    const ejcId = Number(srv.ejc_id || 0);
+                    const ejc = (this.ejcs || []).find((e) => Number(e.id) === ejcId);
+                    if (ejc && ejc.numero) {
+                        return `${this.numeroParaRomano(ejc.numero)} EJC ${this.nomeMeuEJC || ejc.paroquia || ''}`.trim();
+                    }
+                    return 'Edição não informada';
+                },
+                servicosRegistradosCasalComIndice() {
+                    const base = this.formCasal && Array.isArray(this.formCasal.servicos) ? this.formCasal.servicos : [];
+                    const out = [];
+                    base.forEach((srv, idx) => {
+                        if (Number(srv && srv.equipe_id) > 0) out.push({ srv, idx });
+                    });
+                    return out;
+                },
+                formatarDataPresenca(data) {
+                    if (!data) return '-';
+                    const dt = new Date(`${data}T00:00:00`);
+                    return Number.isNaN(dt.getTime()) ? data : dt.toLocaleDateString('pt-BR');
+                },
+                formatarDataFicha(data) {
+                    if (!data) return 'Não informado';
+                    if (typeof data === 'string' && /^\d{2}\/\d{2}\/\d{4}$/.test(data)) return data;
+                    const dt = new Date(data);
+                    return Number.isNaN(dt.getTime()) ? 'Não informado' : dt.toLocaleDateString('pt-BR');
+                },
+                calcularIdadeFicha(dataIso) {
+                    if (!dataIso) return null;
+                    const hoje = new Date();
+                    const nasc = new Date(dataIso);
+                    if (Number.isNaN(nasc.getTime())) return null;
+                    let idade = hoje.getFullYear() - nasc.getFullYear();
+                    const m = hoje.getMonth() - nasc.getMonth();
+                    if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) idade--;
+                    return idade >= 0 ? idade : null;
+                },
+                formatarDataHora(dataHora) {
+                    if (!dataHora) return '-';
+                    const dt = new Date(dataHora);
+                    return Number.isNaN(dt.getTime()) ? dataHora : dt.toLocaleString('pt-BR');
+                },
+                formatarNumeroOutroFicha(numero) {
+                    const romano = this.numeroParaRomano(numero);
+                    return romano ? `${romano} ${this.jovemOutroFicha?.outro_ejc_nome ? `(${this.jovemOutroFicha.outro_ejc_nome})` : ''}`.trim() : 'Não informado';
+                },
+                normalizarInstrumentosOutro(valor) {
+                    if (!valor) return [];
+                    if (Array.isArray(valor)) return valor.filter(Boolean);
+                    if (typeof valor === 'string') {
+                        try {
+                            const parsed = JSON.parse(valor);
+                            if (Array.isArray(parsed)) return parsed.filter(Boolean);
+                        } catch (_) {}
+                        return valor.split(',').map((item) => item.trim()).filter(Boolean);
+                    }
+                    return [];
+                },
+                onMusicoToggleOutroFicha() {
+                    if (!this.jovemOutroFicha.eh_musico) this.jovemOutroFicha.instrumentos_musicais = [];
+                },
+                normalizarCamposSaudeCasal() {
+                    if (!this.formCasal.deficiencia_tio) this.formCasal.qual_deficiencia_tio = '';
+                    if (!this.formCasal.restricao_alimentar_tio) this.formCasal.detalhes_restricao_tio = '';
+                    if (!this.formCasal.deficiencia_tia) this.formCasal.qual_deficiencia_tia = '';
+                    if (!this.formCasal.restricao_alimentar_tia) this.formCasal.detalhes_restricao_tia = '';
+                    this.formCasal.deficiencia = !!(this.formCasal.deficiencia_tio || this.formCasal.deficiencia_tia);
+                    this.formCasal.restricao_alimentar = !!(this.formCasal.restricao_alimentar_tio || this.formCasal.restricao_alimentar_tia);
+                },
+                clonarFormCasal(payload) {
+                    try {
+                        return JSON.parse(JSON.stringify(payload || {}));
+                    } catch (_) {
+                        return { ...(payload || {}) };
+                    }
+                },
+                iniciarEdicaoCasal() {
+                    this.formCasalBackup = this.clonarFormCasal(this.formCasal);
+                    this.isEditingCasal = true;
+                },
+                cancelarEdicaoCasal() {
+                    if (this.formCasal && this.formCasal.id && this.formCasalBackup) {
+                        this.formCasal = this.clonarFormCasal(this.formCasalBackup);
+                        this.isEditingCasal = false;
+                        return;
+                    }
+                    if (this.modalCasal) this.modalCasal.hide();
+                },
+                formatarIdade(data) {
+                    if (!data) return '-';
+                    const dt = new Date(`${String(data).split('T')[0]}T00:00:00`);
+                    if (Number.isNaN(dt.getTime())) return '-';
+                    const diff = Date.now() - dt.getTime();
+                    const idade = Math.floor(diff / (365.25 * 24 * 60 * 60 * 1000));
+                    return Number.isFinite(idade) ? `${idade} anos` : '-';
+                },
+                async carregarFamiliaresCasal() {
+                    if (!this.formCasal || !this.formCasal.id) {
+                        this.familiaresCasal = [];
+                        this.sugestoesFamiliaCasal = [];
+                        this.buscaFamiliaCasal = '';
+                        this.resultadosBuscaFamiliaCasal = [];
+                        return;
+                    }
+                    try {
+                        const res = await fetch(`/api/relacoes-familiares?entity_type=TIO_CASAL&entity_id=${this.formCasal.id}`);
+                        const data = await res.json().catch(() => ([]));
+                        this.familiaresCasal = res.ok && Array.isArray(data) ? data : [];
+                    } catch (err) {
+                        console.error('Erro ao carregar familiares do casal:', err);
+                        this.familiaresCasal = [];
+                    }
+                    try {
+                        const resSug = await fetch(`/api/relacoes-familiares/sugestoes?entity_type=TIO_CASAL&entity_id=${this.formCasal.id}`);
+                        const dataSug = await resSug.json().catch(() => ([]));
+                        this.sugestoesFamiliaCasal = resSug.ok && Array.isArray(dataSug) ? dataSug : [];
+                    } catch (err) {
+                        console.error('Erro ao carregar sugestões de parentesco do casal:', err);
+                        this.sugestoesFamiliaCasal = [];
+                    }
+                },
+                buscarRelacionaveisCasal() {
+                    clearTimeout(this.buscaFamiliaCasalTimer);
+                    const termo = String(this.buscaFamiliaCasal || '').trim();
+                    if (!this.formCasal || !this.formCasal.id) {
+                        this.resultadosBuscaFamiliaCasal = [];
+                        return;
+                    }
+                    this.buscaFamiliaCasalTimer = setTimeout(async () => {
+                        try {
+                            const params = new URLSearchParams({
+                                source_type: 'TIO_CASAL',
+                                source_id: String(this.formCasal.id),
+                                q: termo
+                            });
+                            const res = await fetch(`/api/relacoes-familiares/search?${params.toString()}`);
+                            const data = await res.json().catch(() => ([]));
+                            this.resultadosBuscaFamiliaCasal = res.ok && Array.isArray(data) ? data : [];
+                        } catch (err) {
+                            console.error('Erro ao pesquisar familiares do casal:', err);
+                            this.resultadosBuscaFamiliaCasal = [];
+                        }
+                    }, 250);
+                },
+                async adicionarRelacaoFamiliarCasal(item) {
+                    if (!item || !this.formCasal || !this.formCasal.id) return;
+                    try {
+                        const res = await fetch('/api/relacoes-familiares', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                source_type: 'TIO_CASAL',
+                                source_id: this.formCasal.id,
+                                target_type: item.entity_type,
+                                target_id: item.entity_id,
+                                relation: this.novoParentescoCasal
+                            })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao salvar parentesco.');
+                            return;
+                        }
+                        this.buscaFamiliaCasal = '';
+                        this.resultadosBuscaFamiliaCasal = [];
+                        await this.carregarFamiliaresCasal();
+                    } catch (err) {
+                        console.error('Erro ao adicionar parentesco do casal:', err);
+                        alert('Erro ao salvar parentesco.');
+                    }
+                },
+                async removerRelacaoFamiliarCasal(relacaoId) {
+                    if (!relacaoId) return;
+                    try {
+                        const res = await fetch(`/api/relacoes-familiares/${relacaoId}`, { method: 'DELETE' });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao remover parentesco.');
+                            return;
+                        }
+                        await this.carregarFamiliaresCasal();
+                    } catch (err) {
+                        console.error('Erro ao remover parentesco do casal:', err);
+                        alert('Erro ao remover parentesco.');
+                    }
+                },
+                onSearchJovemInput() {
+                    clearTimeout(this.searchJovemTimer);
+                    const q = String(this.searchJovemQuery || '').trim();
+                    if (!q) {
+                        this.searchJovemResults = [];
+                        return;
+                    }
+                    this.searchJovemTimer = setTimeout(() => this.buscarJovensParaCasal(q), 250);
+                },
+                async buscarJovensParaCasal(q) {
+                    try {
+                        const res = await fetch(`/api/jovens/search?q=${encodeURIComponent(q)}`);
+                        const data = await res.json().catch(() => ([]));
+                        this.searchJovemResults = res.ok && Array.isArray(data) ? data : [];
+                    } catch (err) {
+                        console.error('Erro ao buscar jovens:', err);
+                        this.searchJovemResults = [];
+                    }
+                },
+                async adicionarJovemCasal(jovem) {
+                    if (!this.formCasal || !this.formCasal.id || !jovem || !jovem.id) return;
+                    try {
+                        const res = await fetch(`/api/tios/${this.formCasal.id}/jovens`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ jovem_id: jovem.id })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao vincular jovem.');
+                            return;
+                        }
+                        this.searchJovemQuery = '';
+                        this.searchJovemResults = [];
+                        await this.carregarJovensCasal();
+                    } catch (err) {
+                        console.error('Erro ao vincular jovem:', err);
+                        alert('Erro ao vincular jovem.');
+                    }
+                },
+                async removerJovemCasal(vinculo) {
+                    if (!vinculo || !vinculo.id || !this.formCasal || !this.formCasal.id) return;
+                    if (!(await uiConfirm('Remover este jovem do casal?'))) return;
+                    try {
+                        const res = await fetch(`/api/tios/${this.formCasal.id}/jovens/${vinculo.id}`, { method: 'DELETE' });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao remover vínculo.');
+                            return;
+                        }
+                        await this.carregarJovensCasal();
+                    } catch (err) {
+                        console.error('Erro ao remover vínculo:', err);
+                        alert('Erro ao remover vínculo.');
+                    }
+                },
+                async carregarJovensCasal() {
+                    if (!this.formCasal || !this.formCasal.id) {
+                        this.jovensCasal = [];
+                        return;
+                    }
+                    this.loadingJovensCasal = true;
+                    try {
+                        const res = await fetch(`/api/tios/${this.formCasal.id}/jovens`);
+                        const data = await res.json().catch(() => ([]));
+                        this.jovensCasal = res.ok && Array.isArray(data) ? data : [];
+                    } catch (err) {
+                        console.error('Erro ao carregar jovens do casal:', err);
+                        this.jovensCasal = [];
+                    } finally {
+                        this.loadingJovensCasal = false;
+                    }
+                },
+                async carregarPresencasCasal() {
+                    if (!this.formCasal || !this.formCasal.id) return;
+                    this.presencasCasal = [];
+                    this.loadingPresencasCasal = true;
+                    try {
+                        const res = await fetch(`/api/tios/presencas/${this.formCasal.id}`);
+                        const data = await res.json().catch(() => ([]));
+                        this.presencasCasal = Array.isArray(data) ? data : [];
+                    } catch (err) {
+                        console.error(err);
+                        this.presencasCasal = [];
+                    } finally {
+                        this.loadingPresencasCasal = false;
+                    }
+                },
+                async uploadFotoCasal(event) {
+                    const file = event && event.target && event.target.files ? event.target.files[0] : null;
+                    event.target.value = '';
+                    if (!file || !this.formCasal || !this.formCasal.id) return;
+                    const formData = new FormData();
+                    formData.append('foto', file);
+                    try {
+                        const res = await fetch(`/api/tios/casais/${this.formCasal.id}/foto`, {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao enviar foto.');
+                            return;
+                        }
+                        this.formCasal.foto_url = data.foto_url || '';
+                        const idx = (this.casais || []).findIndex((c) => Number(c.id) === Number(this.formCasal.id));
+                        if (idx >= 0) this.casais[idx].foto_url = data.foto_url || '';
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao enviar foto.');
+                    }
+                },
+                async exportarExcel() {
+                    if (this.aba === 'jovens') {
+                        const fonte = this.itensFiltrados || [];
+                        if (!fonte.length) return alert('Não há dados para exportar.');
+                        const rows = fonte.map((i) => ({
+                            Nome: i.nome_completo || '',
+                            Telefone: i.telefone || '',
+                            OutroEJC: this.formatarOrigem(i),
+                            RestricaoAlimentar: i.restricao_alimentar ? 'Sim' : 'Nao'
+                        }));
+                        ExcelUtils.exportJsonToXlsx({ filename: 'membros_outro_ejc_jovens.xlsx', sheetName: 'Jovens', rows });
+                        return;
+                    }
+                    const fonte = this.casaisOutrosFiltrados || [];
+                    if (!fonte.length) return alert('Não há dados para exportar.');
+                    const rows = fonte.map((c) => ({
+                        NomeTio: c.nome_tio || '',
+                        TelefoneTio: c.telefone_tio || '',
+                        NomeTia: c.nome_tia || '',
+                        TelefoneTia: c.telefone_tia || '',
+                        OutroEJC: [c.outro_ejc_paroquia, c.outro_ejc_nome].filter(Boolean).join(' - ')
+                    }));
+                    ExcelUtils.exportJsonToXlsx({ filename: 'membros_outro_ejc_tios.xlsx', sheetName: 'Tios', rows });
+                },
+                async importarExcel() {
+                    alert('A estrutura da nova tela já foi ajustada. A importação detalhada dessa aba será finalizada na próxima etapa.');
+                },
+                resetNovoJovemOutroEjc() {
+                    this.editandoJovemOutro = false;
+                    this.novo = {
+                        id: null,
+                        origem_ejc_tipo: 'OUTRO_EJC',
+                        nome_completo: '',
+                        apelido: '',
+                        telefone: '',
+                        email: '',
+                        data_nascimento: '',
+                        outro_ejc_id: '',
+                        outro_ejc_numero: '',
+                        instagram: '',
+                        estado_civil: 'Solteiro',
+                        sexo: '',
+                        circulo: '',
+                        deficiencia: false,
+                        qual_deficiencia: '',
+                        restricao_alimentar: false,
+                        detalhes_restricao: '',
+                        eh_musico: false,
+                        ja_foi_moita_inconfidentes: 0,
+                        moita_ejc_id: '',
+                        moita_funcao: ''
+                    };
+                },
+                formatarDataInput(data) {
+                    if (!data) return '';
+                    if (typeof data === 'string' && /^\d{2}\/\d{2}\/\d{4}$/.test(data)) return data;
+                    const dt = new Date(data);
+                    return Number.isNaN(dt.getTime()) ? '' : dt.toLocaleDateString('pt-BR');
+                },
+                abrirEscolhaNovoOutroEjc() {
+                    if (!this.modalEscolhaNovo) {
+                        this.modalEscolhaNovo = new bootstrap.Modal(document.getElementById('modalEscolhaNovoOutroEjc'));
+                    }
+                    this.modalEscolhaNovo.show();
+                },
+                selecionarNovoTipo(tipo) {
+                    if (this.modalEscolhaNovo) this.modalEscolhaNovo.hide();
+                    if (tipo === 'tio') {
+                        this.aba = 'tios';
+                        this.abrirNovoCasalOutroEjc();
+                        return;
+                    }
+                    this.aba = 'jovens';
+                    this.abrirModalNovo();
+                },
+                abrirModalNovo() {
+                    this.resetNovoJovemOutroEjc();
+                    if (!this.modalNovoInstance) {
+                        this.modalNovoInstance = new bootstrap.Modal(document.getElementById('modalNovoOutroJovem'));
+                    }
+                    this.modalNovoInstance.show();
+                },
+                abrirModalEditar(item) {
+                    this.abrirFichaOutroJovem(item);
+                },
+                async abrirFichaOutroJovem(item) {
+                    if (!item || !item.jovem_id) {
+                        this.carregarJovemOutroEjcParaEdicao(item);
+                        return;
+                    }
+                    try {
+                        const res = await fetch(`/api/lista-mestre/${item.jovem_id}`);
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao carregar jovem.');
+                            return;
+                        }
+                        this.abaFichaOutro = 'dados';
+                        this.subAbaDadosOutro = 'cadastro';
+                        this.isEditingOutroFicha = false;
+                        this.novaObservacaoOutroJovem = '';
+                        this.historicoEquipesOutroJovem = Array.isArray(item.historico_equipes) ? item.historico_equipes : [];
+                        this.jovemOutroFicha = {
+                            id: data.id || item.jovem_id,
+                            nome_completo: data.nome_completo || '',
+                            apelido: data.apelido || '',
+                            telefone: data.telefone || '',
+                            email: data.email || '',
+                            data_nascimento: data.data_nascimento || '',
+                            instagram: data.instagram || '',
+                            estado_civil: data.estado_civil || 'Solteiro',
+                            sexo: data.sexo || '',
+                            circulo: data.circulo || '',
+                            deficiencia: !!data.deficiencia,
+                            qual_deficiencia: data.qual_deficiencia || '',
+                            restricao_alimentar: !!data.restricao_alimentar,
+                            detalhes_restricao: data.detalhes_restricao || '',
+                            eh_musico: !!data.eh_musico,
+                            instrumentos_musicais: this.normalizarInstrumentosOutro(data.instrumentos_musicais),
+                            nao_serve_ejc: !!data.nao_serve_ejc,
+                            motivo_nao_serve_ejc: data.motivo_nao_serve_ejc || '',
+                            outro_ejc_id: data.outro_ejc_id || '',
+                            outro_ejc_nome: data.outro_ejc_nome || '',
+                            outro_ejc_numero: data.outro_ejc_numero || '',
+                            observacoes_extras: data.observacoes_extras || '',
+                            termos_aceitos_em: data.termos_aceitos_em || null
+                        };
+                        this.jovemOutroFichaOriginal = JSON.parse(JSON.stringify(this.jovemOutroFicha));
+                        await Promise.all([this.carregarObservacoesOutro(), this.carregarPresencasOutro(), this.carregarFamiliaresOutroJovem(this.jovemOutroFicha.id), this.carregarPapeisEquipeOutro(), this.carregarHistoricoEquipesOutroJovem(this.jovemOutroFicha.id)]);
+                        if (!this.modalEditarInstance) {
+                            this.modalEditarInstance = new bootstrap.Modal(document.getElementById('modalEditarOutroJovem'));
+                        }
+                        this.modalEditarInstance.show();
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao carregar jovem.');
+                    }
+                },
+                iniciarEdicaoOutroFicha() {
+                    this.isEditingOutroFicha = true;
+                },
+                cancelarEdicaoOutroFicha() {
+                    this.isEditingOutroFicha = false;
+                    this.jovemOutroFicha = JSON.parse(JSON.stringify(this.jovemOutroFichaOriginal || {}));
+                    this.buscaFamiliaOutroJovem = '';
+                    this.resultadosBuscaFamiliaOutroJovem = [];
+                },
+                async carregarJovemOutroEjcParaEdicao(item) {
+                    this.resetNovoJovemOutroEjc();
+                    if (!item || !item.jovem_id) {
+                        this.novo.nome_completo = item?.nome_completo || '';
+                        this.novo.telefone = item?.telefone || '';
+                        this.novo.outro_ejc_id = item?.outro_ejc_id || '';
+                        this.novo.outro_ejc_numero = item?.outro_ejc_numero || '';
+                    } else {
+                        try {
+                            const res = await fetch(`/api/lista-mestre/${item.jovem_id}`);
+                            const data = await res.json().catch(() => ({}));
+                            if (!res.ok) {
+                                alert(data.error || 'Erro ao carregar jovem.');
+                                return;
+                            }
+                            this.editandoJovemOutro = true;
+                            this.novo = {
+                                id: data.id || item.jovem_id,
+                                origem_ejc_tipo: 'OUTRO_EJC',
+                                nome_completo: data.nome_completo || '',
+                                apelido: data.apelido || '',
+                                telefone: data.telefone || '',
+                                email: data.email || '',
+                                data_nascimento: this.formatarDataInput(data.data_nascimento),
+                                outro_ejc_id: data.outro_ejc_id || '',
+                                outro_ejc_numero: data.outro_ejc_numero || '',
+                                instagram: data.instagram || '',
+                                estado_civil: data.estado_civil || 'Solteiro',
+                                sexo: data.sexo || '',
+                                circulo: data.circulo || '',
+                                deficiencia: !!data.deficiencia,
+                                qual_deficiencia: data.qual_deficiencia || '',
+                                restricao_alimentar: !!data.restricao_alimentar,
+                                detalhes_restricao: data.detalhes_restricao || '',
+                                eh_musico: !!data.eh_musico,
+                                ja_foi_moita_inconfidentes: data.ja_foi_moita_inconfidentes ? 1 : 0,
+                                moita_ejc_id: data.moita_ejc_id || '',
+                                moita_funcao: data.moita_funcao || ''
+                            };
+                        } catch (err) {
+                            console.error(err);
+                            alert('Erro ao carregar jovem.');
+                            return;
+                        }
+                    }
+                    if (!this.modalNovoInstance) {
+                        this.modalNovoInstance = new bootstrap.Modal(document.getElementById('modalNovoOutroJovem'));
+                    }
+                    this.modalNovoInstance.show();
+                },
+                async salvarFichaOutroJovem() {
+                    if (!this.jovemOutroFicha.id) return;
+                    if (!this.jovemOutroFicha.nome_completo || !this.jovemOutroFicha.telefone || !this.jovemOutroFicha.outro_ejc_id) {
+                        alert('Preencha nome, telefone e o EJC de origem.');
+                        return;
+                    }
+                    const payload = {
+                        origem_ejc_tipo: 'OUTRO_EJC',
+                        nome_completo: this.jovemOutroFicha.nome_completo,
+                        apelido: this.jovemOutroFicha.apelido || null,
+                        telefone: this.jovemOutroFicha.telefone,
+                        email: this.jovemOutroFicha.email || null,
+                        data_nascimento: this.jovemOutroFicha.data_nascimento || null,
+                        outro_ejc_id: this.jovemOutroFicha.outro_ejc_id || null,
+                        outro_ejc_numero: this.jovemOutroFicha.outro_ejc_numero || null,
+                        instagram: this.jovemOutroFicha.instagram || null,
+                        estado_civil: this.jovemOutroFicha.estado_civil || 'Solteiro',
+                        sexo: this.jovemOutroFicha.sexo || null,
+                        circulo: this.jovemOutroFicha.circulo || null,
+                        deficiencia: this.jovemOutroFicha.deficiencia ? 1 : 0,
+                        qual_deficiencia: this.jovemOutroFicha.qual_deficiencia || null,
+                        restricao_alimentar: this.jovemOutroFicha.restricao_alimentar ? 1 : 0,
+                        detalhes_restricao: this.jovemOutroFicha.detalhes_restricao || null,
+                        eh_musico: this.jovemOutroFicha.eh_musico ? 1 : 0,
+                        instrumentos_musicais: this.jovemOutroFicha.eh_musico ? this.normalizarInstrumentosOutro(this.jovemOutroFicha.instrumentos_musicais) : [],
+                        nao_serve_ejc: this.jovemOutroFicha.nao_serve_ejc ? 1 : 0,
+                        motivo_nao_serve_ejc: this.jovemOutroFicha.nao_serve_ejc ? (this.jovemOutroFicha.motivo_nao_serve_ejc || null) : null,
+                        observacoes_extras: this.jovemOutroFicha.observacoes_extras || null
+                    };
+                    try {
+                        const res = await fetch(`/api/lista-mestre/${this.jovemOutroFicha.id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao atualizar jovem.');
+                            return;
+                        }
+                        const outro = (this.outrosEjcs || []).find((oe) => String(oe.id) === String(this.jovemOutroFicha.outro_ejc_id) || Number(oe.id) === Number(this.jovemOutroFicha.outro_ejc_id));
+                        this.jovemOutroFicha.outro_ejc_nome = outro?.nome || this.jovemOutroFicha.outro_ejc_nome;
+                        this.jovemOutroFichaOriginal = JSON.parse(JSON.stringify(this.jovemOutroFicha));
+                        this.isEditingOutroFicha = false;
+                        await this.carregarJovensOutroEjc();
+                        await this.carregarFamiliaresOutroJovem(this.jovemOutroFicha.id);
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao atualizar jovem.');
+                    }
+                },
+                async carregarHistoricoEquipesOutroJovem(jovemId) {
+                    if (!jovemId) {
+                        this.historicoEquipesOutroJovem = [];
+                        return;
+                    }
+                    try {
+                        const res = await fetch(`/api/lista-mestre/historico/${jovemId}`);
+                        const data = await res.json().catch(() => ([]));
+                        this.historicoEquipesOutroJovem = Array.isArray(data) ? data.filter((i) => i) : [];
+                    } catch (err) {
+                        console.error('Erro ao carregar histórico de equipes do jovem de outro EJC:', err);
+                        this.historicoEquipesOutroJovem = [];
+                    }
+                },
+                async adicionarEquipeHistoricoOutro() {
+                    if (!this.novaEquipeHistoricoOutro.equipe_id || !this.novaEquipeHistoricoOutro.ejc_id || !this.jovemOutroFicha.id) return;
+                    if (this.subfuncoesHistoricoOutroDisponiveis.length > 0 && !this.novaEquipeHistoricoOutro.subfuncao) {
+                        alert('Selecione uma subfunção cadastrada para este papel.');
+                        return;
+                    }
+                    const equipeSelecionada = this.todasEquipesOutro.find((e) => e && e.id == this.novaEquipeHistoricoOutro.equipe_id);
+                    if (!equipeSelecionada) return;
+                    try {
+                        const payload = {
+                            jovem_id: this.jovemOutroFicha.id,
+                            equipe_nome: equipeSelecionada.nome,
+                            ejc_id: this.novaEquipeHistoricoOutro.ejc_id,
+                            papel: this.novaEquipeHistoricoOutro.papel,
+                            subfuncao: this.novaEquipeHistoricoOutro.subfuncao ? this.novaEquipeHistoricoOutro.subfuncao.trim() : null
+                        };
+                        const res = await fetch('/api/lista-mestre/historico', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        if (!res.ok) throw new Error('Erro ao adicionar');
+                        await this.carregarHistoricoEquipesOutroJovem(this.jovemOutroFicha.id);
+                        await this.carregarJovensOutroEjc();
+                        this.novaEquipeHistoricoOutro = { equipe_id: '', equipe_nome: '', ejc_id: '', papel: 'Membro', subfuncao: '' };
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao adicionar equipe ao histórico.');
+                    }
+                },
+                async removerEquipeHistoricoOutro(id) {
+                    if (!(await window.showFloatingConfirm('Remover este item do histórico?'))) return;
+                    try {
+                        const res = await fetch(`/api/lista-mestre/historico/${id}`, { method: 'DELETE' });
+                        if (!res.ok) throw new Error('Erro ao remover');
+                        await this.carregarHistoricoEquipesOutroJovem(this.jovemOutroFicha.id);
+                        await this.carregarJovensOutroEjc();
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao remover do histórico.');
+                    }
+                },
+                async carregarFamiliaresOutroJovem(jovemId) {
+                    const requestSeq = ++this.familiaresOutroJovemRequestSeq;
+                    if (!jovemId) {
+                        this.familiaresOutroJovem = [];
+                        this.sugestoesFamiliaOutroJovem = [];
+                        this.buscaFamiliaOutroJovem = '';
+                        this.resultadosBuscaFamiliaOutroJovem = [];
+                        return;
+                    }
+                    try {
+                        const res = await fetch(`/api/relacoes-familiares?entity_type=JOVEM&entity_id=${jovemId}`);
+                        const data = await res.json().catch(() => ([]));
+                        if (requestSeq !== this.familiaresOutroJovemRequestSeq || Number(this.jovemOutroFicha.id) !== Number(jovemId)) return;
+                        this.familiaresOutroJovem = res.ok && Array.isArray(data) ? data : [];
+                    } catch (err) {
+                        console.error('Erro ao carregar familiares do jovem de outro EJC:', err);
+                        if (requestSeq !== this.familiaresOutroJovemRequestSeq || Number(this.jovemOutroFicha.id) !== Number(jovemId)) return;
+                        this.familiaresOutroJovem = [];
+                    }
+                    try {
+                        const resSug = await fetch(`/api/relacoes-familiares/sugestoes?entity_type=JOVEM&entity_id=${jovemId}`);
+                        const dataSug = await resSug.json().catch(() => ([]));
+                        if (requestSeq !== this.familiaresOutroJovemRequestSeq || Number(this.jovemOutroFicha.id) !== Number(jovemId)) return;
+                        this.sugestoesFamiliaOutroJovem = resSug.ok && Array.isArray(dataSug) ? dataSug : [];
+                    } catch (err) {
+                        console.error('Erro ao carregar sugestões de parentesco do jovem de outro EJC:', err);
+                        if (requestSeq !== this.familiaresOutroJovemRequestSeq || Number(this.jovemOutroFicha.id) !== Number(jovemId)) return;
+                        this.sugestoesFamiliaOutroJovem = [];
+                    }
+                },
+                buscarRelacionaveisOutroJovem() {
+                    clearTimeout(this.buscaFamiliaOutroJovemTimer);
+                    const termo = String(this.buscaFamiliaOutroJovem || '').trim();
+                    if (!this.jovemOutroFicha || !this.jovemOutroFicha.id) {
+                        this.resultadosBuscaFamiliaOutroJovem = [];
+                        return;
+                    }
+                    this.buscaFamiliaOutroJovemTimer = setTimeout(async () => {
+                        try {
+                            const params = new URLSearchParams({
+                                source_type: 'JOVEM',
+                                source_id: String(this.jovemOutroFicha.id),
+                                q: termo
+                            });
+                            const res = await fetch(`/api/relacoes-familiares/search?${params.toString()}`);
+                            const data = await res.json().catch(() => ([]));
+                            const itens = res.ok && Array.isArray(data) ? data : [];
+                            this.resultadosBuscaFamiliaOutroJovem = itens.filter((item) => {
+                                if (this.novoParentescoOutroJovem === 'FILHO') return item.entity_type === 'TIO_CASAL';
+                                return true;
+                            });
+                        } catch (err) {
+                            console.error('Erro ao pesquisar familiares do jovem de outro EJC:', err);
+                            this.resultadosBuscaFamiliaOutroJovem = [];
+                        }
+                    }, 250);
+                },
+                async adicionarRelacaoFamiliarOutroJovem(item) {
+                    if (!item || !this.jovemOutroFicha || !this.jovemOutroFicha.id) return;
+                    try {
+                        const res = await fetch('/api/relacoes-familiares', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                source_type: 'JOVEM',
+                                source_id: this.jovemOutroFicha.id,
+                                target_type: item.entity_type,
+                                target_id: item.entity_id,
+                                relation: this.novoParentescoOutroJovem
+                            })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao salvar parentesco.');
+                            return;
+                        }
+                        this.buscaFamiliaOutroJovem = '';
+                        this.resultadosBuscaFamiliaOutroJovem = [];
+                        await this.carregarFamiliaresOutroJovem(this.jovemOutroFicha.id);
+                    } catch (err) {
+                        console.error('Erro ao adicionar parentesco do jovem de outro EJC:', err);
+                        alert('Erro ao salvar parentesco.');
+                    }
+                },
+                async removerRelacaoFamiliarOutroJovem(relacaoId) {
+                    if (!relacaoId) return;
+                    try {
+                        const res = await fetch(`/api/relacoes-familiares/${relacaoId}`, { method: 'DELETE' });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao remover parentesco.');
+                            return;
+                        }
+                        await this.carregarFamiliaresOutroJovem(this.jovemOutroFicha.id);
+                    } catch (err) {
+                        console.error('Erro ao remover parentesco do jovem de outro EJC:', err);
+                        alert('Erro ao remover parentesco.');
+                    }
+                },
+                async carregarObservacoesOutro() {
+                    if (!this.jovemOutroFicha.id) return;
+                    this.loadingObservacoesOutro = true;
+                    try {
+                        const res = await fetch(`/api/lista-mestre/observacoes/${this.jovemOutroFicha.id}`);
+                        this.observacoesOutroJovem = res.ok ? await res.json().catch(() => ([])) : [];
+                    } catch (err) {
+                        console.error(err);
+                        this.observacoesOutroJovem = [];
+                    } finally {
+                        this.loadingObservacoesOutro = false;
+                    }
+                },
+                async adicionarObservacaoOutroJovem() {
+                    if (!this.jovemOutroFicha.id || !String(this.novaObservacaoOutroJovem || '').trim()) return;
+                    try {
+                        const res = await fetch('/api/lista-mestre/observacoes', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ jovem_id: this.jovemOutroFicha.id, texto: this.novaObservacaoOutroJovem.trim() })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao salvar observação.');
+                            return;
+                        }
+                        this.novaObservacaoOutroJovem = '';
+                        await this.carregarObservacoesOutro();
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao salvar observação.');
+                    }
+                },
+                async carregarPresencasOutro() {
+                    if (!this.jovemOutroFicha.id) return;
+                    this.loadingPresencas = true;
+                    this.presencasOutro = [];
+                    try {
+                        const res = await fetch(`/api/lista-mestre/presencas/${this.jovemOutroFicha.id}`);
+                        this.presencasOutro = res.ok ? await res.json().catch(() => ([])) : [];
+                    } catch (err) {
+                        console.error(err);
+                        this.presencasOutro = [];
+                    } finally {
+                        this.loadingPresencas = false;
+                    }
+                },
+                async salvarNovoJovemOutroEjc() {
+                    if (!this.novo.nome_completo || !this.novo.telefone || !this.novo.outro_ejc_id) {
+                        alert('Preencha nome, telefone e a paróquia/EJC de origem.');
+                        return;
+                    }
+                    if (this.novo.ja_foi_moita_inconfidentes && (!this.novo.moita_ejc_id || !String(this.novo.moita_funcao || '').trim())) {
+                        alert('Informe o EJC e a função de moita.');
+                        return;
+                    }
+                    const payload = {
+                        origem_ejc_tipo: 'OUTRO_EJC',
+                        nome_completo: this.novo.nome_completo,
+                        apelido: this.novo.apelido || null,
+                        telefone: this.novo.telefone,
+                        email: this.novo.email || null,
+                        data_nascimento: this.novo.data_nascimento || null,
+                        numero_ejc_fez: null,
+                        outro_ejc_id: this.novo.outro_ejc_id || null,
+                        outro_ejc_numero: this.novo.outro_ejc_numero || null,
+                        transferencia_outro_ejc: 0,
+                        instagram: this.novo.instagram || null,
+                        estado_civil: this.novo.estado_civil || 'Solteiro',
+                        sexo: this.novo.sexo || null,
+                        circulo: this.novo.circulo || null,
+                        deficiencia: this.novo.deficiencia ? 1 : 0,
+                        qual_deficiencia: this.novo.qual_deficiencia || null,
+                        restricao_alimentar: this.novo.restricao_alimentar ? 1 : 0,
+                        detalhes_restricao: this.novo.detalhes_restricao || null,
+                        eh_musico: this.novo.eh_musico ? 1 : 0,
+                        equipe_saude: 0,
+                        instrumentos_musicais: [],
+                        ja_foi_moita_inconfidentes: this.novo.ja_foi_moita_inconfidentes ? 1 : 0,
+                        moita_ejc_id: this.novo.ja_foi_moita_inconfidentes ? (this.novo.moita_ejc_id || null) : null,
+                        moita_funcao: this.novo.ja_foi_moita_inconfidentes ? (this.novo.moita_funcao || null) : null
+                    };
+                    try {
+                        const emEdicao = this.editandoJovemOutro && this.novo.id;
+                        const res = await fetch(emEdicao ? `/api/lista-mestre/${this.novo.id}` : '/api/lista-mestre', {
+                            method: emEdicao ? 'PUT' : 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || (emEdicao ? 'Erro ao atualizar jovem.' : 'Erro ao criar jovem.'));
+                            return;
+                        }
+                        if (this.modalNovoInstance) this.modalNovoInstance.hide();
+                        await this.carregarJovensOutroEjc();
+                    } catch (err) {
+                        console.error(err);
+                        alert(this.editandoJovemOutro ? 'Erro ao atualizar jovem.' : 'Erro ao criar jovem.');
+                    }
+                },
+                async excluirJovem(item) {
+                    if (!item || !item.jovem_id) {
+                        alert('Esse registro ainda não possui cadastro completo para exclusão.');
+                        return;
+                    }
+                    const confirmar = window.showFloatingConfirm
+                        ? await window.showFloatingConfirm(`Deseja excluir ${item.nome_completo}?`)
+                        : window.confirm(`Deseja excluir ${item.nome_completo}?`);
+                    if (!confirmar) return;
+                    try {
+                        const res = await fetch(`/api/lista-mestre/${item.jovem_id}`, { method: 'DELETE' });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao excluir jovem.');
+                            return;
+                        }
+                        await this.carregarJovensOutroEjc();
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao excluir jovem.');
+                    }
+                },
+                async abrirPresencas(item) {
+                    if (!item || !item.jovem_id) {
+                        alert('Esse registro ainda não possui cadastro vinculado para mostrar presenças.');
+                        return;
+                    }
+                    this.loadingPresencas = true;
+                    this.presencasOutro = [];
+                    try {
+                        const res = await fetch(`/api/lista-mestre/presencas/${item.jovem_id}`);
+                        this.presencasOutro = res.ok ? await res.json().catch(() => ([])) : [];
+                    } catch (err) {
+                        console.error(err);
+                        this.presencasOutro = [];
+                    } finally {
+                        this.loadingPresencas = false;
+                    }
+                    if (!this.modalPresencasInstance) this.modalPresencasInstance = new bootstrap.Modal(document.getElementById('modalPresencasOutro'));
+                    this.modalPresencasInstance.show();
+                },
+                abrirNovoCasalOutroEjc() {
+                    this.formCasal = {
+                        id: null,
+                        foto_url: '',
+                        nome_tio: '',
+                        telefone_tio: '',
+                        data_nascimento_tio: '',
+                        nome_tia: '',
+                        telefone_tia: '',
+                        data_nascimento_tia: '',
+                        origem_tipo: 'OUTRO_EJC',
+                        outro_ejc_id: null,
+                        ecc_id: null,
+                        equipe_ids: [],
+                        servicos: [],
+                        restricao_alimentar: false,
+                        deficiencia: false,
+                        restricao_alimentar_tio: false,
+                        detalhes_restricao_tio: '',
+                        deficiencia_tio: false,
+                        qual_deficiencia_tio: '',
+                        restricao_alimentar_tia: false,
+                        detalhes_restricao_tia: '',
+                        deficiencia_tia: false,
+                        qual_deficiencia_tia: '',
+                        observacoes: '',
+                        termos_aceitos_em: null
+                    };
+                    this.novoServicoCasal = { equipe_id: null, ejc_id: null };
+                    this.abaCasal = 'dados';
+                    this.subAbaCasalDados = 'cadastro';
+                    this.isEditingCasal = true;
+                    this.formCasalBackup = null;
+                    this.jovensCasal = [];
+                    this.searchJovemQuery = '';
+                    this.searchJovemResults = [];
+                    this.familiaresCasal = [];
+                    this.sugestoesFamiliaCasal = [];
+                    this.buscaFamiliaCasal = '';
+                    this.resultadosBuscaFamiliaCasal = [];
+                    this.presencasCasal = [];
+                    if (!this.modalCasal) this.modalCasal = new bootstrap.Modal(document.getElementById('modalCasal'));
+                    this.modalCasal.show();
+                },
+                async abrirEditarCasal(item) {
+                    this.formCasal = {
+                        id: item.id,
+                        foto_url: item.foto_url || '',
+                        nome_tio: item.nome_tio || '',
+                        telefone_tio: item.telefone_tio || '',
+                        data_nascimento_tio: item.data_nascimento_tio || '',
+                        nome_tia: item.nome_tia || '',
+                        telefone_tia: item.telefone_tia || '',
+                        data_nascimento_tia: item.data_nascimento_tia || '',
+                        origem_tipo: 'OUTRO_EJC',
+                        outro_ejc_id: item.outro_ejc_id || null,
+                        ecc_id: null,
+                        equipe_ids: Array.isArray(item.equipe_ids) ? item.equipe_ids.slice() : [],
+                        servicos: Array.isArray(item.servicos) && item.servicos.length
+                            ? item.servicos.map((s) => ({ equipe_id: s.equipe_id || null, ejc_id: s.ejc_id || null, equipe_nome: s.equipe_nome || '' }))
+                            : [],
+                        restricao_alimentar: !!item.restricao_alimentar,
+                        deficiencia: !!item.deficiencia,
+                        restricao_alimentar_tio: !!item.restricao_alimentar_tio,
+                        detalhes_restricao_tio: item.detalhes_restricao_tio || '',
+                        deficiencia_tio: !!item.deficiencia_tio,
+                        qual_deficiencia_tio: item.qual_deficiencia_tio || '',
+                        restricao_alimentar_tia: !!item.restricao_alimentar_tia,
+                        detalhes_restricao_tia: item.detalhes_restricao_tia || '',
+                        deficiencia_tia: !!item.deficiencia_tia,
+                        qual_deficiencia_tia: item.qual_deficiencia_tia || '',
+                        observacoes: item.observacoes || '',
+                        termos_aceitos_em: item.termos_aceitos_em || null
+                    };
+                    this.novoServicoCasal = { equipe_id: null, ejc_id: null };
+                    this.abaCasal = 'dados';
+                    this.subAbaCasalDados = 'cadastro';
+                    this.isEditingCasal = false;
+                    this.formCasalBackup = this.clonarFormCasal(this.formCasal);
+                    this.jovensCasal = [];
+                    this.searchJovemQuery = '';
+                    this.searchJovemResults = [];
+                    this.sugestoesFamiliaCasal = [];
+                    this.buscaFamiliaCasal = '';
+                    this.resultadosBuscaFamiliaCasal = [];
+                    this.presencasCasal = [];
+                    await this.carregarFamiliaresCasal();
+                    if (!this.modalCasal) this.modalCasal = new bootstrap.Modal(document.getElementById('modalCasal'));
+                    this.modalCasal.show();
+                },
+                adicionarServicoCasal() {
+                    if (!this.isEditingCasal) return;
+                    const equipeId = this.novoServicoCasal && this.novoServicoCasal.equipe_id ? Number(this.novoServicoCasal.equipe_id) : null;
+                    const ejcId = this.novoServicoCasal && this.novoServicoCasal.ejc_id ? Number(this.novoServicoCasal.ejc_id) : null;
+                    if (!equipeId || !ejcId) return;
+                    this.formCasal.servicos.push({ equipe_id: equipeId, ejc_id: ejcId });
+                    this.novoServicoCasal = { equipe_id: null, ejc_id: null };
+                },
+                removerServicoCasal(idx) {
+                    if (!this.isEditingCasal) return;
+                    this.formCasal.servicos.splice(idx, 1);
+                },
+                async salvarCasal() {
+                    if (!this.formCasal.nome_tio || !this.formCasal.telefone_tio || !this.formCasal.nome_tia || !this.formCasal.telefone_tia) {
+                        alert('Preencha nome e telefone do tio e da tia.');
+                        return;
+                    }
+                    if (!this.formCasal.outro_ejc_id) {
+                        alert('Selecione qual EJC o casal fez.');
+                        return;
+                    }
+                    this.normalizarCamposSaudeCasal();
+                    const servicosValidos = (this.formCasal.servicos || [])
+                        .map((s) => ({
+                            equipe_id: s && s.equipe_id ? Number(s.equipe_id) : null,
+                            ejc_id: s && s.ejc_id ? Number(s.ejc_id) : null
+                        }))
+                        .filter((s) => s.equipe_id);
+                    const payload = {
+                        ...this.formCasal,
+                        origem_tipo: 'OUTRO_EJC',
+                        ecc_id: null,
+                        outro_ejc_id: this.formCasal.outro_ejc_id,
+                        servicos: servicosValidos,
+                        equipe_ids: Array.from(new Set(servicosValidos.map((s) => s.equipe_id)))
+                    };
+                    try {
+                        const isEdit = !!this.formCasal.id;
+                        const res = await fetch(isEdit ? `/api/tios/casais/${this.formCasal.id}` : '/api/tios/casais', {
+                            method: isEdit ? 'PUT' : 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao salvar casal.');
+                            return;
+                        }
+                        this.formCasal.id = data.id || this.formCasal.id;
+                        this.formCasalBackup = this.clonarFormCasal(this.formCasal);
+                        this.isEditingCasal = false;
+                        await this.carregarFamiliaresCasal();
+                        await this.carregarCasais();
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao salvar casal.');
+                    }
+                },
+                async excluirCasal(item) {
+                    if (!(await uiConfirm('Excluir este casal de tios?'))) return;
+                    try {
+                        const res = await fetch(`/api/tios/casais/${item.id}`, { method: 'DELETE' });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao excluir casal.');
+                            return;
+                        }
+                        await this.carregarCasais();
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao excluir casal.');
+                    }
+                },
+                async abrirPresencasCasal(casal) {
+                    if (!casal || !casal.id) return;
+                    await this.abrirEditarCasal(casal);
+                    this.abaCasal = 'presencas';
+                    await this.carregarPresencasCasal();
+                }
+            },
+            async mounted() {
+                await this.carregarTudo();
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

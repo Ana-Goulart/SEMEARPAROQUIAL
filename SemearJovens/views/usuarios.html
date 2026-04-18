@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Usuários - EJC</title>
+    <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
+    <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/velzon-theme.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/ui-kit.js"></script>
+    <style>
+        .table-hover tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        [v-cloak] {
+            display: none;
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 
+      Estrutura Padrão do Layout (conforme style.css):
+      body { display: flex; }
+      #sidebar { width: 250px; ... }
+      #content { flex: 1; ... }
+    -->
+    <div id="app">
+        <!-- O menu.js irá injetar o <nav id="sidebar"> aqui dentro, como primeiro filho -->
+
+        <main id="content" class="w-100 p-4" v-cloak>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3><i class="fa-solid fa-users icon-accent"></i> Gerenciar Usuários</h3>
+                <button class="btn btn-primary" @click="abrirModal()">
+                    <i class="fa-solid fa-plus icon-accent"></i> Novo Usuário
+                </button>
+            </div>
+
+            <div v-if="loading" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Carregando...</span>
+                </div>
+            </div>
+
+            <div v-else class="card shadow-sm">
+                <div class="card-body p-0">
+                    <div v-if="usuarios.some(user => user.managed_by_parish_admin)" class="alert alert-info rounded-0 border-0 border-bottom mb-0">
+                        O usuário principal criado no <strong>admin.semearparoquial</strong> aparece aqui apenas para consulta.
+                        A edição e a exclusão desse acesso devem ser feitas somente no painel da paróquia.
+                    </div>
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Nome Completo</th>
+                                <th>Usuário</th>
+                                <th>Grupo</th>
+                                <th>Entrada</th>
+                                <th>Saída</th>
+                                <th class="text-end">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-if="usuarios.length === 0">
+                                <td colspan="6" class="text-center py-4 text-muted">Nenhum usuário cadastrado.</td>
+                            </tr>
+                            <tr v-for="user in usuarios" :key="user.id">
+                                <td>{{ user.nome_completo }}</td>
+                                <td>
+                                    {{ user.username }}
+                                    <span v-if="user.managed_by_parish_admin" class="badge text-bg-secondary ms-2">
+                                        Gerenciado no admin
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge" :class="getBadgeClass(user.grupo)">{{ user.grupo }}</span>
+                                </td>
+                                <td>{{ formatDate(user.data_entrada) }}</td>
+                                <td>{{ formatDate(user.data_saida) }}</td>
+                                <td class="text-end">
+                                    <button class="btn btn-edit-standard btn-sm me-1"
+                                        :disabled="isReadOnlyUser(user)"
+                                        :title="isReadOnlyUser(user) ? 'Edite este usuário em admin.semearparoquial.com.br' : 'Editar usuário'"
+                                        @click="editarUsuario(user)">Editar</button>
+                                    <button class="btn btn-sm btn-outline-danger"
+                                        :disabled="isReadOnlyUser(user)"
+                                        :title="isReadOnlyUser(user) ? 'Exclusão disponível apenas no admin.semearparoquial.com.br' : 'Excluir usuário'"
+                                        @click="deletarUsuario(user)"><i class="fa-solid fa-trash icon-accent"></i></button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Modal Form (Dentro do escopo do Vue #content) -->
+            <div class="modal fade" id="userModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">{{ isEditing ? 'Editar Usuário' : 'Novo Usuário' }}</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form @submit.prevent="salvarUsuario">
+                                <div v-if="!isEditing" class="alert alert-warning py-2">
+                                    Se informar <strong>Data Saída</strong>, o usuário será removido automaticamente no dia seguinte e não poderá mais acessar o sistema.
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Tipo de cadastro *</label>
+                                    <select class="form-select" v-model="tipoCadastro" :disabled="isEditing">
+                                        <option value="JOVEM">Jovem</option>
+                                        <option value="TIO">Tio</option>
+                                    </select>
+                                </div>
+
+                                <!-- Busca de Jovem -->
+                                <div class="mb-3 position-relative" v-if="tipoCadastro === 'JOVEM'">
+                                    <label class="form-label">Nome Completo *</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fa-solid fa-magnifying-glass icon-accent"></i></span>
+                                        <input type="text" class="form-control" v-model="searchTerm"
+                                            @input="buscarJovem" @focus="mostrarResultados = true"
+                                            placeholder="Digite o nome do jovem..."
+                                            :readonly="!!form.jovem_id">
+                                        <button v-if="form.jovem_id" class="btn btn-soft-secondary" type="button"
+                                            @click="limparSelecaoJovem"><i class="fa-solid fa-xmark icon-accent"></i></button>
+                                    </div>
+                                    <!-- Resultados da Busca -->
+                                    <div v-if="mostrarResultados && resultadosBusca.length > 0"
+                                        class="list-group position-absolute w-100"
+                                        style="z-index: 1050; max-height: 200px; overflow-y: auto;">
+                                        <button type="button" class="list-group-item list-group-item-action"
+                                            v-for="jovem in resultadosBusca" :key="jovem.id"
+                                            @click="selecionarJovem(jovem)">
+                                            {{ jovem.nome_completo }}
+                                            <span class="text-muted small ms-2">
+                                                {{ (jovem.idade !== null && jovem.idade !== undefined) ? (jovem.idade + ' anos') : '-' }}
+                                                • {{ jovem.estado_civil || '-' }}
+                                            </span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Seleção de Tio -->
+                                <div class="mb-3" v-else>
+                                    <label class="form-label">Selecionar Tio *</label>
+                                    <select class="form-select" v-model.number="tioSelecionadoId" :disabled="isEditing">
+                                        <option :value="0">Selecione...</option>
+                                        <option v-for="t in tiosList" :key="`tio-${t.id}`" :value="t.id">
+                                            {{ t.nome_tio }} e {{ t.nome_tia }}
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-3" v-if="!isEditing && tipoCadastro === 'JOVEM'">
+                                    <label class="form-label">Login (e-mail do jovem)</label>
+                                    <input type="text" class="form-control" v-model="form.username" readonly>
+                                    <div class="text-muted small mt-1">O login é o e-mail informado na ficha do jovem.</div>
+                                </div>
+                                <div class="mb-3" v-if="!isEditing && tipoCadastro === 'JOVEM'">
+                                    <label class="form-label">Senha gerada</label>
+                                    <input type="text" class="form-control" v-model="generatedPassword" readonly>
+                                    <div class="text-muted small mt-1">Guarde essa senha para o jovem acessar o sistema.</div>
+                                </div>
+                                <div class="mb-3" v-else>
+                                    <label class="form-label">Nome de Usuário *</label>
+                                    <input type="text" class="form-control" v-model="form.username" required>
+                                </div>
+                                <div class="mb-3" v-if="isEditing || tipoCadastro === 'TIO'">
+                                    <label class="form-label">Senha {{ isEditing ? '(Deixe em branco para manter)' : '*'
+                                        }}</label>
+                                    <input type="password" class="form-control" v-model="form.senha"
+                                        :required="!isEditing">
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Grupo *</label>
+                                    <select class="form-select" v-model="form.grupo" required>
+                                        <option value="" disabled>Selecione...</option>
+                                        <option value="Tios">Tios</option>
+                                        <option value="Jovens">Jovens</option>
+                                        <option value="Diretor Espiritual">Diretor Espiritual</option>
+                                        <option value="Padre">Padre</option>
+                                    </select>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Data Entrada</label>
+                                        <input type="text" class="form-control date-br" v-model="form.data_entrada" placeholder="dd/mm/aaaa">
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label">Data Saída</label>
+                                        <input type="text" class="form-control date-br" v-model="form.data_saida" placeholder="dd/mm/aaaa">
+                                    </div>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Funções da Dirigência</label>
+                                    <div class="text-muted small mb-2">Vincule este usuário às funções já criadas.</div>
+                                    <div v-if="!funcoesDirigencia.length" class="text-muted small border rounded p-2 bg-light">
+                                        Nenhuma função cadastrada no menu Funções Dirigência.
+                                    </div>
+                                    <div v-else class="row g-2">
+                                        <div class="col-md-6" v-for="funcao in funcoesDirigencia" :key="`fd-${funcao.id}`">
+                                            <div class="form-check border rounded px-2 py-1">
+                                                <input class="form-check-input" type="checkbox"
+                                                    :id="`usr-funcao-${funcao.id}`"
+                                                    :checked="(form.funcoes_dirigencia_ids || []).includes(funcao.id)"
+                                                    @change="toggleFuncaoDirigencia(funcao.id)">
+                                                <label class="form-check-label" :for="`usr-funcao-${funcao.id}`">
+                                                    {{ funcao.nome }}
+                                                </label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="d-flex justify-content-end gap-2">
+                                    <button type="button" class="btn btn-soft-secondary"
+                                        data-bs-dismiss="modal">Cancelar</button>
+                                    <button type="submit" class="btn btn-primary">Salvar</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="/js/menu.js"></script>
+    <script>
+        const { createApp } = Vue;
+
+        // Injetar Menu (no #app padrão, pois style.css espera display: flex direto no container pai)
+        try {
+            if (typeof injetarMenu === 'function') {
+                // Injeta no #app, mas O VUE NÃO SERÁ MONTADO NO #APP, E SIM NO #CONTENT
+                injetarMenu('#app');
+                ativarMenu('Usuários');
+            }
+        } catch (e) {
+            console.warn("Falha ao injetar menu:", e);
+        }
+
+        try {
+            // Monta o Vue APENAS no #content, deixando o menu (que é irmão do content) intacto
+            const app = createApp({
+                data() {
+                    return {
+                        usuarios: [],
+                        loading: false,
+                        isEditing: false,
+                        form: {
+                            id: null,
+                            nome_completo: '',
+                            username: '',
+                            senha: '',
+                            grupo: '',
+                            data_entrada: '',
+                            data_saida: '',
+                            jovem_id: null,
+                            funcoes_dirigencia_ids: []
+                        },
+                        funcoesDirigencia: [],
+                        searchTerm: '',
+                        resultadosBusca: [],
+                        mostrarResultados: false,
+                        modalInstance: null,
+                        searchTimeout: null,
+                        generatedPassword: '',
+                        tipoCadastro: 'JOVEM',
+                        tiosList: [],
+                        tioSelecionadoId: 0
+                    }
+                },
+                async mounted() {
+                    const modalEl = document.getElementById('userModal');
+                    if (modalEl) {
+                        this.modalInstance = new bootstrap.Modal(modalEl);
+                    } else {
+                        console.error("Modal #userModal não encontrado!");
+                    }
+                    await this.carregarFuncoesDirigencia();
+                    await this.carregarUsuarios();
+                    await this.carregarTios();
+                },
+                methods: {
+                    isReadOnlyUser(user) {
+                        return !!(user && user.managed_by_parish_admin);
+                    },
+                    async carregarTios() {
+                        try {
+                            const res = await fetch('/api/tios/casais');
+                            this.tiosList = res.ok ? await res.json() : [];
+                        } catch (err) {
+                            console.error(err);
+                            this.tiosList = [];
+                        }
+                    },
+                    async carregarFuncoesDirigencia() {
+                        try {
+                            const res = await fetch('/api/funcoes-dirigencia');
+                            this.funcoesDirigencia = res.ok ? await res.json() : [];
+                        } catch (err) {
+                            console.error(err);
+                            this.funcoesDirigencia = [];
+                        }
+                    },
+                    async carregarUsuarios() {
+                        this.loading = true;
+                        try {
+                            const res = await fetch('/api/usuarios');
+                            if (!res.ok) throw new Error("Falha na requisição: " + res.status);
+                            this.usuarios = await res.json();
+                        } catch (err) {
+                            console.error(err);
+                        } finally {
+                            this.loading = false;
+                        }
+                    },
+                    abrirModal() {
+                        this.isEditing = false;
+                        this.limparForm();
+                        if (this.modalInstance) this.modalInstance.show();
+                    },
+                    limparForm() {
+                        this.form = {
+                            id: null,
+                            nome_completo: '',
+                            username: '',
+                            senha: '',
+                            grupo: '',
+                            data_entrada: '',
+                            data_saida: '',
+                            jovem_id: null,
+                            funcoes_dirigencia_ids: []
+                        };
+                        this.searchTerm = '';
+                        this.resultadosBusca = [];
+                        this.mostrarResultados = false;
+                        this.generatedPassword = '';
+                        this.tipoCadastro = 'JOVEM';
+                        this.tioSelecionadoId = 0;
+                    },
+                    editarUsuario(user) {
+                        if (this.isReadOnlyUser(user)) {
+                            if (window.uiAlert) window.uiAlert('Este usuário é gerenciado no admin.semearparoquial.com.br e não pode ser editado aqui.');
+                            else alert('Este usuário é gerenciado no admin.semearparoquial.com.br e não pode ser editado aqui.');
+                            return;
+                        }
+                        this.isEditing = true;
+                        this.form = {
+                            ...user,
+                            senha: '',
+                            data_entrada: user.data_entrada ? user.data_entrada.split('T')[0] : '',
+                            data_saida: user.data_saida ? user.data_saida.split('T')[0] : '',
+                            jovem_id: user.jovem_id || null,
+                            funcoes_dirigencia_ids: Array.isArray(user.funcoes_dirigencia_ids) ? [...user.funcoes_dirigencia_ids] : []
+                        };
+                        this.searchTerm = user.nome_completo;
+                        this.tipoCadastro = user.jovem_id ? 'JOVEM' : 'TIO';
+                        if (this.tipoCadastro === 'TIO') {
+                            const encontrado = (this.tiosList || []).find(t => {
+                                const nome = `${t.nome_tio} e ${t.nome_tia}`;
+                                return nome.toLowerCase() === String(user.nome_completo || '').toLowerCase();
+                            });
+                            this.tioSelecionadoId = encontrado ? encontrado.id : 0;
+                        }
+                        if (this.modalInstance) this.modalInstance.show();
+                    },
+                    toggleFuncaoDirigencia(funcaoId) {
+                        if (!Array.isArray(this.form.funcoes_dirigencia_ids)) this.form.funcoes_dirigencia_ids = [];
+                        if (this.form.funcoes_dirigencia_ids.includes(funcaoId)) {
+                            this.form.funcoes_dirigencia_ids = this.form.funcoes_dirigencia_ids.filter(id => id !== funcaoId);
+                        } else {
+                            this.form.funcoes_dirigencia_ids.push(funcaoId);
+                        }
+                    },
+                    buscarJovem() {
+                        if (this.form.jovem_id) return;
+                        this.form.nome_completo = this.searchTerm;
+
+                        clearTimeout(this.searchTimeout);
+                        if (this.searchTerm.length < 3) {
+                            this.resultadosBusca = [];
+                            return;
+                        }
+
+                        this.searchTimeout = setTimeout(async () => {
+                            try {
+                                const res = await fetch(`/api/jovens/search?q=${encodeURIComponent(this.searchTerm)}`);
+                                if (res.ok) {
+                                    this.resultadosBusca = await res.json();
+                                    this.mostrarResultados = true;
+                                }
+                            } catch (err) {
+                                console.error("Erro na busca", err);
+                            }
+                        }, 300);
+                    },
+                    selecionarJovem(jovem) {
+                        this.form.nome_completo = jovem.nome_completo;
+                        this.form.jovem_id = jovem.id;
+                        this.searchTerm = jovem.nome_completo;
+                        this.resultadosBusca = [];
+                        this.mostrarResultados = false;
+
+                        if (!this.isEditing) {
+                            this.definirLoginSenhaPorEmail(jovem.id);
+                        }
+                    },
+                    limparSelecaoJovem() {
+                        this.form.jovem_id = null;
+                        this.form.nome_completo = '';
+                        this.searchTerm = '';
+                        this.resultadosBusca = [];
+                        this.form.username = '';
+                        this.form.senha = '';
+                        this.generatedPassword = '';
+                    },
+                    aplicarTioSelecionado() {
+                        const id = Number(this.tioSelecionadoId || 0);
+                        const tio = (this.tiosList || []).find(t => Number(t.id) === id);
+                        if (!tio) {
+                            this.form.nome_completo = '';
+                            return;
+                        }
+                        this.form.nome_completo = `${tio.nome_tio} e ${tio.nome_tia}`;
+                        this.form.jovem_id = null;
+                    },
+                    gerarSenhaAleatoria(tamanho = 10) {
+                        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%';
+                        let senha = '';
+                        for (let i = 0; i < tamanho; i++) {
+                            senha += chars.charAt(Math.floor(Math.random() * chars.length));
+                        }
+                        return senha;
+                    },
+                    async definirLoginSenhaPorEmail(jovemId) {
+                        try {
+                            const res = await fetch(`/api/lista-mestre/${jovemId}`);
+                            if (!res.ok) {
+                                throw new Error('Não foi possível carregar o jovem.');
+                            }
+                            const data = await res.json().catch(() => ({}));
+                            const email = String(data.email || '').trim();
+                            if (!email) {
+                                if (window.uiAlert) window.uiAlert('Não é possível criar usuário: jovem sem e-mail cadastrado.');
+                                else alert('Não é possível criar usuário: jovem sem e-mail cadastrado.');
+                                this.limparSelecaoJovem();
+                                return;
+                            }
+                            const senha = this.gerarSenhaAleatoria(10);
+                            this.form.username = email;
+                            this.form.senha = senha;
+                            this.generatedPassword = senha;
+                        } catch (err) {
+                            console.error(err);
+                            if (window.uiAlert) window.uiAlert('Erro ao buscar e-mail do jovem.');
+                            else alert('Erro ao buscar e-mail do jovem.');
+                        }
+                    },
+                    async salvarUsuario() {
+                        const method = this.isEditing ? 'PUT' : 'POST';
+                        const url = this.isEditing ? `/api/usuarios/${this.form.id}` : '/api/usuarios';
+
+                        try {
+                            if (!this.isEditing) {
+                                if (this.tipoCadastro === 'JOVEM') {
+                                    if (!this.form.jovem_id) {
+                                        if (window.uiAlert) window.uiAlert('Selecione um jovem para criar o usuário.');
+                                        else alert('Selecione um jovem para criar o usuário.');
+                                        return;
+                                    }
+                                    if (!this.form.username || !this.form.senha) {
+                                        if (window.uiAlert) window.uiAlert('Não é possível criar usuário sem e-mail do jovem.');
+                                        else alert('Não é possível criar usuário sem e-mail do jovem.');
+                                        return;
+                                    }
+                                } else {
+                                    if (!this.tioSelecionadoId) {
+                                        if (window.uiAlert) window.uiAlert('Selecione um tio para criar o usuário.');
+                                        else alert('Selecione um tio para criar o usuário.');
+                                        return;
+                                    }
+                                    if (!this.form.username || !this.form.senha) {
+                                        if (window.uiAlert) window.uiAlert('Informe usuário e senha para o tio.');
+                                        else alert('Informe usuário e senha para o tio.');
+                                        return;
+                                    }
+                                    this.aplicarTioSelecionado();
+                                }
+                            }
+                            const res = await fetch(url, {
+                                method: method,
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(this.form)
+                            });
+
+                            const data = await res.json();
+
+                            if (res.ok) {
+                                if (this.modalInstance) this.modalInstance.hide();
+                                await this.carregarUsuarios();
+                            } else {
+                                alert(data.error || "Erro ao salvar usuário.");
+                            }
+                        } catch (err) {
+                            console.error(err);
+                            alert("Erro ao salvar usuário.");
+                        }
+                    },
+                    async deletarUsuario(user) {
+                        if (this.isReadOnlyUser(user)) {
+                            if (window.uiAlert) window.uiAlert('Este usuário é gerenciado no admin.semearparoquial.com.br e não pode ser removido aqui.');
+                            else alert('Este usuário é gerenciado no admin.semearparoquial.com.br e não pode ser removido aqui.');
+                            return;
+                        }
+                        if (!(await window.showFloatingConfirm(`Deseja realmente excluir o usuário "${user.nome_completo}"?`))) return;
+
+                        try {
+                            const res = await fetch(`/api/usuarios/${user.id}`, { method: 'DELETE' });
+                            if (res.ok) {
+                                await this.carregarUsuarios();
+                            } else {
+                                alert("Erro ao deletar usuário.");
+                            }
+                        } catch (err) {
+                            console.error(err);
+                            alert("Erro ao deletar usuário.");
+                        }
+                    },
+                    getBadgeClass(grupo) {
+                        switch (grupo) {
+                            case 'Tios': return 'text-bg-warning';
+                            case 'Jovens': return 'text-bg-info';
+                            case 'Diretor Espiritual': return 'text-bg-primary';
+                            case 'Padre': return 'text-bg-dark';
+                            default: return 'text-bg-secondary';
+                        }
+                    },
+                    formatDate(dateString) {
+                        if (!dateString) return '-';
+                        return new Date(dateString).toLocaleDateString('pt-BR');
+                    }
+                },
+                watch: {
+                    tioSelecionadoId() {
+                        if (!this.isEditing && this.tipoCadastro === 'TIO') {
+                            this.aplicarTioSelecionado();
+                        }
+                    }
+                }
+            });
+
+            app.mount('#content');
+        } catch (e) {
+            console.error("Erro fatal Vue:", e);
+            document.body.innerHTML += `<div class="alert alert-danger fixed-top">Erro ao carregar aplicação (Vue): ${e.message}</div>`;
+        }
+    </script>
+</body>
+
+</html>

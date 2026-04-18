@@ -1,0 +1,1 @@
+// Verify dietary restrictions integration

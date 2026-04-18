@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EJC - Funções Dirigência</title>
+    <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
+    <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/velzon-theme.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/ui-kit.js"></script>
+    <script src="/js/menu.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <main class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h3><i class="fa-solid fa-book-open icon-accent"></i> Funções Dirigência</h3>
+                    <p class="text-muted mb-0">Gerencie as funções e responsabilidades da dirigência.</p>
+                </div>
+                <button class="btn btn-primary" @click="abrirModalNovaFuncao"><i class="fa-solid fa-plus icon-accent"></i> Nova Função</button>
+            </div>
+
+            <div v-if="carregando" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+            </div>
+
+            <div v-else class="card border-0 shadow-sm">
+                <div v-if="erroApi" class="card-body text-danger">{{ erroApi }}</div>
+                <div v-else-if="!funcoes.length" class="card-body text-muted">Nenhuma função cadastrada ainda.</div>
+                <div v-else class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6" v-for="f in funcoes" :key="f.id">
+                            <div class="border rounded p-3 h-100">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <h6 class="mb-1">{{ f.nome }}</h6>
+                                    <div class="d-flex gap-1">
+                                        <button class="btn btn-edit-standard btn-sm" @click="abrirModalEditarFuncao(f)">Editar</button>
+                                        <button class="btn btn-sm btn-outline-danger" @click="removerFuncao(f.id)">Remover</button>
+                                    </div>
+                                </div>
+                                <p class="text-muted small mb-2">{{ f.descricao || 'Sem descrição.' }}</p>
+                                <div class="small fw-semibold mb-1">Usuários vinculados:</div>
+                                <div v-if="!f.usuarios || !f.usuarios.length" class="text-muted small">
+                                    Nenhum usuário vinculado.
+                                </div>
+                                <ul v-else class="small mb-0 ps-3">
+                                    <li v-for="u in f.usuarios" :key="`fu-${f.id}-${u.usuario_id}`">{{ u.nome_completo }}</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <div class="modal fade" id="modalNovaFuncaoDirigencia" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title"><i :class="editandoId ? 'fas fa-pen-to-square me-2' : 'fas fa-plus me-2'"></i>{{ editandoId ? 'Editar Função da Dirigência' : 'Nova Função da Dirigência' }}</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Nome da função *</label>
+                                <input type="text" class="form-control" v-model="form.nome" placeholder="Ex: Secretaria Geral">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Descrição</label>
+                                <input type="text" class="form-control" v-model="form.descricao" placeholder="Ex: Responsável por atas e comunicados">
+                            </div>
+                        </div>
+
+                        <hr>
+                        <h6><i class="fa-solid fa-users icon-accent"></i> Usuários (dirigentes)</h6>
+                        <div class="text-muted small mb-2">Selecione os usuários para esta função.</div>
+                        <div class="row g-2">
+                            <div class="col-md-6" v-for="u in usuarios" :key="`u-${u.id}`">
+                                <div class="form-check border rounded px-2 py-1">
+                                    <input class="form-check-input" type="checkbox"
+                                        :id="`fd-user-${u.id}`"
+                                        :checked="form.usuarios.includes(u.id)"
+                                        @change="toggleUsuario(u.id)">
+                                    <label class="form-check-label" :for="`fd-user-${u.id}`">
+                                        {{ u.nome_completo }}
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button class="btn btn-primary" @click="salvarFuncao" :disabled="salvando">
+                            {{ salvando ? 'Salvando...' : (editandoId ? 'Salvar Alterações' : 'Salvar Função') }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            injetarMenu('#app');
+            ativarMenu('/configuracoes/funcoes-dirigencia');
+        });
+
+        const { createApp } = Vue;
+        createApp({
+            data() {
+                return {
+                    carregando: true,
+                    salvando: false,
+                    erroApi: '',
+                    funcoes: [],
+                    usuarios: [],
+                    modalNovaFuncao: null,
+                    editandoId: null,
+                    form: {
+                        nome: '',
+                        descricao: '',
+                        usuarios: []
+                    }
+                };
+            },
+            methods: {
+                resetForm() {
+                    this.form = { nome: '', descricao: '', usuarios: [] };
+                    this.editandoId = null;
+                },
+                async carregarUsuarios() {
+                    const res = await fetch('/api/usuarios');
+                    this.usuarios = res.ok ? await res.json() : [];
+                },
+                async carregarFuncoes() {
+                    const res = await fetch('/api/funcoes-dirigencia');
+                    this.funcoes = res.ok ? await res.json() : [];
+                },
+                async carregarDados() {
+                    this.carregando = true;
+                    this.erroApi = '';
+                    try {
+                        await Promise.all([this.carregarUsuarios(), this.carregarFuncoes()]);
+                    } catch (err) {
+                        console.error(err);
+                        this.erroApi = 'Erro ao carregar funções da dirigência.';
+                    } finally {
+                        this.carregando = false;
+                    }
+                },
+                abrirModalNovaFuncao() {
+                    this.resetForm();
+                    if (!this.modalNovaFuncao) this.modalNovaFuncao = new bootstrap.Modal(document.getElementById('modalNovaFuncaoDirigencia'));
+                    this.modalNovaFuncao.show();
+                },
+                abrirModalEditarFuncao(funcao) {
+                    this.editandoId = Number(funcao && funcao.id ? funcao.id : 0) || null;
+                    this.form = {
+                        nome: String(funcao && funcao.nome ? funcao.nome : ''),
+                        descricao: String(funcao && funcao.descricao ? funcao.descricao : ''),
+                        usuarios: Array.isArray(funcao && funcao.usuarios)
+                            ? funcao.usuarios.map(u => Number(u.usuario_id)).filter(v => Number.isInteger(v) && v > 0)
+                            : []
+                    };
+                    if (!this.modalNovaFuncao) this.modalNovaFuncao = new bootstrap.Modal(document.getElementById('modalNovaFuncaoDirigencia'));
+                    this.modalNovaFuncao.show();
+                },
+                toggleUsuario(id) {
+                    if (this.form.usuarios.includes(id)) {
+                        this.form.usuarios = this.form.usuarios.filter(i => i !== id);
+                    } else {
+                        this.form.usuarios.push(id);
+                    }
+                },
+                async salvarFuncao() {
+                    if (!String(this.form.nome || '').trim()) {
+                        alert('Informe o nome da função.');
+                        return;
+                    }
+                    if (!this.form.usuarios.length) {
+                        alert('Selecione ao menos um usuário.');
+                        return;
+                    }
+
+                    this.salvando = true;
+                    try {
+                        const editando = !!this.editandoId;
+                        const url = editando ? `/api/funcoes-dirigencia/${this.editandoId}` : '/api/funcoes-dirigencia';
+                        const method = editando ? 'PUT' : 'POST';
+                        const res = await fetch(url, {
+                            method,
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                nome: this.form.nome.trim(),
+                                descricao: this.form.descricao,
+                                usuarios: this.form.usuarios
+                            })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || `Erro ao ${editando ? 'atualizar' : 'criar'} função.`);
+                            return;
+                        }
+                        if (this.modalNovaFuncao) this.modalNovaFuncao.hide();
+                        await this.carregarFuncoes();
+                    } catch (err) {
+                        console.error(err);
+                        alert(`Erro ao ${this.editandoId ? 'atualizar' : 'criar'} função.`);
+                    } finally {
+                        this.salvando = false;
+                    }
+                },
+                async removerFuncao(id) {
+                    if (!(await window.showFloatingConfirm('Remover esta função?'))) return;
+                    try {
+                        const res = await fetch(`/api/funcoes-dirigencia/${id}`, { method: 'DELETE' });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao remover função.');
+                            return;
+                        }
+                        await this.carregarFuncoes();
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao remover função.');
+                    }
+                }
+            },
+            mounted() {
+                this.carregarDados();
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

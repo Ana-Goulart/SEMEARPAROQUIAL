@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>EJC - Financeiro</title>
+    <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
+    <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="/css/velzon-theme.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/ui-kit.js"></script>
+    <script src="/js/menu.js"></script>
+    <style>
+        .saldo-card {
+            border: 1px solid #e6ecf5;
+            border-radius: 12px;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8fbff 0%, #eef4ff 100%);
+        }
+
+        .saldo-valor {
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: 0.4px;
+        }
+
+        .saldo-oculto {
+            letter-spacing: 3px;
+        }
+
+        .tipo-badge {
+            min-width: 84px;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <main class="container-fluid">
+            <div class="d-flex justify-content-between mb-4 align-items-center">
+                <div>
+                    <h3><i class="fa-solid fa-sack-dollar icon-accent me-2"></i>Financeiro</h3>
+                    <p class="text-muted mb-0">Controle de entradas, saídas e saldo do EJC.</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-danger" @click="zerarSaldo">Zerar saldo</button>
+                    <button class="btn btn-soft-primary" @click="carregarTudo">
+                        <i class="fas fa-sync-alt"></i> Atualizar
+                    </button>
+                </div>
+            </div>
+
+            <div class="saldo-card mb-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <div class="text-muted small">Saldo Atual</div>
+                        <div class="saldo-valor" :class="{ 'saldo-oculto': !mostrarSaldo }">
+                            {{ mostrarSaldo ? formatarMoeda(saldoAtual) : '••••••' }}
+                        </div>
+                    </div>
+                    <button class="btn btn-outline-secondary btn-sm" @click="mostrarSaldo = !mostrarSaldo"
+                        :title="mostrarSaldo ? 'Ocultar saldo' : 'Mostrar saldo'">
+                        <span v-if="mostrarSaldo"><i class="fas fa-eye"></i></span>
+                        <span v-else><i class="fas fa-eye-slash"></i></span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="d-flex gap-2 mb-4">
+                <button class="btn btn-success" @click="abrirModal('ENTRADA')"><i class="fa-solid fa-plus icon-accent"></i> Registrar Entrada</button>
+                <button class="btn btn-danger" @click="abrirModal('SAIDA')"><i class="fa-solid fa-minus icon-accent"></i> Registrar Saída</button>
+            </div>
+
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">Histórico Financeiro</h6>
+                    <small class="text-muted">{{ movimentacoes.length }} movimentações</small>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Data</th>
+                                <th>Tipo</th>
+                                <th>Descrição</th>
+                                <th class="text-end">Valor</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-if="!movimentacoes.length">
+                                <td colspan="4" class="text-center text-muted py-4">Nenhuma movimentação registrada.</td>
+                            </tr>
+                            <tr v-for="mov in movimentacoes" :key="mov.id">
+                                <td>{{ formatarDataHora(mov.created_at) }}</td>
+                                <td>
+                                    <span class="badge tipo-badge" :class="mov.tipo === 'ENTRADA' ? 'bg-success-subtle text-success' : 'bg-danger-subtle text-danger'">
+                                        {{ mov.tipo === 'ENTRADA' ? 'Entrada' : 'Saída' }}
+                                    </span>
+                                </td>
+                                <td>{{ mov.descricao }}</td>
+                                <td class="text-end fw-semibold" :class="mov.tipo === 'ENTRADA' ? 'text-success' : 'text-danger'">
+                                    {{ mov.tipo === 'ENTRADA' ? '+' : '-' }} {{ formatarMoeda(mov.valor) }}
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+
+        <div class="modal fade" id="modalMovimentacao" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header" :class="form.tipo === 'ENTRADA' ? 'bg-success text-white' : 'bg-danger text-white'">
+                        <h5 class="modal-title">{{ form.tipo === 'ENTRADA' ? 'Registrar Entrada' : 'Registrar Saída' }}</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">Valor *</label>
+                            <input type="text" inputmode="decimal" v-model="form.valor" @input="onValorInput"
+                                class="form-control" placeholder="0,00" maxlength="20">
+                        </div>
+                        <div class="mb-2">
+                            <label class="form-label">Descrição *</label>
+                            <textarea v-model="form.descricao" class="form-control" rows="3" placeholder="Descreva esta movimentação"></textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn" :class="form.tipo === 'ENTRADA' ? 'btn-success' : 'btn-danger'" @click="salvarMovimentacao">
+                            Salvar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            injetarMenu('#app');
+            ativarMenu('/financeiro');
+        });
+
+        const { createApp } = Vue;
+        createApp({
+            data() {
+                return {
+                    saldoAtual: 0,
+                    mostrarSaldo: false,
+                    movimentacoes: [],
+                    form: { tipo: 'ENTRADA', valor: null, descricao: '' },
+                    modalInstance: null
+                }
+            },
+            methods: {
+                async carregarTudo() {
+                    await Promise.all([this.carregarResumo(), this.carregarMovimentacoes()]);
+                },
+                async carregarResumo() {
+                    const res = await fetch('/api/financeiro/resumo');
+                    if (!res.ok) return;
+                    const data = await res.json();
+                    this.saldoAtual = Number(data.saldo_atual || 0);
+                },
+                async carregarMovimentacoes() {
+                    const res = await fetch('/api/financeiro/movimentacoes');
+                    if (!res.ok) return;
+                    this.movimentacoes = await res.json();
+                },
+                abrirModal(tipo) {
+                    this.form = { tipo, valor: '', descricao: '' };
+                    if (!this.modalInstance) {
+                        this.modalInstance = new bootstrap.Modal(document.getElementById('modalMovimentacao'));
+                    }
+                    this.modalInstance.show();
+                },
+                onValorInput() {
+                    this.form.valor = this.formatarValorMonetario(this.form.valor);
+                },
+                formatarValorMonetario(valorDigitado) {
+                    const apenasDigitos = String(valorDigitado || '').replace(/\D/g, '');
+                    if (!apenasDigitos) return '';
+
+                    const inteiroCentavos = parseInt(apenasDigitos, 10);
+                    if (!Number.isFinite(inteiroCentavos)) return '';
+
+                    const valor = (inteiroCentavos / 100).toFixed(2);
+                    const [parteInt, parteDec] = valor.split('.');
+                    const parteIntComMilhar = parteInt.replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+                    return `${parteIntComMilhar},${parteDec}`;
+                },
+                converterValorParaNumero(valorFormatado) {
+                    const texto = String(valorFormatado || '').trim();
+                    if (!texto) return NaN;
+                    const normalizado = texto.replace(/\./g, '').replace(',', '.');
+                    return Number(normalizado);
+                },
+                async salvarMovimentacao() {
+                    const valorNumerico = this.converterValorParaNumero(this.form.valor);
+                    if (!Number.isFinite(valorNumerico) || valorNumerico <= 0 || !this.form.descricao.trim()) {
+                        uiAlert('Preencha valor e descrição.');
+                        return;
+                    }
+                    const res = await fetch('/api/financeiro/movimentacoes', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            tipo: this.form.tipo,
+                            valor: valorNumerico,
+                            descricao: this.form.descricao
+                        })
+                    });
+                    if (!res.ok) {
+                        const err = await res.json();
+                        uiAlert(err.error || 'Erro ao salvar movimentação');
+                        return;
+                    }
+                    this.modalInstance.hide();
+                    await this.carregarTudo();
+                },
+                async zerarSaldo() {
+                    const ok = await uiConfirm('Zerar o saldo remove todas as movimentações. Deseja continuar?');
+                    if (!ok) return;
+                    const res = await fetch('/api/financeiro/zerar', { method: 'POST' });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok) {
+                        await uiAlert(data.error || 'Erro ao zerar saldo.');
+                        return;
+                    }
+                    await this.carregarTudo();
+                },
+                formatarMoeda(valor) {
+                    return Number(valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                },
+                formatarDataHora(data) {
+                    if (!data) return '--/--/---- --:--';
+                    return new Date(data).toLocaleString('pt-BR');
+                }
+            },
+            mounted() {
+                this.carregarTudo();
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

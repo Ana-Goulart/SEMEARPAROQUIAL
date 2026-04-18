@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>EJC - Equipes e Funções</title>
+    <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
+    <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="/css/velzon-theme.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/ui-kit.js"></script>
+    <script src="/js/menu.js"></script>
+    <style>
+        .cart-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .equipe-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s;
+            cursor: pointer;
+        }
+
+        .equipe-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+            border-color: var(--vz-primary);
+        }
+
+        .equipe-icon {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .equipe-nome {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #333;
+            margin: 10px 0;
+        }
+
+        .equipe-descricao {
+            color: #666;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .icon-option {
+            border: 1px solid #e5e7eb;
+            border-radius: 10px;
+            padding: 10px;
+            cursor: pointer;
+            transition: all .2s ease;
+            background: #fff;
+        }
+
+        .icon-option:hover {
+            border-color: var(--vz-primary);
+            transform: translateY(-1px);
+        }
+
+        .icon-option.active {
+            border-color: var(--vz-primary);
+            box-shadow: 0 0 0 2px rgba(64, 81, 137, 0.15);
+            background: #f8f9ff;
+        }
+
+        #modalEquipe .team-role-icon {
+            background: linear-gradient(135deg, rgba(180, 149, 96, 0.14), rgba(130, 102, 63, 0.08));
+            color: #8a6330;
+        }
+
+        #modalEquipe .badge-role {
+            background: #f4ede1;
+            color: #6e5430;
+            border: 1px solid #e5d5bb;
+        }
+
+        #modalEquipe .badge-subrole {
+            background: #f8f4ec;
+            color: #8b7355;
+            border: 1px solid #eadfce;
+        }
+
+        #modalEquipe .btn-role-add,
+        #modalFuncoesPadrao .btn-role-add {
+            background: #efe7d8;
+            color: #6e5430;
+            border: 1px solid #decdb0;
+            font-weight: 700;
+        }
+
+        #modalEquipe .btn-role-add:hover,
+        #modalEquipe .btn-role-add:focus,
+        #modalFuncoesPadrao .btn-role-add:hover,
+        #modalFuncoesPadrao .btn-role-add:focus {
+            background: #e6dac3;
+            color: #5f4728;
+            border-color: #d3bc98;
+        }
+
+        #modalFuncoesPadrao .modal-header {
+            background: #f8f9fa;
+            border-bottom: 1px solid var(--brand-border, #e5e7eb);
+        }
+
+        #modalFuncoesPadrao .modal-title {
+            color: var(--brand-ink, #243b53);
+            font-weight: 800;
+        }
+
+        #modalFuncoesPadrao .modal-body {
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.94));
+        }
+
+        #modalFuncoesPadrao .roles-panel {
+            background: linear-gradient(180deg, rgba(244, 237, 225, 0.72), rgba(248, 244, 236, 0.92));
+            border: 1px solid #eadfce;
+            border-radius: 18px;
+        }
+
+        #modalFuncoesPadrao .default-role-form {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) 180px auto;
+            gap: 0.75rem;
+            align-items: center;
+        }
+
+        #modalFuncoesPadrao .paper-tag {
+            background: #f8f4ec;
+            color: #7b6140;
+            border: 1px solid #eadfce;
+            border-radius: 999px;
+            padding: 0.38rem 0.72rem;
+            font-size: 0.82rem;
+            font-weight: 700;
+        }
+
+        #modalFuncoesPadrao .paper-tag button {
+            color: #c8615a;
+        }
+
+        #modalFuncoesPadrao .team-role-list {
+            margin-bottom: 0;
+        }
+
+        #modalFuncoesPadrao .team-role-item {
+            padding: 0.9rem 1rem;
+        }
+
+        #modalFuncoesPadrao .team-role-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 12px;
+        }
+
+        #modalFuncoesPadrao .btn-icon-delete {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+        }
+
+        @media (max-width: 767px) {
+            #modalFuncoesPadrao .default-role-form {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <!-- Menu injetado via JS -->
+        <main class="container-fluid">
+            <div class="d-flex justify-content-between mb-4 align-items-center">
+                <div>
+                    <h3><i class="fa-solid fa-users icon-accent"></i> Gerenciar Equipes e Funções</h3>
+                    <p class="text-muted mb-0">Cadastre suas equipes e configure as funções exclusivas de cada uma
+                        delas.</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-soft-primary" @click="abrirModalFuncoesPadrao()"><i class="fa-solid fa-gear icon-accent"></i> Funções Padrão</button>
+                    <button class="btn btn-primary" @click="abrirModalEquipeNovo()"><i class="fa-solid fa-plus icon-accent"></i> Nova Equipe</button>
+                </div>
+            </div>
+
+            <div v-if="carregando" class="text-center py-5">
+                <div class="spinner-border text-primary" role="status"></div>
+                <div class="mt-2 text-muted">Carregando equipes...</div>
+            </div>
+
+            <div v-else-if="equipes.length === 0" class="text-center text-muted py-5">
+                <i class="fas fa-users-slash fa-3x mb-3 text-light"></i>
+                <p>Nenhuma equipe cadastrada ainda.</p>
+            </div>
+
+            <div v-else class="cart-container">
+                <div v-for="equipe in equipes" :key="equipe.id" class="equipe-card" @click="abrirModalEquipe(equipe)">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="equipe-icon" :style="getIconBgStyle(equipe.cor_icone)">
+                            <i v-if="equipe.icone_classe" :class="equipe.icone_classe"
+                                :style="{ color: equipe.cor_icone || '#2563eb' }"></i>
+                            <i v-else class="fa-solid fa-users" :style="{ color: equipe.cor_icone || '#2563eb' }"></i>
+                        </div>
+                        <div class="d-flex flex-column align-items-end gap-1">
+                            <span class="badge bg-soft-primary text-primary" style="font-size: 0.75rem;">Clique p/
+                                Editar</span>
+                        </div>
+                    </div>
+                    <div class="equipe-nome">{{ equipe.nome }}</div>
+                    <div class="equipe-descricao">{{ equipe.descricao || 'Sem descrição' }}</div>
+                    <div class="mt-2 small text-muted">
+                        Limite homens: {{ equipe.limite_homens ?? '-' }} • mulheres: {{ equipe.limite_mulheres ?? '-' }}
+                        • casais de tios: {{ equipe.limite_casais_tios ?? '-' }}
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Modal Editar Equipe e Funções -->
+        <div class="modal fade" id="modalEquipe" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">
+                            <i :class="editando ? 'fa-solid fa-gear icon-accent me-2' : 'fa-solid fa-plus icon-accent me-2'"></i>{{ editando ? 'Gerenciar Equipe' : 'Nova Equipe' }}
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+
+                    <div class="modal-body bg-light">
+                        <div class="card shadow-sm border-0 mb-3">
+                            <div class="card-body">
+                                <h6 class="card-title text-muted mb-3 fw-bold">1. Dados Fundamentais</h6>
+                                <div class="row g-3">
+                                    <div class="col-md-12">
+                                        <label class="form-label small mb-1">Nome da Equipe *</label>
+                                        <input type="text" v-model="formulario.nome" class="form-control"
+                                            placeholder="Ex: Cozinha, Liturgia Ext...">
+                                    </div>
+                                    <div class="col-md-12">
+                                        <label class="form-label small mb-1">Descrição Breve</label>
+                                        <input type="text" v-model="formulario.descricao" class="form-control"
+                                            placeholder="Ex: Prepara as refeições gerais">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small mb-1">Limite de Homens</label>
+                                        <input type="number" min="0" step="1" v-model="formulario.limite_homens" class="form-control"
+                                            placeholder="Ex: 15">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small mb-1">Limite de Mulheres</label>
+                                        <input type="number" min="0" step="1" v-model="formulario.limite_mulheres" class="form-control"
+                                            placeholder="Ex: 14">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label small mb-1">Limite de Casais de Tios</label>
+                                        <input type="number" min="0" step="1" v-model="formulario.limite_casais_tios" class="form-control"
+                                            placeholder="Ex: 2">
+                                    </div>
+                                    <div class="col-md-12">
+                                        <label class="form-label small mb-1">Ícone da Equipe</label>
+                                        <div class="d-flex gap-2 align-items-center">
+                                            <button class="btn btn-soft-primary btn-sm" @click="abrirModalIcones">
+                                                <i class="fa-solid fa-palette icon-accent me-1"></i> Escolher Ícone
+                                            </button>
+                                            <div class="d-flex align-items-center gap-2 border rounded px-2 py-1 bg-white">
+                                                <div class="equipe-icon m-0" style="width: 32px; height: 32px;"
+                                                    :style="getIconBgStyle(formulario.cor_icone)">
+                                                    <i :class="formulario.icone_classe || 'fa-solid fa-users'"
+                                                        :style="{ color: formulario.cor_icone || '#2563eb', fontSize: '1rem' }"></i>
+                                                </div>
+                                                <input type="color" v-model="formulario.cor_icone" class="form-control form-control-color"
+                                                    title="Cor do ícone">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-12 text-end">
+                                        <button class="btn btn-sm btn-success" @click="salvarEquipe"><i
+                                                class="fas fa-save"></i> {{ editando ? 'Atualizar Dados da Equipe' :
+                                            'Salvar Equipe' }}</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Parte 2: Funções. SÓ EXIBE SE A EQUIPE JÁ FOI CRIADA E ESTÁ SENDO EDITADA -->
+                        <div v-if="editando" class="card shadow-sm border-0">
+                            <div class="card-body pb-2">
+                                <h6 class="card-title text-muted mb-3 fw-bold border-bottom pb-2">2. Controle de Funções
+                                    (Cargos da Equipe)</h6>
+
+                                <div class="d-flex mb-3 gap-2">
+                                    <input type="text" v-model="novaFuncao" class="form-control form-control-sm"
+                                        placeholder="Ex: Coordenador(a), Animador(a)..." @keyup.enter="adicionarFuncao">
+                                    <select v-model="novaFuncaoPapel" class="form-select form-select-sm"
+                                        style="max-width: 150px;">
+                                        <option v-for="p in papeisDisponiveis" :key="`papel-local-${p.id}`"
+                                            :value="p.nome">{{ p.nome }}</option>
+                                    </select>
+                                    <button class="btn btn-role-add btn-sm px-3" @click="adicionarFuncao"
+                                        :disabled="!novaFuncao.trim()"><i class="fas fa-plus"></i> Inserir</button>
+                                </div>
+
+                                <div v-if="carregandoFuncoes" class="text-center py-3">
+                                    <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                                </div>
+                                <div v-else-if="funcoes.length === 0"
+                                    class="text-center text-muted small py-3 bg-light rounded">
+                                    Nenhuma função específica registrada para esta equipe.
+                                </div>
+                                <ul v-else class="team-role-list mt-2">
+                                    <li v-for="funcao in funcoes" :key="funcao.id"
+                                        class="team-role-item">
+                                        <div class="team-role-main">
+                                            <span class="team-role-icon"><i class="fas fa-briefcase"></i></span>
+                                            <span class="team-role-name">{{ funcao.nome }}</span>
+                                        </div>
+                                        <div class="team-role-meta">
+                                            <span class="badge-role">{{ funcao.papel_base || 'Membro' }}</span>
+                                            <span v-if="funcao.is_padrao" class="badge-subrole">Padrão</span>
+                                            <button class="btn btn-sm btn-outline-danger py-0 px-2"
+                                                @click="removerFuncao(funcao.id)" title="Deletar Função"><i
+                                                    class="fas fa-trash-alt"></i></button>
+                                        </div>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-footer d-flex justify-content-between">
+                        <button type="button" class="btn btn-danger" v-if="editando"
+                            @click="deletarEquipe(formulario.id)"><i class="fa-solid fa-trash icon-accent"></i> Deletar Equipe Completa</button>
+                        <span v-else></span>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Funções Padrão Globais -->
+        <div class="modal fade" id="modalFuncoesPadrao" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header align-items-center">
+                        <h5 class="modal-title"><i class="fa-solid fa-gear icon-accent"></i> Funções Padrão (Todas as Equipes)</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="small text-muted mb-3">
+                            As funções cadastradas aqui serão aplicadas automaticamente em todas as equipes.
+                            Você ainda pode manter subfunções específicas por equipe.
+                        </p>
+
+                        <div class="roles-panel p-3 mb-3">
+                            <div>
+                                <label class="form-label small fw-bold mb-1">Gerenciar Papéis (base)</label>
+                                <div class="d-flex gap-2 mb-2">
+                                    <input type="text" v-model="novoPapelNome" class="form-control form-control-sm"
+                                        placeholder="Ex: Mentor, Intercessor..." @keyup.enter="adicionarPapel">
+                                    <button class="btn btn-role-add btn-sm px-3" @click="adicionarPapel"
+                                        :disabled="!novoPapelNome.trim()">
+                                        + Papel
+                                    </button>
+                                </div>
+                                <div class="d-flex flex-wrap gap-2">
+                                    <span v-for="p in papeisDisponiveis" :key="`papel-tag-${p.id}`"
+                                        class="paper-tag d-inline-flex align-items-center">
+                                        {{ p.nome }}
+                                        <button class="btn btn-link btn-sm p-0 ms-1 text-danger text-decoration-none"
+                                            title="Excluir papel" @click="removerPapel(p.id)">×</button>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="default-role-form mb-3">
+                            <input type="text" v-model="novaFuncaoPadrao" class="form-control form-control-sm"
+                                placeholder="Ex: Intercessor(a), Boa vontade..." @keyup.enter="adicionarFuncaoPadrao">
+                            <select v-model="novaFuncaoPadraoPapel" class="form-select form-select-sm"
+                                aria-label="Selecionar papel base da função padrão">
+                                <option v-for="p in papeisDisponiveis" :key="`papel-padrao-${p.id}`"
+                                    :value="p.nome">{{ p.nome }}</option>
+                            </select>
+                            <button class="btn btn-role-add btn-sm px-3" @click="adicionarFuncaoPadrao"
+                                :disabled="!novaFuncaoPadrao.trim()"><i class="fas fa-plus me-1"></i> Inserir</button>
+                        </div>
+
+                        <div v-if="carregandoFuncoesPadrao" class="text-center py-3">
+                            <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                        </div>
+                        <div v-else-if="funcoesPadrao.length === 0"
+                            class="text-center text-muted small py-3 corporate-soft-panel">
+                            Nenhuma função padrão cadastrada.
+                        </div>
+                        <ul v-else class="team-role-list">
+                            <li v-for="fp in funcoesPadrao" :key="fp.id"
+                                class="team-role-item">
+                                <div class="team-role-main">
+                                    <span class="team-role-icon"><i class="fas fa-layer-group"></i></span>
+                                    <span class="team-role-name">{{ fp.nome }}</span>
+                                </div>
+                                <div class="team-role-meta">
+                                    <span class="badge-role">{{ fp.papel_base || 'Membro' }}</span>
+                                    <button class="btn btn-icon-delete"
+                                        @click="removerFuncaoPadrao(fp.id)" title="Remover Função Padrão"><i
+                                            class="fas fa-trash-alt"></i></button>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de Busca de Ícones -->
+        <div class="modal fade" id="modalIcones" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-light">
+                        <h5 class="modal-title"><i class="fa-solid fa-palette icon-accent me-2"></i>Escolher Ícone da Equipe</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <input type="text" v-model="buscaIcone" class="form-control mb-3"
+                            placeholder="Pesquisar ícone... ex: café, música, livro, cruz">
+                        <div class="row g-2">
+                            <div class="col-6 col-md-4 col-lg-3" v-for="ico in iconesFiltrados" :key="ico.className">
+                                <div class="icon-option"
+                                    :class="{ active: formulario.icone_classe === ico.className }"
+                                    @click="selecionarIcone(ico.className)">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <i :class="ico.className" :style="{ color: formulario.cor_icone || '#2563eb' }"></i>
+                                        <small>{{ ico.label }}</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-if="iconesFiltrados.length === 0" class="text-muted small mt-3">
+                            Nenhum ícone encontrado para essa busca.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            injetarMenu('#app');
+            ativarMenu('/equipes');
+        });
+
+        const { createApp } = Vue;
+        createApp({
+            data() {
+                return {
+                    equipes: [],
+                    carregando: true,
+                    editando: false,
+                    modalInstancia: null,
+                    modalFuncoesPadraoInstancia: null,
+                    modalIconesInstancia: null,
+
+                    formulario: {
+                        id: null,
+                        nome: '',
+                        descricao: '',
+                        icone_classe: 'fa-solid fa-users',
+                        cor_icone: '#2563eb',
+                        membros_outro_ejc: 0,
+                        limite_homens: '',
+                        limite_mulheres: '',
+                        limite_casais_tios: ''
+                    },
+
+                    funcoes: [],
+                    novaFuncao: '',
+                    novaFuncaoPapel: 'Membro',
+                    carregandoFuncoes: false,
+
+                    papeisDisponiveis: [],
+                    novoPapelNome: '',
+                    funcoesPadrao: [],
+                    carregandoFuncoesPadrao: false,
+                    novaFuncaoPadrao: '',
+                    novaFuncaoPadraoPapel: 'Membro',
+
+                    buscaIcone: '',
+                    bibliotecaIcones: [
+                        { className: 'fa-solid fa-users', label: 'Grupo', tags: 'equipe pessoas membros turma' },
+                        { className: 'fa-solid fa-mug-hot', label: 'Cafe', tags: 'cafe cafezinho bebida copa' },
+                        { className: 'fa-solid fa-kitchen-set', label: 'Cozinha', tags: 'cozinha comida refeicao panelas' },
+                        { className: 'fa-solid fa-utensils', label: 'Refeicao', tags: 'talher jantar almoco lanche' },
+                        { className: 'fa-solid fa-music', label: 'Musica', tags: 'canto louvor animacao' },
+                        { className: 'fa-solid fa-microphone', label: 'Voz', tags: 'palco canto apresentacao' },
+                        { className: 'fa-solid fa-hands-praying', label: 'Oracao', tags: 'intercessao espiritual reza' },
+                        { className: 'fa-solid fa-church', label: 'Igreja', tags: 'paroquia capela templo' },
+                        { className: 'fa-solid fa-cross', label: 'Cruz', tags: 'jesus fe espiritualidade' },
+                        { className: 'fa-solid fa-heart', label: 'Caridade', tags: 'amor cuidado servico' },
+                        { className: 'fa-solid fa-handshake', label: 'Acolhida', tags: 'recepcao boas vindas apoio' },
+                        { className: 'fa-solid fa-comments', label: 'Comunicacao', tags: 'mensagem conversa avisos' },
+                        { className: 'fa-solid fa-bullhorn', label: 'Avisos', tags: 'divulgacao anuncio chamada' },
+                        { className: 'fa-solid fa-camera', label: 'Foto', tags: 'fotografia registro midia' },
+                        { className: 'fa-solid fa-video', label: 'Video', tags: 'filmagem gravacao reels' },
+                        { className: 'fa-solid fa-mobile-screen-button', label: 'Midias', tags: 'instagram social celular' },
+                        { className: 'fa-solid fa-computer', label: 'TI', tags: 'tecnologia sistema suporte' },
+                        { className: 'fa-solid fa-book-bible', label: 'Palavra', tags: 'biblia evangelho leitura' },
+                        { className: 'fa-solid fa-book-open', label: 'Leitura', tags: 'estudo texto roteiro' },
+                        { className: 'fa-solid fa-clipboard-list', label: 'Checklist', tags: 'controle lista tarefas' },
+                        { className: 'fa-solid fa-pen-to-square', label: 'Secretaria', tags: 'administrativo inscricao dados' },
+                        { className: 'fa-solid fa-id-card', label: 'Credencial', tags: 'cracha identificacao acesso' },
+                        { className: 'fa-solid fa-bed', label: 'Alojamento', tags: 'quarto descanso hospedagem' },
+                        { className: 'fa-solid fa-bus', label: 'Transporte', tags: 'onibus viagem rota' },
+                        { className: 'fa-solid fa-car', label: 'Carona', tags: 'veiculo deslocamento' },
+                        { className: 'fa-solid fa-truck', label: 'Logistica', tags: 'estrutura material entrega' },
+                        { className: 'fa-solid fa-shield-heart', label: 'Saude', tags: 'bem-estar cuidado' },
+                        { className: 'fa-solid fa-kit-medical', label: 'Primeiros socorros', tags: 'ambulancia remedio curativo' },
+                        { className: 'fa-solid fa-stethoscope', label: 'Cuidado', tags: 'enfermagem atencao suporte' },
+                        { className: 'fa-solid fa-user-shield', label: 'Ordem', tags: 'seguranca apoio disciplina' },
+                        { className: 'fa-solid fa-people-group', label: 'Sala', tags: 'sala encontro turma' },
+                        { className: 'fa-solid fa-user-check', label: 'Recepcao', tags: 'checkin entrada acolhida' },
+                        { className: 'fa-solid fa-calendar-days', label: 'Eventos', tags: 'agenda programacao cronograma' },
+                        { className: 'fa-solid fa-location-dot', label: 'Local', tags: 'espaco lugar mapa' },
+                        { className: 'fa-solid fa-seedling', label: 'Plantio', tags: 'missao semear crescimento' },
+                        { className: 'fa-solid fa-leaf', label: 'Natureza', tags: 'ecologia verde meio ambiente' },
+                        { className: 'fa-solid fa-guitar', label: 'Instrumento', tags: 'musica banda louvor' },
+                        { className: 'fa-solid fa-drum', label: 'Bateria', tags: 'ritmo musica percussao' },
+                        { className: 'fa-solid fa-headset', label: 'Som', tags: 'audio mesa tecnica' },
+                        { className: 'fa-solid fa-lightbulb', label: 'Ideias', tags: 'criatividade planejamento' },
+                        { className: 'fa-solid fa-star', label: 'Destaque', tags: 'excelencia brilho especial' },
+                        { className: 'fa-solid fa-gift', label: 'Presentes', tags: 'lembranca mimo brindes' },
+                        { className: 'fa-solid fa-cake-candles', label: 'Confraternizacao', tags: 'festa comemoracao' },
+                        { className: 'fa-solid fa-palette', label: 'Criativo', tags: 'design arte visual' },
+                        { className: 'fa-solid fa-brush', label: 'Arte', tags: 'pintura decoracao cenografia' },
+                        { className: 'fa-solid fa-flag', label: 'Direcao', tags: 'lideranca rumo gestao' },
+                        { className: 'fa-solid fa-crown', label: 'Coordenacao', tags: 'coordenador chefia lider' },
+                        { className: 'fa-solid fa-phone', label: 'Contato', tags: 'telefone ligacao suporte' },
+                        { className: 'fa-solid fa-envelope', label: 'Mensagem', tags: 'email recado comunicacao' },
+                        { className: 'fa-solid fa-scale-balanced', label: 'Finanças', tags: 'financeiro caixa dinheiro contabilidade' },
+                        { className: 'fa-solid fa-sack-dollar', label: 'Caixa', tags: 'caixa oferta arrecadacao' },
+                        { className: 'fa-solid fa-coins', label: 'Moedas', tags: 'financeiro valor pagamento' },
+                        { className: 'fa-solid fa-file-invoice-dollar', label: 'Prestação de contas', tags: 'financeiro relatorio gastos' },
+                        { className: 'fa-solid fa-chart-line', label: 'Gestão', tags: 'indicador planejamento estrategia' },
+                        { className: 'fa-solid fa-chalkboard-user', label: 'Formação', tags: 'curso estudo aprendizagem' },
+                        { className: 'fa-solid fa-child-reaching', label: 'Acolhimento', tags: 'recepcao cuidado suporte' },
+                        { className: 'fa-solid fa-people-arrows', label: 'Integração', tags: 'dinamica interacao convivio' },
+                        { className: 'fa-solid fa-bell-concierge', label: 'Serviço', tags: 'servir apoio estrutura' },
+                        { className: 'fa-solid fa-broom', label: 'Limpeza', tags: 'higiene limpeza organizacao' },
+                        { className: 'fa-solid fa-boxes-stacked', label: 'Almoxarifado', tags: 'material estoque organizacao' },
+                        { className: 'fa-solid fa-sheet-plastic', label: 'Decoração', tags: 'decoracao cenografia ambiente' },
+                        { className: 'fa-solid fa-person-praying', label: 'Espiritualidade', tags: 'oracao espiritual liturgia' },
+                        { className: 'fa-solid fa-book-journal-whills', label: 'Catequese', tags: 'estudo doutrina formacao' },
+                        { className: 'fa-solid fa-route', label: 'Roteiro', tags: 'cronograma fluxo encontro' },
+                        { className: 'fa-solid fa-walkie-talkie', label: 'Comunicação interna', tags: 'radio comunicacao equipe' },
+                        { className: 'fa-solid fa-user-plus', label: 'Cadastro', tags: 'inscricao secretaria lista' },
+                        { className: 'fa-solid fa-notes-medical', label: 'Saúde', tags: 'medico enfermagem primeiros socorros' },
+                        { className: 'fa-solid fa-people-roof', label: 'Família', tags: 'apoio familia acompanhamento' },
+                        { className: 'fa-solid fa-user-gear', label: 'Coordenação técnica', tags: 'coord tecnica sistema suporte' }
+                    ]
+                }
+            },
+            computed: {
+                iconesFiltrados() {
+                    const termo = this.normalizarTexto(this.buscaIcone || '');
+                    if (!termo) return this.bibliotecaIcones;
+                    return this.bibliotecaIcones.filter(i =>
+                        this.normalizarTexto(i.label).includes(termo) ||
+                        this.normalizarTexto(i.className).includes(termo) ||
+                        this.normalizarTexto(i.tags || '').includes(termo)
+                    );
+                }
+            },
+            methods: {
+                normalizarTexto(valor) {
+                    return (valor || '')
+                        .toString()
+                        .normalize('NFD')
+                        .replace(/[\u0300-\u036f]/g, '')
+                        .toLowerCase()
+                        .trim();
+                },
+                abrirModalIcones() {
+                    this.buscaIcone = '';
+                    if (!this.modalIconesInstancia) {
+                        this.modalIconesInstancia = new bootstrap.Modal(document.getElementById('modalIcones'));
+                    }
+                    this.modalIconesInstancia.show();
+                },
+                selecionarIcone(className) {
+                    this.formulario.icone_classe = className;
+                    if (this.modalIconesInstancia) this.modalIconesInstancia.hide();
+                },
+                getIconBgStyle(color) {
+                    const base = color || '#2563eb';
+                    return { backgroundColor: `${base}20` };
+                },
+                async buscarEquipes() {
+                    this.carregando = true;
+                    try {
+                        const res = await fetch('/api/equipes');
+                        this.equipes = await res.json();
+                    } catch (e) {
+                        console.error("Erro ao puxar:", e);
+                    } finally {
+                        this.carregando = false;
+                    }
+                },
+                async buscarFuncoesPadrao() {
+                    this.carregandoFuncoesPadrao = true;
+                    try {
+                        const res = await fetch('/api/equipes/funcoes-padrao');
+                        this.funcoesPadrao = res.ok ? await res.json() : [];
+                    } catch (e) {
+                        this.funcoesPadrao = [];
+                    } finally {
+                        this.carregandoFuncoesPadrao = false;
+                    }
+                },
+                async carregarPapeisDisponiveis() {
+                    try {
+                        const res = await fetch('/api/equipes/papeis');
+                        const data = res.ok ? await res.json() : [];
+                        this.papeisDisponiveis = Array.isArray(data) ? data : [];
+                    } catch (e) {
+                        this.papeisDisponiveis = [];
+                    } finally {
+                        if (!this.papeisDisponiveis.length) {
+                            this.papeisDisponiveis = [
+                                { id: 1, nome: 'Membro' },
+                                { id: 2, nome: 'Tio' },
+                                { id: 3, nome: 'Coordenador' }
+                            ];
+                        }
+                        if (!this.papeisDisponiveis.some(p => p.nome === this.novaFuncaoPapel)) {
+                            this.novaFuncaoPapel = this.papeisDisponiveis[0].nome;
+                        }
+                        if (!this.papeisDisponiveis.some(p => p.nome === this.novaFuncaoPadraoPapel)) {
+                            this.novaFuncaoPadraoPapel = this.papeisDisponiveis[0].nome;
+                        }
+                    }
+                },
+                async adicionarPapel() {
+                    const nome = (this.novoPapelNome || '').trim();
+                    if (!nome) return;
+                    try {
+                        const res = await fetch('/api/equipes/papeis', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ nome })
+                        });
+                        if (!res.ok) {
+                            const err = await res.json();
+                            alert(err.error || 'Erro ao criar papel');
+                            return;
+                        }
+                        this.novoPapelNome = '';
+                        await this.carregarPapeisDisponiveis();
+                    } catch (e) {
+                        alert('Erro ao criar papel');
+                    }
+                },
+                async removerPapel(id) {
+                    if (!(await window.showFloatingConfirm('Excluir este papel? Essa ação bloqueia se ele estiver em uso.'))) return;
+                    try {
+                        const res = await fetch(`/api/equipes/papeis/${id}`, { method: 'DELETE' });
+                        if (!res.ok) {
+                            const err = await res.json();
+                            alert(err.error || 'Erro ao excluir papel');
+                            return;
+                        }
+                        await this.carregarPapeisDisponiveis();
+                    } catch (e) {
+                        alert('Erro ao excluir papel');
+                    }
+                },
+                abrirModalFuncoesPadrao() {
+                    this.novaFuncaoPadrao = '';
+                    this.novaFuncaoPadraoPapel = this.papeisDisponiveis.length ? this.papeisDisponiveis[0].nome : 'Membro';
+                    this.novoPapelNome = '';
+                    this.buscarFuncoesPadrao();
+                    if (!this.modalFuncoesPadraoInstancia) {
+                        this.modalFuncoesPadraoInstancia = new bootstrap.Modal(document.getElementById('modalFuncoesPadrao'));
+                    }
+                    this.modalFuncoesPadraoInstancia.show();
+                },
+                async adicionarFuncaoPadrao() {
+                    if (!this.novaFuncaoPadrao.trim()) return;
+                    try {
+                        const res = await fetch('/api/equipes/funcoes-padrao', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                nome: this.novaFuncaoPadrao,
+                                papel_base: this.novaFuncaoPadraoPapel
+                            })
+                        });
+                        if (!res.ok) {
+                            const err = await res.json();
+                            alert(err.error || 'Erro ao inserir função padrão');
+                            return;
+                        }
+                        this.novaFuncaoPadrao = '';
+                        this.novaFuncaoPadraoPapel = this.papeisDisponiveis.length ? this.papeisDisponiveis[0].nome : 'Membro';
+                        await this.buscarFuncoesPadrao();
+                        if (this.editando && this.formulario.id) await this.buscarFuncoes(this.formulario.id);
+                    } catch (e) {
+                        alert('Erro ao inserir função padrão');
+                    }
+                },
+                async removerFuncaoPadrao(id) {
+                    if (!(await window.showFloatingConfirm("Remover essa função padrão de todas as equipes?"))) return;
+                    try {
+                        const res = await fetch(`/api/equipes/funcoes-padrao/${id}`, { method: 'DELETE' });
+                        if (!res.ok) {
+                            const err = await res.json();
+                            alert(err.error || 'Erro ao remover função padrão');
+                            return;
+                        }
+                        await this.buscarFuncoesPadrao();
+                        if (this.editando && this.formulario.id) await this.buscarFuncoes(this.formulario.id);
+                    } catch (e) {
+                        alert('Erro ao remover função padrão');
+                    }
+                },
+
+                abrirModalEquipeNovo() {
+                    this.editando = false;
+                    this.formulario = {
+                        id: null,
+                        nome: '',
+                        descricao: '',
+                        icone_classe: 'fa-solid fa-users',
+                        cor_icone: '#2563eb',
+                        membros_outro_ejc: 0,
+                        limite_homens: '',
+                        limite_mulheres: '',
+                        limite_casais_tios: ''
+                    };
+                    this.funcoes = [];
+                    this.novaFuncao = '';
+                    this.novaFuncaoPapel = this.papeisDisponiveis.length ? this.papeisDisponiveis[0].nome : 'Membro';
+                    if (!this.modalInstancia) this.modalInstancia = new bootstrap.Modal(document.getElementById('modalEquipe'));
+                    this.modalInstancia.show();
+                },
+
+                abrirModalEquipe(equipe) {
+                    this.editando = true;
+                    this.formulario = {
+                        id: equipe.id,
+                        nome: equipe.nome,
+                        descricao: equipe.descricao,
+                        icone_classe: equipe.icone_classe || 'fa-solid fa-users',
+                        cor_icone: equipe.cor_icone || '#2563eb',
+                        membros_outro_ejc: equipe.membros_outro_ejc ? 1 : 0,
+                        limite_homens: equipe.limite_homens ?? '',
+                        limite_mulheres: equipe.limite_mulheres ?? '',
+                        limite_casais_tios: equipe.limite_casais_tios ?? ''
+                    };
+                    this.novaFuncao = '';
+                    this.novaFuncaoPapel = this.papeisDisponiveis.length ? this.papeisDisponiveis[0].nome : 'Membro';
+                    this.buscarFuncoes(equipe.id);
+                    if (!this.modalInstancia) this.modalInstancia = new bootstrap.Modal(document.getElementById('modalEquipe'));
+                    this.modalInstancia.show();
+                },
+
+                async salvarEquipe() {
+                    if (!this.formulario.nome.trim()) {
+                        alert("O nome da equipe é obrigatório.");
+                        return;
+                    }
+
+                    try {
+                        const url = this.editando ? `/api/equipes/${this.formulario.id}` : '/api/equipes';
+                        const metodo = this.editando ? 'PUT' : 'POST';
+
+                        const res = await fetch(url, {
+                            method: metodo,
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(this.formulario)
+                        });
+
+                        if (!res.ok) {
+                            const err = await res.json();
+                            alert(err.error || "Erro ao salvar equipe"); return;
+                        }
+
+                        const dados = await res.json();
+
+                        if (!this.editando) {
+                            this.editando = true;
+                            this.formulario.id = dados.id;
+                            this.funcoes = [];
+                        } else {
+                            alert('Dados atualizados com sucesso!');
+                        }
+
+                        this.buscarEquipes();
+
+                    } catch (e) {
+                        alert("Erro de comunicação ao salvar.");
+                    }
+                },
+
+                async deletarEquipe(id) {
+                    if (!(await window.showFloatingConfirm("Atenção! Deletar esta equipe também DELETARÁ todas as funções internas cadastradas nela. Deseja prosseguir de forma definitiva?"))) return;
+
+                    try {
+                        const res = await fetch(`/api/equipes/${id}`, { method: 'DELETE' });
+                        if (!res.ok) {
+                            alert("Erro ao excluir."); return;
+                        }
+                        this.modalInstancia.hide();
+                        this.buscarEquipes();
+                    } catch (e) {
+                        alert("Erro ao excluir.");
+                    }
+                },
+
+                async buscarFuncoes(equipeId) {
+                    this.carregandoFuncoes = true;
+                    this.funcoes = [];
+                    try {
+                        const res = await fetch(`/api/equipes/${equipeId}/funcoes`);
+                        if (res.ok) {
+                            this.funcoes = await res.json();
+                        }
+                    } catch (e) { } finally {
+                        this.carregandoFuncoes = false;
+                    }
+                },
+
+                async adicionarFuncao() {
+                    if (!this.novaFuncao.trim() || !this.formulario.id) return;
+
+                    try {
+                        const res = await fetch(`/api/equipes/${this.formulario.id}/funcoes`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                nome: this.novaFuncao,
+                                papel_base: this.novaFuncaoPapel
+                            })
+                        });
+                        if (res.ok) {
+                            this.novaFuncao = '';
+                            this.novaFuncaoPapel = this.papeisDisponiveis.length ? this.papeisDisponiveis[0].nome : 'Membro';
+                            this.buscarFuncoes(this.formulario.id); // Recarrega lista local
+                        } else {
+                            const err = await res.json();
+                            alert(err.error || "Erro ao inserir.");
+                        }
+                    } catch (e) { }
+                },
+
+                async removerFuncao(funcaoId) {
+                    if (!(await window.showFloatingConfirm("Tem certeza que deseja remover esta função/cargo?"))) return;
+                    try {
+                        const res = await fetch(`/api/equipes/funcoes/${funcaoId}`, { method: 'DELETE' });
+                        if (res.ok) {
+                            this.buscarFuncoes(this.formulario.id);
+                        } else {
+                            alert("Erro ao remover.");
+                        }
+                    } catch (e) { }
+                }
+            },
+            mounted() {
+                this.buscarEquipes();
+                this.carregarPapeisDisponiveis();
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

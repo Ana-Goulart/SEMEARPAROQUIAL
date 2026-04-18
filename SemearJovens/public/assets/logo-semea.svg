@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Semear Paroquial">
+  <g fill="none" stroke="#b98a35" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="256" cy="256" r="206" stroke-width="10"/>
+
+    <path d="M256 100 C226 140,226 180,256 212 C286 180,286 140,256 100 Z" stroke-width="12"/>
+
+    <path d="M256 204 L256 334" stroke-width="14"/>
+    <path d="M222 252 L290 252" stroke-width="12"/>
+
+    <path d="M256 334 C232 286,198 254,151 223" stroke-width="12"/>
+    <path d="M256 334 C280 286,314 254,361 223" stroke-width="12"/>
+
+    <path d="M148 196 C178 196,196 218,196 246 C166 246,148 224,148 196 Z" stroke-width="10"/>
+    <path d="M364 196 C334 196,316 218,316 246 C346 246,364 224,364 196 Z" stroke-width="10"/>
+
+    <path d="M116 270 C156 270,180 299,180 338 C140 338,116 309,116 270 Z" stroke-width="10"/>
+    <path d="M396 270 C356 270,332 299,332 338 C372 338,396 309,396 270 Z" stroke-width="10"/>
+  </g>
+</svg>

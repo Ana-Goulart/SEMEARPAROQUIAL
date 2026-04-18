@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>EJC - Meu EJC</title>
+    <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
+    <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="/css/velzon-theme.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/ui-kit.js"></script>
+    <script src="/js/menu.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <main class="container-fluid">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="mb-0">Meu EJC</h3>
+            </div>
+
+            <div class="card border-0 shadow-sm" style="max-width: 720px;">
+                <div class="card-body">
+                    <h5 class="card-title mb-2">Identificação oficial do seu EJC</h5>
+                    <p class="text-muted mb-3">
+                        O nome do seu EJC e a paróquia base são dados institucionais do mesmo tenant. Aqui no sistema do EJC você pode editar apenas os bairros atendidos.
+                    </p>
+
+                    <div class="mb-3">
+                        <label class="form-label">Nome do EJC</label>
+                        <input type="text" class="form-control" v-model.trim="form.nome"
+                            placeholder="Ex.: São José, Santa Luzia, Cristo Rei" disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Paróquia base</label>
+                        <input type="text" class="form-control" v-model.trim="form.paroquia"
+                            placeholder="Ex.: Paróquia Nossa Senhora Aparecida" disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Endereço</label>
+                        <input type="text" class="form-control" v-model.trim="form.endereco"
+                            placeholder="Ex.: Rua ..., nº ..., Bairro ..., Cidade ..." disabled>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Estado atendido</label>
+                        <select class="form-select" v-model="form.estado_atende" disabled>
+                            <option value="Minas Gerais">Minas Gerais</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Cidade atendida</label>
+                        <select class="form-select" v-model="form.cidade_atende" disabled>
+                            <option value="Contagem">Contagem</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Bairros atendidos</label>
+                        <input type="text" class="form-control mb-2" v-model="filtroBairro"
+                            placeholder="Filtrar bairro...">
+                        <div class="border rounded p-2 bg-light" style="max-height: 220px; overflow: auto;">
+                            <div class="form-check" v-for="b in bairrosFiltrados" :key="b">
+                                <input class="form-check-input" type="checkbox" :id="`bairro-${b}`" :value="b"
+                                    v-model="form.bairros_atendidos">
+                                <label class="form-check-label" :for="`bairro-${b}`">{{ b }}</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-primary" @click="salvar" :disabled="salvando">
+                            {{ salvando ? 'Salvando...' : 'Salvar bairros atendidos' }}
+                        </button>
+                        <button class="btn btn-soft-secondary" @click="carregar" :disabled="salvando">Recarregar</button>
+                    </div>
+
+                    <div class="mt-3" v-if="mensagem">
+                        <div class="alert alert-success py-2 mb-0">{{ mensagem }}</div>
+                    </div>
+                    <div class="mt-3" v-if="erro">
+                        <div class="alert alert-danger py-2 mb-0">{{ erro }}</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            injetarMenu('#app');
+            ativarMenu('/configuracoes/meuejc');
+        });
+
+        const { createApp } = Vue;
+        createApp({
+            data() {
+                return {
+                    form: { nome: '', paroquia: '', endereco: '', estado_atende: 'Minas Gerais', cidade_atende: 'Contagem', bairros_atendidos: [] },
+                    salvando: false,
+                    mensagem: '',
+                    erro: '',
+                    filtroBairro: '',
+                    bairros: [
+                        'Alvorada', 'Ana Lucia', 'Água Branca', 'Água Branca do Riacho', 'Areias', 'Arvoredo',
+                        'Beatriz', 'Bela Vista', 'Bernardo Monteiro', 'Bom Jesus', 'Brasil Industrial', 'Cabral',
+                        'Caiçara', 'Camargos', 'Cândida Ferreira', 'Canguiri', 'Capelinha', 'Centro',
+                        'Chácara', 'Cidade Industrial', 'Conjunto Confiança', 'Conjunto Amazonas',
+                        'Conjunto Água Branca', 'Conjunto Eldorado', 'Conjunto Icaivera', 'Conjunto Santa Maria',
+                        'Coqueiros', 'Darcy Vargas', 'Distrito Industrial', 'Dom Bosco', 'Dona Clara',
+                        'Eldorado', 'Europa', 'Fazendinha', 'Fonte Grande', 'Funcionários', 'Glória',
+                        'Granja De Freitas', 'Industrial', 'Inconfidentes', 'Ipê Amarelo', 'Itatiaia',
+                        'Jardim Eldorado', 'Jardim Industrial', 'Jardim Laguna', 'Jardim Riacho',
+                        'Jatobá', 'JK', 'Laura', 'Lúcio de Abreu', 'Maracanã', 'Maria Regina',
+                        'Monte Castelo', 'Morada Nova', 'Nacional', 'Nossa Senhora de Fátima',
+                        'Nova Contagem', 'Novo Riacho', 'Olaria', 'Ouro Verde', 'Parque São João',
+                        'Pedra Azul', 'Petrolândia', 'Praia', 'Recanto da Pampulha', 'Retiro',
+                        'Riacho', 'Santa Cruz', 'Santa Helena', 'Santa Maria', 'Santana', 'São Caetano',
+                        'São Gonçalo', 'São Joaquim', 'São Luiz', 'São Pedro', 'São Salvador',
+                        'Sapucaias', 'Solar do Madeira', 'Tropical', 'Tupã', 'Várzea das Flores', 'Vila França',
+                        'Vila Nova', 'Vila Renascer', 'Vila Santa Maria'
+                    ]
+                };
+            },
+            computed: {
+                bairrosFiltrados() {
+                    const filtro = String(this.filtroBairro || '').trim().toLowerCase();
+                    if (!filtro) return this.bairros;
+                    return this.bairros.filter(b => b.toLowerCase().includes(filtro));
+                }
+            },
+            methods: {
+                async carregar() {
+                    this.erro = '';
+                    this.mensagem = '';
+                    try {
+                        const res = await fetch('/api/meu-ejc');
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) throw new Error(data.error || 'Erro ao carregar configuração.');
+                        this.form.nome = data.nome || 'Inconfidentes';
+                        this.form.paroquia = data.paroquia || '';
+                        this.form.endereco = data.endereco || '';
+                        this.form.estado_atende = data.estado_atende || 'Minas Gerais';
+                        this.form.cidade_atende = data.cidade_atende || 'Contagem';
+                        this.form.bairros_atendidos = Array.isArray(data.bairros_atendidos) ? data.bairros_atendidos : [];
+                    } catch (e) {
+                        this.erro = e.message || 'Erro ao carregar configuração.';
+                    }
+                },
+                async salvar() {
+                    this.erro = '';
+                    this.mensagem = '';
+                    this.salvando = true;
+                    try {
+                        const res = await fetch('/api/meu-ejc', {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                bairros_atendidos: this.form.bairros_atendidos || []
+                            })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) throw new Error(data.error || 'Erro ao salvar configuração.');
+                        this.form.nome = data.nome || this.form.nome;
+                        this.form.paroquia = data.paroquia || '';
+                        this.form.endereco = data.endereco || '';
+                        this.form.estado_atende = data.estado_atende || 'Minas Gerais';
+                        this.form.cidade_atende = data.cidade_atende || 'Contagem';
+                        this.form.bairros_atendidos = Array.isArray(data.bairros_atendidos) ? data.bairros_atendidos : [];
+                        this.mensagem = 'Bairros atendidos atualizados com sucesso.';
+                    } catch (e) {
+                        this.erro = e.message || 'Erro ao salvar configuração.';
+                    } finally {
+                        this.salvando = false;
+                    }
+                }
+            },
+            mounted() {
+                this.carregar();
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>
