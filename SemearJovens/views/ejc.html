@@ -25,7 +25,10 @@
             <main class="container-fluid">
                 <div class="d-flex justify-content-between mb-4 align-items-center">
                     <h3>Gerenciar EJCs</h3>
-                    <button class="btn btn-primary" @click="abrirModalAdicionar"><i class="fa-solid fa-plus icon-accent"></i> Novo EJC</button>
+                    <button class="btn btn-primary btn-ejc-action" @click="abrirModalAdicionar" title="Novo" aria-label="Novo">
+                        <span class="btn-ejc-icon"><i class="fa-solid fa-plus icon-accent"></i></span>
+                        <span class="btn-ejc-text">Novo EJC</span>
+                    </button>
                 </div>
 
                 <!-- Tabela de EJCs -->
@@ -55,11 +58,17 @@
                                 <td>{{ formatarData(e.data_fim) }}</td>
                                 <td>{{ e.musica_tema || '-' }}</td>
                                 <td>
-                                    <button class="btn btn-corporate-view btn-sm"
-                                        @click="abrirModalEncontristas(e)"><i class="fas fa-eye me-1"></i>Ver</button>
+                                    <button class="btn btn-corporate-view btn-sm btn-ejc-action"
+                                        @click="abrirModalEncontristas(e)" title="Visualizar" aria-label="Visualizar">
+                                        <span class="btn-ejc-icon"><i class="fas fa-eye"></i></span>
+                                        <span class="btn-ejc-text">Ver</span>
+                                    </button>
                                 </td>
                                 <td>
-                                    <button class="btn btn-edit-standard btn-sm" @click="abrirModalEditar(e)">Editar</button>
+                                    <button class="btn-edit-standard btn-sm btn-ejc-action" @click="abrirModalEditar(e)" title="Editar" aria-label="Editar">
+                                        <span class="btn-ejc-icon"><i class="fas fa-pen-to-square"></i></span>
+                                        <span class="btn-ejc-text">Editar</span>
+                                    </button>
                                 </td>
                             </tr>
                         </tbody>
@@ -115,7 +124,10 @@
                         <div class="modal-footer d-flex justify-content-between bg-light">
                             <span class="text-muted fw-bold">Total: <span class="text-primary">{{ encontristas.length
                                     }}</span></span>
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                            <button type="button" class="btn btn-secondary btn-ejc-action" data-bs-dismiss="modal" title="Fechar" aria-label="Fechar">
+                                <span class="btn-ejc-icon"><i class="fa-solid fa-xmark icon-accent"></i></span>
+                                <span class="btn-ejc-text">Fechar</span>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -185,12 +197,20 @@
                             </form>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-soft-secondary"
-                                data-bs-dismiss="modal">Cancelar</button>
-                            <button type="button" class="btn btn-danger me-auto" v-if="editando"
-                                @click="deletarEJCModal"><i class="fa-solid fa-trash icon-accent"></i> Deletar</button>
-                            <button type="button" class="btn btn-primary" @click="salvar">{{ editando ? 'Atualizar' :
-                                'Criar' }}</button>
+                            <button type="button" class="btn btn-soft-secondary btn-ejc-action"
+                                data-bs-dismiss="modal" title="Cancelar" aria-label="Cancelar">
+                                <span class="btn-ejc-icon"><i class="fa-solid fa-xmark icon-accent"></i></span>
+                                <span class="btn-ejc-text">Cancelar</span>
+                            </button>
+                            <button type="button" class="btn btn-danger me-auto btn-ejc-action" v-if="editando"
+                                @click="deletarEJCModal" title="Excluir" aria-label="Excluir">
+                                <span class="btn-ejc-icon"><i class="fa-solid fa-trash icon-accent"></i></span>
+                                <span class="btn-ejc-text">Deletar</span>
+                            </button>
+                            <button type="button" class="btn btn-primary btn-ejc-action" @click="salvar" title="Salvar" aria-label="Salvar">
+                                <span class="btn-ejc-icon"><i class="fa-solid fa-floppy-disk icon-accent"></i></span>
+                                <span class="btn-ejc-text">{{ editando ? 'Atualizar' : 'Criar' }}</span>
+                            </button>
                         </div>
                     </div>
                 </div>

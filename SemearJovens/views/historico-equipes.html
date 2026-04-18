@@ -27,12 +27,19 @@
                 <div class="d-flex justify-content-between mb-4 align-items-center">
                     <h3 class="mb-0"><i class="fa-solid fa-bullseye icon-accent"></i> EJC</h3>
                     <div class="d-flex gap-2">
-                        <button class="btn btn-outline-success" @click="exportarExcel">Exportar Excel</button>
-                        <label class="btn btn-outline-primary mb-0">
-                            Importar Excel
+                        <button class="btn btn-outline-success btn-ejc-action" @click="exportarExcel" title="Exportar" aria-label="Exportar">
+                            <span class="btn-ejc-icon"><i class="fa-solid fa-folder-open icon-accent"></i></span>
+                            <span class="btn-ejc-text">Exportar</span>
+                        </button>
+                        <label class="btn btn-outline-primary btn-ejc-action mb-0" title="Importar" aria-label="Importar">
+                            <span class="btn-ejc-icon"><i class="fa-solid fa-file-import icon-accent"></i></span>
+                            <span class="btn-ejc-text">Importar</span>
                             <input type="file" class="d-none" accept=".xlsx" @change="importarExcel">
                         </label>
-                        <button class="btn btn-primary" @click="abrirModalAdicionar"><i class="fa-solid fa-plus icon-accent"></i> Novo EJC</button>
+                        <button class="btn btn-primary btn-ejc-action" @click="abrirModalAdicionar" title="Novo" aria-label="Novo">
+                            <span class="btn-ejc-icon"><i class="fa-solid fa-plus icon-accent"></i></span>
+                            <span class="btn-ejc-text">Novo EJC</span>
+                        </button>
                     </div>
                 </div>
                 <div class="mb-2 text-muted small">
@@ -50,7 +57,10 @@
                 <div class="accordion corporate-accordion shadow-sm" id="acordeaoEJCs">
                     <div v-if="ejcs.length === 0" class="alert alert-info d-flex justify-content-between align-items-center">
                         <span>Nenhum EJC cadastrado.</span>
-                        <button class="btn btn-sm btn-primary" @click="abrirModalAdicionar">Criar Primeiro EJC</button>
+                        <button class="btn btn-soft-secondary btn-ejc-action" @click="abrirModalAdicionar" title="Novo" aria-label="Novo">
+                            <span class="btn-ejc-icon"><i class="fa-solid fa-plus icon-accent"></i></span>
+                            <span class="btn-ejc-text">Criar Primeiro EJC</span>
+                        </button>
                     </div>
 
                     <div v-for="(ejc, index) in ejcsOrdenados" :key="ejc.id" class="accordion-item">
@@ -81,10 +91,11 @@
                                         <tr v-for="equipe in ejc.estrutura" :key="equipe.id">
                                             <td><strong>{{ equipe.nome }}</strong></td>
                                             <td class="text-center">
-                                                <button class="btn btn-corporate-view btn-sm"
+                                                <button class="btn btn-corporate-view btn-sm btn-ejc-action"
                                                     @click="abrirModalMontagem(ejc, equipe)"
                                                     title="Ver dados dessa equipe">
-                                                    <i class="fas fa-eye me-1"></i>Ver
+                                                    <span class="btn-ejc-icon"><i class="fas fa-eye"></i></span>
+                                                    <span class="btn-ejc-text">Ver</span>
                                                 </button>
                                             </td>
                                         </tr>
@@ -96,10 +107,11 @@
                                         <tr v-for="equipe in equipesDoEJC(ejc.id)" :key="equipe.id">
                                             <td><strong>{{ equipe.nome }}</strong></td>
                                             <td class="text-center">
-                                                <button class="btn btn-corporate-view btn-sm"
+                                                <button class="btn btn-corporate-view btn-sm btn-ejc-action"
                                                     @click="abrirModalJovens(ejc, equipe)"
                                                     title="Ver integrantes dessa equipe">
-                                                    <i class="fas fa-eye me-1"></i>Ver
+                                                    <span class="btn-ejc-icon"><i class="fas fa-eye"></i></span>
+                                                    <span class="btn-ejc-text">Ver</span>
                                                 </button>
                                             </td>
                                         </tr>
@@ -111,7 +123,10 @@
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <h6 class="mb-0">Informações da Edição</h6>
                                         <div class="d-flex gap-2">
-                                            <button class="btn btn-corporate-view btn-sm" @click="abrirModalEncontristas(ejc)"><i class="fas fa-eye me-1"></i>Encontristas</button>
+                                            <button class="btn btn-corporate-view btn-sm btn-ejc-action" @click="abrirModalEncontristas(ejc)" title="Visualizar" aria-label="Visualizar">
+                                                <span class="btn-ejc-icon"><i class="fas fa-eye"></i></span>
+                                                <span class="btn-ejc-text">Encontristas</span>
+                                            </button>
                                             <span class="badge bg-soft-secondary text-muted d-inline-flex align-items-center">Histórico congelado</span>
                                         </div>
                                     </div>
@@ -132,8 +147,9 @@
                                 <div class="mt-4 corporate-soft-panel" v-else>
                                     <div class="d-flex justify-content-between align-items-center mb-2">
                                         <h6 class="mb-0">Status da Montagem</h6>
-                                        <button class="btn btn-corporate-view btn-sm" @click="abrirModalEncontristas(ejc)">
-                                            <i class="fas fa-eye me-1"></i>Encontristas
+                                        <button class="btn btn-corporate-view btn-sm btn-ejc-action" @click="abrirModalEncontristas(ejc)" title="Visualizar" aria-label="Visualizar">
+                                            <span class="btn-ejc-icon"><i class="fas fa-eye"></i></span>
+                                            <span class="btn-ejc-text">Encontristas</span>
                                         </button>
                                     </div>
                                     <div class="row text-sm">
@@ -193,7 +209,10 @@
                         <div class="modal-footer d-flex justify-content-between bg-light">
                             <span class="text-muted fw-bold">Total: <span class="text-primary">{{ encontristas.length
                                     }}</span></span>
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                            <button type="button" class="btn btn-secondary btn-ejc-action" data-bs-dismiss="modal" title="Fechar" aria-label="Fechar">
+                                <span class="btn-ejc-icon"><i class="fa-solid fa-xmark icon-accent"></i></span>
+                                <span class="btn-ejc-text">Fechar</span>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -247,11 +266,19 @@
                             </form>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-soft-secondary" data-bs-dismiss="modal">Cancelar</button>
-                            <button type="button" class="btn btn-danger me-auto" v-if="editando"
-                                @click="deletarEJCModal"><i class="fa-solid fa-trash icon-accent"></i> Deletar</button>
-                            <button type="button" class="btn btn-primary" @click="salvarEJC">{{ editando ? 'Atualizar' :
-                                'Criar' }}</button>
+                            <button type="button" class="btn btn-soft-secondary btn-ejc-action" data-bs-dismiss="modal" title="Cancelar" aria-label="Cancelar">
+                                <span class="btn-ejc-icon"><i class="fa-solid fa-xmark icon-accent"></i></span>
+                                <span class="btn-ejc-text">Cancelar</span>
+                            </button>
+                            <button type="button" class="btn btn-danger me-auto btn-ejc-action" v-if="editando"
+                                @click="deletarEJCModal" title="Excluir" aria-label="Excluir">
+                                <span class="btn-ejc-icon"><i class="fa-solid fa-trash icon-accent"></i></span>
+                                <span class="btn-ejc-text">Deletar</span>
+                            </button>
+                            <button type="button" class="btn btn-primary btn-ejc-action" @click="salvarEJC" title="Salvar" aria-label="Salvar">
+                                <span class="btn-ejc-icon"><i class="fa-solid fa-floppy-disk icon-accent"></i></span>
+                                <span class="btn-ejc-text">{{ editando ? 'Atualizar' : 'Criar' }}</span>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -292,7 +319,10 @@
                             </table>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-soft-secondary" data-bs-dismiss="modal">Fechar</button>
+                            <button type="button" class="btn btn-soft-secondary btn-ejc-action" data-bs-dismiss="modal" title="Fechar" aria-label="Fechar">
+                                <span class="btn-ejc-icon"><i class="fa-solid fa-xmark icon-accent"></i></span>
+                                <span class="btn-ejc-text">Fechar</span>
+                            </button>
                         </div>
                     </div>
                 </div>

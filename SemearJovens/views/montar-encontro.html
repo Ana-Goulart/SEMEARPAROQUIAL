@@ -338,7 +338,7 @@
                                             <button class="btn btn-sm btn-outline-primary" @click="salvarSelecaoServir" :disabled="salvandoSelecao">
                                                 {{ salvandoSelecao ? 'Salvando...' : 'Salvar seleção' }}
                                             </button>
-                                            <button class="btn btn-sm btn-primary" @click="abrirModalDistribuicao" :disabled="!podeDistribuirSelecao">
+                                            <button class="btn btn-soft-secondary d-flex align-items-center gap-1" @click="abrirModalDistribuicao" :disabled="!podeDistribuirSelecao">
                                                 {{ distribuindo ? 'Distribuindo...' : 'Distribuir aleatoriamente' }}
                                             </button>
                                         </div>

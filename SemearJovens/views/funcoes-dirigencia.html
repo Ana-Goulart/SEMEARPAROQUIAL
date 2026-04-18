@@ -25,7 +25,10 @@
                     <h3><i class="fa-solid fa-book-open icon-accent"></i> Funções Dirigência</h3>
                     <p class="text-muted mb-0">Gerencie as funções e responsabilidades da dirigência.</p>
                 </div>
-                <button class="btn btn-primary" @click="abrirModalNovaFuncao"><i class="fa-solid fa-plus icon-accent"></i> Nova Função</button>
+                <button class="btn btn-primary btn-ejc-action" @click="abrirModalNovaFuncao" title="Novo" aria-label="Novo">
+                    <span class="btn-ejc-icon"><i class="fa-solid fa-plus icon-accent"></i></span>
+                    <span class="btn-ejc-text">Nova Função</span>
+                </button>
             </div>
 
             <div v-if="carregando" class="text-center py-5">
@@ -42,8 +45,14 @@
                                 <div class="d-flex justify-content-between align-items-start">
                                     <h6 class="mb-1">{{ f.nome }}</h6>
                                     <div class="d-flex gap-1">
-                                        <button class="btn btn-edit-standard btn-sm" @click="abrirModalEditarFuncao(f)">Editar</button>
-                                        <button class="btn btn-sm btn-outline-danger" @click="removerFuncao(f.id)">Remover</button>
+                                        <button class="btn-edit-standard btn-sm btn-ejc-action" @click="abrirModalEditarFuncao(f)" title="Editar" aria-label="Editar">
+                                            <span class="btn-ejc-icon"><i class="fas fa-pen-to-square"></i></span>
+                                            <span class="btn-ejc-text">Editar</span>
+                                        </button>
+                                        <button class="btn btn-danger btn-ejc-action" @click="removerFuncao(f.id)" title="Excluir" aria-label="Excluir">
+                                            <span class="btn-ejc-icon"><i class="fa-solid fa-trash icon-accent"></i></span>
+                                            <span class="btn-ejc-text">Remover</span>
+                                        </button>
                                     </div>
                                 </div>
                                 <p class="text-muted small mb-2">{{ f.descricao || 'Sem descrição.' }}</p>
@@ -98,9 +107,13 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button class="btn btn-primary" @click="salvarFuncao" :disabled="salvando">
-                            {{ salvando ? 'Salvando...' : (editandoId ? 'Salvar Alterações' : 'Salvar Função') }}
+                        <button class="btn btn-secondary btn-ejc-action" data-bs-dismiss="modal" title="Cancelar" aria-label="Cancelar">
+                            <span class="btn-ejc-icon"><i class="fa-solid fa-xmark icon-accent"></i></span>
+                            <span class="btn-ejc-text">Cancelar</span>
+                        </button>
+                        <button class="btn btn-primary btn-ejc-action" @click="salvarFuncao" :disabled="salvando" title="Salvar" aria-label="Salvar">
+                            <span class="btn-ejc-icon"><i :class="salvando ? 'fa-solid fa-spinner fa-spin icon-accent' : 'fa-solid fa-floppy-disk icon-accent'"></i></span>
+                            <span class="btn-ejc-text">{{ salvando ? 'Salvando...' : (editandoId ? 'Salvar Alterações' : 'Salvar Função') }}</span>
                         </button>
                     </div>
                 </div>

@@ -29,27 +29,33 @@
         }
 
         .ficha-subtab {
-            border: 1px solid rgba(31, 53, 88, 0.12);
+            border: 1px solid #d9a650;
             border-radius: 999px;
             background: #fff;
-            color: #4d596c;
+            color: #b67f1d;
             font-size: 0.92rem;
-            font-weight: 600;
-            padding: 0.5rem 0.95rem;
+            font-weight: 700;
+            padding: 0.45rem 0.95rem;
+            min-height: 40px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: none;
             transition: all 0.18s ease;
         }
 
         .ficha-subtab:hover {
-            border-color: rgba(197, 139, 42, 0.28);
-            background: #fff8ed;
-            color: #8b5b16;
+            border-color: #c8933f;
+            background: #fff6e8;
+            color: #9b6910;
+            transform: translateY(-1px);
         }
 
         .ficha-subtab.active {
             border-color: transparent;
-            background: linear-gradient(180deg, #355173 0%, #223750 100%);
+            background: #d9a650;
             color: #fff;
-            box-shadow: 0 10px 22px rgba(34, 55, 80, 0.18);
+            box-shadow: 0 8px 18px rgba(217, 166, 80, 0.28);
         }
 
         .ficha-subpane {
@@ -68,7 +74,7 @@
 
         .ficha-pane-title h6 {
             margin: 0;
-            color: #223750;
+            color: #b88732;
             font-size: 1rem;
             font-weight: 700;
         }
@@ -77,6 +83,14 @@
             margin: 0.25rem 0 0;
             color: #7b8797;
             font-size: 0.9rem;
+        }
+
+        #modalEditar .section-label-corporate {
+            color: #b88732;
+        }
+
+        #modalEditar .section-label-corporate i {
+            color: #b88732;
         }
 
         .sort-button {
@@ -97,14 +111,154 @@
             opacity: 0.8;
         }
 
+        .lista-mestre-mobile-expand-col {
+            display: none;
+            width: 3.2rem;
+            text-align: center;
+        }
+
+        .lista-mestre-mobile-name-cell {
+            text-align: left;
+        }
+
+        .lista-mestre-mobile-name-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 0.55rem;
+            min-height: 2.5rem;
+        }
+
+        .lista-mestre-mobile-toggle {
+            width: 2.15rem;
+            height: 2.15rem;
+            border: 1px solid rgba(191, 161, 111, 0.35);
+            border-radius: 999px;
+            background: #fff8ee;
+            color: #8f6a24;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            box-shadow: none;
+            transition: all 0.18s ease;
+        }
+
+        .lista-mestre-mobile-toggle:hover {
+            background: #f4ead8;
+            color: #6f511d;
+        }
+
+        .lista-mestre-mobile-toggle:focus {
+            box-shadow: 0 0 0 0.2rem rgba(191, 161, 111, 0.2);
+        }
+
+        .lista-mestre-mobile-detail-row {
+            display: none;
+            background: linear-gradient(180deg, #fffdf9 0%, #fdf7ee 100%);
+        }
+
+        .lista-mestre-mobile-detail-row.is-open {
+            display: table-row;
+        }
+
+        .lista-mestre-mobile-detail-cell {
+            padding: 0 !important;
+            border-top: 0 !important;
+        }
+
+        .lista-mestre-mobile-detail-grid {
+            display: grid;
+            gap: 0.85rem;
+            padding: 1rem 1.1rem;
+        }
+
+        .lista-mestre-mobile-detail-item {
+            border: 1px solid rgba(34, 55, 80, 0.08);
+            border-radius: 14px;
+            background: #fff;
+            padding: 0.75rem 0.85rem;
+        }
+
+        .lista-mestre-mobile-detail-label {
+            display: block;
+            margin-bottom: 0.25rem;
+            color: #8b6d41;
+            font-size: 0.77rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
+        .lista-mestre-mobile-detail-value {
+            color: #3d4451;
+            font-size: 0.92rem;
+            word-break: break-word;
+        }
+
+        .lista-mestre-mobile-action {
+            display: flex;
+            justify-content: flex-start;
+            padding-top: 0.2rem;
+        }
+
+        @media (max-width: 1199.98px) {
+            .lista-mestre-grid {
+                table-layout: auto;
+            }
+
+            .lista-mestre-mobile-expand-col {
+                display: table-cell;
+                vertical-align: middle;
+            }
+
+            .lista-mestre-mobile-hidden {
+                display: none;
+            }
+
+            .lista-mestre-mobile-detail-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .lista-mestre-grid thead th {
+                white-space: nowrap;
+            }
+
+            .lista-mestre-grid tbody td {
+                vertical-align: middle;
+            }
+
+            .lista-mestre-grid tbody tr:not(.lista-mestre-mobile-detail-row) td {
+                padding-top: 0.9rem;
+                padding-bottom: 0.9rem;
+            }
+
+            .lista-mestre-mobile-detail-row td {
+                background: linear-gradient(180deg, #fffdf9 0%, #fdf7ee 100%);
+            }
+        }
+
+        @media (max-width: 767.98px) {
+            .lista-mestre-mobile-detail-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (min-width: 1200px) {
+            .lista-mestre-mobile-detail-row,
+            .lista-mestre-mobile-expand-col {
+                display: none !important;
+            }
+        }
+
         .novo-jovem-modal .modal-content {
             border-radius: 24px;
             overflow: hidden;
         }
 
         .novo-jovem-header {
-            background: linear-gradient(135deg, #234462 0%, #172f45 100%);
-            color: #fff;
+            background: #F6F3EB;
+            color: #223750;
             padding: 1.1rem 1.4rem;
         }
 
@@ -169,13 +323,6 @@
             font-size: 0.95rem;
         }
 
-        .novo-jovem-origem-box {
-            border: 1px solid rgba(197, 139, 42, 0.22);
-            border-radius: 18px;
-            background: linear-gradient(180deg, #fffaf1 0%, #fff3df 100%);
-            padding: 1rem 1.05rem;
-        }
-
         .novo-jovem-help {
             margin-top: 0.55rem;
             color: #8b6d33;
@@ -183,7 +330,7 @@
         }
 
         .novo-jovem-modal .modal-footer {
-            background: #eef3f8;
+            background: #F6F3EB;
             border-top: 1px solid rgba(34, 55, 80, 0.08);
             padding: 1.15rem 1.4rem;
         }
@@ -200,21 +347,26 @@
             <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
                 <h3 class="mb-0">Lista Mestre - EJC {{ nomeMeuEJC }}</h3>
                 <div class="d-flex flex-wrap gap-2">
-                    <button class="btn btn-success d-flex align-items-center gap-1" @click="abrirModalNovoJovem">
-                        <span><i class="fa-solid fa-plus icon-accent"></i></span> Novo
+                    <button class="btn btn-soft-secondary btn-ejc-action" @click="abrirModalNovoJovem" title="Novo" aria-label="Novo">
+                        <span class="btn-ejc-icon"><i class="fa-solid fa-plus icon-accent"></i></span>
+                        <span class="btn-ejc-text">Novo</span>
                     </button>
-                    <button class="btn btn-soft-secondary d-flex align-items-center gap-1" @click="abrirModalExportacao">
-                        <span><i class="fa-solid fa-folder-open icon-accent"></i></span> Exportar
+                    <button class="btn btn-soft-secondary btn-ejc-action" @click="abrirModalExportacao" title="Exportar" aria-label="Exportar">
+                        <span class="btn-ejc-icon"><i class="fa-solid fa-folder-open icon-accent"></i></span>
+                        <span class="btn-ejc-text">Exportar</span>
                     </button>
-                    <button class="btn btn-soft-primary d-flex align-items-center gap-1 text-nowrap"
-                        @click="abrirModalImportacao">
-                        <span><i class="fa-solid fa-file-import icon-accent"></i></span> Importar
+                    <button class="btn btn-soft-secondary btn-ejc-action"
+                        @click="abrirModalImportacao" title="Importar" aria-label="Importar">
+                        <span class="btn-ejc-icon"><i class="fa-solid fa-file-import icon-accent"></i></span>
+                        <span class="btn-ejc-text">Importar</span>
                     </button>
                     <div class="vr mx-1"></div>
 
                     <div class="btn-group">
-                        <button class="btn btn-soft-secondary dropdown-toggle" data-bs-toggle="dropdown"><i class="fa-solid fa-gear icon-accent"></i>
-                            Colunas</button>
+                        <button class="btn btn-soft-secondary dropdown-toggle btn-ejc-action" data-bs-toggle="dropdown" title="Colunas" aria-label="Colunas">
+                            <span class="btn-ejc-icon"><i class="fa-solid fa-gear icon-accent"></i></span>
+                            <span class="btn-ejc-text">Colunas</span>
+                        </button>
                         <ul class="dropdown-menu p-3" style="min-width: 280px;">
                             <li v-for="(val, col) in colunasVisiveis" :key="col" class="mb-1">
                                 <div class="form-check">
@@ -224,14 +376,15 @@
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <li class="d-flex gap-2">
-                                <button type="button" class="btn btn-sm btn-primary" @click.stop="salvarPreferenciasColunas">Salvar</button>
+                                <button type="button" class="btn btn-soft-secondary d-flex align-items-center gap-1" @click.stop="salvarPreferenciasColunas">Salvar</button>
                                 <button type="button" class="btn btn-sm btn-outline-secondary" @click.stop="restaurarPreferenciasColunas">Restaurar padrão</button>
                             </li>
                         </ul>
                     </div>
-                    <button class="btn" :class="mostrarFiltros ? 'btn-primary' : 'btn-soft-primary'"
-                        @click="mostrarFiltros = !mostrarFiltros">
-                        <i class="fa-solid fa-magnifying-glass icon-accent"></i> Filtros
+                    <button class="btn btn-ejc-action" :class="mostrarFiltros ? 'btn-primary' : 'btn-soft-primary'"
+                        @click="mostrarFiltros = !mostrarFiltros" title="Filtros" aria-label="Filtros">
+                        <span class="btn-ejc-icon"><i class="fa-solid fa-magnifying-glass icon-accent"></i></span>
+                        <span class="btn-ejc-text">Filtros</span>
                     </button>
                 </div>
             </div>
@@ -341,59 +494,90 @@
             </div>
 
             <div class="card shadow-sm border-0">
-                <table class="table table-hover mb-0 text-center align-middle">
+                <table class="table table-hover mb-0 text-center align-middle lista-mestre-grid table-no-mobile-expand">
                     <thead class="table-light">
                         <tr>
+                            <th class="lista-mestre-mobile-expand-col">
+                                <span class="visually-hidden">Expandir linha</span>
+                            </th>
                             <th v-if="colunasVisiveis.Nome"><button type="button" class="sort-button" @click="ordenarPor('nome_completo')">Nome <span class="sort-indicator">{{ iconeOrdenacao('nome_completo') }}</span></button></th>
-                            <th v-if="colunasVisiveis.Telefone"><button type="button" class="sort-button" @click="ordenarPor('telefone')">Telefone <span class="sort-indicator">{{ iconeOrdenacao('telefone') }}</span></button></th>
-                            <th v-if="colunasVisiveis.Apelido"><button type="button" class="sort-button" @click="ordenarPor('apelido')">Apelido <span class="sort-indicator">{{ iconeOrdenacao('apelido') }}</span></button></th>
-                            <th v-if="colunasVisiveis.Email"><button type="button" class="sort-button" @click="ordenarPor('email')">E-mail <span class="sort-indicator">{{ iconeOrdenacao('email') }}</span></button></th>
-                            <th v-if="colunasVisiveis.TermosUso"><button type="button" class="sort-button" @click="ordenarPor('termos_aceitos_em')">Termos de uso <span class="sort-indicator">{{ iconeOrdenacao('termos_aceitos_em') }}</span></button></th>
-                            <th v-if="colunasVisiveis.Sexo"><button type="button" class="sort-button" @click="ordenarPor('sexo')">Sexo <span class="sort-indicator">{{ iconeOrdenacao('sexo') }}</span></button></th>
-                            <th v-if="colunasVisiveis.Idade"><button type="button" class="sort-button" @click="ordenarPor('idade')">Idade <span class="sort-indicator">{{ iconeOrdenacao('idade') }}</span></button></th>
-                            <th v-if="colunasVisiveis.Circulo"><button type="button" class="sort-button" @click="ordenarPor('circulo')">Círculo <span class="sort-indicator">{{ iconeOrdenacao('circulo') }}</span></button></th>
-                            <th v-if="colunasVisiveis.NumEJC"><button type="button" class="sort-button" @click="ordenarPor('numero_ejc')">Nº EJC <span class="sort-indicator">{{ iconeOrdenacao('numero_ejc') }}</span></button></th>
-                            <th v-if="colunasVisiveis.Instagram"><button type="button" class="sort-button" @click="ordenarPor('instagram')">Instagram <span class="sort-indicator">{{ iconeOrdenacao('instagram') }}</span></button></th>
-                            <th v-if="colunasVisiveis.ServeNoEJC"><button type="button" class="sort-button" @click="ordenarPor('serve_no_ejc')">Serve no EJC <span class="sort-indicator">{{ iconeOrdenacao('serve_no_ejc') }}</span></button></th>
-                            <th v-if="colunasVisiveis.Musico"><button type="button" class="sort-button" @click="ordenarPor('eh_musico')">Músico <span class="sort-indicator">{{ iconeOrdenacao('eh_musico') }}</span></button></th>
-                            <th v-if="colunasVisiveis.EstadoCivil"><button type="button" class="sort-button" @click="ordenarPor('estado_civil')">Estado Civil <span class="sort-indicator">{{ iconeOrdenacao('estado_civil') }}</span></button></th>
-                            <th v-if="colunasVisiveis.EquipeSaude"><button type="button" class="sort-button" @click="ordenarPor('equipe_saude')">Equipe de saúde <span class="sort-indicator">{{ iconeOrdenacao('equipe_saude') }}</span></button></th>
-                            <th v-if="colunasVisiveis.Deficiencia"><button type="button" class="sort-button" @click="ordenarPor('deficiencia')">Deficiência <span class="sort-indicator">{{ iconeOrdenacao('deficiencia') }}</span></button></th>
-                            <th v-if="colunasVisiveis.RestricaoAlimentar"><button type="button" class="sort-button" @click="ordenarPor('restricao_alimentar')">Restrição alimentar <span class="sort-indicator">{{ iconeOrdenacao('restricao_alimentar') }}</span></button></th>
-                            <th>Ações</th>
+                            <th v-if="colunasVisiveis.Telefone" class="lista-mestre-mobile-hidden"><button type="button" class="sort-button" @click="ordenarPor('telefone')">Telefone <span class="sort-indicator">{{ iconeOrdenacao('telefone') }}</span></button></th>
+                            <th v-if="colunasVisiveis.Apelido" class="lista-mestre-mobile-hidden"><button type="button" class="sort-button" @click="ordenarPor('apelido')">Apelido <span class="sort-indicator">{{ iconeOrdenacao('apelido') }}</span></button></th>
+                            <th v-if="colunasVisiveis.Email" class="lista-mestre-mobile-hidden"><button type="button" class="sort-button" @click="ordenarPor('email')">E-mail <span class="sort-indicator">{{ iconeOrdenacao('email') }}</span></button></th>
+                            <th v-if="colunasVisiveis.TermosUso" class="lista-mestre-mobile-hidden"><button type="button" class="sort-button" @click="ordenarPor('termos_aceitos_em')">Termos de uso <span class="sort-indicator">{{ iconeOrdenacao('termos_aceitos_em') }}</span></button></th>
+                            <th v-if="colunasVisiveis.Sexo" class="lista-mestre-mobile-hidden"><button type="button" class="sort-button" @click="ordenarPor('sexo')">Sexo <span class="sort-indicator">{{ iconeOrdenacao('sexo') }}</span></button></th>
+                            <th v-if="colunasVisiveis.Idade" class="lista-mestre-mobile-hidden"><button type="button" class="sort-button" @click="ordenarPor('idade')">Idade <span class="sort-indicator">{{ iconeOrdenacao('idade') }}</span></button></th>
+                            <th v-if="colunasVisiveis.Circulo" class="lista-mestre-mobile-hidden"><button type="button" class="sort-button" @click="ordenarPor('circulo')">Círculo <span class="sort-indicator">{{ iconeOrdenacao('circulo') }}</span></button></th>
+                            <th v-if="colunasVisiveis.NumEJC" class="lista-mestre-mobile-hidden"><button type="button" class="sort-button" @click="ordenarPor('numero_ejc')">Nº EJC <span class="sort-indicator">{{ iconeOrdenacao('numero_ejc') }}</span></button></th>
+                            <th v-if="colunasVisiveis.Instagram" class="lista-mestre-mobile-hidden"><button type="button" class="sort-button" @click="ordenarPor('instagram')">Instagram <span class="sort-indicator">{{ iconeOrdenacao('instagram') }}</span></button></th>
+                            <th v-if="colunasVisiveis.ServeNoEJC" class="lista-mestre-mobile-hidden"><button type="button" class="sort-button" @click="ordenarPor('serve_no_ejc')">Serve no EJC <span class="sort-indicator">{{ iconeOrdenacao('serve_no_ejc') }}</span></button></th>
+                            <th v-if="colunasVisiveis.Musico" class="lista-mestre-mobile-hidden"><button type="button" class="sort-button" @click="ordenarPor('eh_musico')">Músico <span class="sort-indicator">{{ iconeOrdenacao('eh_musico') }}</span></button></th>
+                            <th v-if="colunasVisiveis.EstadoCivil" class="lista-mestre-mobile-hidden"><button type="button" class="sort-button" @click="ordenarPor('estado_civil')">Estado Civil <span class="sort-indicator">{{ iconeOrdenacao('estado_civil') }}</span></button></th>
+                            <th v-if="colunasVisiveis.EquipeSaude" class="lista-mestre-mobile-hidden"><button type="button" class="sort-button" @click="ordenarPor('equipe_saude')">Equipe de saúde <span class="sort-indicator">{{ iconeOrdenacao('equipe_saude') }}</span></button></th>
+                            <th v-if="colunasVisiveis.Deficiencia" class="lista-mestre-mobile-hidden"><button type="button" class="sort-button" @click="ordenarPor('deficiencia')">Deficiência <span class="sort-indicator">{{ iconeOrdenacao('deficiencia') }}</span></button></th>
+                            <th v-if="colunasVisiveis.RestricaoAlimentar" class="lista-mestre-mobile-hidden"><button type="button" class="sort-button" @click="ordenarPor('restricao_alimentar')">Restrição alimentar <span class="sort-indicator">{{ iconeOrdenacao('restricao_alimentar') }}</span></button></th>
+                            <th class="lista-mestre-mobile-hidden">Ações</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="jovem in jovensFiltrados" :key="jovem.id">
-                            <td v-if="colunasVisiveis.Nome">
-                                <strong class="nome-clicavel" @click="verDetalhes(jovem)">{{ jovem.nome_completo }}</strong>
-                                <span v-if="jovem.transferencia_outro_ejc" class="badge bg-soft-warning text-warning ms-1">Transferência</span>
-                            </td>
-                            <td v-if="colunasVisiveis.Telefone">{{ jovem.telefone }}</td>
-                            <td v-if="colunasVisiveis.Apelido">{{ jovem.apelido || '-' }}</td>
-                            <td v-if="colunasVisiveis.Email">{{ jovem.email || '-' }}</td>
-                            <td v-if="colunasVisiveis.TermosUso">{{ jovem.termos_aceitos_em ? 'Aceito' : 'Não' }}</td>
-                            <td v-if="colunasVisiveis.Sexo">{{ jovem.sexo || '-' }}</td>
-                            <td v-if="colunasVisiveis.Idade">{{ calcularIdade(jovem.data_nascimento) }}</td>
-                            <td v-if="colunasVisiveis.Circulo">{{ jovem.circulo }}</td>
-                            <td v-if="colunasVisiveis.NumEJC">
-                                <span v-if="jovem.origem_ejc_tipo === 'OUTRO_EJC'">
-                                    {{ formatarNumeroOutroEjc(jovem.outro_ejc_numero) || '-' }} {{ jovem.outro_ejc_paroquia || '' }}
-                                </span>
-                                <span v-else>
-                                    {{ jovem.numero_ejc_montagem ? (numeroParaRomano(jovem.numero_ejc_montagem) + ' EJC ' + nomeMeuEJC + ' (Montagem)') : (jovem.numero_ejc ? (numeroParaRomano(jovem.numero_ejc) + ' EJC ' + nomeMeuEJC) : '-') }}
-                                </span>
-                            </td>
-                            <td v-if="colunasVisiveis.Instagram">{{ jovem.instagram || '-' }}</td>
-                            <td v-if="colunasVisiveis.ServeNoEJC">{{ jovem.nao_serve_ejc ? 'Não' : 'Sim' }}</td>
-                            <td v-if="colunasVisiveis.Musico">{{ jovem.eh_musico ? 'Sim' : 'Não' }}</td>
-                            <td v-if="colunasVisiveis.EstadoCivil">{{ jovem.estado_civil }}</td>
-                            <td v-if="colunasVisiveis.EquipeSaude">{{ jovem.equipe_saude ? 'Sim' : 'Não' }}</td>
-                            <td v-if="colunasVisiveis.Deficiencia">{{ jovem.deficiencia ? 'Sim' : 'Não' }}</td>
-                            <td v-if="colunasVisiveis.RestricaoAlimentar">{{ jovem.restricao_alimentar ? 'Sim' : 'Não' }}</td>
-                            <td><button class="btn btn-edit-standard btn-sm"
-                                    @click="abrirEdicao(jovem)">Editar</button></td>
-                        </tr>
+                        <template v-for="jovem in jovensFiltrados" :key="jovem.id">
+                            <tr>
+                                <td class="lista-mestre-mobile-expand-col">
+                                    <button type="button"
+                                        class="lista-mestre-mobile-toggle"
+                                        data-ui-skip-standardize="true"
+                                        :aria-expanded="String(!!linhasExpandidasListaMestre[jovem.id])"
+                                        :title="linhasExpandidasListaMestre[jovem.id] ? 'Recolher linha' : 'Expandir linha'"
+                                        aria-label="Expandir linha"
+                                        @click="toggleLinhaListaMestre(jovem.id)">
+                                        <i class="fa-solid" :class="linhasExpandidasListaMestre[jovem.id] ? 'fa-minus' : 'fa-plus'"></i>
+                                    </button>
+                                </td>
+                                <td v-if="colunasVisiveis.Nome" class="lista-mestre-mobile-name-cell">
+                                    <div class="lista-mestre-mobile-name-wrap">
+                                        <strong class="nome-clicavel" @click="verDetalhes(jovem)">{{ jovem.nome_completo }}</strong>
+                                        <span v-if="jovem.transferencia_outro_ejc" class="badge bg-soft-warning text-warning">Transferência</span>
+                                    </div>
+                                </td>
+                                <td v-if="colunasVisiveis.Telefone" class="lista-mestre-mobile-hidden">{{ jovem.telefone }}</td>
+                                <td v-if="colunasVisiveis.Apelido" class="lista-mestre-mobile-hidden">{{ jovem.apelido || '-' }}</td>
+                                <td v-if="colunasVisiveis.Email" class="lista-mestre-mobile-hidden">{{ jovem.email || '-' }}</td>
+                                <td v-if="colunasVisiveis.TermosUso" class="lista-mestre-mobile-hidden">{{ jovem.termos_aceitos_em ? 'Aceito' : 'Não' }}</td>
+                                <td v-if="colunasVisiveis.Sexo" class="lista-mestre-mobile-hidden">{{ jovem.sexo || '-' }}</td>
+                                <td v-if="colunasVisiveis.Idade" class="lista-mestre-mobile-hidden">{{ calcularIdade(jovem.data_nascimento) }}</td>
+                                <td v-if="colunasVisiveis.Circulo" class="lista-mestre-mobile-hidden">{{ jovem.circulo }}</td>
+                                <td v-if="colunasVisiveis.NumEJC" class="lista-mestre-mobile-hidden">
+                                    <span v-if="jovem.origem_ejc_tipo === 'OUTRO_EJC'">
+                                        {{ formatarNumeroOutroEjc(jovem.outro_ejc_numero) || '-' }} {{ jovem.outro_ejc_paroquia || '' }}
+                                    </span>
+                                    <span v-else>
+                                        {{ jovem.numero_ejc_montagem ? (numeroParaRomano(jovem.numero_ejc_montagem) + ' EJC ' + nomeMeuEJC + ' (Montagem)') : (jovem.numero_ejc ? (numeroParaRomano(jovem.numero_ejc) + ' EJC ' + nomeMeuEJC) : '-') }}
+                                    </span>
+                                </td>
+                                <td v-if="colunasVisiveis.Instagram" class="lista-mestre-mobile-hidden">{{ jovem.instagram || '-' }}</td>
+                                <td v-if="colunasVisiveis.ServeNoEJC" class="lista-mestre-mobile-hidden">{{ jovem.nao_serve_ejc ? 'Não' : 'Sim' }}</td>
+                                <td v-if="colunasVisiveis.Musico" class="lista-mestre-mobile-hidden">{{ jovem.eh_musico ? 'Sim' : 'Não' }}</td>
+                                <td v-if="colunasVisiveis.EstadoCivil" class="lista-mestre-mobile-hidden">{{ jovem.estado_civil }}</td>
+                                <td v-if="colunasVisiveis.EquipeSaude" class="lista-mestre-mobile-hidden">{{ jovem.equipe_saude ? 'Sim' : 'Não' }}</td>
+                                <td v-if="colunasVisiveis.Deficiencia" class="lista-mestre-mobile-hidden">{{ jovem.deficiencia ? 'Sim' : 'Não' }}</td>
+                                <td v-if="colunasVisiveis.RestricaoAlimentar" class="lista-mestre-mobile-hidden">{{ jovem.restricao_alimentar ? 'Sim' : 'Não' }}</td>
+                                <td class="lista-mestre-mobile-hidden"><button class="btn btn-edit-standard btn-sm"
+                                        @click="abrirEdicao(jovem)">Editar</button></td>
+                            </tr>
+                            <tr class="lista-mestre-mobile-detail-row" :class="{ 'is-open': !!linhasExpandidasListaMestre[jovem.id] }">
+                                <td class="lista-mestre-mobile-detail-cell" :colspan="getListaMestreColspan()">
+                                    <div class="lista-mestre-mobile-detail-grid">
+                                        <div v-for="item in getListaMestreDetalhes(jovem)" :key="`${jovem.id}-${item.label}`" class="lista-mestre-mobile-detail-item">
+                                            <span class="lista-mestre-mobile-detail-label">{{ item.label }}</span>
+                                            <div class="lista-mestre-mobile-detail-value">{{ item.value }}</div>
+                                        </div>
+                                        <div class="lista-mestre-mobile-action">
+                                            <button class="btn btn-edit-standard btn-sm" @click="abrirEdicao(jovem)">Editar</button>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
                     </tbody>
                 </table>
             </div>
@@ -424,7 +608,7 @@
                                     <button class="nav-link" :class="{ active: tabEdicao === 'observacoes' }"
                                         @click="carregarObservacoes"><i class="fa-solid fa-note-sticky icon-accent"></i> Observações</button>
                                 </li>
-                                <li class="nav-item">
+                                <li class="nav-item d-none">
                                     <button class="nav-link" :class="{ active: tabEdicao === 'presencas' }"
                                         @click="carregarPresencas"><i class="fa-solid fa-square-check icon-accent"></i> Presença</button>
                                 </li>
@@ -454,8 +638,8 @@
 
                                     <!-- Botão de editar foto, só aparece no modo edição -->
                                     <label v-if="isEditing"
-                                        class="position-absolute bottom-0 end-0 bg-primary text-white rounded-circle d-flex justify-content-center align-items-center shadow cursor-pointer"
-                                        style="width: 32px; height: 32px; cursor: pointer; transform: translate(15%, 15%);"
+                                        class="position-absolute bottom-0 end-0 text-white rounded-circle d-flex justify-content-center align-items-center shadow cursor-pointer"
+                                        style="width: 32px; height: 32px; cursor: pointer; transform: translate(15%, 15%); background: #d9a650; border: 1px solid #d9a650;"
                                         title="Trocar foto">
                                         <span style="font-size: 14px;"><i class="fa-solid fa-camera icon-accent"></i></span>
                                         <input type="file" accept="image/*" class="d-none"
@@ -556,10 +740,10 @@
                             <!-- Conteúdo Principal (flui ao lado e abaixo) -->
                             <div class="pt-2">
                                 <div class="ficha-subtabs">
-                                    <button type="button" class="ficha-subtab" :class="{ active: subAbaDados === 'cadastro' }" @click="subAbaDados = 'cadastro'">Cadastro</button>
-                                    <button type="button" class="ficha-subtab" :class="{ active: subAbaDados === 'participacao' }" @click="subAbaDados = 'participacao'">Participação no EJC</button>
-                                    <button type="button" class="ficha-subtab" :class="{ active: subAbaDados === 'familia' }" @click="subAbaDados = 'familia'; carregarFamiliaresJovem(jovemEditando.id)">Família</button>
-                                    <button type="button" class="ficha-subtab" :class="{ active: subAbaDados === 'saude' }" @click="subAbaDados = 'saude'">Saúde e Apoio</button>
+                                    <button type="button" class="ficha-subtab btn-edit-standard btn-sm" :class="{ active: subAbaDados === 'cadastro' }" @click="subAbaDados = 'cadastro'">Cadastro</button>
+                                    <button type="button" class="ficha-subtab btn-edit-standard btn-sm" :class="{ active: subAbaDados === 'participacao' }" @click="subAbaDados = 'participacao'">Participação no EJC</button>
+                                    <button type="button" class="ficha-subtab btn-edit-standard btn-sm" :class="{ active: subAbaDados === 'familia' }" @click="subAbaDados = 'familia'; carregarFamiliaresJovem(jovemEditando.id)">Família</button>
+                                    <button type="button" class="ficha-subtab btn-edit-standard btn-sm" :class="{ active: subAbaDados === 'saude' }" @click="subAbaDados = 'saude'">Saúde e Apoio</button>
                                 </div>
 
                                 <div class="ficha-subpane">
@@ -808,9 +992,10 @@
                                                             {{ rel.telefone }}
                                                         </div>
                                                     </div>
-                                                    <button v-if="isEditing" type="button" class="btn btn-outline-danger btn-sm"
+                                                    <button v-if="isEditing" type="button" class="btn btn-danger btn-ejc-action btn-sm"
                                                         @click="removerRelacaoFamiliarJovem(rel.id)">
-                                                        Remover
+                                                        <span class="btn-ejc-icon"><i class="fa-solid fa-trash icon-accent"></i></span>
+                                                        <span class="btn-ejc-text">Remover</span>
                                                     </button>
                                                 </div>
                                             </div>
@@ -1119,8 +1304,13 @@
                                                     <span v-if="h.subfuncao" class="badge-subrole">{{ h.subfuncao }}</span>
                                                 </div>
                                                 <button v-if="isEditing"
-                                                    class="btn btn-icon-delete"
-                                                    @click="removerEquipeHistorico(h.id)"><i class="fa-solid fa-trash icon-accent"></i></button>
+                                                    class="btn btn-danger btn-ejc-action btn-sm"
+                                                    @click="removerEquipeHistorico(h.id)"
+                                                    title="Remover"
+                                                    aria-label="Remover">
+                                                    <span class="btn-ejc-icon"><i class="fa-solid fa-trash icon-accent"></i></span>
+                                                    <span class="btn-ejc-text">Remover</span>
+                                                </button>
                                             </li>
                                         </ul>
 
@@ -1155,8 +1345,13 @@
                                                         {{ f.nome }}
                                                     </option>
                                                 </select>
-                                                <button class="btn btn-success btn-sm" @click="adicionarEquipeHistorico"
-                                                    :disabled="!novaEquipeHistorico.equipe_id || !novaEquipeHistorico.ejc_id"><i class="fa-solid fa-plus icon-accent"></i></button>
+                                                <button class="btn btn-success btn-ejc-action btn-sm" @click="adicionarEquipeHistorico"
+                                                    :disabled="!novaEquipeHistorico.equipe_id || !novaEquipeHistorico.ejc_id"
+                                                    title="Adicionar"
+                                                    aria-label="Adicionar">
+                                                    <span class="btn-ejc-icon"><i class="fa-solid fa-plus icon-accent"></i></span>
+                                                    <span class="btn-ejc-text">Adicionar</span>
+                                                </button>
                                             </div>
                                         </div>
                                     </div>
@@ -1288,8 +1483,11 @@
                                                         com.observacao
                                                         }}</small>
                                                 </div>
-                                                <button v-if="!['COORDENACAO', 'GARCOM_EQUIPE'].includes(com.tipo)" class="btn btn-sm btn-outline-danger border-0"
-                                                    @click="removerComissao(com.id)"><i class="fa-solid fa-trash icon-accent"></i></button>
+                                                <button v-if="!['COORDENACAO', 'GARCOM_EQUIPE'].includes(com.tipo)" class="btn btn-danger btn-ejc-action btn-sm"
+                                                    @click="removerComissao(com.id)" title="Remover" aria-label="Remover">
+                                                    <span class="btn-ejc-icon"><i class="fa-solid fa-trash icon-accent"></i></span>
+                                                    <span class="btn-ejc-text">Remover</span>
+                                                </button>
                                             </div>
                                         </div>
                                         <div v-if="comissoes.length === 0"
@@ -1369,14 +1567,6 @@
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body novo-jovem-body">
-                        <div class="novo-jovem-origem-box mb-4">
-                            <label class="text-muted small fw-semibold mb-2 d-block">Origem do jovem *</label>
-                            <select v-model="novoJovem.origem_ejc_tipo" class="form-select" disabled>
-                                <option value="INCONFIDENTES">Fez o EJC {{ nomeMeuEJC }}</option>
-                            </select>
-                            <div class="novo-jovem-help">Para cadastrar membros de outro EJC, use o menu "Membros de Outro EJC".</div>
-                        </div>
-
                         <div class="row g-4">
                             <div class="col-12">
                                 <div class="novo-jovem-panel">
@@ -1842,20 +2032,20 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                     colunasVisiveis: {
                         Nome: true,
                         Telefone: true,
-                        Apelido: true,
+                        Apelido: false,
                         Email: true,
-                        TermosUso: true,
-                        Sexo: true,
+                        TermosUso: false,
+                        Sexo: false,
                         Idade: true,
-                        Circulo: true,
-                        NumEJC: true,
-                        Instagram: true,
-                        ServeNoEJC: true,
-                        Musico: true,
-                        EstadoCivil: true,
-                        EquipeSaude: true,
-                        Deficiencia: true,
-                        RestricaoAlimentar: true,
+                        Circulo: false,
+                        NumEJC: false,
+                        Instagram: false,
+                        ServeNoEJC: false,
+                        Musico: false,
+                        EstadoCivil: false,
+                        EquipeSaude: false,
+                        Deficiencia: false,
+                        RestricaoAlimentar: false,
                     },
                     filtros: {
                         nome: '',
@@ -1888,6 +2078,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                         historicoEquipes: true,
                         somenteFiltrados: false
                     },
+                    linhasExpandidasListaMestre: {},
                     jovemSelecionado: {}, jovemEditando: {}, jovemHistoricoEquipes: [],
                     todasEquipes: [], // Lista de todas as equipes para o select
                     papeisEquipeDisponiveis: [],
@@ -1967,20 +2158,20 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                     return {
                         Nome: true,
                         Telefone: true,
-                        Apelido: true,
+                        Apelido: false,
                         Email: true,
-                        TermosUso: true,
-                        Sexo: true,
+                        TermosUso: false,
+                        Sexo: false,
                         Idade: true,
-                        Circulo: true,
-                        NumEJC: true,
-                        Instagram: true,
-                        ServeNoEJC: true,
-                        Musico: true,
-                        EstadoCivil: true,
-                        EquipeSaude: true,
-                        Deficiencia: true,
-                        RestricaoAlimentar: true,
+                        Circulo: false,
+                        NumEJC: false,
+                        Instagram: false,
+                        ServeNoEJC: false,
+                        Musico: false,
+                        EstadoCivil: false,
+                        EquipeSaude: false,
+                        Deficiencia: false,
+                        RestricaoAlimentar: false,
                     };
                 },
                 getChavePreferenciasColunas() {
@@ -1989,7 +2180,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                         .trim()
                         .toLowerCase()
                         .replace(/\s+/g, '_');
-                    return `semear_lista_mestre_colunas_${tenantId}_${nomeUsuario}`;
+                    return `semear_lista_mestre_colunas_v2_${tenantId}_${nomeUsuario}`;
                 },
                 salvarPreferenciasColunas() {
                     try {
@@ -2040,6 +2231,141 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                         Circulo: 'Círculo'
                     };
                     return labels[col] || col;
+                },
+                toggleLinhaListaMestre(id) {
+                    this.linhasExpandidasListaMestre = {
+                        ...this.linhasExpandidasListaMestre,
+                        [id]: !this.linhasExpandidasListaMestre[id]
+                    };
+                },
+                getListaMestreColspan() {
+                    return Object.values(this.colunasVisiveis).filter(Boolean).length + 2;
+                },
+                getListaMestreNumeroEjc(jovem) {
+                    if (jovem.origem_ejc_tipo === 'OUTRO_EJC') {
+                        const numero = this.formatarNumeroOutroEjc(jovem.outro_ejc_numero) || '-';
+                        return `${numero}${jovem.outro_ejc_paroquia ? ` ${jovem.outro_ejc_paroquia}` : ''}`.trim();
+                    }
+                    if (jovem.numero_ejc_montagem) {
+                        return `${this.numeroParaRomano(jovem.numero_ejc_montagem)} EJC ${this.nomeMeuEJC} (Montagem)`;
+                    }
+                    if (jovem.numero_ejc) {
+                        return `${this.numeroParaRomano(jovem.numero_ejc)} EJC ${this.nomeMeuEJC}`;
+                    }
+                    return '-';
+                },
+                getListaMestreDetalhes(jovem) {
+                    const detalhes = [];
+                    const addDetalhe = (ativo, label, value) => {
+                        if (!ativo) return;
+                        detalhes.push({
+                            label,
+                            value: value === undefined || value === null || value === '' ? '-' : value
+                        });
+                    };
+
+                    addDetalhe(this.colunasVisiveis.Telefone, 'Telefone', jovem.telefone);
+                    addDetalhe(this.colunasVisiveis.Apelido, 'Apelido', jovem.apelido);
+                    addDetalhe(this.colunasVisiveis.Email, 'E-mail', jovem.email);
+                    addDetalhe(this.colunasVisiveis.TermosUso, 'Termos de uso', jovem.termos_aceitos_em ? 'Aceito' : 'Não');
+                    addDetalhe(this.colunasVisiveis.Sexo, 'Sexo', jovem.sexo);
+                    addDetalhe(this.colunasVisiveis.Idade, 'Idade', this.calcularIdade(jovem.data_nascimento));
+                    addDetalhe(this.colunasVisiveis.Circulo, 'Círculo', jovem.circulo);
+                    addDetalhe(this.colunasVisiveis.NumEJC, 'Nº EJC', this.getListaMestreNumeroEjc(jovem));
+                    addDetalhe(this.colunasVisiveis.Instagram, 'Instagram', jovem.instagram);
+                    addDetalhe(this.colunasVisiveis.ServeNoEJC, 'Serve no EJC', jovem.nao_serve_ejc ? 'Não' : 'Sim');
+                    addDetalhe(this.colunasVisiveis.Musico, 'Músico', jovem.eh_musico ? 'Sim' : 'Não');
+                    addDetalhe(this.colunasVisiveis.EstadoCivil, 'Estado civil', jovem.estado_civil);
+                    addDetalhe(this.colunasVisiveis.EquipeSaude, 'Equipe de saúde', jovem.equipe_saude ? 'Sim' : 'Não');
+                    addDetalhe(this.colunasVisiveis.Deficiencia, 'Deficiência', jovem.deficiencia ? 'Sim' : 'Não');
+                    addDetalhe(this.colunasVisiveis.RestricaoAlimentar, 'Restrição alimentar', jovem.restricao_alimentar ? 'Sim' : 'Não');
+
+                    return detalhes;
+                },
+                normalizarTelefoneDuplicidade(value) {
+                    return String(value || '').replace(/\D/g, '');
+                },
+                normalizarEmailDuplicidade(value) {
+                    return String(value || '').trim().toLowerCase();
+                },
+                normalizarInstagramDuplicidade(value) {
+                    return String(value || '').trim().toLowerCase().replace(/^@+/, '');
+                },
+                validarDuplicidadeListaMestre(payload, excludeId = null) {
+                    const telefone = this.normalizarTelefoneDuplicidade(payload.telefone);
+                    const email = this.normalizarEmailDuplicidade(payload.email);
+                    const instagram = this.normalizarInstagramDuplicidade(payload.instagram);
+                    const jovensBase = Array.isArray(this.jovens) ? this.jovens : [];
+
+                    const duplicado = jovensBase.find((jovem) => {
+                        if (excludeId && Number(jovem.id) === Number(excludeId)) return false;
+
+                        const mesmoTelefone = telefone
+                            && this.normalizarTelefoneDuplicidade(jovem.telefone) === telefone;
+                        const mesmoEmail = email
+                            && this.normalizarEmailDuplicidade(jovem.email) === email;
+                        const mesmoInstagram = instagram
+                            && this.normalizarInstagramDuplicidade(jovem.instagram) === instagram;
+
+                        return mesmoTelefone || mesmoEmail || mesmoInstagram;
+                    });
+
+                    if (!duplicado) return null;
+
+                    if (telefone && this.normalizarTelefoneDuplicidade(duplicado.telefone) === telefone) {
+                        return { campo: 'telefone', error: 'Telefone já cadastrado neste EJC.' };
+                    }
+
+                    if (email && this.normalizarEmailDuplicidade(duplicado.email) === email) {
+                        return { campo: 'email', error: 'E-mail já cadastrado neste EJC.' };
+                    }
+
+                    if (instagram && this.normalizarInstagramDuplicidade(duplicado.instagram) === instagram) {
+                        return { campo: 'instagram', error: 'Instagram já cadastrado neste EJC.' };
+                    }
+
+                    return null;
+                },
+                async validarDuplicidadeListaMestreNoServidor(payload, excludeId = null) {
+                    const res = await fetch('/api/lista-mestre');
+                    const listaAtual = await res.json().catch(() => ([]));
+                    if (!res.ok) {
+                        throw new Error('Erro ao consultar a lista mestre para validar duplicidade.');
+                    }
+
+                    const telefone = this.normalizarTelefoneDuplicidade(payload.telefone);
+                    const email = this.normalizarEmailDuplicidade(payload.email);
+                    const instagram = this.normalizarInstagramDuplicidade(payload.instagram);
+                    const registros = Array.isArray(listaAtual) ? listaAtual : [];
+
+                    const duplicado = registros.find((jovem) => {
+                        if (excludeId && Number(jovem.id) === Number(excludeId)) return false;
+
+                        const mesmoTelefone = telefone
+                            && this.normalizarTelefoneDuplicidade(jovem.telefone) === telefone;
+                        const mesmoEmail = email
+                            && this.normalizarEmailDuplicidade(jovem.email) === email;
+                        const mesmoInstagram = instagram
+                            && this.normalizarInstagramDuplicidade(jovem.instagram) === instagram;
+
+                        return mesmoTelefone || mesmoEmail || mesmoInstagram;
+                    });
+
+                    if (!duplicado) return null;
+
+                    if (telefone && this.normalizarTelefoneDuplicidade(duplicado.telefone) === telefone) {
+                        return { campo: 'telefone', error: 'Telefone já cadastrado neste EJC.' };
+                    }
+
+                    if (email && this.normalizarEmailDuplicidade(duplicado.email) === email) {
+                        return { campo: 'email', error: 'E-mail já cadastrado neste EJC.' };
+                    }
+
+                    if (instagram && this.normalizarInstagramDuplicidade(duplicado.instagram) === instagram) {
+                        return { campo: 'instagram', error: 'Instagram já cadastrado neste EJC.' };
+                    }
+
+                    return null;
                 },
                 ordenarPor(campo) {
                     if (this.ordenacao.campo === campo) {
@@ -3196,6 +3522,18 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                             moita_funcao: (this.novoJovem.origem_ejc_tipo === 'OUTRO_EJC' && this.novoJovem.ja_foi_moita_inconfidentes) ? (this.novoJovem.moita_funcao || null) : null
                         };
 
+                        const duplicidade = this.validarDuplicidadeListaMestre(payload);
+                        if (duplicidade) {
+                            alert(duplicidade.error);
+                            return;
+                        }
+
+                        const duplicidadeServidor = await this.validarDuplicidadeListaMestreNoServidor(payload);
+                        if (duplicidadeServidor) {
+                            alert(duplicidadeServidor.error);
+                            return;
+                        }
+
                         const res = await fetch('/api/lista-mestre', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
@@ -3204,6 +3542,15 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
 
                         if (!res.ok) {
                             const erro = await res.json();
+                            if (res.status === 409 && erro && erro.campo) {
+                                const mensagens = {
+                                    telefone: 'Telefone já cadastrado neste EJC.',
+                                    email: 'E-mail já cadastrado neste EJC.',
+                                    instagram: 'Instagram já cadastrado neste EJC.'
+                                };
+                                alert(mensagens[erro.campo] || erro.error || 'Registro duplicado neste EJC.');
+                                return;
+                            }
                             alert(erro.error || 'Erro ao criar jovem');
                             return;
                         }
@@ -3281,11 +3628,35 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                             mover_casal_para_tios: moverCasalParaTios
                         };
 
+                        const duplicidade = this.validarDuplicidadeListaMestre(payload, this.jovemEditando.id);
+                        if (duplicidade) {
+                            alert(duplicidade.error);
+                            return;
+                        }
+
+                        const duplicidadeServidor = await this.validarDuplicidadeListaMestreNoServidor(payload, this.jovemEditando.id);
+                        if (duplicidadeServidor) {
+                            alert(duplicidadeServidor.error);
+                            return;
+                        }
+
                         const res = await fetch(`/api/lista-mestre/${this.jovemEditando.id}`, {
                             method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
                         });
                         const resposta = await res.json().catch(() => ({}));
-                        if (!res.ok) { alert(resposta.error || 'Erro ao salvar jovem'); return; }
+                        if (!res.ok) {
+                            if (res.status === 409 && resposta && resposta.campo) {
+                                const mensagens = {
+                                    telefone: 'Telefone já cadastrado neste EJC.',
+                                    email: 'E-mail já cadastrado neste EJC.',
+                                    instagram: 'Instagram já cadastrado neste EJC.'
+                                };
+                                alert(mensagens[resposta.campo] || resposta.error || 'Registro duplicado neste EJC.');
+                                return;
+                            }
+                            alert(resposta.error || 'Erro ao salvar jovem');
+                            return;
+                        }
                         try {
                             await this.salvarPastoraisJovem();
                         } catch (err) {

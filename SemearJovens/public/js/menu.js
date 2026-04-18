@@ -13,140 +13,131 @@ const menuTemplate = `
         </div>
         <div class="nav flex-column mt-2">
             <a href="/dashboard" class="nav-link" title="Dashboard">
-                <span class="fs-5">📊</span> <span class="link-text">Visão Geral</span>
+                <span class="menu-link-icon"><i class="fa-solid fa-chart-line"></i></span><span class="link-text">Visão Geral</span>
             </a>
 
             <div class="menu-group" data-group="gestao">
                 <button type="button" class="menu-group-toggle" data-group-toggle="gestao">
-                    <span class="group-title">Encontro</span>
+                    <span class="group-title"><span class="menu-group-icon"><i class="fa-solid fa-calendar-check"></i></span><span>Encontro</span></span>
                     <span class="menu-chevron">▸</span>
                 </button>
                 <div class="menu-group-links" data-group-links="gestao">
                     <a href="/gestaodoencontro/listamestre" class="nav-link" title="Lista Mestre">
-                        <span class="fs-5">📋</span> <span class="link-text">Lista mestre</span>
+                        <span class="menu-link-icon"><i class="fa-solid fa-clipboard-list"></i></span><span class="link-text">Lista mestre</span>
                     </a>
                     <a href="/gestaodoencontro/tios" class="nav-link" title="Tios">
-                        <span class="fs-5">👫</span> <span class="link-text">Tios</span>
+                        <span class="menu-link-icon"><i class="fa-solid fa-people-group"></i></span><span class="link-text">Tios</span>
                     </a>
                     <a href="/gestaodoencontro/equipes" class="nav-link" title="Equipes">
-                        <span class="fs-5">👥</span> <span class="link-text">Equipes e Funções</span>
+                        <span class="menu-link-icon"><i class="fa-solid fa-users"></i></span><span class="link-text">Equipes e Funções</span>
                     </a>
                     <a href="/gestaodoencontro/ejc" class="nav-link" title="EJC">
-                        <span class="fs-5">🎯</span> <span class="link-text">Edições do EJC</span>
+                        <span class="menu-link-icon"><i class="fa-solid fa-bullseye"></i></span><span class="link-text">Edições do EJC</span>
                     </a>
                     <a href="/gestaodoencontro/montarencontro" class="nav-link" title="Montar Encontro">
-                        <span class="fs-5">🧩</span> <span class="link-text">Montagem do Encontro</span>
+                        <span class="menu-link-icon"><i class="fa-solid fa-puzzle-piece"></i></span><span class="link-text">Montagem do Encontro</span>
                     </a>
                     <a href="/gestaodoencontro/regras" class="nav-link" title="Regras">
-                        <span class="fs-5">⚖️</span> <span class="link-text">Regras</span>
+                        <span class="menu-link-icon"><i class="fa-solid fa-scale-balanced"></i></span><span class="link-text">Regras</span>
                     </a>
                     <a href="/gestaodoencontro/formularios-atualizacao" class="nav-link" title="Formulários">
-                        <span class="fs-5">🧾</span> <span class="link-text">Formulários</span>
-                    </a>
-                    <a href="/gestaodoencontro/votacao" class="nav-link" title="Votação">
-                        <span class="fs-5">🗳️</span> <span class="link-text">Votação</span>
+                        <span class="menu-link-icon"><i class="fa-solid fa-file-lines"></i></span><span class="link-text">Formulários</span>
                     </a>
                 </div>
             </div>
 
             <div class="menu-group" data-group="participacoes">
                 <button type="button" class="menu-group-toggle" data-group-toggle="participacoes">
-                    <span class="group-title">Participações</span>
+                    <span class="group-title"><span class="menu-group-icon"><i class="fa-solid fa-user-group"></i></span><span>Participações</span></span>
                     <span class="menu-chevron">▸</span>
                 </button>
                 <div class="menu-group-links" data-group-links="participacoes">
                     <a href="/gestaodoencontro/outrosejcs" class="nav-link" title="Outros EJCs">
-                        <span class="fs-5">🌍</span> <span class="link-text">Outros EJCs</span>
+                        <span class="menu-link-icon"><i class="fa-solid fa-globe"></i></span><span class="link-text">Outros EJCs</span>
                     </a>
                     <a href="/gestaodoencontro/jovensoutroejc" class="nav-link" title="Membros de Outro EJC">
-                        <span class="fs-5">🧾</span> <span class="link-text">Membros de Outro EJC</span>
-                    </a>
-                    <a href="/gestaodoencontro/visitantes" class="nav-link" title="Visitantes">
-                        <span class="fs-5">🙋</span> <span class="link-text">Visitantes</span>
+                        <span class="menu-link-icon"><i class="fa-solid fa-id-card"></i></span><span class="link-text">Membros de Outro EJC</span>
                     </a>
                     <a href="/gestaodoencontro/moita" class="nav-link" title="Moita">
-                        <span class="fs-5">🌿</span> <span class="link-text">Moita</span>
+                        <span class="menu-link-icon"><i class="fa-solid fa-seedling"></i></span><span class="link-text">Moita</span>
                     </a>
                     <a href="/gestaodoencontro/garcons" class="nav-link" title="Garçons">
-                        <span class="fs-5">🍽️</span> <span class="link-text">Garçons</span>
+                        <span class="menu-link-icon"><i class="fa-solid fa-utensils"></i></span><span class="link-text">Garçons</span>
                     </a>
                 </div>
             </div>
 
             <div class="menu-group" data-group="planejamento">
                 <button type="button" class="menu-group-toggle" data-group-toggle="planejamento">
-                    <span class="group-title">Planejamento</span>
+                    <span class="group-title"><span class="menu-group-icon"><i class="fa-solid fa-calendar-days"></i></span><span>Planejamento</span></span>
                     <span class="menu-chevron">▸</span>
                 </button>
                 <div class="menu-group-links" data-group-links="planejamento">
                     <a href="/planejamento/calendario" class="nav-link" title="Calendário">
-                        <span class="fs-5">📅</span> <span class="link-text">Calendário</span>
+                        <span class="menu-link-icon"><i class="fa-solid fa-calendar-days"></i></span><span class="link-text">Calendário</span>
                     </a>
                     <a href="/planejamento/espacos" class="nav-link" title="Espaços da Igreja">
-                        <span class="fs-5">🏛️</span> <span class="link-text">Espaços da Igreja</span>
-                    </a>
-                    <a href="/planejamento/eventos" class="nav-link" title="Eventos e Presença">
-                        <span class="fs-5">🎉</span> <span class="link-text">Eventos e Presença</span>
+                        <span class="menu-link-icon"><i class="fa-solid fa-landmark"></i></span><span class="link-text">Espaços da Igreja</span>
                     </a>
                     <a href="/planejamento/atasdereuniao" class="nav-link" title="Atas de Reunião">
-                        <span class="fs-5">📝</span> <span class="link-text">Atas de Reunião</span>
+                        <span class="menu-link-icon"><i class="fa-solid fa-clipboard"></i></span><span class="link-text">Atas de Reunião</span>
                     </a>
                 </div>
             </div>
 
             <div class="menu-group" data-group="administrativo">
                 <button type="button" class="menu-group-toggle" data-group-toggle="administrativo">
-                    <span class="group-title">Administrativo</span>
+                    <span class="group-title"><span class="menu-group-icon"><i class="fa-solid fa-briefcase"></i></span><span>Administrativo</span></span>
                     <span class="menu-chevron">▸</span>
                 </button>
                 <div class="menu-group-links" data-group-links="administrativo">
                     <a href="/administrativo/financeiro" class="nav-link" title="Financeiro">
-                        <span class="fs-5">💰</span> <span class="link-text">Financeiro</span>
+                        <span class="menu-link-icon"><i class="fa-solid fa-wallet"></i></span><span class="link-text">Financeiro</span>
                     </a>
                     <a href="/administrativo/backup" class="nav-link" title="Backup">
-                        <span class="fs-5">🧩</span> <span class="link-text">Backup</span>
+                        <span class="menu-link-icon"><i class="fa-solid fa-database"></i></span><span class="link-text">Backup</span>
                     </a>
                     <a href="/administrativo/uso-sistema" class="nav-link" title="Uso do Sistema">
-                        <span class="fs-5">📊</span> <span class="link-text">Uso do Sistema</span>
+                        <span class="menu-link-icon"><i class="fa-solid fa-chart-pie"></i></span><span class="link-text">Uso do Sistema</span>
                     </a>
                     <a href="/administrativo/anexos" class="nav-link" title="Anexos">
-                        <span class="fs-5">📁</span> <span class="link-text">Anexos</span>
+                        <span class="menu-link-icon"><i class="fa-solid fa-folder-open"></i></span><span class="link-text">Anexos</span>
                     </a>
                     <a href="/administrativo/contatos" class="nav-link" title="Contatos">
-                        <span class="fs-5">📞</span> <span class="link-text">Contatos</span>
+                        <span class="menu-link-icon"><i class="fa-solid fa-address-book"></i></span><span class="link-text">Contatos</span>
                     </a>
                     <a href="/administrativo/almoxarifado" class="nav-link" title="Almoxarifado">
-                        <span class="fs-5">📦</span> <span class="link-text">Almoxarifado</span>
+                        <span class="menu-link-icon"><i class="fa-solid fa-boxes-stacked"></i></span><span class="link-text">Almoxarifado</span>
                     </a>
                     <a href="/administrativo/ajuda" class="nav-link" title="Ajuda">
-                        <span class="fs-5">🆘</span> <span class="link-text">Ajuda</span>
+                        <span class="menu-link-icon"><i class="fa-solid fa-life-ring"></i></span><span class="link-text">Ajuda</span>
                     </a>
                     <a href="/administrativo/logs" class="nav-link" title="Log">
-                        <span class="fs-5">🕘</span> <span class="link-text">Log</span>
+                        <span class="menu-link-icon"><i class="fa-solid fa-clock-rotate-left"></i></span><span class="link-text">Log</span>
                     </a>
                 </div>
             </div>
 
             <div class="menu-group" data-group="configuracoes">
                 <button type="button" class="menu-group-toggle" data-group-toggle="configuracoes">
-                    <span class="group-title">Cadastros Base</span>
+                    <span class="group-title"><span class="menu-group-icon"><i class="fa-solid fa-sliders"></i></span><span>Cadastros Base</span></span>
                     <span class="menu-chevron">▸</span>
                 </button>
                 <div class="menu-group-links" data-group-links="configuracoes">
                     <a href="/configuracoes/usuarios" class="nav-link" title="Usuários">
-                        <span class="fs-5">👥</span> <span class="link-text">Usuários</span>
+                        <span class="menu-link-icon"><i class="fa-solid fa-users"></i></span><span class="link-text">Usuários</span>
                     </a>
                     <a href="/configuracoes/coordenacoes" class="nav-link" title="Coordenações">
-                        <span class="fs-5">🧭</span> <span class="link-text">Coordenações</span>
+                        <span class="menu-link-icon"><i class="fa-solid fa-compass"></i></span><span class="link-text">Coordenações</span>
                     </a>
                     <a href="/configuracoes/funcoes-dirigencia" class="nav-link" title="Funções da Dirigência">
-                        <span class="fs-5">🗂️</span> <span class="link-text">Funções da Dirigência</span>
+                        <span class="menu-link-icon"><i class="fa-solid fa-sitemap"></i></span><span class="link-text">Funções da Dirigência</span>
                     </a>
                     <a href="/configuracoes/meuejc" class="nav-link" title="Meu EJC">
-                        <span class="fs-5">🏷️</span> <span class="link-text">Meu EJC</span>
+                        <span class="menu-link-icon"><i class="fa-solid fa-tag"></i></span><span class="link-text">Meu EJC</span>
                     </a>
                     <a href="/configuracoes/circulos" class="nav-link" title="Círculos">
-                        <span class="fs-5">🎨</span> <span class="link-text">Círculos</span>
+                        <span class="menu-link-icon"><i class="fa-solid fa-palette"></i></span><span class="link-text">Círculos</span>
                     </a>
                 </div>
             </div>
@@ -156,7 +147,7 @@ const menuTemplate = `
         <header id="page-topbar">
             <div class="topbar-left">
                 <button id="sidebarToggle" class="topbar-icon-btn" title="Abrir ou fechar menu">
-                    ☰
+                    <i class="fa-solid fa-bars"></i>
                 </button>
                 <a href="/dashboard" class="topbar-brand" aria-label="Ir para dashboard">
                     <img src="/assets/logo-oficial.png" alt="Semear Paroquial" class="topbar-brand-mark">
@@ -188,7 +179,7 @@ const menuTemplate = `
                         </a>
                     </div>
                 </div>
-                <button type="button" class="topbar-icon-btn" title="Avisos">🔔</button>
+                <button type="button" class="topbar-icon-btn" title="Avisos"><i class="fa-solid fa-bell"></i></button>
                 <div class="topbar-user-pill" id="page-header-user-dropdown" title="Usuário logado">
                     <span class="topbar-user-avatar">SP</span>
                     <span class="user-name-text">Admin</span>

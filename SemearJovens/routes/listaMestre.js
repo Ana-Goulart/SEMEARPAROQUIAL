@@ -342,6 +342,124 @@ function normalizePhoneDigits(value) {
     return String(value || '').replace(/\D/g, '');
 }
 
+function normalizeEmailValue(value) {
+    return String(value || '').trim().toLowerCase();
+}
+
+function normalizeInstagramValue(value) {
+    return String(value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/^@+/, '');
+}
+
+async function validarDuplicidadeJovemListaMestre({
+    tenantId,
+    telefone,
+    email,
+    instagram,
+    excludeId = null,
+    connection = pool
+}) {
+    const normalizedPhone = normalizePhoneDigits(telefone);
+    const normalizedEmail = normalizeEmailValue(email);
+    const normalizedInstagram = normalizeInstagramValue(instagram);
+
+    if (normalizedPhone) {
+        const params = [tenantId, normalizedPhone];
+        let sql = `
+            SELECT id, nome_completo, telefone
+            FROM jovens
+            WHERE tenant_id = ?
+              AND ${normalizedPhoneExpr('telefone')} = ?
+        `;
+        if (excludeId) {
+            sql += ' AND id <> ?';
+            params.push(Number(excludeId));
+        }
+        sql += ' LIMIT 1';
+        const [rows] = await connection.query(sql, params);
+        if (rows && rows.length) {
+            return {
+                campo: 'telefone',
+                error: `Já existe um jovem com este telefone neste EJC: ${rows[0].nome_completo || 'registro existente'}.`
+            };
+        }
+    }
+
+    if (normalizedEmail) {
+        const params = [tenantId, normalizedEmail];
+        let sql = `
+            SELECT id, nome_completo, email
+            FROM jovens
+            WHERE tenant_id = ?
+              AND LOWER(TRIM(COALESCE(email, ''))) = ?
+        `;
+        if (excludeId) {
+            sql += ' AND id <> ?';
+            params.push(Number(excludeId));
+        }
+        sql += ' LIMIT 1';
+        const [rows] = await connection.query(sql, params);
+        if (rows && rows.length) {
+            return {
+                campo: 'email',
+                error: `Já existe um jovem com este e-mail neste EJC: ${rows[0].nome_completo || 'registro existente'}.`
+            };
+        }
+    }
+
+    if (normalizedInstagram) {
+        const params = [tenantId, normalizedInstagram];
+        let sql = `
+            SELECT id, nome_completo, instagram
+            FROM jovens
+            WHERE tenant_id = ?
+              AND REPLACE(LOWER(TRIM(COALESCE(instagram, ''))), '@', '') = ?
+        `;
+        if (excludeId) {
+            sql += ' AND id <> ?';
+            params.push(Number(excludeId));
+        }
+        sql += ' LIMIT 1';
+        const [rows] = await connection.query(sql, params);
+        if (rows && rows.length) {
+            return {
+                campo: 'instagram',
+                error: `Já existe um jovem com este Instagram neste EJC: ${rows[0].nome_completo || 'registro existente'}.`
+            };
+        }
+    }
+
+    return null;
+}
+
+router.post('/validar-duplicidade', async (req, res) => {
+    try {
+        const tenantId = getTenantId(req);
+        const duplicidade = await validarDuplicidadeJovemListaMestre({
+            tenantId,
+            telefone: req.body && req.body.telefone,
+            email: req.body && req.body.email,
+            instagram: req.body && req.body.instagram,
+            excludeId: req.body && req.body.excludeId ? Number(req.body.excludeId) : null
+        });
+
+        if (duplicidade) {
+            return res.status(409).json({
+                ok: false,
+                campo: duplicidade.campo,
+                error: duplicidade.error
+            });
+        }
+
+        return res.json({ ok: true });
+    } catch (err) {
+        console.error('Erro ao validar duplicidade da lista mestre:', err);
+        return res.status(500).json({ error: 'Erro ao validar duplicidade.' });
+    }
+});
+
 async function vincularPresencasOutroEjcSemCadastro({
     tenantId,
     jovemId,
@@ -828,7 +946,11 @@ router.get('/', async (req, res) => {
             LEFT JOIN montagens me ON me.id = j.montagem_ejc_id AND me.tenant_id = j.tenant_id
             LEFT JOIN outros_ejcs oe ON j.outro_ejc_id = oe.id AND oe.tenant_id = j.tenant_id
             LEFT JOIN ejc eme ON j.moita_ejc_id = eme.id AND eme.tenant_id = j.tenant_id
-            LEFT JOIN tios_jovens tj ON tj.jovem_id = j.id AND tj.tenant_id = j.tenant_id
+            LEFT JOIN (
+                SELECT tenant_id, jovem_id, MAX(casal_id) AS casal_id
+                FROM tios_jovens
+                GROUP BY tenant_id, jovem_id
+            ) tj ON tj.jovem_id = j.id AND tj.tenant_id = j.tenant_id
             LEFT JOIN tios_casais tc ON tc.id = tj.casal_id AND tc.tenant_id = j.tenant_id
             WHERE COALESCE(j.origem_ejc_tipo, 'INCONFIDENTES') <> 'OUTRO_EJC'
               AND COALESCE(j.lista_mestre_ativo, 1) = 1
@@ -1380,6 +1502,16 @@ router.post('/', async (req, res) => {
         const transferenciaOutroEjc = transferenciaOutroEjcSolicitada ? 1 : (origemTipo === 'OUTRO_EJC' && req.body.transferencia_outro_ejc ? 1 : 0);
         const foiMoita = !!ja_foi_moita_inconfidentes;
 
+        const duplicidade = await validarDuplicidadeJovemListaMestre({
+            tenantId,
+            telefone,
+            email,
+            instagram
+        });
+        if (duplicidade) {
+            return res.status(409).json({ error: duplicidade.error, campo: duplicidade.campo });
+        }
+
         const campos = [
             'tenant_id',
             'nome_completo',
@@ -1604,6 +1736,17 @@ router.put('/:id', async (req, res) => {
             } catch (e) {
                 resolvedConjugeId = merged.conjuge_id || null;
             }
+        }
+
+        const duplicidade = await validarDuplicidadeJovemListaMestre({
+            tenantId,
+            telefone: merged.telefone,
+            email: merged.email,
+            instagram: merged.instagram,
+            excludeId: id
+        });
+        if (duplicidade) {
+            return res.status(409).json({ error: duplicidade.error, campo: duplicidade.campo });
         }
 
         const [colCheck] = await pool.query(`
@@ -2161,6 +2304,18 @@ router.post('/importacao', async (req, res) => {
                     'SELECT id FROM jovens WHERE tenant_id = ? AND (nome_completo = ? OR (telefone = ? AND telefone IS NOT NULL AND telefone != "")) LIMIT 1',
                     [tenantId, j.nome_completo, j.telefone]
                 );
+
+                const duplicidade = await validarDuplicidadeJovemListaMestre({
+                    tenantId,
+                    telefone: j.telefone,
+                    email: j.email,
+                    instagram: j.instagram,
+                    excludeId: exists.length > 0 ? exists[0].id : null,
+                    connection
+                });
+                if (duplicidade) {
+                    throw new Error(`${nomeJovem}: ${duplicidade.error}`);
+                }
 
                 if (exists.length > 0) {
                     jovemId = exists[0].id;

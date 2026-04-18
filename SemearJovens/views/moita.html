@@ -51,8 +51,14 @@
                     <p class="text-muted mb-0">Histórico de jovens que serviram no moita.</p>
                 </div>
                 <div class="d-flex gap-2">
-                    <button class="btn btn-outline-success" @click="exportarExcel">Exportar Excel</button>
-                    <button class="btn btn-success" @click="abrirModalFuncao"><i class="fa-solid fa-plus icon-accent"></i> Criar Função</button>
+                    <button class="btn btn-outline-success btn-ejc-action" @click="exportarExcel" title="Exportar" aria-label="Exportar">
+                        <span class="btn-ejc-icon"><i class="fa-solid fa-folder-open icon-accent"></i></span>
+                        <span class="btn-ejc-text">Exportar</span>
+                    </button>
+                    <button class="btn btn-ejc-action btn-edit-standard btn-sm" @click="abrirModalFuncao" title="Novo" aria-label="Novo">
+                        <span class="btn-ejc-icon"><i class="fa-solid fa-plus icon-accent"></i></span>
+                        <span class="btn-ejc-text">Criar Função</span>
+                    </button>
                 </div>
             </div>
             <div class="mb-2 text-muted small">
@@ -85,7 +91,10 @@
                                         title="Visualizar lista">
                                         <i class="fas fa-eye"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-soft-primary" @click="abrirModalReserva('MULHERES')"><i class="fa-solid fa-plus icon-accent"></i> Adicionar</button>
+                                    <button class="btn btn-sm btn-soft-primary btn-ejc-action" @click="abrirModalReserva('MULHERES')" title="Novo" aria-label="Novo">
+                                        <span class="btn-ejc-icon"><i class="fa-solid fa-plus icon-accent"></i></span>
+                                        <span class="btn-ejc-text">Adicionar</span>
+                                    </button>
                                 </div>
                             </div>
                             <div class="text-muted small">
@@ -104,7 +113,10 @@
                                         title="Visualizar lista">
                                         <i class="fas fa-eye"></i>
                                     </button>
-                                    <button class="btn btn-sm btn-soft-primary" @click="abrirModalReserva('HOMENS')"><i class="fa-solid fa-plus icon-accent"></i> Adicionar</button>
+                                    <button class="btn btn-sm btn-soft-primary btn-ejc-action" @click="abrirModalReserva('HOMENS')" title="Novo" aria-label="Novo">
+                                        <span class="btn-ejc-icon"><i class="fa-solid fa-plus icon-accent"></i></span>
+                                        <span class="btn-ejc-text">Adicionar</span>
+                                    </button>
                                 </div>
                             </div>
                             <div class="text-muted small">

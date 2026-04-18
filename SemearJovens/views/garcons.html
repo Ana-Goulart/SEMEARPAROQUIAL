@@ -151,8 +151,14 @@
                     <p class="text-muted mb-0">Crie equipes de garçom por EJC e gerencie os jovens com os mesmos papéis das equipes.</p>
                 </div>
                 <div class="d-flex gap-2">
-                    <button class="btn btn-outline-success" @click="exportarExcel">Exportar Excel</button>
-                    <button class="btn btn-primary" @click="abrirModalNovaEquipe"><i class="fa-solid fa-plus icon-accent"></i> Nova Equipe de Garçom</button>
+                    <button class="btn btn-outline-success btn-ejc-action" @click="exportarExcel" title="Exportar" aria-label="Exportar">
+                        <span class="btn-ejc-icon"><i class="fa-solid fa-folder-open icon-accent"></i></span>
+                        <span class="btn-ejc-text">Exportar</span>
+                    </button>
+                    <button class="btn btn-primary btn-ejc-action" @click="abrirModalNovaEquipe" title="Novo" aria-label="Novo">
+                        <span class="btn-ejc-icon"><i class="fa-solid fa-plus icon-accent"></i></span>
+                        <span class="btn-ejc-text">Nova Equipe de Garçom</span>
+                    </button>
                 </div>
             </div>
             <div class="mb-2 text-muted small">
@@ -192,13 +198,34 @@
                                 <button class="btn btn-sm garcom-btn-soft" @click="toggleMembros(equipe.id)" :title="membrosAbertos[equipe.id] ? 'Ocultar jovens' : 'Ver jovens'">
                                     {{ membrosAbertos[equipe.id] ? '▾ Integrantes' : '▸ Integrantes' }}
                                 </button>
-                                <button class="btn btn-sm garcom-btn-soft" @click="abrirModalAdicionarJovem(equipe)"><i class="fa-solid fa-plus icon-accent"></i> Adicionar Jovem</button>
-                                <button class="btn btn-sm garcom-btn-soft" @click="abrirModalAdicionarTio(equipe)"><i class="fa-solid fa-plus icon-accent"></i> Adicionar Tios</button>
-                                <button v-if="equipe.reserva_ativa" class="btn btn-sm garcom-btn-soft" @click="abrirModalAdicionarJovem(equipe, 'RESERVA')"><i class="fa-solid fa-plus icon-accent"></i> Adicionar Reserva</button>
-                                <button v-if="equipe.reserva_ativa" class="btn btn-sm garcom-btn-soft" @click="abrirModalAdicionarTio(equipe, 'RESERVA')"><i class="fa-solid fa-plus icon-accent"></i> Adicionar Tios na Reserva</button>
-                                <button v-if="!equipe.reserva_ativa" class="btn btn-sm garcom-btn-outline" @click="criarListaReserva(equipe)"><i class="fa-solid fa-folder-tree icon-accent"></i> Criar Lista de Reserva</button>
-                                <button class="btn btn-sm garcom-btn-main" @click="exportarEquipeExcel(equipe)"><i class="fa-solid fa-file-lines icon-accent"></i> Exportar equipe</button>
-                                <button class="btn btn-sm garcom-btn-danger" @click="removerEquipe(equipe)"><i class="fa-solid fa-trash icon-accent"></i></button>
+                                <button class="btn btn-sm garcom-btn-soft btn-ejc-action" @click="abrirModalAdicionarJovem(equipe)" title="Novo" aria-label="Novo">
+                                    <span class="btn-ejc-icon"><i class="fa-solid fa-plus icon-accent"></i></span>
+                                    <span class="btn-ejc-text">Adicionar Jovem</span>
+                                </button>
+                                <button class="btn btn-sm garcom-btn-soft btn-ejc-action" @click="abrirModalAdicionarTio(equipe)" title="Novo" aria-label="Novo">
+                                    <span class="btn-ejc-icon"><i class="fa-solid fa-plus icon-accent"></i></span>
+                                    <span class="btn-ejc-text">Adicionar Tios</span>
+                                </button>
+                                <button v-if="equipe.reserva_ativa" class="btn btn-sm garcom-btn-soft btn-ejc-action" @click="abrirModalAdicionarJovem(equipe, 'RESERVA')" title="Novo" aria-label="Novo">
+                                    <span class="btn-ejc-icon"><i class="fa-solid fa-plus icon-accent"></i></span>
+                                    <span class="btn-ejc-text">Adicionar Reserva</span>
+                                </button>
+                                <button v-if="equipe.reserva_ativa" class="btn btn-sm garcom-btn-soft btn-ejc-action" @click="abrirModalAdicionarTio(equipe, 'RESERVA')" title="Novo" aria-label="Novo">
+                                    <span class="btn-ejc-icon"><i class="fa-solid fa-plus icon-accent"></i></span>
+                                    <span class="btn-ejc-text">Adicionar Tios na Reserva</span>
+                                </button>
+                                <button v-if="!equipe.reserva_ativa" class="btn btn-sm garcom-btn-outline btn-ejc-action" @click="criarListaReserva(equipe)" title="Criar Lista de Reserva" aria-label="Criar Lista de Reserva">
+                                    <span class="btn-ejc-icon"><i class="fa-solid fa-folder-tree icon-accent"></i></span>
+                                    <span class="btn-ejc-text">Criar Lista de Reserva</span>
+                                </button>
+                                <button class="btn btn-sm garcom-btn-main btn-ejc-action" @click="exportarEquipeExcel(equipe)" title="Exportar" aria-label="Exportar">
+                                    <span class="btn-ejc-icon"><i class="fa-solid fa-file-lines icon-accent"></i></span>
+                                    <span class="btn-ejc-text">Exportar equipe</span>
+                                </button>
+                                <button class="btn btn-sm garcom-btn-danger btn-ejc-action" @click="removerEquipe(equipe)" title="Excluir" aria-label="Excluir">
+                                    <span class="btn-ejc-icon"><i class="fa-solid fa-trash icon-accent"></i></span>
+                                    <span class="btn-ejc-text">Excluir</span>
+                                </button>
                             </div>
                         </div>
                         <div class="p-3">
