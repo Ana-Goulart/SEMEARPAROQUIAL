@@ -25,6 +25,7 @@ const upload = multer({ storage });
 let ensured = false;
 let ensurePromise = null;
 let ensureListaMestreAtivoPromise = null;
+const NORMALIZED_PHONE_SQL = "REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TRIM(COALESCE(%FIELD%, '')), ' ', ''), '(', ''), ')', ''), '-', ''), '+', '')";
 
 async function ensureTiosServicosSnapshots() {
     const colunas = [
@@ -339,6 +340,76 @@ function parseBool(v) {
 
 function normalizePhoneDigits(value) {
     return String(value || '').replace(/\D/g, '');
+}
+
+function normalizedPhoneExpr(fieldName) {
+    return NORMALIZED_PHONE_SQL.replace('%FIELD%', fieldName);
+}
+
+function normalizeTrimmedText(value) {
+    if (value === undefined || value === null) return null;
+    const text = String(value).trim();
+    return text || null;
+}
+
+function normalizeUpperText(value) {
+    const text = normalizeTrimmedText(value);
+    return text ? text.toLocaleUpperCase('pt-BR') : null;
+}
+
+async function validarDuplicidadeTelefoneCasal({
+    tenantId,
+    telefoneTio,
+    telefoneTia,
+    excludeCasalId = null,
+    connection = pool
+}) {
+    const telefoneTioNormalizado = normalizePhoneDigits(telefoneTio);
+    const telefoneTiaNormalizado = normalizePhoneDigits(telefoneTia);
+
+    if (telefoneTioNormalizado && telefoneTiaNormalizado && telefoneTioNormalizado === telefoneTiaNormalizado) {
+        return {
+            campo: 'telefone_tia',
+            error: 'Os telefones do tio e da tia não podem ser iguais.'
+        };
+    }
+
+    const telefonesParaValidar = [
+        { campo: 'telefone_tio', label: 'Telefone do tio', valor: telefoneTioNormalizado },
+        { campo: 'telefone_tia', label: 'Telefone da tia', valor: telefoneTiaNormalizado }
+    ];
+
+    for (const item of telefonesParaValidar) {
+        if (!item.valor) continue;
+
+        const params = [tenantId, item.valor, item.valor];
+        let sql = `
+            SELECT id, nome_tio, nome_tia
+            FROM tios_casais
+            WHERE tenant_id = ?
+              AND (
+                    ${normalizedPhoneExpr('telefone_tio')} = ?
+                 OR ${normalizedPhoneExpr('telefone_tia')} = ?
+              )
+        `;
+
+        if (excludeCasalId) {
+            sql += ' AND id <> ?';
+            params.push(Number(excludeCasalId));
+        }
+
+        sql += ' LIMIT 1';
+        const [rows] = await connection.query(sql, params);
+        if (rows && rows.length) {
+            const nomeCasal = [rows[0].nome_tio, rows[0].nome_tia].filter(Boolean).join(' e ') || 'outro casal';
+            return {
+                campo: item.campo,
+                error: `${item.label} já está cadastrado em ${nomeCasal}.`
+            };
+        }
+    }
+
+    return null;
 }
 
 async function buscarJovemPorNomeTelefone({ tenantId, nome, telefone }) {
@@ -862,11 +933,11 @@ router.post('/casais', async (req, res) => {
     try {
         await ensureStructure();
         const tenantId = getTenantId(req);
-        const nomeTio = String(req.body.nome_tio || '').trim();
-        const telefoneTio = String(req.body.telefone_tio || '').trim();
+        const nomeTio = normalizeUpperText(req.body.nome_tio);
+        const telefoneTio = normalizeTrimmedText(req.body.telefone_tio);
         const dataNascimentoTio = normalizeDate(req.body.data_nascimento_tio);
-        const nomeTia = String(req.body.nome_tia || '').trim();
-        const telefoneTia = String(req.body.telefone_tia || '').trim();
+        const nomeTia = normalizeUpperText(req.body.nome_tia);
+        const telefoneTia = normalizeTrimmedText(req.body.telefone_tia);
         const dataNascimentoTia = normalizeDate(req.body.data_nascimento_tia);
         const restricaoAlimentarTio = parseBool(req.body.restricao_alimentar_tio);
         const detalhesRestricaoTio = restricaoAlimentarTio ? (String(req.body.detalhes_restricao_tio || '').trim() || null) : null;
@@ -888,6 +959,15 @@ router.post('/casais', async (req, res) => {
 
         if (!nomeTio || !telefoneTio || !nomeTia || !telefoneTia) {
             return res.status(400).json({ error: 'Dados obrigatórios: nome e telefone de tio e tia.' });
+        }
+
+        const duplicidade = await validarDuplicidadeTelefoneCasal({
+            tenantId,
+            telefoneTio,
+            telefoneTia
+        });
+        if (duplicidade) {
+            return res.status(409).json({ error: duplicidade.error, campo: duplicidade.campo });
         }
 
         if (origemTipo === 'EJC' && eccId) {
@@ -979,11 +1059,11 @@ router.put('/casais/:id', async (req, res) => {
         const casalId = Number(req.params.id);
         if (!casalId) return res.status(400).json({ error: 'ID inválido.' });
 
-        const nomeTio = String(req.body.nome_tio || '').trim();
-        const telefoneTio = String(req.body.telefone_tio || '').trim();
+        const nomeTio = normalizeUpperText(req.body.nome_tio);
+        const telefoneTio = normalizeTrimmedText(req.body.telefone_tio);
         const dataNascimentoTio = normalizeDate(req.body.data_nascimento_tio);
-        const nomeTia = String(req.body.nome_tia || '').trim();
-        const telefoneTia = String(req.body.telefone_tia || '').trim();
+        const nomeTia = normalizeUpperText(req.body.nome_tia);
+        const telefoneTia = normalizeTrimmedText(req.body.telefone_tia);
         const dataNascimentoTia = normalizeDate(req.body.data_nascimento_tia);
         const restricaoAlimentarTio = parseBool(req.body.restricao_alimentar_tio);
         const detalhesRestricaoTio = restricaoAlimentarTio ? (String(req.body.detalhes_restricao_tio || '').trim() || null) : null;
@@ -1005,6 +1085,16 @@ router.put('/casais/:id', async (req, res) => {
 
         if (!nomeTio || !telefoneTio || !nomeTia || !telefoneTia) {
             return res.status(400).json({ error: 'Dados obrigatórios: nome e telefone de tio e tia.' });
+        }
+
+        const duplicidade = await validarDuplicidadeTelefoneCasal({
+            tenantId,
+            telefoneTio,
+            telefoneTia,
+            excludeCasalId: casalId
+        });
+        if (duplicidade) {
+            return res.status(409).json({ error: duplicidade.error, campo: duplicidade.campo });
         }
 
         if (origemTipo === 'EJC' && eccId) {

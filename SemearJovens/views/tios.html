@@ -207,94 +207,570 @@
             border-top: 1px solid rgba(34, 55, 80, 0.08);
             padding: 1.1rem 1.4rem;
         }
+
+        .tios-page-header {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .tios-page-header-top {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.9rem;
+        }
+
+        .tios-page-heading {
+            min-width: 0;
+        }
+
+        .tios-toolbar-actions {
+            width: 100%;
+            display: flex;
+            justify-content: flex-start;
+        }
+
+        .tios-toolbar-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            justify-content: flex-start;
+            width: 100%;
+        }
+
+        .tios-toolbar-search {
+            width: 100%;
+            max-width: 100%;
+            margin-left: auto;
+        }
+
+        .tios-search-label {
+            display: block;
+            margin-bottom: 0.45rem;
+            color: #8f6a24;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .tios-toolbar-search .input-group {
+            flex-wrap: nowrap;
+        }
+
+        .tios-toolbar-search .input-group-text {
+            border-color: rgba(191, 161, 111, 0.35);
+            background: #fff8ee;
+            color: #8f6a24;
+        }
+
+        .tios-toolbar-search .form-control,
+        .tios-toolbar-search .btn {
+            min-height: 44px;
+        }
+
+        .tios-toolbar-search .form-control {
+            color: #334155;
+            background: #fffdf9;
+        }
+
+        .tios-toolbar-search .form-control:focus {
+            background: #fff;
+        }
+
+        .tios-tabs-bar {
+            align-items: flex-end;
+            gap: 0.75rem;
+        }
+
+        .tios-tabs-search-item {
+            width: 100%;
+            list-style: none;
+        }
+
+        .tios-tabs-search-item .tios-toolbar-search {
+            padding-bottom: 0.35rem;
+        }
+
+        .tios-footer-bar {
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+            margin-top: 1rem;
+        }
+
+        .tios-total-info {
+            color: #5b6677;
+            font-size: 1rem;
+            line-height: 1.2;
+        }
+
+        .tios-pagination {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 0.45rem;
+        }
+
+        .tios-page-btn,
+        .tios-page-ellipsis {
+            min-width: 2.4rem;
+            height: 2.4rem;
+            padding: 0 0.75rem;
+            border-radius: 12px;
+            border: 1px solid rgba(191, 161, 111, 0.45);
+            background: #fffdf9;
+            color: #9a681b;
+            font-size: 0.95rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.18s ease;
+        }
+
+        .tios-page-btn:hover:not(:disabled) {
+            background: #fff2db;
+            border-color: rgba(191, 161, 111, 0.65);
+            color: #8a5a14;
+            transform: translateY(-1px);
+        }
+
+        .tios-page-btn.active {
+            border-color: transparent;
+            background: linear-gradient(180deg, #d9a650 0%, #c8933f 100%);
+            color: #fff;
+            box-shadow: 0 10px 20px rgba(217, 166, 80, 0.24);
+        }
+
+        .tios-page-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .tios-page-btn.is-arrow {
+            min-width: 2.4rem;
+            padding: 0;
+        }
+
+        .tios-page-ellipsis {
+            border-style: dashed;
+            background: transparent;
+        }
+
+        @media (min-width: 992px) {
+            .tios-page-header-top {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+
+            .tios-page-heading {
+                flex: 1 1 auto;
+            }
+
+            .tios-toolbar-actions {
+                flex: 0 0 auto;
+                width: auto;
+                justify-content: flex-end;
+            }
+
+            .tios-toolbar-buttons {
+                width: auto;
+                justify-content: flex-end;
+            }
+
+            .tios-tabs-search-item {
+                margin-left: auto;
+                max-width: 360px;
+            }
+
+            .tios-toolbar-search {
+                max-width: 360px;
+            }
+        }
+
+        .lista-mestre-page-title {
+            flex: 1 1 320px;
+            min-width: 0;
+            margin: 0;
+            color: #0f2440;
+            font-size: clamp(1.55rem, 1.45vw, 2rem);
+            line-height: 1.04;
+        }
+
+        .ficha-subtab {
+            border: 1px solid #d9a650;
+            border-radius: 999px;
+            background: #fff;
+            color: #b67f1d;
+            font-size: 0.92rem;
+            font-weight: 700;
+            padding: 0.45rem 0.95rem;
+            min-height: 40px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: none;
+            transition: all 0.18s ease;
+        }
+
+        .ficha-subtab:hover {
+            border-color: #c8933f;
+            background: #fff6e8;
+            color: #9b6910;
+            transform: translateY(-1px);
+        }
+
+        .ficha-subtab.active {
+            border-color: transparent;
+            background: #d9a650;
+            color: #fff;
+            box-shadow: 0 8px 18px rgba(217, 166, 80, 0.28);
+        }
+
+        .ficha-subpane {
+            border: 0;
+            border-radius: 18px;
+            background: #fff;
+            padding: 1rem;
+            margin-bottom: 0.9rem;
+        }
+
+        .ficha-pane-title {
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 0;
+        }
+
+        .ficha-pane-title h6 {
+            color: #b88732;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        #modalCasal .modal-dialog {
+            max-width: min(1680px, 92vw);
+            margin: 1rem auto;
+        }
+
+        #modalCasal .modal-body {
+            padding: 1.25rem 1.5rem 1.5rem;
+        }
+
+        .novo-jovem-body {
+            background: linear-gradient(180deg, #fffdf9 0%, #fff8ee 100%);
+            padding: 1.5rem !important;
+        }
+
+        .novo-jovem-panel {
+            border: 1px solid rgba(34, 55, 80, 0.08);
+            border-radius: 20px;
+            background: #fff;
+            padding: 1.15rem;
+            box-shadow: 0 12px 28px rgba(34, 55, 80, 0.05);
+        }
+
+        .novo-jovem-panel-title {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            margin-bottom: 0.9rem;
+        }
+
+        .novo-jovem-panel-title strong {
+            color: #223750;
+            font-size: 1rem;
+        }
+
+        .novo-jovem-panel-title span {
+            color: #7b8797;
+            font-size: 0.9rem;
+        }
+
+        .novo-jovem-panel-icon {
+            width: 34px;
+            height: 34px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #fff4de;
+            color: #9a681b;
+            font-size: 0.95rem;
+        }
+
+        .novo-casal-help {
+            margin-top: 0.55rem;
+            color: #8b6d33;
+            font-size: 0.9rem;
+        }
+
+        .tios-profile-rail {
+            width: 100%;
+            max-width: 100%;
+            min-width: 0;
+        }
+
+        .tios-profile-photo {
+            width: 100%;
+            max-width: 180px;
+            height: auto;
+            aspect-ratio: 1 / 1;
+            background-color: #f8f9fa;
+            cursor: pointer;
+        }
+
+        .tios-profile-summary {
+            width: 100%;
+            margin-top: 1.1rem;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.55rem 0.9rem;
+            align-items: start;
+        }
+
+        .tios-summary-item {
+            margin-bottom: 0 !important;
+            min-width: 0;
+            max-width: 100%;
+        }
+
+        .tios-summary-item--wide {
+            grid-column: 1 / -1;
+        }
+
+        .tios-profile-summary label,
+        .ficha-aside-item label {
+            display: block;
+            margin-bottom: 0.15rem !important;
+            color: #6c757d;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .tios-profile-summary .bg-light.border.rounded,
+        .ficha-aside-item div {
+            width: 100%;
+            max-width: 100%;
+            min-height: calc(1.5em + 0.5rem + 2px);
+            padding: 0.25rem 0.5rem;
+            line-height: 1.5;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+            border: 1px solid rgba(31, 53, 88, 0.08);
+            border-radius: 0.375rem;
+            background: var(--bs-light);
+            color: #3d4451;
+        }
+
+        .ficha-aside-list {
+            width: 100%;
+            margin-top: 1.1rem;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.55rem 0.9rem;
+        }
+
+        .lista-mestre-grid.table > :not(caption) > * > * {
+            padding: 0.58rem 0.6rem !important;
+        }
+
+        .lista-mestre-grid thead th {
+            padding: 0.7rem 0.6rem !important;
+            font-size: 0.95rem;
+        }
+
+        .lista-mestre-grid tbody td {
+            padding: 0.58rem 0.6rem !important;
+            font-size: 0.94rem;
+            line-height: 1.15;
+            vertical-align: middle;
+        }
+
+        .lista-mestre-grid .btn.btn-edit-standard.btn-sm {
+            min-width: 58px !important;
+            min-height: 30px !important;
+            padding: 0.22rem 0.62rem !important;
+            border-radius: 8px !important;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 12px rgba(217, 166, 80, 0.2);
+        }
+
+        @media (max-width: 767.98px) {
+            #modalCasal .modal-dialog {
+                max-width: calc(100vw - 1rem);
+                margin: 0.5rem auto;
+            }
+
+            #modalCasal .modal-body {
+                padding: 1rem;
+            }
+
+            .tios-profile-rail {
+                width: 280px;
+                max-width: 100%;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .tios-profile-rail {
+                width: 100%;
+                max-width: 100%;
+            }
+
+            .ficha-aside-list {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .ficha-aside-list.tios-profile-summary {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
     <div id="app">
         <main class="container-fluid">
-            <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 gap-3">
-                <div>
-                    <h3 class="mb-1">Tios</h3>
-                    <p class="text-muted mb-0">Cadastro de casais (tio e tia), ECC/ECNA e histórico de serviço no EJC.</p>
-                </div>
-                <div class="d-flex flex-wrap gap-2">
-                    <button v-if="aba==='casais'" class="btn btn-soft-secondary btn-ejc-action" @click="abrirNovoCasal" title="Novo" aria-label="Novo">
-                        <span class="btn-ejc-icon"><i class="fa-solid fa-plus icon-accent"></i></span>
-                        <span class="btn-ejc-text">Novo</span>
-                    </button>
-                    <button v-else-if="aba==='ecc'" class="btn btn-soft-secondary btn-ejc-action" @click="abrirNovoEcc" title="Novo" aria-label="Novo">
-                        <span class="btn-ejc-icon"><i class="fa-solid fa-plus icon-accent"></i></span>
-                        <span class="btn-ejc-text">Novo</span>
-                    </button>
-                    <button class="btn btn-soft-secondary btn-ejc-action" @click="exportarExcel" title="Exportar" aria-label="Exportar">
-                        <span class="btn-ejc-icon"><i class="fa-solid fa-folder-open icon-accent"></i></span>
-                        <span class="btn-ejc-text">Exportar</span>
-                    </button>
-                    <button v-if="aba==='casais'" class="btn btn-soft-secondary btn-ejc-action" @click="abrirModalImportacaoTios" title="Importar" aria-label="Importar">
-                        <span class="btn-ejc-icon"><i class="fa-solid fa-file-import icon-accent"></i></span>
-                        <span class="btn-ejc-text">Importar</span>
-                    </button>
-                    <label v-else-if="aba==='ecc'" class="btn btn-soft-secondary btn-ejc-action mb-0" title="Importar" aria-label="Importar">
-                        <span class="btn-ejc-icon"><i class="fa-solid fa-file-import icon-accent"></i></span>
-                        <span class="btn-ejc-text">Importar</span>
-                        <input type="file" class="d-none" accept=".xlsx" @change="importarExcel">
-                    </label>
-                    <div class="vr mx-1" v-if="aba==='casais'"></div>
-                    <div class="btn-group" v-if="aba==='casais'">
-                        <button class="btn btn-soft-secondary dropdown-toggle btn-ejc-action" data-bs-toggle="dropdown" title="Colunas" aria-label="Colunas">
-                            <span class="btn-ejc-icon"><i class="fa-solid fa-gear icon-accent"></i></span>
-                            <span class="btn-ejc-text">Colunas</span>
-                        </button>
-                        <ul class="dropdown-menu p-3" style="min-width: 280px;">
-                            <li v-for="(val, col) in colunasConfiguraveisCasais" :key="col" class="mb-1">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" v-model="colunasVisiveisCasais[col]">
-                                    <label class="form-check-label">{{ labelColunaTios(col) }}</label>
-                                </div>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li class="d-flex gap-2">
-                                <button type="button" class="btn btn-soft-secondary d-flex align-items-center gap-1" @click.stop="salvarPreferenciasColunasTios">Salvar</button>
-                                <button type="button" class="btn btn-sm btn-outline-secondary" @click.stop="restaurarPreferenciasColunasTios">Restaurar padrão</button>
-                            </li>
-                        </ul>
+            <div class="tios-page-header">
+                <div class="tios-page-header-top">
+                    <div class="tios-page-heading">
+                        <h3 class="lista-mestre-page-title">Tios</h3>
                     </div>
-                    <button v-if="aba==='casais'" class="btn btn-ejc-action" :class="mostrarFiltrosCasais ? 'btn-primary' : 'btn-soft-primary'" @click="mostrarFiltrosCasais = !mostrarFiltrosCasais" title="Filtros" aria-label="Filtros">
-                        <span class="btn-ejc-icon"><i class="fa-solid fa-magnifying-glass icon-accent"></i></span>
-                        <span class="btn-ejc-text">Filtros</span>
-                    </button>
+                    <div class="tios-toolbar-actions">
+                        <div class="tios-toolbar-buttons">
+                        <button v-if="aba==='casais'" class="btn btn-soft-secondary btn-ejc-action" @click="abrirNovoCasal" title="Novo" aria-label="Novo">
+                            <span class="btn-ejc-icon"><i class="fa-solid fa-plus icon-accent"></i></span>
+                            <span class="btn-ejc-text">Novo</span>
+                        </button>
+                        <button v-else-if="aba==='ecc'" class="btn btn-soft-secondary btn-ejc-action" @click="abrirNovoEcc" title="Novo" aria-label="Novo">
+                            <span class="btn-ejc-icon"><i class="fa-solid fa-plus icon-accent"></i></span>
+                            <span class="btn-ejc-text">Novo</span>
+                        </button>
+                        <button class="btn btn-soft-secondary btn-ejc-action" @click="exportarExcel" title="Exportar" aria-label="Exportar">
+                            <span class="btn-ejc-icon"><i class="fa-solid fa-folder-open icon-accent"></i></span>
+                            <span class="btn-ejc-text">Exportar</span>
+                        </button>
+                        <button v-if="aba==='casais'" class="btn btn-soft-secondary btn-ejc-action" @click="abrirModalImportacaoTios" title="Importar" aria-label="Importar">
+                            <span class="btn-ejc-icon"><i class="fa-solid fa-file-import icon-accent"></i></span>
+                            <span class="btn-ejc-text">Importar</span>
+                        </button>
+                        <label v-else-if="aba==='ecc'" class="btn btn-soft-secondary btn-ejc-action mb-0" title="Importar" aria-label="Importar">
+                            <span class="btn-ejc-icon"><i class="fa-solid fa-file-import icon-accent"></i></span>
+                            <span class="btn-ejc-text">Importar</span>
+                            <input type="file" class="d-none" accept=".xlsx" @change="importarExcel">
+                        </label>
+                        <div class="vr mx-1" v-if="aba==='casais'"></div>
+                        <div class="btn-group" v-if="aba==='casais'">
+                            <button class="btn btn-soft-secondary dropdown-toggle btn-ejc-action" data-bs-toggle="dropdown" title="Colunas" aria-label="Colunas">
+                                <span class="btn-ejc-icon"><i class="fa-solid fa-gear icon-accent"></i></span>
+                                <span class="btn-ejc-text">Colunas</span>
+                            </button>
+                            <ul class="dropdown-menu p-3" style="min-width: 280px;">
+                                <li v-for="(val, col) in colunasConfiguraveisCasais" :key="col" class="mb-1">
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" v-model="colunasVisiveisCasais[col]">
+                                        <label class="form-check-label">{{ labelColunaTios(col) }}</label>
+                                    </div>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li class="d-flex gap-2">
+                                    <button type="button" class="btn btn-soft-secondary d-flex align-items-center gap-1" @click.stop="salvarPreferenciasColunasTios">Salvar</button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" @click.stop="restaurarPreferenciasColunasTios">Restaurar padrão</button>
+                                </li>
+                            </ul>
+                        </div>
+                        <button class="btn btn-ejc-action"
+                            :class="filtrosAvancadosAbertosTios ? 'btn-primary' : 'btn-soft-primary'"
+                            @click="toggleFiltrosAvancadosTios"
+                            title="Filtros avançados"
+                            aria-label="Filtros avançados">
+                            <span class="btn-ejc-icon"><i class="fa-solid fa-sliders icon-accent"></i></span>
+                            <span class="btn-ejc-text">Filtros avançados</span>
+                        </button>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="mb-2 text-muted small" v-if="aba==='casais'">
-                Total: <strong class="text-dark">{{ casaisLocais.length }}</strong>
-                • Filtrados: <strong class="text-dark">{{ casaisFiltrados.length }}</strong>
-            </div>
-            <div class="mb-2 text-muted small" v-else>
-                Total: <strong class="text-dark">{{ eccs.length }}</strong>
-                • Filtrados: <strong class="text-dark">{{ eccsFiltrados.length }}</strong>
-            </div>
-
-            <ul class="nav nav-tabs mb-3">
+            <ul class="nav nav-tabs mb-3 tios-tabs-bar">
                 <li class="nav-item"><button class="nav-link" :class="{active: aba==='casais'}" @click="aba='casais'">Casais</button></li>
                 <li class="nav-item"><button class="nav-link" :class="{active: aba==='ecc'}" @click="aba='ecc'">Encontros</button></li>
+                <li class="tios-tabs-search-item">
+                    <div class="tios-toolbar-search">
+                        <label for="tiosPesquisaRapida" class="tios-search-label">Pesquisa rápida</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+                            <input id="tiosPesquisaRapida"
+                                type="search"
+                                class="form-control"
+                                :value="pesquisaRapidaAtualTios"
+                                @input="onPesquisaRapidaTiosInput"
+                                data-ui-skip-phone-mask="true"
+                                autocomplete="off"
+                                spellcheck="false"
+                                :placeholder="placeholderPesquisaRapidaTios">
+                            <button v-show="pesquisaRapidaAtualTios"
+                                type="button"
+                                class="btn btn-outline-secondary"
+                                @click="limparPesquisaRapidaTios"
+                                data-ui-skip-standardize="true"
+                                title="Limpar pesquisa"
+                                aria-label="Limpar pesquisa">
+                                <i class="fa-solid fa-xmark"></i>
+                            </button>
+                        </div>
+                    </div>
+                </li>
             </ul>
 
             <div v-if="aba==='casais'">
                 <div v-if="mostrarFiltrosCasais" class="filtro-panel shadow-sm mb-3">
-                    <div class="row g-2">
-                        <div class="col-md-6">
-                            <label class="form-label small text-muted">Buscar casal</label>
-                            <input class="form-control" v-model.trim="filtroNome" placeholder="Nome do tio ou tia">
+                    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end gap-2 mb-3">
+                        <div>
+                            <span class="tios-search-label mb-1">Filtros avançados</span>
+                            <div class="text-muted small">Use a pesquisa rápida para localizar qualquer dado do casal e refine abaixo pelos campos da listagem.</div>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label small text-muted">Buscar telefone</label>
-                            <input class="form-control" v-model.trim="filtroTelefone" placeholder="Telefone do tio ou tia">
+                        <button class="btn btn-soft-secondary btn-sm" @click="limparFiltrosAvancadosTios">Limpar filtros avançados</button>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Nome do casal</label>
+                            <input class="form-control" v-model.trim="filtrosCasais.nome" placeholder="Nome do tio ou tia">
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <label class="form-label">Telefone</label>
+                            <input class="form-control" v-model.trim="filtrosCasais.telefone" placeholder="Telefone do tio ou tia">
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label class="form-label">Nº Encontro</label>
+                            <input class="form-control" v-model.trim="filtrosCasais.encontroNumero" placeholder="Ex: 1">
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label class="form-label">Tipo</label>
+                            <select class="form-select" v-model="filtrosCasais.encontroTipo">
+                                <option value="">Todos</option>
+                                <option value="ECC">ECC</option>
+                                <option value="ECNA">ECNA</option>
+                            </select>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <label class="form-label">Termos de uso</label>
+                            <select class="form-select" v-model="filtrosCasais.termosUso">
+                                <option value="">Todos</option>
+                                <option :value="true">Aceito</option>
+                                <option :value="false">Não aceito</option>
+                            </select>
                         </div>
                     </div>
                 </div>
-                <div class="card border-0 shadow-sm">
+                <div class="card border-0 shadow-sm" ref="casaisCard">
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
+                    <table class="table table-hover align-middle mb-0 lista-mestre-grid" ref="casaisTabela">
                         <thead class="table-light">
                             <tr>
                                 <th v-if="colunasVisiveisCasais.Casal">Casal</th>
@@ -305,7 +781,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="c in casaisFiltrados" :key="c.id">
+                            <tr v-for="c in casaisPaginados" :key="c.id">
                                 <td v-if="colunasVisiveisCasais.Casal">
                                     <div class="fw-semibold">{{ c.nome_tio }}</div>
                                     <div class="fw-semibold">{{ c.nome_tia }}</div>
@@ -330,23 +806,71 @@
                     </table>
                 </div>
                 </div>
+                <div class="tios-footer-bar" ref="casaisRodape">
+                    <div class="tios-total-info">
+                        Total de casais: <strong class="text-dark">{{ casaisFiltrados.length }}</strong>
+                    </div>
+                    <nav v-if="totalPaginasCasais > 1" class="tios-pagination" aria-label="Paginação dos casais de tios">
+                        <button type="button"
+                            class="tios-page-btn is-arrow"
+                            :disabled="paginaAtualCasaisNormalizada === 1"
+                            @click="irParaPaginaCasais(paginaAtualCasaisNormalizada - 1)"
+                            aria-label="Página anterior">
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </button>
+                        <template v-for="item in paginasVisiveisCasais" :key="item.chave">
+                            <span v-if="item.tipo === 'ellipsis'" class="tios-page-ellipsis" aria-hidden="true">…</span>
+                            <button v-else
+                                type="button"
+                                class="tios-page-btn"
+                                :class="{ active: item.numero === paginaAtualCasaisNormalizada }"
+                                :aria-current="item.numero === paginaAtualCasaisNormalizada ? 'page' : null"
+                                @click="irParaPaginaCasais(item.numero)">
+                                {{ item.numero }}
+                            </button>
+                        </template>
+                        <button type="button"
+                            class="tios-page-btn is-arrow"
+                            :disabled="paginaAtualCasaisNormalizada === totalPaginasCasais"
+                            @click="irParaPaginaCasais(paginaAtualCasaisNormalizada + 1)"
+                            aria-label="Próxima página">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                    </nav>
+                </div>
             </div>
 
-            <div v-if="aba==='ecc'" class="card border-0 shadow-sm">
-                <div class="card-body border-bottom">
-                    <div class="row g-2">
-                        <div class="col-md-6">
-                            <label class="form-label small text-muted">Buscar número</label>
-                            <input class="form-control" v-model.trim="filtroEccNumero" placeholder="Número do Encontro">
+            <div v-if="aba==='ecc'">
+                <div v-if="mostrarFiltrosEcc" class="filtro-panel shadow-sm mb-3">
+                    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end gap-2 mb-3">
+                        <div>
+                            <span class="tios-search-label mb-1">Filtros avançados</span>
+                            <div class="text-muted small">Use a pesquisa rápida para localizar o encontro e refine abaixo pelos campos dessa listagem.</div>
                         </div>
-                        <div class="col-md-6">
-                            <label class="form-label small text-muted">Buscar descrição</label>
-                            <input class="form-control" v-model.trim="filtroEccDescricao" placeholder="Descrição">
+                        <button class="btn btn-soft-secondary btn-sm" @click="limparFiltrosAvancadosTios">Limpar filtros avançados</button>
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-12 col-md-4">
+                            <label class="form-label">Número</label>
+                            <input class="form-control" v-model.trim="filtrosEcc.numero" placeholder="Número do Encontro">
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label">Tipo</label>
+                            <select class="form-select" v-model="filtrosEcc.tipo">
+                                <option value="">Todos</option>
+                                <option value="ECC">ECC</option>
+                                <option value="ECNA">ECNA</option>
+                            </select>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label">Descrição</label>
+                            <input class="form-control" v-model.trim="filtrosEcc.descricao" placeholder="Descrição">
                         </div>
                     </div>
                 </div>
+                <div class="card border-0 shadow-sm" ref="eccCard">
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
+                    <table class="table table-hover align-middle mb-0 lista-mestre-grid" ref="eccTabela">
                         <thead class="table-light">
                             <tr>
                                 <th>Número</th>
@@ -356,7 +880,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="e in eccsFiltrados" :key="e.id">
+                            <tr v-for="e in eccsPaginados" :key="e.id">
                                 <td class="fw-semibold">{{ e.numero }}</td>
                                 <td>{{ e.tipo || 'ECC' }}</td>
                                 <td>{{ e.descricao || '-' }}</td>
@@ -368,13 +892,46 @@
                                 </td>
                             </tr>
                             <tr v-if="loadingEcc">
-                                <td colspan="3" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Carregando...</td>
+                                <td colspan="4" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Carregando...</td>
                             </tr>
-                            <tr v-else-if="!eccs.length">
+                            <tr v-else-if="!eccsFiltrados.length">
                                 <td colspan="4" class="text-center text-muted py-4">Nenhum encontro cadastrado.</td>
                             </tr>
                         </tbody>
                     </table>
+                </div>
+                </div>
+                <div class="tios-footer-bar" ref="eccRodape">
+                    <div class="tios-total-info">
+                        Total de encontros: <strong class="text-dark">{{ eccsFiltrados.length }}</strong>
+                    </div>
+                    <nav v-if="totalPaginasEcc > 1" class="tios-pagination" aria-label="Paginação dos encontros de tios">
+                        <button type="button"
+                            class="tios-page-btn is-arrow"
+                            :disabled="paginaAtualEccNormalizada === 1"
+                            @click="irParaPaginaEcc(paginaAtualEccNormalizada - 1)"
+                            aria-label="Página anterior">
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </button>
+                        <template v-for="item in paginasVisiveisEcc" :key="item.chave">
+                            <span v-if="item.tipo === 'ellipsis'" class="tios-page-ellipsis" aria-hidden="true">…</span>
+                            <button v-else
+                                type="button"
+                                class="tios-page-btn"
+                                :class="{ active: item.numero === paginaAtualEccNormalizada }"
+                                :aria-current="item.numero === paginaAtualEccNormalizada ? 'page' : null"
+                                @click="irParaPaginaEcc(item.numero)">
+                                {{ item.numero }}
+                            </button>
+                        </template>
+                        <button type="button"
+                            class="tios-page-btn is-arrow"
+                            :disabled="paginaAtualEccNormalizada === totalPaginasEcc"
+                            @click="irParaPaginaEcc(paginaAtualEccNormalizada + 1)"
+                            aria-label="Próxima página">
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                    </nav>
                 </div>
             </div>
         </main>
@@ -382,7 +939,7 @@
         <div class="modal fade" id="modalImportacaoTios" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content border-0 shadow">
-                    <div class="modal-header bg-soft-primary">
+                    <div class="modal-header bg-light border-bottom">
                         <h5 class="modal-title">Importar Excel (Modelo esperado)</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
@@ -424,7 +981,7 @@ preencha outro_ejc_paroquia</div>
 
                         <p class="text-muted mt-3 mb-2">Importante: use arquivo Excel (.xlsx).</p>
 
-                        <button type="button" class="btn btn-outline-primary" @click="baixarModeloImportacaoExcelTios">
+                        <button type="button" class="btn btn-soft-secondary" @click="baixarModeloImportacaoExcelTios">
                             Baixar modelo Excel
                         </button>
 
@@ -435,27 +992,122 @@ preencha outro_ejc_paroquia</div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-soft-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-primary" @click="confirmarImportacaoTios">Importar</button>
+                        <button type="button" class="btn btn-success" @click="confirmarImportacaoTios">Importar</button>
                     </div>
                 </div>
             </div>
         </div>
 
         <div class="modal fade" id="modalCasal" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-xl modal-dialog-scrollable casal-modal">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable">
                 <div class="modal-content border-0 shadow">
-                    <div class="modal-header casal-modal-header align-items-center">
-                        <h5 class="modal-title">
-                            <span class="casal-modal-badge">{{ formCasal.id ? 'C' : '+' }}</span>
-                            <span>{{ formCasal.id ? ((formCasal.nome_tio || 'Tio') + ' e ' + (formCasal.nome_tia || 'Tia')) : (formCasal.origem_tipo === 'OUTRO_EJC' ? 'Novo casal de outro EJC' : 'Novo casal') }}</span>
+                    <div class="modal-header align-items-center bg-light border-bottom">
+                        <h5 class="modal-title d-flex align-items-center m-0 text-dark">
+                            {{ formCasal.id ? ((formCasal.nome_tio || 'TIO') + ' E ' + (formCasal.nome_tia || 'TIA')) : 'Cadastro de tios' }}
                         </h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
-                    <div class="modal-body casal-modal-body">
-                        <div v-if="!formCasal.id" class="casal-helper-box">
-                            <strong>{{ formCasal.origem_tipo === 'OUTRO_EJC' ? 'Cadastro de tios de outro EJC' : 'Cadastro de novo casal de tios' }}</strong>
-                            <span>Preencha os dados principais do tio e da tia, depois complemente saúde, família e histórico de serviço conforme necessário.</span>
+                    <div class="modal-body" :class="{ 'novo-jovem-body': !formCasal.id }">
+                        <div v-if="!formCasal.id" class="row g-4">
+                            <div class="col-12">
+                                <div class="novo-jovem-panel">
+                                    <div class="novo-jovem-panel-title">
+                                        <span class="novo-jovem-panel-icon"><i class="fa-solid fa-people-roof"></i></span>
+                                        <div>
+                                            <strong>Dados básicos do casal</strong>
+                                            <span class="d-block">Cadastre primeiro tio e tia. Histórico, família e demais ajustes podem ser complementados depois na ficha completa.</span>
+                                        </div>
+                                    </div>
+                                    <div class="row g-3">
+                                        <div class="col-lg-4">
+                                            <label class="text-muted small">Origem do casal</label>
+                                            <select class="form-select" v-model="formCasal.origem_tipo">
+                                                <option value="EJC">Tios do EJC</option>
+                                                <option value="OUTRO_EJC">Tios de outro EJC</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-lg-8" v-if="formCasal.origem_tipo === 'OUTRO_EJC'">
+                                            <label class="text-muted small">Paróquia de origem</label>
+                                            <select class="form-select" v-model="formCasal.outro_ejc_id">
+                                                <option :value="null">Selecione...</option>
+                                                <option v-for="o in outrosEjcs" :key="`novo-outro-ejc-${o.id}`" :value="o.id">
+                                                    {{ o.paroquia }}{{ o.nome ? ` - ${o.nome}` : '' }}
+                                                </option>
+                                            </select>
+                                        </div>
+                                        <div class="col-lg-8" v-else>
+                                            <label class="text-muted small">Encontro (ECC/ECNA)</label>
+                                            <select class="form-select" v-model="formCasal.ecc_id">
+                                                <option :value="null">Selecione...</option>
+                                                <option v-for="e in eccs" :key="`novo-ecc-${e.id}`" :value="e.id">
+                                                    {{ e.numero }} {{ (e.tipo || 'ECC') }}{{ e.descricao ? ` - ${e.descricao}` : '' }}
+                                                </option>
+                                            </select>
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="row g-3">
+                                                <div class="col-12">
+                                                    <strong class="text-muted small d-block">Dados do tio</strong>
+                                                </div>
+                                                <div class="col-lg-5">
+                                                    <label class="text-muted small">Nome do tio *</label>
+                                                    <input class="form-control"
+                                                        v-model.trim="formCasal.nome_tio"
+                                                        @input="normalizarCampoMaiusculoCasal('nome_tio')"
+                                                        maxlength="180"
+                                                        placeholder="Nome do tio">
+                                                </div>
+                                                <div class="col-lg-4">
+                                                    <label class="text-muted small">Telefone do tio *</label>
+                                                    <input class="form-control"
+                                                        v-model.trim="formCasal.telefone_tio"
+                                                        maxlength="30"
+                                                        placeholder="(31)99999-9999">
+                                                </div>
+                                                <div class="col-lg-3">
+                                                    <label class="text-muted small">Nascimento</label>
+                                                    <input type="date" class="form-control" v-model="formCasal.data_nascimento_tio" lang="pt-BR">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
+                                            <div class="row g-3">
+                                                <div class="col-12">
+                                                    <strong class="text-muted small d-block">Dados da tia</strong>
+                                                </div>
+                                                <div class="col-lg-5">
+                                                    <label class="text-muted small">Nome da tia *</label>
+                                                    <input class="form-control"
+                                                        v-model.trim="formCasal.nome_tia"
+                                                        @input="normalizarCampoMaiusculoCasal('nome_tia')"
+                                                        maxlength="180"
+                                                        placeholder="Nome da tia">
+                                                </div>
+                                                <div class="col-lg-4">
+                                                    <label class="text-muted small">Telefone da tia *</label>
+                                                    <input class="form-control"
+                                                        v-model.trim="formCasal.telefone_tia"
+                                                        maxlength="30"
+                                                        placeholder="(31)99999-9999">
+                                                </div>
+                                                <div class="col-lg-3">
+                                                    <label class="text-muted small">Nascimento</label>
+                                                    <input type="date" class="form-control" v-model="formCasal.data_nascimento_tia" lang="pt-BR">
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="text-muted small">Observações iniciais</label>
+                                            <textarea class="form-control" rows="3" v-model.trim="formCasal.observacoes" placeholder="Se precisar, deixe aqui uma observação inicial do casal."></textarea>
+                                        </div>
+                                    </div>
+                                    <div class="novo-casal-help">
+                                        Depois de salvar, a ficha completa fica disponível com histórico, observações, jovens vinculados e presenças.
+                                    </div>
+                                </div>
+                            </div>
                         </div>
+                        <template v-if="formCasal.id">
                         <div class="d-flex justify-content-between border-bottom mb-3">
                             <ul class="nav nav-tabs border-bottom-0 mb-0">
                                 <li class="nav-item"><button class="nav-link" :class="{active: abaCasal==='dados'}" @click="abaCasal='dados'; subAbaCasalDados='cadastro'"><i class="fa-solid fa-user icon-accent"></i> Dados Pessoais</button></li>
@@ -471,21 +1123,27 @@ preencha outro_ejc_paroquia</div>
                         <div v-if="abaCasal==='dados'" class="ficha-dados-shell">
                             <div class="row g-3">
                             <div class="col-md-3">
-                                <div class="ficha-aside-shell">
+                                <div class="ficha-aside-shell d-flex flex-column align-items-center tios-profile-rail">
                                     <div class="d-flex flex-column align-items-center">
                                         <div class="position-relative mb-3">
                                             <img :src="formCasal.foto_url || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(((formCasal.nome_tio || 'Tio') + ' e ' + (formCasal.nome_tia || 'Tia')).trim()) + '&background=e9ecef&color=6c757d&size=160')"
                                                 alt="Foto do casal"
-                                                class="ficha-avatar-card shadow-sm"
+                                                class="rounded border shadow-sm object-fit-cover tios-profile-photo"
                                                 :class="{ 'ficha-avatar-trigger': !isEditingCasal }"
                                                 :data-bs-toggle="!isEditingCasal ? 'modal' : null"
                                                 :data-bs-target="!isEditingCasal ? '#modalVerFotoCasal' : null"
                                                 :title="!isEditingCasal ? 'Ver foto ampliada' : ''">
                                             <label v-if="isEditingCasal"
-                                                class="position-absolute bottom-0 end-0 bg-primary text-white rounded-circle d-flex justify-content-center align-items-center shadow cursor-pointer"
-                                                style="width: 32px; height: 32px; cursor: pointer; transform: translate(15%, 15%);"
+                                                class="position-absolute bottom-0 end-0 rounded-circle d-flex justify-content-center align-items-center shadow cursor-pointer"
+                                                style="width: 32px; height: 32px; cursor: pointer; transform: translate(15%, 15%); background: #d9a650; border: 1px solid #d9a650;"
                                                 title="Trocar foto">
-                                                <span style="font-size: 14px;"><i class="fa-solid fa-camera icon-accent"></i></span>
+                                                <span class="position-relative d-inline-flex align-items-center justify-content-center" style="width: 18px; height: 18px;">
+                                                    <i class="fa-solid fa-camera" style="font-size: 14px; color: #8a5a14;"></i>
+                                                    <span class="position-absolute d-inline-flex align-items-center justify-content-center"
+                                                        style="width: 11px; height: 11px; right: -5px; bottom: -4px; border-radius: 999px; background: #fff; color: #8a5a14; font-size: 7px; box-shadow: 0 0 0 1px rgba(138, 90, 20, 0.12);">
+                                                        <i class="fa-solid fa-plus"></i>
+                                                    </span>
+                                                </span>
                                                 <input type="file" class="d-none" accept="image/*" @change="uploadFotoCasal" :disabled="!formCasal.id">
                                             </label>
                                         </div>
@@ -494,21 +1152,13 @@ preencha outro_ejc_paroquia</div>
                                         </div>
                                         <div class="small text-muted mt-1 text-center" v-if="isEditingCasal && !formCasal.id">Salve o casal antes de enviar a foto.</div>
                                     </div>
-                                    <div class="ficha-aside-list mt-4">
-                                        <div class="ficha-aside-item">
-                                            <label>Origem</label>
+                                    <div class="ficha-aside-list tios-profile-summary text-start">
+                                        <div class="ficha-aside-item tios-summary-item">
+                                            <label class="text-muted small mb-0">Origem</label>
                                             <div>{{ formCasal.origem_tipo === 'OUTRO_EJC' ? 'Tios de outro EJC' : 'Tios do EJC' }}</div>
                                         </div>
-                                        <div class="ficha-aside-item">
-                                            <label>Casal</label>
-                                            <div>{{ formCasal.nome_tio || '-' }} e {{ formCasal.nome_tia || '-' }}</div>
-                                        </div>
-                                        <div class="ficha-aside-item">
-                                            <label>Contato</label>
-                                            <div>{{ formCasal.telefone_tio || '-' }} / {{ formCasal.telefone_tia || '-' }}</div>
-                                        </div>
-                                        <div class="ficha-aside-item">
-                                            <label>Encontro</label>
+                                        <div class="ficha-aside-item tios-summary-item">
+                                            <label class="text-muted small mb-0">Encontro</label>
                                             <div v-if="formCasal.origem_tipo !== 'OUTRO_EJC'">{{ eccLabelAtualCasal }}</div>
                                             <div v-else>{{ outroEjcLabelAtualCasal }}</div>
                                         </div>
@@ -531,14 +1181,14 @@ preencha outro_ejc_paroquia</div>
                                     </div>
                                     <div class="row g-3">
                                         <div class="col-12"><h6 class="text-muted mb-0">Dados do Tio</h6></div>
-                                        <div class="col-md-6"><label class="form-label">Nome do tio</label><input class="form-control" v-model.trim="formCasal.nome_tio" maxlength="180"></div>
+                                        <div class="col-md-6"><label class="form-label">Nome do tio</label><input class="form-control" v-model.trim="formCasal.nome_tio" @input="normalizarCampoMaiusculoCasal('nome_tio')" maxlength="180"></div>
                                         <div class="col-md-3"><label class="form-label">Telefone</label><input class="form-control" v-model.trim="formCasal.telefone_tio" maxlength="30"></div>
-                                        <div class="col-md-3"><label class="form-label">Nascimento</label><input type="text" class="form-control date-br" v-model="formCasal.data_nascimento_tio" placeholder="dd/mm/aaaa"></div>
+                                        <div class="col-md-3"><label class="form-label">Nascimento</label><input type="date" class="form-control" v-model="formCasal.data_nascimento_tio" lang="pt-BR"></div>
 
                                         <div class="col-12 pt-2"><h6 class="text-muted mb-0">Dados da Tia</h6></div>
-                                        <div class="col-md-6"><label class="form-label">Nome da tia</label><input class="form-control" v-model.trim="formCasal.nome_tia" maxlength="180"></div>
+                                        <div class="col-md-6"><label class="form-label">Nome da tia</label><input class="form-control" v-model.trim="formCasal.nome_tia" @input="normalizarCampoMaiusculoCasal('nome_tia')" maxlength="180"></div>
                                         <div class="col-md-3"><label class="form-label">Telefone</label><input class="form-control" v-model.trim="formCasal.telefone_tia" maxlength="30"></div>
-                                        <div class="col-md-3"><label class="form-label">Nascimento</label><input type="text" class="form-control date-br" v-model="formCasal.data_nascimento_tia" placeholder="dd/mm/aaaa"></div>
+                                        <div class="col-md-3"><label class="form-label">Nascimento</label><input type="date" class="form-control" v-model="formCasal.data_nascimento_tia" lang="pt-BR"></div>
                                         <div class="col-md-6">
                                             <label class="text-muted small mb-0">Termos de uso</label>
                                             <div class="py-1 px-2 bg-light border rounded" v-if="formCasal.termos_aceitos_em">
@@ -557,6 +1207,13 @@ preencha outro_ejc_paroquia</div>
                                         <p>Encontro realizado e equipes em que o casal já serviu.</p>
                                     </div>
                                     <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label class="form-label">Origem do casal</label>
+                                            <select class="form-select" v-model="formCasal.origem_tipo">
+                                                <option value="EJC">Tios do EJC</option>
+                                                <option value="OUTRO_EJC">Tios de outro EJC</option>
+                                            </select>
+                                        </div>
                                         <div class="col-md-6" v-if="formCasal.origem_tipo !== 'OUTRO_EJC'">
                                             <label class="form-label">Encontro (ECC/ECNA)</label>
                                             <select class="form-select" v-model="formCasal.ecc_id">
@@ -871,8 +1528,9 @@ preencha outro_ejc_paroquia</div>
                                 </div>
                             </div>
                         </div>
+                        </template>
                     </div>
-                    <div class="modal-footer casal-modal-footer">
+                    <div class="modal-footer bg-light border-top">
                         <button
                             v-if="isEditingCasal && formCasal.id"
                             class="btn btn-danger me-auto"
@@ -881,7 +1539,7 @@ preencha outro_ejc_paroquia</div>
                         </button>
                         <button v-if="isEditingCasal" class="btn btn-soft-secondary" @click="cancelarEdicaoCasal">Cancelar</button>
                         <button v-else class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
-                        <button v-if="isEditingCasal" class="btn btn-success" @click="salvarCasal"><i class="fa-solid fa-floppy-disk icon-accent"></i> Salvar Alterações</button>
+                        <button v-if="isEditingCasal" class="btn btn-success" @click="salvarCasal"><i class="fa-solid fa-floppy-disk icon-accent"></i> {{ formCasal.id ? 'Salvar Alterações' : 'Criar Casal' }}</button>
                     </div>
                 </div>
             </div>
@@ -927,8 +1585,8 @@ preencha outro_ejc_paroquia</div>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button class="btn btn-primary" @click="salvarEcc">Salvar</button>
+                        <button class="btn btn-soft-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button class="btn btn-success" @click="salvarEcc">Salvar</button>
                     </div>
                 </div>
             </div>
@@ -955,7 +1613,7 @@ preencha outro_ejc_paroquia</div>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
+                        <button type="button" class="btn btn-soft-secondary" data-bs-dismiss="modal">Fechar</button>
                     </div>
                 </div>
             </div>
@@ -992,6 +1650,7 @@ preencha outro_ejc_paroquia</div>
                     loadingEcc: false,
                     loadingJovensOutroEjc: false,
                     mostrarFiltrosCasais: false,
+                    mostrarFiltrosEcc: false,
                     casais: [],
                     jovensOutroEjc: [],
                     eccs: [],
@@ -1002,12 +1661,28 @@ preencha outro_ejc_paroquia</div>
                         Casal: true,
                         Telefones: true,
                         Encontro: true,
+                        TermosUso: false,
                         Acoes: false
                     },
-                    filtroNome: '',
-                    filtroTelefone: '',
-                    filtroEccNumero: '',
-                    filtroEccDescricao: '',
+                    pesquisaRapidaCasais: '',
+                    pesquisaRapidaEcc: '',
+                    filtrosCasais: {
+                        nome: '',
+                        telefone: '',
+                        encontroNumero: '',
+                        encontroTipo: '',
+                        termosUso: ''
+                    },
+                    filtrosEcc: {
+                        numero: '',
+                        tipo: '',
+                        descricao: ''
+                    },
+                    paginaAtualCasais: 1,
+                    itensPorPaginaCasais: 10,
+                    paginaAtualEcc: 1,
+                    itensPorPaginaEcc: 10,
+                    temporizadorPaginacaoTios: null,
                     modalCasal: null,
                     modalEcc: null,
                     modalPresencas: null,
@@ -1074,16 +1749,15 @@ preencha outro_ejc_paroquia</div>
                 };
             },
             computed: {
-                casaisFiltrados() {
-                    const nome = String(this.filtroNome || '').trim().toLowerCase();
-                    const tel = String(this.filtroTelefone || '').trim().toLowerCase();
-                    return this.casaisLocais.filter((c) => {
-                        const nomeCasal = `${c.nome_tio || ''} ${c.nome_tia || ''}`.toLowerCase();
-                        const tels = `${c.telefone_tio || ''} ${c.telefone_tia || ''}`.toLowerCase();
-                        const okNome = !nome || nomeCasal.includes(nome);
-                        const okTel = !tel || tels.includes(tel);
-                        return okNome && okTel;
-                    });
+                pesquisaRapidaAtualTios() {
+                    return this.aba === 'ecc' ? this.pesquisaRapidaEcc : this.pesquisaRapidaCasais;
+                },
+                placeholderPesquisaRapidaTios() {
+                    if (this.aba === 'ecc') return 'Pesquise por número, tipo ou descrição...';
+                    return 'Pesquise por nome, telefone, encontro, observações...';
+                },
+                filtrosAvancadosAbertosTios() {
+                    return this.aba === 'ecc' ? this.mostrarFiltrosEcc : this.mostrarFiltrosCasais;
                 },
                 casaisLocais() {
                     return (this.casais || []).filter((c) => String(c.origem_tipo || 'EJC').toUpperCase() !== 'OUTRO_EJC');
@@ -1091,20 +1765,45 @@ preencha outro_ejc_paroquia</div>
                 casaisOutros() {
                     return (this.casais || []).filter((c) => String(c.origem_tipo || 'EJC').toUpperCase() === 'OUTRO_EJC');
                 },
+                casaisFiltrados() {
+                    const nome = String(this.filtrosCasais.nome || '').trim().toLowerCase();
+                    const tel = String(this.filtrosCasais.telefone || '').trim().toLowerCase();
+                    const encontroNumero = String(this.filtrosCasais.encontroNumero || '').trim().toLowerCase();
+                    const encontroTipo = String(this.filtrosCasais.encontroTipo || '').trim().toUpperCase();
+                    const termosPesquisaRapida = this.normalizarTextoBusca(this.pesquisaRapidaCasais).split(' ').filter(Boolean);
+
+                    return this.casaisLocais.filter((c) => {
+                        const nomeCasal = `${c.nome_tio || ''} ${c.nome_tia || ''}`.toLowerCase();
+                        const tels = `${c.telefone_tio || ''} ${c.telefone_tia || ''}`.toLowerCase();
+                        const okNome = !nome || nomeCasal.includes(nome);
+                        const okTel = !tel || tels.includes(tel);
+                        const okEncontroNumero = !encontroNumero || String(c.ecc_numero || '').toLowerCase().includes(encontroNumero);
+                        const okEncontroTipo = !encontroTipo || String(c.ecc_tipo || '').trim().toUpperCase() === encontroTipo;
+                        const okTermos = this.filtrosCasais.termosUso === '' || !!c.termos_aceitos_em == this.filtrosCasais.termosUso;
+                        return this.registroCasalAtendePesquisaRapida(c, termosPesquisaRapida)
+                            && okNome
+                            && okTel
+                            && okEncontroNumero
+                            && okEncontroTipo
+                            && okTermos;
+                    });
+                },
                 casaisOutrosFiltrados() {
-                    const nome = String(this.filtroNome || '').trim().toLowerCase();
-                    const tel = String(this.filtroTelefone || '').trim().toLowerCase();
+                    const nome = String(this.filtrosCasais.nome || '').trim().toLowerCase();
+                    const tel = String(this.filtrosCasais.telefone || '').trim().toLowerCase();
+                    const termosPesquisaRapida = this.normalizarTextoBusca(this.pesquisaRapidaCasais).split(' ').filter(Boolean);
+
                     return this.casaisOutros.filter((c) => {
                         const nomeCasal = `${c.nome_tio || ''} ${c.nome_tia || ''}`.toLowerCase();
                         const tels = `${c.telefone_tio || ''} ${c.telefone_tia || ''}`.toLowerCase();
                         const okNome = !nome || nomeCasal.includes(nome);
                         const okTel = !tel || tels.includes(tel);
-                        return okNome && okTel;
+                        return this.registroCasalAtendePesquisaRapida(c, termosPesquisaRapida) && okNome && okTel;
                     });
                 },
                 jovensOutroEjcFiltrados() {
-                    const nome = String(this.filtroNome || '').trim().toLowerCase();
-                    const tel = String(this.filtroTelefone || '').trim().toLowerCase();
+                    const nome = String(this.filtrosCasais.nome || '').trim().toLowerCase();
+                    const tel = String(this.filtrosCasais.telefone || '').trim().toLowerCase();
                     return (this.jovensOutroEjc || []).filter((j) => {
                         const nomeJovem = String(j.nome_completo || '').toLowerCase();
                         const telefone = String(j.telefone || '').toLowerCase();
@@ -1116,31 +1815,69 @@ preencha outro_ejc_paroquia</div>
                 },
                 totalAbaAtual() {
                     if (this.aba === 'casais') return this.casaisLocais.length;
+                    if (this.aba === 'ecc') return (this.eccs || []).length;
                     if (this.aba === 'membros_outro') return this.abaMembrosOutro === 'tios' ? this.casaisOutros.length : (this.jovensOutroEjc || []).length;
                     return 0;
                 },
                 totalFiltradoAbaAtual() {
                     if (this.aba === 'casais') return this.casaisFiltrados.length;
+                    if (this.aba === 'ecc') return this.eccsFiltrados.length;
                     if (this.aba === 'membros_outro') return this.abaMembrosOutro === 'tios' ? this.casaisOutrosFiltrados.length : this.jovensOutroEjcFiltrados.length;
                     return 0;
                 },
                 eccsFiltrados() {
-                    const numero = String(this.filtroEccNumero || '').trim().toLowerCase();
-                    const desc = String(this.filtroEccDescricao || '').trim().toLowerCase();
+                    const numero = String(this.filtrosEcc.numero || '').trim().toLowerCase();
+                    const tipo = String(this.filtrosEcc.tipo || '').trim().toUpperCase();
+                    const desc = String(this.filtrosEcc.descricao || '').trim().toLowerCase();
+                    const termosPesquisaRapida = this.normalizarTextoBusca(this.pesquisaRapidaEcc).split(' ').filter(Boolean);
+
                     return (this.eccs || []).filter((e) => {
                         const n = String(e.numero || '').toLowerCase();
                         const t = String(e.tipo || '').toLowerCase();
                         const d = String(e.descricao || '').toLowerCase();
                         const okNum = !numero || n.includes(numero);
+                        const okTipo = !tipo || String(e.tipo || '').trim().toUpperCase() === tipo;
                         const okDesc = !desc || d.includes(desc) || t.includes(desc);
-                        return okNum && okDesc;
+                        return this.registroEccAtendePesquisaRapida(e, termosPesquisaRapida) && okNum && okTipo && okDesc;
                     });
+                },
+                totalPaginasCasais() {
+                    return Math.max(1, Math.ceil(this.casaisFiltrados.length / Math.max(this.itensPorPaginaCasais, 1)));
+                },
+                paginaAtualCasaisNormalizada() {
+                    const pagina = Number(this.paginaAtualCasais || 1);
+                    if (pagina < 1) return 1;
+                    if (pagina > this.totalPaginasCasais) return this.totalPaginasCasais;
+                    return pagina;
+                },
+                casaisPaginados() {
+                    const inicio = (this.paginaAtualCasaisNormalizada - 1) * this.itensPorPaginaCasais;
+                    return this.casaisFiltrados.slice(inicio, inicio + this.itensPorPaginaCasais);
+                },
+                paginasVisiveisCasais() {
+                    return this.montarPaginasVisiveisTios(this.totalPaginasCasais, this.paginaAtualCasaisNormalizada);
+                },
+                totalPaginasEcc() {
+                    return Math.max(1, Math.ceil(this.eccsFiltrados.length / Math.max(this.itensPorPaginaEcc, 1)));
+                },
+                paginaAtualEccNormalizada() {
+                    const pagina = Number(this.paginaAtualEcc || 1);
+                    if (pagina < 1) return 1;
+                    if (pagina > this.totalPaginasEcc) return this.totalPaginasEcc;
+                    return pagina;
+                },
+                eccsPaginados() {
+                    const inicio = (this.paginaAtualEccNormalizada - 1) * this.itensPorPaginaEcc;
+                    return this.eccsFiltrados.slice(inicio, inicio + this.itensPorPaginaEcc);
+                },
+                paginasVisiveisEcc() {
+                    return this.montarPaginasVisiveisTios(this.totalPaginasEcc, this.paginaAtualEccNormalizada);
                 },
                 eccLabelAtualCasal() {
                     const eccId = Number(this.formCasal && this.formCasal.ecc_id);
                     const ecc = (this.eccs || []).find((item) => Number(item.id) === eccId);
                     if (!ecc) return 'Não informado';
-                    return `${ecc.numero || '-'} ${ecc.tipo || 'ECC'}${ecc.descricao ? ` - ${ecc.descricao}` : ''}`;
+                    return `${ecc.numero || '-'} ${ecc.tipo || 'ECC'}`;
                 },
                 outroEjcLabelAtualCasal() {
                     const outroId = Number(this.formCasal && this.formCasal.outro_ejc_id);
@@ -1161,7 +1898,348 @@ preencha outro_ejc_paroquia</div>
                     return Math.max(1, totalConfiguraveis + 1);
                 }
             },
+            watch: {
+                aba() {
+                    this.agendarRecalculoPaginacaoTios();
+                },
+                mostrarFiltrosCasais() {
+                    this.agendarRecalculoPaginacaoTios();
+                },
+                mostrarFiltrosEcc() {
+                    this.agendarRecalculoPaginacaoTios();
+                },
+                pesquisaRapidaCasais() {
+                    this.paginaAtualCasais = 1;
+                    this.agendarRecalculoPaginacaoTios();
+                },
+                pesquisaRapidaEcc() {
+                    this.paginaAtualEcc = 1;
+                    this.agendarRecalculoPaginacaoTios();
+                },
+                filtrosCasais: {
+                    deep: true,
+                    handler() {
+                        this.paginaAtualCasais = 1;
+                        this.agendarRecalculoPaginacaoTios();
+                    }
+                },
+                filtrosEcc: {
+                    deep: true,
+                    handler() {
+                        this.paginaAtualEcc = 1;
+                        this.agendarRecalculoPaginacaoTios();
+                    }
+                },
+                colunasVisiveisCasais: {
+                    deep: true,
+                    handler() {
+                        if (this.aba === 'casais') this.agendarRecalculoPaginacaoTios();
+                    }
+                },
+                casaisFiltrados() {
+                    this.ajustarPaginaAtualCasais();
+                    this.agendarRecalculoPaginacaoTios();
+                },
+                eccsFiltrados() {
+                    this.ajustarPaginaAtualEcc();
+                    this.agendarRecalculoPaginacaoTios();
+                }
+            },
+            beforeUnmount() {
+                if (this.temporizadorPaginacaoTios) {
+                    clearTimeout(this.temporizadorPaginacaoTios);
+                    this.temporizadorPaginacaoTios = null;
+                }
+                window.removeEventListener('resize', this.onResizeTios);
+            },
             methods: {
+                normalizarTextoBusca(value) {
+                    return String(value || '')
+                        .normalize('NFD')
+                        .replace(/[\u0300-\u036f]/g, '')
+                        .toLowerCase()
+                        .replace(/[^a-z0-9\s]/g, ' ')
+                        .replace(/\s+/g, ' ')
+                        .trim();
+                },
+                apenasDigitos(value) {
+                    return String(value || '').replace(/\D+/g, '');
+                },
+                paraMaiusculo(valor) {
+                    return String(valor === undefined || valor === null ? '' : valor).trim().toLocaleUpperCase('pt-BR');
+                },
+                normalizarCampoMaiusculoCasal(campo) {
+                    if (!this.formCasal || !campo || !(campo in this.formCasal)) return;
+                    const valorAtual = this.formCasal[campo];
+                    if (valorAtual === undefined || valorAtual === null) {
+                        this.formCasal[campo] = '';
+                        return;
+                    }
+                    this.formCasal[campo] = this.paraMaiusculo(valorAtual);
+                },
+                normalizarCamposMaiusculosCasal(obj) {
+                    if (!obj || typeof obj !== 'object') return obj;
+                    ['nome_tio', 'nome_tia'].forEach((campo) => {
+                        if (obj[campo] !== undefined && obj[campo] !== null && obj[campo] !== '') {
+                            obj[campo] = this.paraMaiusculo(obj[campo]);
+                        }
+                    });
+                    return obj;
+                },
+                validarDuplicidadeTelefonesCasal(payload, excludeId = null) {
+                    const telefoneTio = this.apenasDigitos(payload && payload.telefone_tio);
+                    const telefoneTia = this.apenasDigitos(payload && payload.telefone_tia);
+
+                    if (telefoneTio && telefoneTia && telefoneTio === telefoneTia) {
+                        return { campo: 'telefone_tia', error: 'Os telefones do tio e da tia não podem ser iguais.' };
+                    }
+
+                    const registros = Array.isArray(this.casais) ? this.casais : [];
+                    const telefoneDuplicado = (telefone) => registros.find((casal) => {
+                        if (!telefone) return false;
+                        if (excludeId && Number(casal.id) === Number(excludeId)) return false;
+                        return this.apenasDigitos(casal.telefone_tio) === telefone || this.apenasDigitos(casal.telefone_tia) === telefone;
+                    });
+
+                    const casalTio = telefoneDuplicado(telefoneTio);
+                    if (casalTio) {
+                        return {
+                            campo: 'telefone_tio',
+                            error: `Telefone do tio já está cadastrado em ${[casalTio.nome_tio, casalTio.nome_tia].filter(Boolean).join(' e ')}.`
+                        };
+                    }
+
+                    const casalTia = telefoneDuplicado(telefoneTia);
+                    if (casalTia) {
+                        return {
+                            campo: 'telefone_tia',
+                            error: `Telefone da tia já está cadastrado em ${[casalTia.nome_tio, casalTia.nome_tia].filter(Boolean).join(' e ')}.`
+                        };
+                    }
+
+                    return null;
+                },
+                textoBuscaTios(value) {
+                    if (value === null || value === undefined) return '';
+                    if (Array.isArray(value)) return value.map((item) => this.textoBuscaTios(item)).filter(Boolean).join(' ');
+                    if (typeof value === 'boolean') return value ? 'sim' : 'nao';
+                    return String(value);
+                },
+                montarTextoPesquisaCasal(casal) {
+                    const servicos = (casal.servicos || []).map((servico) => `${servico.equipe_nome || ''} ${servico.ejc_numero || ''} ${servico.ejc_paroquia || ''}`);
+                    const encontro = [casal.ecc_numero, casal.ecc_tipo, casal.ecc_descricao].filter(Boolean).join(' ');
+                    const origemTipo = String(casal.origem_tipo || 'EJC').toUpperCase() === 'OUTRO_EJC'
+                        ? 'outro ejc outra paroquia'
+                        : 'ejc inconfidentes local';
+                    const termosUso = casal.termos_aceitos_em ? 'aceito sim' : 'nao aceito nao';
+                    const partes = [
+                        casal.nome_tio,
+                        casal.nome_tia,
+                        `${casal.nome_tio || ''} ${casal.nome_tia || ''}`,
+                        casal.telefone_tio,
+                        this.apenasDigitos(casal.telefone_tio),
+                        casal.telefone_tia,
+                        this.apenasDigitos(casal.telefone_tia),
+                        encontro,
+                        casal.outro_ejc_nome,
+                        casal.outro_ejc_paroquia,
+                        casal.outro_ejc_bairro,
+                        casal.observacoes,
+                        origemTipo,
+                        termosUso,
+                        casal.restricao_alimentar_tio ? 'restricao alimentar tio sim' : 'restricao alimentar tio nao',
+                        casal.restricao_alimentar_tia ? 'restricao alimentar tia sim' : 'restricao alimentar tia nao',
+                        casal.deficiencia_tio ? 'deficiencia tio sim' : 'deficiencia tio nao',
+                        casal.deficiencia_tia ? 'deficiencia tia sim' : 'deficiencia tia nao',
+                        servicos
+                    ];
+                    return this.normalizarTextoBusca(partes.map((item) => this.textoBuscaTios(item)).filter(Boolean).join(' '));
+                },
+                registroCasalAtendePesquisaRapida(casal, termosPesquisaRapida) {
+                    if (!termosPesquisaRapida.length) return true;
+                    const textoBusca = this.montarTextoPesquisaCasal(casal);
+                    return termosPesquisaRapida.every((termo) => textoBusca.includes(termo));
+                },
+                montarTextoPesquisaEcc(ecc) {
+                    const tipo = String(ecc.tipo || 'ECC').toUpperCase();
+                    const partes = [
+                        ecc.numero,
+                        ecc.tipo,
+                        ecc.descricao,
+                        `${ecc.numero || ''} ${tipo}`,
+                        tipo === 'ECNA' ? 'encontro ecna' : 'encontro ecc'
+                    ];
+                    return this.normalizarTextoBusca(partes.map((item) => this.textoBuscaTios(item)).filter(Boolean).join(' '));
+                },
+                registroEccAtendePesquisaRapida(ecc, termosPesquisaRapida) {
+                    if (!termosPesquisaRapida.length) return true;
+                    const textoBusca = this.montarTextoPesquisaEcc(ecc);
+                    return termosPesquisaRapida.every((termo) => textoBusca.includes(termo));
+                },
+                onPesquisaRapidaTiosInput(event) {
+                    const valor = event && event.target ? event.target.value : '';
+                    if (this.aba === 'ecc') {
+                        this.pesquisaRapidaEcc = valor;
+                        return;
+                    }
+                    this.pesquisaRapidaCasais = valor;
+                },
+                limparPesquisaRapidaTios() {
+                    if (this.aba === 'ecc') {
+                        this.pesquisaRapidaEcc = '';
+                        return;
+                    }
+                    this.pesquisaRapidaCasais = '';
+                },
+                toggleFiltrosAvancadosTios() {
+                    if (this.aba === 'ecc') {
+                        this.mostrarFiltrosEcc = !this.mostrarFiltrosEcc;
+                        return;
+                    }
+                    this.mostrarFiltrosCasais = !this.mostrarFiltrosCasais;
+                },
+                limparFiltrosAvancadosTios() {
+                    if (this.aba === 'ecc') {
+                        this.filtrosEcc = {
+                            numero: '',
+                            tipo: '',
+                            descricao: ''
+                        };
+                        return;
+                    }
+                    this.filtrosCasais = {
+                        nome: '',
+                        telefone: '',
+                        encontroNumero: '',
+                        encontroTipo: '',
+                        termosUso: ''
+                    };
+                },
+                montarPaginasVisiveisTios(total, atual) {
+                    const paginas = new Set([1, total, atual - 1, atual, atual + 1]);
+
+                    if (atual <= 3) {
+                        paginas.add(2);
+                        paginas.add(3);
+                        paginas.add(4);
+                    }
+                    if (atual >= total - 2) {
+                        paginas.add(total - 1);
+                        paginas.add(total - 2);
+                        paginas.add(total - 3);
+                    }
+
+                    const ordenadas = Array.from(paginas)
+                        .filter((pagina) => pagina >= 1 && pagina <= total)
+                        .sort((a, b) => a - b);
+
+                    const itens = [];
+                    ordenadas.forEach((pagina, index) => {
+                        if (index > 0 && pagina - ordenadas[index - 1] > 1) {
+                            itens.push({ tipo: 'ellipsis', chave: `ellipsis-${ordenadas[index - 1]}-${pagina}` });
+                        }
+                        itens.push({ tipo: 'page', numero: pagina, chave: `page-${pagina}` });
+                    });
+
+                    return itens;
+                },
+                getMinimoItensPorPaginaTios() {
+                    const largura = window.innerWidth || 1280;
+                    if (largura < 576) return 4;
+                    if (largura < 768) return 5;
+                    if (largura < 992) return 6;
+                    return 7;
+                },
+                getMaximoItensPorPaginaTios() {
+                    const largura = window.innerWidth || 1280;
+                    if (largura < 576) return 8;
+                    if (largura < 768) return 10;
+                    if (largura < 992) return 14;
+                    return 24;
+                },
+                ajustarPaginaAtualCasais() {
+                    const total = this.totalPaginasCasais;
+                    if (this.paginaAtualCasais < 1) {
+                        this.paginaAtualCasais = 1;
+                        return;
+                    }
+                    if (this.paginaAtualCasais > total) {
+                        this.paginaAtualCasais = total;
+                    }
+                },
+                ajustarPaginaAtualEcc() {
+                    const total = this.totalPaginasEcc;
+                    if (this.paginaAtualEcc < 1) {
+                        this.paginaAtualEcc = 1;
+                        return;
+                    }
+                    if (this.paginaAtualEcc > total) {
+                        this.paginaAtualEcc = total;
+                    }
+                },
+                irParaPaginaCasais(pagina) {
+                    const destino = Math.min(Math.max(Number(pagina) || 1, 1), this.totalPaginasCasais);
+                    if (destino === this.paginaAtualCasais) return;
+                    this.paginaAtualCasais = destino;
+                },
+                irParaPaginaEcc(pagina) {
+                    const destino = Math.min(Math.max(Number(pagina) || 1, 1), this.totalPaginasEcc);
+                    if (destino === this.paginaAtualEcc) return;
+                    this.paginaAtualEcc = destino;
+                },
+                recalcularPaginacaoTios() {
+                    const minimo = this.getMinimoItensPorPaginaTios();
+                    const maximo = this.getMaximoItensPorPaginaTios();
+                    const tabela = this.aba === 'ecc' ? this.$refs.eccTabela : this.$refs.casaisTabela;
+                    const card = this.aba === 'ecc' ? this.$refs.eccCard : this.$refs.casaisCard;
+                    const rodape = this.aba === 'ecc' ? this.$refs.eccRodape : this.$refs.casaisRodape;
+
+                    if (!tabela || !card) {
+                        if (this.aba === 'ecc') {
+                            this.itensPorPaginaEcc = Math.max(minimo, Math.min(maximo, this.itensPorPaginaEcc || minimo));
+                            this.ajustarPaginaAtualEcc();
+                        } else {
+                            this.itensPorPaginaCasais = Math.max(minimo, Math.min(maximo, this.itensPorPaginaCasais || minimo));
+                            this.ajustarPaginaAtualCasais();
+                        }
+                        return;
+                    }
+
+                    const cabecalho = tabela.querySelector('thead');
+                    const primeiraLinha = tabela.querySelector('tbody tr');
+                    const alturaCabecalho = cabecalho ? cabecalho.getBoundingClientRect().height : 48;
+                    const alturaLinha = primeiraLinha ? primeiraLinha.getBoundingClientRect().height : (window.innerWidth < 768 ? 72 : 58);
+                    const alturaRodape = rodape ? rodape.getBoundingClientRect().height : 78;
+                    const margemSeguranca = window.innerWidth < 768 ? 18 : 28;
+                    const topoCard = card.getBoundingClientRect().top;
+                    const alturaDisponivel = window.innerHeight - topoCard - alturaCabecalho - alturaRodape - margemSeguranca;
+                    const linhasQueCabem = Math.floor(alturaDisponivel / Math.max(alturaLinha, 1));
+                    const novoLimite = Math.max(minimo, Math.min(maximo, linhasQueCabem || minimo));
+
+                    if (this.aba === 'ecc') {
+                        if (novoLimite !== this.itensPorPaginaEcc) {
+                            this.itensPorPaginaEcc = novoLimite;
+                        }
+                        this.ajustarPaginaAtualEcc();
+                        return;
+                    }
+
+                    if (novoLimite !== this.itensPorPaginaCasais) {
+                        this.itensPorPaginaCasais = novoLimite;
+                    }
+                    this.ajustarPaginaAtualCasais();
+                },
+                agendarRecalculoPaginacaoTios() {
+                    if (this.temporizadorPaginacaoTios) {
+                        clearTimeout(this.temporizadorPaginacaoTios);
+                    }
+                    this.temporizadorPaginacaoTios = window.setTimeout(() => {
+                        this.$nextTick(() => this.recalcularPaginacaoTios());
+                    }, 70);
+                },
+                onResizeTios() {
+                    this.agendarRecalculoPaginacaoTios();
+                },
                 getColunasVisiveisCasaisPadrao() {
                     return {
                         Casal: true,
@@ -1222,7 +2300,9 @@ preencha outro_ejc_paroquia</div>
                     try {
                         const res = await fetch('/api/tios/casais');
                         const data = await res.json().catch(() => ([]));
-                        this.casais = res.ok && Array.isArray(data) ? data : [];
+                        this.casais = res.ok && Array.isArray(data)
+                            ? data.map((item) => this.normalizarCamposMaiusculosCasal({ ...item }))
+                            : [];
                     } catch (err) {
                         console.error(err);
                         this.casais = [];
@@ -2074,10 +3154,10 @@ preencha outro_ejc_paroquia</div>
                         foto_url: item.foto_url || '',
                         nome_tio: item.nome_tio || '',
                         telefone_tio: item.telefone_tio || '',
-                        data_nascimento_tio: item.data_nascimento_tio || '',
+                        data_nascimento_tio: item.data_nascimento_tio ? String(item.data_nascimento_tio).split('T')[0] : '',
                         nome_tia: item.nome_tia || '',
                         telefone_tia: item.telefone_tia || '',
-                        data_nascimento_tia: item.data_nascimento_tia || '',
+                        data_nascimento_tia: item.data_nascimento_tia ? String(item.data_nascimento_tia).split('T')[0] : '',
                         origem_tipo: item.origem_tipo || 'EJC',
                         outro_ejc_id: item.outro_ejc_id || null,
                         ecc_id: item.ecc_id || null,
@@ -2098,6 +3178,7 @@ preencha outro_ejc_paroquia</div>
                         observacoes: item.observacoes || '',
                         termos_aceitos_em: item.termos_aceitos_em || null
                     };
+                    this.normalizarCamposMaiusculosCasal(this.formCasal);
                     this.observacoesExtrasCasal = [];
                     this.comissoesCasal = [];
                     this.novaObservacaoCasal = '';
@@ -2152,12 +3233,18 @@ preencha outro_ejc_paroquia</div>
                     }
                 },
                 async salvarCasal() {
+                    this.normalizarCamposMaiusculosCasal(this.formCasal);
                     if (!this.formCasal.nome_tio || !this.formCasal.telefone_tio || !this.formCasal.nome_tia || !this.formCasal.telefone_tia) {
                         alert('Preencha nome e telefone do tio e da tia.');
                         return;
                     }
                     if (this.formCasal.origem_tipo === 'OUTRO_EJC' && !this.formCasal.outro_ejc_id) {
                         alert('Selecione a paróquia do outro EJC.');
+                        return;
+                    }
+                    const duplicidadeLocal = this.validarDuplicidadeTelefonesCasal(this.formCasal, this.formCasal.id);
+                    if (duplicidadeLocal) {
+                        alert(duplicidadeLocal.error);
                         return;
                     }
                     this.normalizarCamposSaudeCasal();
@@ -2183,6 +3270,10 @@ preencha outro_ejc_paroquia</div>
                         });
                         const data = await res.json().catch(() => ({}));
                         if (!res.ok) {
+                            if (res.status === 409 && data && data.error) {
+                                alert(data.error);
+                                return;
+                            }
                             alert(data.error || 'Erro ao salvar casal.');
                             return;
                         }
@@ -2286,6 +3377,8 @@ preencha outro_ejc_paroquia</div>
                 } catch (_) {}
                 this.carregarPreferenciasColunasTios();
                 this.carregarTudo();
+                window.addEventListener('resize', this.onResizeTios);
+                this.$nextTick(() => this.agendarRecalculoPaginacaoTios());
             }
         }).mount('#app');
     </script>

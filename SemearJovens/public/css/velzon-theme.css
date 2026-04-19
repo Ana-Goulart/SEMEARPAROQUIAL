@@ -1,6 +1,8 @@
 @import url("https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Source+Sans+3:wght@300;400;500;600;700&display=swap");
 
 :root {
+  --bs-primary: #d9a650;
+  --bs-primary-rgb: 217, 166, 80;
   --vz-primary: #b88732;
   --vz-secondary: #7b5f2a;
   --vz-success: #588157;
@@ -713,14 +715,40 @@ main.container-fluid > div:first-child h3.mb-1 {
 }
 
 .btn-soft-secondary {
-  color: var(--vz-secondary);
+  color: #7b5f2a;
   background-color: rgba(var(--vz-secondary-rgb), 0.1);
   border-color: transparent;
+}
+
+.btn-soft-secondary .btn-ejc-text,
+.btn-soft-secondary .btn-ejc-icon,
+.btn-soft-secondary .btn-ejc-icon i,
+.btn-soft-secondary .btn-ejc-icon svg,
+.btn-soft-secondary .icon-accent {
+  color: #7b5f2a !important;
 }
 
 .btn-soft-secondary:hover {
   color: #fff;
   background-color: var(--vz-secondary);
+}
+
+.btn-soft-secondary:hover .btn-ejc-text,
+.btn-soft-secondary:hover .btn-ejc-icon,
+.btn-soft-secondary:hover .btn-ejc-icon i,
+.btn-soft-secondary:hover .btn-ejc-icon svg,
+.btn-soft-secondary:hover .icon-accent,
+.btn-soft-secondary:focus .btn-ejc-text,
+.btn-soft-secondary:focus .btn-ejc-icon,
+.btn-soft-secondary:focus .btn-ejc-icon i,
+.btn-soft-secondary:focus .btn-ejc-icon svg,
+.btn-soft-secondary:focus .icon-accent,
+.btn-soft-secondary:active .btn-ejc-text,
+.btn-soft-secondary:active .btn-ejc-icon,
+.btn-soft-secondary:active .btn-ejc-icon i,
+.btn-soft-secondary:active .btn-ejc-icon svg,
+.btn-soft-secondary:active .icon-accent {
+  color: #ffffff !important;
 }
 
 /* TABLES */

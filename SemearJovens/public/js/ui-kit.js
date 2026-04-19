@@ -195,7 +195,7 @@
             if (action.tests.some((test) => source.includes(test))) return action;
         }
 
-        return { key: 'padrao', icon: 'fa-solid fa-circle-dot', label: text || 'Ação' };
+        return { key: 'padrao', icon: null, label: text || 'Ação' };
     };
 
     const ensureWrapper = (button, className) => {
@@ -207,21 +207,40 @@
         return wrapper;
     };
 
+    const isFallbackIcon = (icon) => {
+        return icon instanceof HTMLElement
+            && icon.tagName === 'I'
+            && icon.classList.contains('fa-circle-dot');
+    };
+
     const ensureIcon = (button, action, iconWrapper) => {
         let icon = button.querySelector(':scope > .btn-ejc-icon > i, :scope > .btn-ejc-icon > svg');
         if (!icon) {
             icon = button.querySelector(':scope > i, :scope > svg, :scope > span > i, :scope > span > svg');
         }
 
-        if (!icon || icon.classList.contains('fa-spinner')) {
+        if (!action.icon) {
+            if (!icon || isFallbackIcon(icon)) {
+                if (icon && icon.parentElement === iconWrapper) icon.remove();
+                iconWrapper.replaceChildren();
+                return false;
+            }
+
+            if (icon.tagName === 'I') icon.classList.add('icon-accent');
+            if (icon.parentElement !== iconWrapper) iconWrapper.replaceChildren(icon);
+            return true;
+        }
+
+        if (!icon || icon.classList.contains('fa-spinner') || isFallbackIcon(icon)) {
             const iconEl = document.createElement('i');
             iconEl.className = `${action.icon} icon-accent`;
             iconWrapper.replaceChildren(iconEl);
-            return;
+            return true;
         }
 
         if (icon.tagName === 'I') icon.classList.add('icon-accent');
         if (icon.parentElement !== iconWrapper) iconWrapper.replaceChildren(icon);
+        return true;
     };
 
     const ensureText = (button, textWrapper, fallbackText) => {
@@ -279,11 +298,15 @@
         button.classList.add('btn-ejc-action');
         if (action.key === 'novo') applyNovoButtonClasses(button);
 
-        ensureIcon(button, action, iconWrapper);
+        const hasIcon = ensureIcon(button, action, iconWrapper);
         ensureText(button, textWrapper, label);
 
-        if (!iconWrapper.parentElement) button.prepend(iconWrapper);
-        else if (button.firstChild !== iconWrapper) button.prepend(iconWrapper);
+        if (hasIcon) {
+            if (!iconWrapper.parentElement) button.prepend(iconWrapper);
+            else if (button.firstChild !== iconWrapper) button.prepend(iconWrapper);
+        } else if (iconWrapper.parentElement) {
+            iconWrapper.remove();
+        }
 
         if (!textWrapper.parentElement) {
             if (fileInput) button.insertBefore(textWrapper, fileInput);

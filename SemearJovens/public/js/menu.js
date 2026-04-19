@@ -94,15 +94,7 @@ const menuTemplate = `
                     <a href="/administrativo/financeiro" class="nav-link" title="Financeiro">
                         <span class="menu-link-icon"><i class="fa-solid fa-wallet"></i></span><span class="link-text">Financeiro</span>
                     </a>
-                    <a href="/administrativo/backup" class="nav-link" title="Backup">
-                        <span class="menu-link-icon"><i class="fa-solid fa-database"></i></span><span class="link-text">Backup</span>
-                    </a>
-                    <a href="/administrativo/uso-sistema" class="nav-link" title="Uso do Sistema">
-                        <span class="menu-link-icon"><i class="fa-solid fa-chart-pie"></i></span><span class="link-text">Uso do Sistema</span>
-                    </a>
-                    <a href="/administrativo/anexos" class="nav-link" title="Anexos">
-                        <span class="menu-link-icon"><i class="fa-solid fa-folder-open"></i></span><span class="link-text">Anexos</span>
-                    </a>
+                    <!-- Backup, Uso do Sistema e Anexos permanecem disponíveis no projeto, mas ocultos do menu. -->
                     <a href="/administrativo/contatos" class="nav-link" title="Contatos">
                         <span class="menu-link-icon"><i class="fa-solid fa-address-book"></i></span><span class="link-text">Contatos</span>
                     </a>
@@ -332,7 +324,9 @@ function formatarTelefoneBrasil(valor) {
 
 function isCampoTelefone(el) {
     if (!el || el.tagName !== 'INPUT') return false;
+    if (el.hasAttribute('data-ui-skip-phone-mask')) return false;
     const type = String(el.type || '').toLowerCase();
+    if (type === 'search') return false;
     if (type === 'tel') return true;
     const attrs = [
         el.name,

@@ -193,6 +193,7 @@ async function ensureEnderecoColumns() {
         hasColumn('jovens', 'endereco_numero'),
         hasColumn('jovens', 'endereco_bairro'),
         hasColumn('jovens', 'endereco_cidade'),
+        hasColumn('jovens', 'endereco_estado'),
         hasColumn('jovens', 'endereco_cep')
     ]);
     if (checks.every(Boolean)) {
@@ -204,7 +205,8 @@ async function ensureEnderecoColumns() {
         if (!checks[1]) await pool.query("ALTER TABLE jovens ADD COLUMN endereco_numero VARCHAR(30) NULL");
         if (!checks[2]) await pool.query("ALTER TABLE jovens ADD COLUMN endereco_bairro VARCHAR(120) NULL");
         if (!checks[3]) await pool.query("ALTER TABLE jovens ADD COLUMN endereco_cidade VARCHAR(120) NULL");
-        if (!checks[4]) await pool.query("ALTER TABLE jovens ADD COLUMN endereco_cep VARCHAR(12) NULL");
+        if (!checks[4]) await pool.query("ALTER TABLE jovens ADD COLUMN endereco_estado VARCHAR(120) NULL");
+        if (!checks[5]) await pool.query("ALTER TABLE jovens ADD COLUMN endereco_cep VARCHAR(12) NULL");
     } catch (e) { }
     hasEnderecoColumnsCache = true;
     return true;
@@ -351,6 +353,17 @@ function normalizeInstagramValue(value) {
         .trim()
         .toLowerCase()
         .replace(/^@+/, '');
+}
+
+function normalizeTrimmedText(value) {
+    if (value === undefined || value === null) return null;
+    const text = String(value).trim();
+    return text || null;
+}
+
+function normalizeUpperText(value) {
+    const text = normalizeTrimmedText(value);
+    return text ? text.toLocaleUpperCase('pt-BR') : null;
 }
 
 async function validarDuplicidadeJovemListaMestre({
@@ -1479,11 +1492,18 @@ router.post('/', async (req, res) => {
         const {
             nome_completo, apelido, telefone, email, data_nascimento, numero_ejc_fez, instagram, estado_civil, data_casamento,
             circulo, deficiencia, qual_deficiencia, restricao_alimentar, detalhes_restricao, sexo,
-            endereco_rua, endereco_numero, endereco_bairro, endereco_cidade, endereco_cep, equipe_saude,
+            endereco_rua, endereco_numero, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, equipe_saude,
             origem_ejc_tipo, outro_ejc_id, outro_ejc_numero, ja_foi_moita_inconfidentes, moita_ejc_id, moita_funcao
         } = req.body;
 
-        if (!nome_completo || !telefone) {
+        const nomeCompletoNormalizado = normalizeUpperText(nome_completo);
+        const telefoneNormalizado = normalizeTrimmedText(telefone);
+        const enderecoRuaNormalizado = normalizeUpperText(endereco_rua);
+        const enderecoBairroNormalizado = normalizeUpperText(endereco_bairro);
+        const enderecoCidadeNormalizado = normalizeUpperText(endereco_cidade);
+        const enderecoEstadoNormalizado = normalizeUpperText(endereco_estado);
+
+        if (!nomeCompletoNormalizado || !telefoneNormalizado) {
             return res.status(400).json({ error: "Nome completo e telefone são obrigatórios" });
         }
 
@@ -1504,7 +1524,7 @@ router.post('/', async (req, res) => {
 
         const duplicidade = await validarDuplicidadeJovemListaMestre({
             tenantId,
-            telefone,
+            telefone: telefoneNormalizado,
             email,
             instagram
         });
@@ -1538,6 +1558,7 @@ router.post('/', async (req, res) => {
             'endereco_numero',
             'endereco_bairro',
             'endereco_cidade',
+            'endereco_estado',
             'endereco_cep',
             'ja_foi_moita_inconfidentes',
             'moita_ejc_id',
@@ -1545,9 +1566,9 @@ router.post('/', async (req, res) => {
         ];
         const valores = [
             tenantId,
-            nome_completo,
+            nomeCompletoNormalizado,
             apelido ? String(apelido).trim() : null,
-            telefone,
+            telefoneNormalizado,
             email || null,
             normalizeDate(data_nascimento),
             numeroEjcInconfidentes,
@@ -1565,10 +1586,11 @@ router.post('/', async (req, res) => {
             restricao_alimentar ? 1 : 0,
             detalhes_restricao || null,
             equipe_saude ? 1 : 0,
-            endereco_rua ? String(endereco_rua).trim() : null,
+            enderecoRuaNormalizado,
             endereco_numero ? String(endereco_numero).trim() : null,
-            endereco_bairro ? String(endereco_bairro).trim() : null,
-            endereco_cidade ? String(endereco_cidade).trim() : null,
+            enderecoBairroNormalizado,
+            enderecoCidadeNormalizado,
+            enderecoEstadoNormalizado,
             endereco_cep ? String(endereco_cep).trim() : null,
             foiMoita ? 1 : 0,
             foiMoita ? (moita_ejc_id || null) : null,
@@ -1598,11 +1620,11 @@ router.post('/', async (req, res) => {
         await vincularPresencasOutroEjcSemCadastro({
             tenantId,
             jovemId: result.insertId,
-            nomeAtual: nome_completo,
-            telefoneAtual: telefone,
+            nomeAtual: nomeCompletoNormalizado,
+            telefoneAtual: telefoneNormalizado,
             outroEjcIdAtual: outroEjcId,
-            nomeOriginal: req.body.vincular_presencas_nome || nome_completo,
-            telefoneOriginal: req.body.vincular_presencas_telefone || telefone,
+            nomeOriginal: req.body.vincular_presencas_nome || nomeCompletoNormalizado,
+            telefoneOriginal: req.body.vincular_presencas_telefone || telefoneNormalizado,
             outroEjcIdOriginal: req.body.vincular_presencas_outro_ejc_id || outroEjcId
         });
 
@@ -1672,6 +1694,7 @@ router.put('/:id', async (req, res) => {
             endereco_numero: req.body.endereco_numero !== undefined ? req.body.endereco_numero : atual.endereco_numero,
             endereco_bairro: req.body.endereco_bairro !== undefined ? req.body.endereco_bairro : atual.endereco_bairro,
             endereco_cidade: req.body.endereco_cidade !== undefined ? req.body.endereco_cidade : atual.endereco_cidade,
+            endereco_estado: req.body.endereco_estado !== undefined ? req.body.endereco_estado : atual.endereco_estado,
             endereco_cep: req.body.endereco_cep !== undefined ? req.body.endereco_cep : atual.endereco_cep,
             conjuge_id: req.body.conjuge_id !== undefined ? req.body.conjuge_id : atual.conjuge_id,
             conjuge_nome: req.body.conjuge_nome !== undefined ? req.body.conjuge_nome : atual.conjuge_nome,
@@ -1718,6 +1741,17 @@ router.put('/:id', async (req, res) => {
             merged.moita_funcao = null;
         }
 
+        merged.nome_completo = normalizeUpperText(merged.nome_completo);
+        merged.telefone = normalizeTrimmedText(merged.telefone);
+        merged.endereco_rua = normalizeUpperText(merged.endereco_rua);
+        merged.endereco_bairro = normalizeUpperText(merged.endereco_bairro);
+        merged.endereco_cidade = normalizeUpperText(merged.endereco_cidade);
+        merged.endereco_estado = normalizeUpperText(merged.endereco_estado);
+
+        if (!merged.nome_completo || !merged.telefone) {
+            return res.status(400).json({ error: 'Nome completo e telefone são obrigatórios' });
+        }
+
         if (!merged.eh_musico) {
             merged.instrumentos_musicais = [];
         }
@@ -1760,11 +1794,11 @@ router.put('/:id', async (req, res) => {
         const hasInstrumentosMusicais = await hasInstrumentosMusicaisColumn();
         const hasSexo = await hasSexoColumn();
 
-        let updateFields = `nome_completo=?, apelido=?, telefone=?, email=?, data_nascimento=?, numero_ejc_fez=?, montagem_ejc_id=?, origem_ejc_tipo=?, outro_ejc_id=?, outro_ejc_numero=?, transferencia_outro_ejc=?, instagram=?, estado_civil=?, data_casamento=?, circulo=?, deficiencia=?, qual_deficiencia=?, restricao_alimentar=?, detalhes_restricao=?, endereco_rua=?, endereco_numero=?, endereco_bairro=?, endereco_cidade=?, endereco_cep=?, conjuge_id=?, conjuge_nome=?, conjuge_telefone=?, conjuge_ejc_id=?, conjuge_outro_ejc_id=?, observacoes_extras=?, nao_serve_ejc=?, motivo_nao_serve_ejc=?, ja_foi_moita_inconfidentes=?, moita_ejc_id=?, moita_funcao=?`;
+        let updateFields = `nome_completo=?, apelido=?, telefone=?, email=?, data_nascimento=?, numero_ejc_fez=?, montagem_ejc_id=?, origem_ejc_tipo=?, outro_ejc_id=?, outro_ejc_numero=?, transferencia_outro_ejc=?, instagram=?, estado_civil=?, data_casamento=?, circulo=?, deficiencia=?, qual_deficiencia=?, restricao_alimentar=?, detalhes_restricao=?, endereco_rua=?, endereco_numero=?, endereco_bairro=?, endereco_cidade=?, endereco_estado=?, endereco_cep=?, conjuge_id=?, conjuge_nome=?, conjuge_telefone=?, conjuge_ejc_id=?, conjuge_outro_ejc_id=?, observacoes_extras=?, nao_serve_ejc=?, motivo_nao_serve_ejc=?, ja_foi_moita_inconfidentes=?, moita_ejc_id=?, moita_funcao=?`;
         const params = [
             merged.nome_completo, merged.apelido || null, merged.telefone, merged.email || null, merged.data_nascimento, merged.numero_ejc_fez, merged.montagem_ejc_id || null, merged.origem_ejc_tipo, merged.outro_ejc_id || null, merged.outro_ejc_numero || null, merged.transferencia_outro_ejc ? 1 : 0,
             merged.instagram, merged.estado_civil, merged.data_casamento, merged.circulo, merged.deficiencia, merged.qual_deficiencia, merged.restricao_alimentar, merged.detalhes_restricao,
-            merged.endereco_rua || null, merged.endereco_numero || null, merged.endereco_bairro || null, merged.endereco_cidade || null, merged.endereco_cep || null,
+            merged.endereco_rua || null, merged.endereco_numero || null, merged.endereco_bairro || null, merged.endereco_cidade || null, merged.endereco_estado || null, merged.endereco_cep || null,
             merged.conjuge_id || null, merged.conjuge_nome || null, merged.conjuge_telefone || null, merged.conjuge_ejc_id || null, merged.conjuge_outro_ejc_id || null, merged.observacoes_extras || null,
             merged.nao_serve_ejc ? 1 : 0, merged.motivo_nao_serve_ejc || null,
             merged.ja_foi_moita_inconfidentes ? 1 : 0, merged.moita_ejc_id || null, merged.moita_funcao || null
@@ -2176,12 +2210,15 @@ router.post('/importacao', async (req, res) => {
             }
             return texto;
         };
+        const normalizarTextoOuNullMaiusculo = (valor, maxLen = null) => {
+            const texto = normalizarTextoOuNull(valor, maxLen);
+            return texto ? texto.toLocaleUpperCase('pt-BR') : null;
+        };
         const normalizarJovemImportacao = (j) => {
             if (!j || typeof j !== 'object') throw new Error('Registro de jovem inválido.');
 
-            j.nome_completo = String(j.nome_completo || '').trim();
+            j.nome_completo = normalizarTextoOuNullMaiusculo(j.nome_completo, 120);
             if (!j.nome_completo) throw new Error('Campo nome é obrigatório.');
-            if (j.nome_completo.length > 120) throw new Error('Campo nome_completo fora do padrão: máximo de 120 caracteres.');
 
             if (j.telefone !== undefined && j.telefone !== null && String(j.telefone).trim() !== '') {
                 const telefoneTexto = String(j.telefone).trim();
@@ -2264,10 +2301,11 @@ router.post('/importacao', async (req, res) => {
             j.conjuge_nome = normalizarTextoOuNull(j.conjuge_nome, 150);
             j.termos_aceitos_email = normalizarTextoOuNull(j.termos_aceitos_email, 180);
             j.motivo_nao_serve_ejc = normalizarTextoOuNull(j.motivo_nao_serve_ejc);
-            j.endereco_rua = normalizarTextoOuNull(j.endereco_rua, 180);
+            j.endereco_rua = normalizarTextoOuNullMaiusculo(j.endereco_rua, 180);
             j.endereco_numero = normalizarTextoOuNull(j.endereco_numero, 30);
-            j.endereco_bairro = normalizarTextoOuNull(j.endereco_bairro, 120);
-            j.endereco_cidade = normalizarTextoOuNull(j.endereco_cidade, 120);
+            j.endereco_bairro = normalizarTextoOuNullMaiusculo(j.endereco_bairro, 120);
+            j.endereco_cidade = normalizarTextoOuNullMaiusculo(j.endereco_cidade, 120);
+            j.endereco_estado = normalizarTextoOuNullMaiusculo(j.endereco_estado, 120);
             j.endereco_cep = normalizarTextoOuNull(j.endereco_cep, 12);
             if (j.nao_serve_ejc === false) {
                 j.motivo_nao_serve_ejc = '';
@@ -2320,6 +2358,7 @@ router.post('/importacao', async (req, res) => {
                 if (exists.length > 0) {
                     jovemId = exists[0].id;
                     let updateSql = `UPDATE jovens SET
+                            nome_completo = COALESCE(?, nome_completo),
                             telefone = COALESCE(?, telefone),
                             apelido = COALESCE(?, apelido),
                             email = COALESCE(?, email),
@@ -2340,16 +2379,17 @@ router.post('/importacao', async (req, res) => {
                             endereco_numero = COALESCE(?, endereco_numero),
                             endereco_bairro = COALESCE(?, endereco_bairro),
                             endereco_cidade = COALESCE(?, endereco_cidade),
+                            endereco_estado = COALESCE(?, endereco_estado),
                             endereco_cep = COALESCE(?, endereco_cep),
                             nao_serve_ejc = COALESCE(?, nao_serve_ejc),
                             motivo_nao_serve_ejc = COALESCE(?, motivo_nao_serve_ejc),
                             equipe_saude = COALESCE(?, equipe_saude)`;
                     const updateParams = [
-                        j.telefone, j.apelido, j.email, j.data_nascimento, j.numero_ejc_fez, j.instagram,
+                        j.nome_completo, j.telefone, j.apelido, j.email, j.data_nascimento, j.numero_ejc_fez, j.instagram,
                         j.estado_civil, j.data_casamento, j.circulo, j.deficiencia, j.qual_deficiencia,
                         j.restricao_alimentar, j.detalhes_restricao, j.conjuge_nome, j.termos_aceitos_em,
                         j.termos_aceitos_email, j.endereco_rua, j.endereco_numero, j.endereco_bairro,
-                        j.endereco_cidade, j.endereco_cep, j.nao_serve_ejc, j.motivo_nao_serve_ejc, j.equipe_saude
+                        j.endereco_cidade, j.endereco_estado, j.endereco_cep, j.nao_serve_ejc, j.motivo_nao_serve_ejc, j.equipe_saude
                     ];
                     if (comSexo) {
                         updateSql += ', sexo = COALESCE(?, sexo)';
@@ -2373,7 +2413,7 @@ router.post('/importacao', async (req, res) => {
                         'numero_ejc_fez', 'instagram', 'estado_civil', 'data_casamento', 'circulo',
                         'deficiencia', 'qual_deficiencia', 'restricao_alimentar', 'detalhes_restricao',
                         'conjuge_nome', 'termos_aceitos_em', 'termos_aceitos_email', 'endereco_rua',
-                        'endereco_numero', 'endereco_bairro', 'endereco_cidade', 'endereco_cep',
+                        'endereco_numero', 'endereco_bairro', 'endereco_cidade', 'endereco_estado', 'endereco_cep',
                         'nao_serve_ejc', 'motivo_nao_serve_ejc', 'equipe_saude'
                     ];
                     const insertParams = [
@@ -2381,7 +2421,7 @@ router.post('/importacao', async (req, res) => {
                         j.numero_ejc_fez, j.instagram, j.estado_civil, j.data_casamento, j.circulo,
                         j.deficiencia ? 1 : 0, j.qual_deficiencia, j.restricao_alimentar ? 1 : 0,
                         j.detalhes_restricao, j.conjuge_nome, j.termos_aceitos_em, j.termos_aceitos_email,
-                        j.endereco_rua, j.endereco_numero, j.endereco_bairro, j.endereco_cidade,
+                        j.endereco_rua, j.endereco_numero, j.endereco_bairro, j.endereco_cidade, j.endereco_estado,
                         j.endereco_cep, j.nao_serve_ejc ? 1 : 0, j.motivo_nao_serve_ejc, j.equipe_saude ? 1 : 0
                     ];
                     if (comSexo) {

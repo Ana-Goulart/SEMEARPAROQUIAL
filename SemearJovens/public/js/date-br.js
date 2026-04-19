@@ -159,16 +159,50 @@
         syncHidden();
     }
 
+    function initDateBrInput(el) {
+        if (!el || !el.classList || !el.classList.contains('date-br')) return;
+        const br = toBrDate(el.value);
+        if (br !== el.value) el.value = br;
+        if (el.placeholder && /dd\/mm\/aaaa/i.test(el.placeholder)) {
+            el.placeholder = 'dd/mês/aaaa';
+        }
+        setupPicker(el);
+    }
+
+    function initDateBrInputs(root = document) {
+        if (!root || !root.querySelectorAll) return;
+        root.querySelectorAll('input.date-br').forEach((el) => initDateBrInput(el));
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
-        document.querySelectorAll('input.date-br').forEach((el) => {
-            const br = toBrDate(el.value);
-            if (br !== el.value) el.value = br;
-            if (el.placeholder && /dd\/mm\/aaaa/i.test(el.placeholder)) {
-                el.placeholder = 'dd/mês/aaaa';
-            }
-            setupPicker(el);
+        initDateBrInputs(document);
+    });
+
+    document.addEventListener('focusin', (e) => {
+        const el = e.target;
+        if (!el || !el.classList || !el.classList.contains('date-br')) return;
+        initDateBrInput(el);
+    });
+
+    const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+            mutation.addedNodes.forEach((node) => {
+                if (!node || node.nodeType !== 1) return;
+                if (node.matches && node.matches('input.date-br')) {
+                    initDateBrInput(node);
+                    return;
+                }
+                initDateBrInputs(node);
+            });
         });
     });
+
+    if (document.documentElement) {
+        observer.observe(document.documentElement, {
+            childList: true,
+            subtree: true
+        });
+    }
 
     const originalFetch = window.fetch;
     window.fetch = function (input, init = {}) {
