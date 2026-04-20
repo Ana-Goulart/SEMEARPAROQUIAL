@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>EJC - Missão Externa</title>
+    <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
+    <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/velzon-theme.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/ui-kit.js"></script>
+    <script src="/js/menu.js"></script>
+    <style>
+        .missao-shell {
+            padding-top: 0.3rem;
+            padding-bottom: 1.25rem;
+            background: linear-gradient(180deg, #f7f3eb 0, #f7f3eb 158px, transparent 158px);
+        }
+
+        .missao-header-row {
+            margin-bottom: 0.45rem;
+        }
+
+        .lista-mestre-page-title {
+            flex: 1 1 320px;
+            min-width: 0;
+            margin: 0;
+            color: #0f2440;
+            font-size: clamp(1.55rem, 1.45vw, 2rem);
+            line-height: 1.04;
+        }
+
+        .missao-page-title-ejc {
+            text-transform: uppercase;
+        }
+
+        .lista-mestre-tabs-bar {
+            align-items: flex-end;
+            gap: 0.75rem;
+            margin-bottom: 0;
+            border-bottom-color: rgba(212, 193, 156, 0.9);
+        }
+
+        .lista-mestre-tabs-bar .nav-item {
+            list-style: none;
+        }
+
+        .lista-mestre-tabs-bar .nav-link {
+            margin: 0;
+            padding: 0.7rem 0.05rem 0.95rem;
+            border: 0;
+            border-bottom: 2px solid transparent;
+            border-radius: 0;
+            background: transparent;
+            color: #7a5320;
+            font-size: clamp(1rem, 2.6vw, 1.1rem);
+            font-weight: 500;
+            transition: color 0.18s ease, border-color 0.18s ease;
+        }
+
+        .lista-mestre-tabs-bar .nav-link:hover,
+        .lista-mestre-tabs-bar .nav-link:focus {
+            border-color: transparent;
+            color: #ad7423;
+        }
+
+        .lista-mestre-tabs-bar .nav-link.active {
+            border: 0;
+            border-bottom: 2px solid #c8923b;
+            background: transparent;
+            color: #d28f31;
+        }
+
+        .missao-tab-content {
+            padding-top: 0.45rem;
+        }
+
+        .missao-tab-pane {
+            padding-top: 0;
+        }
+
+        .missao-frame-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.75rem;
+            padding: 1rem 1rem 0;
+        }
+
+        .missao-frame-head h5 {
+            margin-bottom: 0.2rem;
+        }
+
+        .missao-frame-head p {
+            margin-bottom: 0;
+            color: #64748b;
+        }
+
+        .missao-frame-shell {
+            position: relative;
+            padding: 0.45rem 1rem 1rem;
+            min-height: 540px;
+        }
+
+        .missao-frame-loader {
+            position: absolute;
+            inset: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            border-radius: 16px;
+            background: rgba(248, 250, 252, 0.96);
+            color: #244256;
+            z-index: 2;
+        }
+
+        .missao-frame-loader.is-hidden {
+            display: none;
+        }
+
+        .missao-frame {
+            display: block;
+            width: 100%;
+            min-height: 720px;
+            border: 0;
+            border-radius: 16px;
+            background: transparent;
+            overflow: hidden;
+        }
+
+        @media (max-width: 575.98px) {
+            .missao-shell {
+                background: linear-gradient(180deg, #f7f3eb 0, #f7f3eb 144px, transparent 144px);
+            }
+
+            .missao-header-row {
+                margin-bottom: 0.4rem;
+            }
+
+            .lista-mestre-tabs-bar {
+                gap: 1.25rem;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .missao-shell {
+                padding-top: 0.45rem;
+                background: linear-gradient(180deg, #f7f3eb 0, #f7f3eb 178px, transparent 178px);
+            }
+
+            .missao-frame-head {
+                padding: 1.25rem 1.25rem 0;
+            }
+
+            .missao-frame-shell {
+                padding: 0.6rem 1.25rem 1.25rem;
+            }
+
+            .missao-frame-loader {
+                inset: 1.25rem;
+            }
+        }
+
+        @media (min-width: 992px) {
+            .lista-mestre-page-title {
+                white-space: nowrap;
+                font-size: clamp(1.42rem, 1.15vw, 1.75rem);
+            }
+
+            .missao-header-row {
+                margin-bottom: 0.5rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <main class="container-fluid missao-shell">
+            <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 missao-header-row">
+                <h3 class="lista-mestre-page-title">
+                    Missão Externa - EJC <span id="missaoExternaNomeEjc" class="missao-page-title-ejc">Inconfidentes</span>
+                </h3>
+            </div>
+
+            <ul class="nav nav-tabs lista-mestre-tabs-bar" id="missaoExternaTabs" role="tablist">
+                <li class="nav-item">
+                    <button
+                        class="nav-link active"
+                        id="missao-tab-moitas"
+                        data-bs-toggle="tab"
+                        data-bs-target="#missao-pane-moitas"
+                        type="button"
+                        role="tab"
+                        aria-controls="missao-pane-moitas"
+                        aria-selected="true"
+                        data-missao-externa-tab="moitas">
+                        Moitas
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button
+                        class="nav-link"
+                        id="missao-tab-garcons"
+                        data-bs-toggle="tab"
+                        data-bs-target="#missao-pane-garcons"
+                        type="button"
+                        role="tab"
+                        aria-controls="missao-pane-garcons"
+                        aria-selected="false"
+                        data-missao-externa-tab="garcons">
+                        Garçons
+                    </button>
+                </li>
+            </ul>
+
+            <section class="missao-tab-content">
+                <div class="tab-content">
+                    <div
+                        class="tab-pane fade show active missao-tab-pane"
+                        id="missao-pane-moitas"
+                        role="tabpanel"
+                        aria-labelledby="missao-tab-moitas"
+                        tabindex="0">
+                        <div class="missao-frame-shell">
+                            <div class="missao-frame-loader" data-missao-loader="moitas">
+                                <div class="spinner-border text-primary" role="status" aria-hidden="true"></div>
+                                <span>Carregando aba de Moitas...</span>
+                            </div>
+                            <iframe
+                                id="missao-frame-moitas"
+                                class="missao-frame"
+                                title="Missão Externa - Moitas"
+                                data-src="/gestaodoencontro/moita?embed=1"
+                                data-missao-externa-frame="moitas"></iframe>
+                        </div>
+                    </div>
+
+                    <div
+                        class="tab-pane fade missao-tab-pane"
+                        id="missao-pane-garcons"
+                        role="tabpanel"
+                        aria-labelledby="missao-tab-garcons"
+                        tabindex="0">
+                        <div class="missao-frame-shell">
+                            <div class="missao-frame-loader" data-missao-loader="garcons">
+                                <div class="spinner-border text-primary" role="status" aria-hidden="true"></div>
+                                <span>Carregando aba de Garçons...</span>
+                            </div>
+                            <iframe
+                                id="missao-frame-garcons"
+                                class="missao-frame"
+                                title="Missão Externa - Garçons"
+                                data-src="/gestaodoencontro/garcons?embed=1"
+                                data-missao-externa-frame="garcons"></iframe>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script>
+        const MISSAO_EXTERNA_TABS = {
+            moitas: {
+                buttonId: 'missao-tab-moitas',
+                iframeId: 'missao-frame-moitas'
+            },
+            garcons: {
+                buttonId: 'missao-tab-garcons',
+                iframeId: 'missao-frame-garcons'
+            }
+        };
+
+        function normalizarAbaMissaoExterna(valor) {
+            const chave = String(valor || '').trim().toLowerCase();
+            if (chave === 'moita' || chave === 'moitas') return 'moitas';
+            if (chave === 'garcons' || chave === 'garçons') return 'garcons';
+            return 'moitas';
+        }
+
+        function atualizarUrlMissaoExterna(aba) {
+            const url = new URL(window.location.href);
+            if (aba === 'moitas') {
+                url.searchParams.delete('aba');
+            } else {
+                url.searchParams.set('aba', aba);
+            }
+            window.history.replaceState({}, '', url.toString());
+        }
+
+        function definirEstadoLoaderMissao(chave, carregando) {
+            const loader = document.querySelector(`[data-missao-loader="${chave}"]`);
+            if (!loader) return;
+            loader.classList.toggle('is-hidden', !carregando);
+        }
+
+        function carregarIframeMissaoExterna(chave) {
+            const config = MISSAO_EXTERNA_TABS[chave];
+            if (!config) return;
+            const iframe = document.getElementById(config.iframeId);
+            if (!iframe) return;
+            if (iframe.dataset.loaded === '1') {
+                definirEstadoLoaderMissao(chave, false);
+                return;
+            }
+            definirEstadoLoaderMissao(chave, true);
+            iframe.src = iframe.dataset.src || '';
+            iframe.dataset.loaded = '1';
+        }
+
+        function ativarAbaMissaoExterna(chave, sincronizarUrl = true) {
+            const config = MISSAO_EXTERNA_TABS[chave];
+            if (!config) return;
+            carregarIframeMissaoExterna(chave);
+            const button = document.getElementById(config.buttonId);
+            if (!button) return;
+            bootstrap.Tab.getOrCreateInstance(button).show();
+            if (sincronizarUrl) atualizarUrlMissaoExterna(chave);
+        }
+
+        function atualizarTituloMissaoExterna(nome) {
+            const target = document.getElementById('missaoExternaNomeEjc');
+            if (!target) return;
+            const valor = String(nome || window.__NOME_EJC_ATUAL || 'Inconfidentes').trim();
+            target.textContent = valor || 'Inconfidentes';
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            injetarMenu('#app');
+            ativarMenu('/gestaodoencontro/missaoexterna');
+            atualizarTituloMissaoExterna(window.__NOME_EJC_ATUAL);
+
+            document.querySelectorAll('[data-missao-externa-tab]').forEach((button) => {
+                button.addEventListener('shown.bs.tab', (event) => {
+                    const chave = normalizarAbaMissaoExterna(event.target.getAttribute('data-missao-externa-tab'));
+                    carregarIframeMissaoExterna(chave);
+                    atualizarUrlMissaoExterna(chave);
+                });
+            });
+
+            document.querySelectorAll('.missao-frame').forEach((iframe) => {
+                iframe.addEventListener('load', () => {
+                    const chave = iframe.getAttribute('data-missao-externa-frame');
+                    if (chave) definirEstadoLoaderMissao(chave, false);
+                });
+            });
+
+            window.addEventListener('message', (event) => {
+                if (event.origin !== window.location.origin) return;
+                const data = event.data || {};
+                if (data.type !== 'missao-externa-height') return;
+                const chave = normalizarAbaMissaoExterna(data.page);
+                const iframe = document.querySelector(`[data-missao-externa-frame="${chave}"]`);
+                if (!iframe) return;
+                const altura = Math.max(Number(data.height) || 0, 720);
+                const alturaAtual = parseFloat(iframe.style.height || '0') || 0;
+                if (Math.abs(alturaAtual - altura) > 1) {
+                    iframe.style.height = `${altura}px`;
+                }
+                definirEstadoLoaderMissao(chave, false);
+            });
+
+            window.addEventListener('meu-ejc-atualizado', (event) => {
+                atualizarTituloMissaoExterna(event && event.detail ? event.detail.nome : '');
+            });
+
+            const abaInicial = normalizarAbaMissaoExterna(new URLSearchParams(window.location.search).get('aba'));
+            ativarAbaMissaoExterna(abaInicial, false);
+        });
+    </script>
+</body>
+
+</html>

@@ -57,7 +57,7 @@
                     <div v-else>
                         <div v-if="campos.length" class="mb-4">
                             <div class="mb-3" v-for="campo in campos" :key="campo.id">
-                                <label class="form-label">{{ campo.label }} <span v-if="campo.obrigatorio" class="text-danger">*</span></label>
+                                <label class="form-label">{{ labelExibicaoCampo(campo) }} <span v-if="campo.obrigatorio" class="text-danger">*</span></label>
 
                                 <div v-if="ehCampoRestricaoAlimentar(campo)">
                                     <div class="d-flex gap-2 align-items-center flex-wrap">
@@ -82,7 +82,7 @@
                                             <input class="form-check-input" type="checkbox" :id="`def-${campo.id}`"
                                                 v-model="camposSaude[campo.id].ativo"
                                                 @change="sincronizarCampoSaude(campo)">
-                                            <label class="form-check-label" :for="`def-${campo.id}`">Possui deficiência</label>
+                                            <label class="form-check-label" :for="`def-${campo.id}`">Sim</label>
                                         </div>
                                         <input v-if="camposSaude[campo.id] && camposSaude[campo.id].ativo"
                                             class="form-control flex-grow-1"
@@ -527,6 +527,14 @@
                         .replace(/[\u0300-\u036f]/g, '')
                         .toLowerCase();
                 },
+                labelExibicaoCampo(campo) {
+                    const id = this.normalizarTextoComparacao(campo && campo.id);
+                    const label = this.normalizarTextoComparacao(campo && campo.label);
+                    if (id === 'deficiencia' || (label.includes('deficiencia') && label.includes('qual'))) {
+                        return 'Pessoa com Deficiência(PcD)?';
+                    }
+                    return String((campo && campo.label) || '');
+                },
                 ehCampoRestricaoAlimentar(campo) {
                     const id = this.normalizarTextoComparacao(campo && campo.id);
                     const label = this.normalizarTextoComparacao(campo && campo.label);
@@ -608,15 +616,15 @@
                         const valor = this.respostas[campo.id];
                         if (!campo.obrigatorio) continue;
                         if (campo.tipo === 'checkbox') {
-                            if (!Array.isArray(valor) || !valor.length) return `Preencha: ${campo.label}`;
+                            if (!Array.isArray(valor) || !valor.length) return `Preencha: ${this.labelExibicaoCampo(campo)}`;
                             continue;
                         }
                         if (campo.tipo === 'imagem' && this.tipo === 'INSCRICAO') {
                             const file = this.arquivosSelecionados[campo.id];
-                            if (!file) return `Envie a imagem: ${campo.label}`;
+                            if (!file) return `Envie a imagem: ${this.labelExibicaoCampo(campo)}`;
                             continue;
                         }
-                        if (!String(valor || '').trim()) return `Preencha: ${campo.label}`;
+                        if (!String(valor || '').trim()) return `Preencha: ${this.labelExibicaoCampo(campo)}`;
                     }
                     return '';
                 },

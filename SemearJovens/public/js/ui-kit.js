@@ -263,25 +263,50 @@
         }
     };
 
-    const applyNovoButtonClasses = (button) => {
-        const removable = [
-            'btn-primary',
-            'btn-success',
-            'btn-secondary',
-            'btn-warning',
-            'btn-soft-primary',
-            'btn-soft-secondary',
-            'btn-outline-primary',
-            'btn-outline-secondary',
-            'btn-outline-success',
-            'btn-outline-warning',
-            'btn-outline-info',
-            'btn-outline-dark',
-            'btn-outline-light'
-        ];
+    const BUTTON_VARIANT_CLASSES = [
+        'dropdown-toggle',
+        'btn-sm',
+        'btn-lg',
+        'btn-primary',
+        'btn-success',
+        'btn-secondary',
+        'btn-warning',
+        'btn-danger',
+        'btn-soft-primary',
+        'btn-soft-secondary',
+        'btn-outline-primary',
+        'btn-outline-secondary',
+        'btn-outline-success',
+        'btn-outline-warning',
+        'btn-outline-info',
+        'btn-outline-danger',
+        'btn-outline-dark',
+        'btn-outline-light',
+        'btn-edit-standard',
+        'btn-corporate-view',
+        'garcom-btn-main',
+        'garcom-btn-soft',
+        'garcom-btn-outline',
+        'garcom-btn-danger'
+    ];
 
-        removable.forEach((cls) => button.classList.remove(cls));
-        button.classList.add('btn-edit-standard', 'btn-sm', 'btn-ejc-action');
+    const limparVariantesBotao = (button) => {
+        BUTTON_VARIANT_CLASSES.forEach((cls) => button.classList.remove(cls));
+    };
+
+    const applyNovoButtonClasses = (button) => {
+        limparVariantesBotao(button);
+        button.classList.add('btn', 'btn-ejc-action', 'btn-sm', 'btn-edit-standard');
+    };
+
+    const applyExcluirButtonClasses = (button) => {
+        limparVariantesBotao(button);
+        button.classList.add('btn', 'btn-danger', 'btn-ejc-action');
+    };
+
+    const applyBotaoPadraoClasses = (button) => {
+        limparVariantesBotao(button);
+        button.classList.add('btn', 'btn-soft-secondary', 'dropdown-toggle', 'btn-ejc-action');
     };
 
     const standardizeButton = (button) => {
@@ -297,6 +322,8 @@
 
         button.classList.add('btn-ejc-action');
         if (action.key === 'novo') applyNovoButtonClasses(button);
+        else if (action.key === 'excluir') applyExcluirButtonClasses(button);
+        else applyBotaoPadraoClasses(button);
 
         const hasIcon = ensureIcon(button, action, iconWrapper);
         ensureText(button, textWrapper, label);

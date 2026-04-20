@@ -454,6 +454,14 @@
             font-weight: 700;
         }
 
+        #modalCasal .section-label-corporate {
+            color: #b88732;
+        }
+
+        #modalCasal .section-label-corporate i {
+            color: #b88732;
+        }
+
         #modalCasal .modal-dialog {
             max-width: min(1680px, 92vw);
             margin: 1rem auto;
@@ -543,6 +551,15 @@
 
         .tios-summary-item--wide {
             grid-column: 1 / -1;
+        }
+
+        .tios-section-heading {
+            display: block;
+            margin: 0;
+            color: #b88732;
+            font-size: 0.95rem;
+            font-weight: 700;
+            line-height: 1.25;
         }
 
         .tios-profile-summary label,
@@ -1052,7 +1069,7 @@ preencha outro_ejc_paroquia</div>
                                                 <div class="col-lg-5">
                                                     <label class="text-muted small">Nome do tio *</label>
                                                     <input class="form-control"
-                                                        v-model.trim="formCasal.nome_tio"
+                                                        v-model="formCasal.nome_tio"
                                                         @input="normalizarCampoMaiusculoCasal('nome_tio')"
                                                         maxlength="180"
                                                         placeholder="Nome do tio">
@@ -1078,7 +1095,7 @@ preencha outro_ejc_paroquia</div>
                                                 <div class="col-lg-5">
                                                     <label class="text-muted small">Nome da tia *</label>
                                                     <input class="form-control"
-                                                        v-model.trim="formCasal.nome_tia"
+                                                        v-model="formCasal.nome_tia"
                                                         @input="normalizarCampoMaiusculoCasal('nome_tia')"
                                                         maxlength="180"
                                                         placeholder="Nome da tia">
@@ -1155,12 +1172,30 @@ preencha outro_ejc_paroquia</div>
                                     <div class="ficha-aside-list tios-profile-summary text-start">
                                         <div class="ficha-aside-item tios-summary-item">
                                             <label class="text-muted small mb-0">Origem</label>
-                                            <div>{{ formCasal.origem_tipo === 'OUTRO_EJC' ? 'Tios de outro EJC' : 'Tios do EJC' }}</div>
+                                            <div v-if="!isEditingCasal" class="py-1 px-2 bg-light border rounded">
+                                                {{ formCasal.origem_tipo === 'OUTRO_EJC' ? 'Tios de outro EJC' : 'Tios do EJC' }}
+                                            </div>
+                                            <select v-else class="form-select" v-model="formCasal.origem_tipo">
+                                                <option value="EJC">Tios do EJC</option>
+                                                <option value="OUTRO_EJC">Tios de outro EJC</option>
+                                            </select>
                                         </div>
                                         <div class="ficha-aside-item tios-summary-item">
                                             <label class="text-muted small mb-0">Encontro</label>
-                                            <div v-if="formCasal.origem_tipo !== 'OUTRO_EJC'">{{ eccLabelAtualCasal }}</div>
-                                            <div v-else>{{ outroEjcLabelAtualCasal }}</div>
+                                            <div v-if="!isEditingCasal && formCasal.origem_tipo !== 'OUTRO_EJC'" class="py-1 px-2 bg-light border rounded">{{ eccLabelAtualCasal }}</div>
+                                            <div v-else-if="!isEditingCasal" class="py-1 px-2 bg-light border rounded">{{ outroEjcLabelAtualCasal }}</div>
+                                            <select v-else-if="formCasal.origem_tipo !== 'OUTRO_EJC'" class="form-select" v-model="formCasal.ecc_id">
+                                                <option :value="null">Selecione...</option>
+                                                <option v-for="e in eccs" :key="`ecc-sidebar-${e.id}`" :value="e.id">
+                                                    {{ e.numero }} {{ (e.tipo || 'ECC') }}{{ e.descricao ? ` - ${e.descricao}` : '' }}
+                                                </option>
+                                            </select>
+                                            <select v-else class="form-select" v-model="formCasal.outro_ejc_id">
+                                                <option :value="null">Selecione...</option>
+                                                <option v-for="o in outrosEjcs" :key="`outro-ejc-sidebar-${o.id}`" :value="o.id">
+                                                    {{ o.paroquia }}{{ o.nome ? ` - ${o.nome}` : '' }}
+                                                </option>
+                                            </select>
                                         </div>
                                     </div>
                                 </div>
@@ -1180,13 +1215,13 @@ preencha outro_ejc_paroquia</div>
                                         <p>Identificação e contato do tio e da tia em um só lugar.</p>
                                     </div>
                                     <div class="row g-3">
-                                        <div class="col-12"><h6 class="text-muted mb-0">Dados do Tio</h6></div>
-                                        <div class="col-md-6"><label class="form-label">Nome do tio</label><input class="form-control" v-model.trim="formCasal.nome_tio" @input="normalizarCampoMaiusculoCasal('nome_tio')" maxlength="180"></div>
+                                        <div class="col-12"><h6 class="tios-section-heading">Dados do Tio</h6></div>
+                                        <div class="col-md-6"><label class="form-label">Nome do tio</label><input class="form-control" v-model="formCasal.nome_tio" @input="normalizarCampoMaiusculoCasal('nome_tio')" maxlength="180"></div>
                                         <div class="col-md-3"><label class="form-label">Telefone</label><input class="form-control" v-model.trim="formCasal.telefone_tio" maxlength="30"></div>
                                         <div class="col-md-3"><label class="form-label">Nascimento</label><input type="date" class="form-control" v-model="formCasal.data_nascimento_tio" lang="pt-BR"></div>
 
-                                        <div class="col-12 pt-2"><h6 class="text-muted mb-0">Dados da Tia</h6></div>
-                                        <div class="col-md-6"><label class="form-label">Nome da tia</label><input class="form-control" v-model.trim="formCasal.nome_tia" @input="normalizarCampoMaiusculoCasal('nome_tia')" maxlength="180"></div>
+                                        <div class="col-12 pt-2"><h6 class="tios-section-heading">Dados da Tia</h6></div>
+                                        <div class="col-md-6"><label class="form-label">Nome da tia</label><input class="form-control" v-model="formCasal.nome_tia" @input="normalizarCampoMaiusculoCasal('nome_tia')" maxlength="180"></div>
                                         <div class="col-md-3"><label class="form-label">Telefone</label><input class="form-control" v-model.trim="formCasal.telefone_tia" maxlength="30"></div>
                                         <div class="col-md-3"><label class="form-label">Nascimento</label><input type="date" class="form-control" v-model="formCasal.data_nascimento_tia" lang="pt-BR"></div>
                                         <div class="col-md-6">
@@ -1204,34 +1239,9 @@ preencha outro_ejc_paroquia</div>
                                 <div class="ficha-subpane" v-show="subAbaCasalDados === 'participacao'">
                                     <div class="ficha-pane-title">
                                         <h6>Participação no EJC</h6>
-                                        <p>Encontro realizado e equipes em que o casal já serviu.</p>
+                                        <p>Equipes em que o casal já serviu no encontro.</p>
                                     </div>
                                     <div class="row g-3">
-                                        <div class="col-md-6">
-                                            <label class="form-label">Origem do casal</label>
-                                            <select class="form-select" v-model="formCasal.origem_tipo">
-                                                <option value="EJC">Tios do EJC</option>
-                                                <option value="OUTRO_EJC">Tios de outro EJC</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-6" v-if="formCasal.origem_tipo !== 'OUTRO_EJC'">
-                                            <label class="form-label">Encontro (ECC/ECNA)</label>
-                                            <select class="form-select" v-model="formCasal.ecc_id">
-                                                <option :value="null">Selecione...</option>
-                                                <option v-for="e in eccs" :key="`ecc-${e.id}`" :value="e.id">
-                                                    {{ e.numero }} {{ (e.tipo || 'ECC') }}{{ e.descricao ? ` - ${e.descricao}` : '' }}
-                                                </option>
-                                            </select>
-                                        </div>
-                                        <div class="col-md-6" v-else>
-                                            <label class="form-label">Paróquia</label>
-                                            <select class="form-select" v-model="formCasal.outro_ejc_id">
-                                                <option :value="null">Selecione...</option>
-                                                <option v-for="o in outrosEjcs" :key="`outro-ejc-${o.id}`" :value="o.id">
-                                                    {{ o.paroquia }}{{ o.nome ? ` - ${o.nome}` : '' }}
-                                                </option>
-                                            </select>
-                                        </div>
                                         <div class="col-12">
                                             <label class="section-label-corporate"><i class="fas fa-briefcase"></i> Equipes de Trabalho (EJC {{ nomeMeuEJC }})</label>
                                             <div class="history-panel">
@@ -1335,13 +1345,13 @@ preencha outro_ejc_paroquia</div>
                                         <p>Deficiências e restrições alimentares do tio e da tia.</p>
                                     </div>
                                     <div class="row g-3">
-                                        <div class="col-12 pt-2"><h6 class="text-muted mb-0">Saúde do Tio</h6></div>
+                                        <div class="col-12 pt-2"><h6 class="tios-section-heading">Saúde do Tio</h6></div>
                                         <div class="col-md-12">
-                                            <label class="form-label d-block">Possui deficiência?</label>
+                                            <label class="form-label d-block">Pessoa com Deficiência(PcD)?</label>
                                             <div class="d-flex gap-2 align-items-center flex-wrap">
                                                 <div class="form-check mb-0">
                                                     <input class="form-check-input" type="checkbox" id="checkDeficienciaTio" v-model="formCasal.deficiencia_tio" :true-value="1" :false-value="0">
-                                                    <label class="form-check-label" for="checkDeficienciaTio">Possui deficiência</label>
+                                                    <label class="form-check-label" for="checkDeficienciaTio">Sim</label>
                                                 </div>
                                                 <input v-if="formCasal.deficiencia_tio" class="form-control flex-grow-1" style="min-width: 260px;" v-model.trim="formCasal.qual_deficiencia_tio" placeholder="Qual?">
                                             </div>
@@ -1363,13 +1373,13 @@ preencha outro_ejc_paroquia</div>
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="col-12 pt-2"><h6 class="text-muted mb-0">Saúde da Tia</h6></div>
+                                        <div class="col-12 pt-2"><h6 class="tios-section-heading">Saúde da Tia</h6></div>
                                         <div class="col-md-12">
-                                            <label class="form-label d-block">Possui deficiência?</label>
+                                            <label class="form-label d-block">Pessoa com Deficiência(PcD)?</label>
                                             <div class="d-flex gap-2 align-items-center flex-wrap">
                                                 <div class="form-check mb-0">
                                                     <input class="form-check-input" type="checkbox" id="checkDeficienciaTia" v-model="formCasal.deficiencia_tia" :true-value="1" :false-value="0">
-                                                    <label class="form-check-label" for="checkDeficienciaTia">Possui deficiência</label>
+                                                    <label class="form-check-label" for="checkDeficienciaTia">Sim</label>
                                                 </div>
                                                 <input v-if="formCasal.deficiencia_tia" class="form-control flex-grow-1" style="min-width: 260px;" v-model.trim="formCasal.qual_deficiencia_tia" placeholder="Qual?">
                                             </div>
@@ -1965,8 +1975,10 @@ preencha outro_ejc_paroquia</div>
                 apenasDigitos(value) {
                     return String(value || '').replace(/\D+/g, '');
                 },
-                paraMaiusculo(valor) {
-                    return String(valor === undefined || valor === null ? '' : valor).trim().toLocaleUpperCase('pt-BR');
+                paraMaiusculo(valor, options = {}) {
+                    const { trim = false } = options || {};
+                    const texto = String(valor === undefined || valor === null ? '' : valor);
+                    return (trim ? texto.trim() : texto).toLocaleUpperCase('pt-BR');
                 },
                 normalizarCampoMaiusculoCasal(campo) {
                     if (!this.formCasal || !campo || !(campo in this.formCasal)) return;
@@ -1981,7 +1993,7 @@ preencha outro_ejc_paroquia</div>
                     if (!obj || typeof obj !== 'object') return obj;
                     ['nome_tio', 'nome_tia'].forEach((campo) => {
                         if (obj[campo] !== undefined && obj[campo] !== null && obj[campo] !== '') {
-                            obj[campo] = this.paraMaiusculo(obj[campo]);
+                            obj[campo] = this.paraMaiusculo(obj[campo], { trim: true });
                         }
                     });
                     return obj;

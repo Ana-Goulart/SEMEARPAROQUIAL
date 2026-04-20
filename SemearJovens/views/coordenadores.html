@@ -3,7 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>EJC - Cordenadores</title>
+    <title>EJC - Coordenações</title>
     <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
     <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
@@ -69,11 +69,45 @@
             border: 1px solid #e6ecf5;
             border-radius: 12px;
             background: #fff;
+            cursor: pointer;
+            transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+        }
+
+        .coord-card:hover {
+            transform: translateY(-2px);
+            border-color: rgba(191, 161, 111, 0.42);
+            box-shadow: 0 18px 32px rgba(15, 23, 42, 0.1);
         }
 
         .coord-header {
             padding: 14px 16px;
             border-bottom: 1px solid #eef2f7;
+        }
+
+        .coord-card-subtitle {
+            font-size: 0.76rem;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: #8d6b29;
+            font-weight: 700;
+        }
+
+        .coord-card-preview {
+            color: #64748b;
+            font-size: 0.92rem;
+            line-height: 1.45;
+        }
+
+        .coord-card-empty {
+            color: #94a3b8;
+            font-size: 0.92rem;
+        }
+
+        .coord-card-footer {
+            color: #8d6b29;
+            font-size: 0.84rem;
+            font-weight: 600;
         }
 
         .busca-resultados {
@@ -104,12 +138,12 @@
         <main class="container-fluid">
             <div class="d-flex justify-content-between mb-4 align-items-center">
                 <div>
-                    <h3><i class="fa-solid fa-compass icon-accent"></i> Cordenadores</h3>
+                    <h3><i class="fa-solid fa-compass icon-accent"></i> Coordenações</h3>
                     <p class="text-muted mb-0">Cada pasta é uma coordenação. Dentro dela, cadastre os períodos.</p>
                 </div>
                 <div class="d-flex gap-2">
                     <button v-if="!pastaAtual" class="btn btn-soft-primary" @click="abrirModalNovaPasta"><i class="fa-solid fa-folder icon-accent"></i> Nova Coordenação</button>
-                    <button v-else class="btn btn-soft-secondary" @click="voltarRaiz">← Voltar</button>
+                    <button v-else class="btn btn-soft-secondary" @click="voltarRaiz"><i class="fa-solid fa-arrow-left icon-accent"></i> Voltar</button>
                     <button v-if="pastaAtual" class="btn btn-soft-primary" @click="abrirModalNovaPasta"><i class="fa-solid fa-folder-open icon-accent"></i> Nova Subpasta</button>
                     <button v-if="pastaAtual" class="btn btn-primary" @click="abrirModalNova"><i class="fa-solid fa-plus icon-accent"></i> Novo Período</button>
                 </div>
@@ -170,62 +204,93 @@
                 </div>
 
                 <div v-if="coordenacoesDaPasta.length" class="row g-3">
-                    <div class="col-12" v-for="c in coordenacoesDaPasta" :key="c.id">
-                        <div class="coord-card">
-                            <div class="coord-header d-flex justify-content-between align-items-center">
-                                <div>
-                                    <h5 class="mb-1">{{ c.periodo || 'Sem período' }}</h5>
-                                    <div class="small text-muted">
-                                        <span>{{ c.pasta_nome || pastaAtual?.nome || c.nome }}</span>
-                                        <span v-if="c.descricao"> • {{ c.descricao }}</span>
-                                    </div>
+                    <div class="col-12 col-lg-6" v-for="c in coordenacoesDaPasta" :key="c.id">
+                        <div
+                            class="coord-card h-100"
+                            role="button"
+                            tabindex="0"
+                            @click="abrirDetalhesCoordenacao(c)"
+                            @keyup.enter="abrirDetalhesCoordenacao(c)"
+                            @keyup.space.prevent="abrirDetalhesCoordenacao(c)">
+                            <div class="coord-header d-flex justify-content-between align-items-start gap-3">
+                                <div class="flex-grow-1">
+                                    <div class="coord-card-subtitle mb-1">{{ c.pasta_nome || pastaAtual?.nome || c.nome }}</div>
+                                    <h5 class="mb-2">{{ c.periodo || 'Sem período' }}</h5>
+                                    <div class="small text-muted">{{ totalMembrosCoord(c) }} membro(s) vinculado(s)</div>
                                 </div>
-                                <div class="d-flex gap-2">
-                                    <button class="btn btn-sm btn-soft-secondary" @click="toggleMembros(c.id)" :title="membrosAbertos[c.id] ? 'Ocultar membros' : 'Ver membros'">
-                                        {{ membrosAbertos[c.id] ? '▾ Membros' : '▸ Membros' }}
-                                    </button>
+                                <div class="d-flex gap-2 flex-shrink-0" @click.stop>
                                     <button class="btn btn-edit-standard btn-sm" @click="abrirModalEditar(c)">Editar</button>
-                                    <button class="btn btn-sm btn-soft-primary" @click="abrirModalAdicionarJovem(c)"><i class="fa-solid fa-plus icon-accent"></i> Membro</button>
                                     <button class="btn btn-sm btn-outline-danger" @click="deletarCoordenacao(c)"><i class="fa-solid fa-trash icon-accent"></i></button>
                                 </div>
                             </div>
                             <div class="p-3">
-                                <div v-if="!membrosAbertos[c.id]" class="text-muted small">Membros ocultos. Clique em "Membros" para visualizar.</div>
-                                <div v-else-if="!c.membros || !c.membros.length" class="text-muted small">Nenhum membro vinculado.</div>
-                                <div v-else class="table-responsive">
-                                    <table class="table table-sm align-middle mb-0">
-                                        <thead class="table-light">
-                                            <tr>
-                                                <th>Nome</th>
-                                                <th>Telefone</th>
-                                                <th>Círculo</th>
-                                                <th>Tipo</th>
-                                                <th class="text-end">Ações</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr v-for="m in c.membros" :key="m.id">
-                                                <td>{{ m.nome_completo }}</td>
-                                                <td>{{ m.telefone || '-' }}</td>
-                                                <td>{{ m.circulo || '-' }}</td>
-                                                <td>
-                                                    <span class="badge" :class="m.membro_tipo === 'TIO' ? 'text-bg-warning' : 'text-bg-info'">
-                                                        {{ m.membro_tipo === 'TIO' ? 'Tio' : 'Jovem' }}
-                                                    </span>
-                                                </td>
-                                                <td class="text-end">
-                                                    <button class="btn btn-sm btn-outline-danger" @click="removerMembro(m.id)">Remover</button>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
+                                <div v-if="c.descricao" class="coord-card-preview mb-3">{{ c.descricao }}</div>
+                                <div v-if="c.membros && c.membros.length" class="coord-card-preview mb-2">{{ resumoMembrosCard(c) }}</div>
+                                <div v-else class="coord-card-empty mb-2">Nenhum membro vinculado ainda.</div>
+                                <div class="coord-card-footer">Clique no card para ver e gerenciar os membros.</div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </main>
+
+        <div class="modal fade" id="modalDetalhesCoordenacao" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-soft-primary">
+                        <div>
+                            <h5 class="modal-title mb-1">{{ coordenacaoSelecionada?.periodo || 'Período da coordenação' }}</h5>
+                            <div class="small text-muted">{{ coordenacaoSelecionada?.pasta_nome || pastaAtual?.nome || coordenacaoSelecionada?.nome || 'Coordenação' }}</div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body" v-if="coordenacaoSelecionada">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                            <div>
+                                <h6 class="mb-1">Pessoas da coordenação</h6>
+                                <div class="small text-muted">Adicione jovens ou tios e remova vínculos quando precisar.</div>
+                            </div>
+                            <button class="btn btn-primary" @click="abrirModalAdicionarJovem(coordenacaoSelecionada, true)">
+                                <i class="fa-solid fa-plus icon-accent"></i> Adicionar Membro
+                            </button>
+                        </div>
+
+                        <div v-if="!coordenacaoSelecionada.membros || !coordenacaoSelecionada.membros.length" class="text-center text-muted border rounded-3 bg-light py-5">
+                            <div class="mb-2">Nenhum membro vinculado neste período.</div>
+                            <button class="btn btn-soft-primary" @click="abrirModalAdicionarJovem(coordenacaoSelecionada, true)">
+                                <i class="fa-solid fa-user-plus icon-accent"></i> Adicionar primeiro membro
+                            </button>
+                        </div>
+                        <div v-else class="table-responsive">
+                            <table class="table align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Nome</th>
+                                        <th>Telefone</th>
+                                        <th>Círculo</th>
+                                        <th class="text-end">Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="m in coordenacaoSelecionada.membros" :key="m.id">
+                                        <td>{{ m.nome_completo }}</td>
+                                        <td>{{ m.telefone || '-' }}</td>
+                                        <td>{{ m.circulo || '-' }}</td>
+                                        <td class="text-end">
+                                            <button class="btn btn-sm btn-outline-danger" @click="removerMembro(m.id)">Remover</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <div class="modal fade" id="modalCoord" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog">
@@ -256,7 +321,13 @@
             <div class="modal-dialog">
                 <div class="modal-content border-0 shadow">
                     <div class="modal-header bg-light">
-                        <h5 class="modal-title">Adicionar membro em {{ coordenacaoSelecionada?.nome }}</h5>
+                        <div>
+                            <h5 class="modal-title mb-1">Adicionar membro</h5>
+                            <div class="small text-muted">
+                                {{ coordenacaoSelecionada?.pasta_nome || pastaAtual?.nome || coordenacaoSelecionada?.nome || 'Coordenação' }}
+                                <span v-if="coordenacaoSelecionada?.periodo"> • {{ coordenacaoSelecionada.periodo }}</span>
+                            </div>
+                        </div>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
@@ -337,15 +408,16 @@
                     modalCoord: null,
                     modalPasta: null,
                     modalAdicionar: null,
+                    modalDetalhes: null,
                     modalHistorico: null,
                     coordenacaoSelecionada: null,
                     historicoCoord: { nome: '', gestoes: [] },
-                    membrosAbertos: {},
                     searchQuery: '',
                     searchResults: [],
                     searchTimer: null,
                     tipoMembro: 'JOVEM',
-                    tiosList: []
+                    tiosList: [],
+                    reabrirDetalhesAposAdicionar: false
                 }
             },
             computed: {
@@ -362,8 +434,29 @@
                 }
             },
             methods: {
-                toggleMembros(id) {
-                    this.membrosAbertos[id] = !this.membrosAbertos[id];
+                totalMembrosCoord(coord) {
+                    return Array.isArray(coord && coord.membros) ? coord.membros.length : 0;
+                },
+                resumoMembrosCard(coord) {
+                    const nomes = Array.isArray(coord && coord.membros)
+                        ? coord.membros
+                            .map(m => String(m.nome_completo || '').trim())
+                            .filter(Boolean)
+                            .slice(0, 3)
+                        : [];
+                    if (!nomes.length) return '';
+                    const restante = this.totalMembrosCoord(coord) - nomes.length;
+                    return restante > 0 ? `${nomes.join(', ')} e mais ${restante} pessoa(s).` : nomes.join(', ');
+                },
+                sincronizarCoordenacaoSelecionada() {
+                    if (!this.coordenacaoSelecionada) return;
+                    const atualizada = this.coordenacoes.find(c => Number(c.id) === Number(this.coordenacaoSelecionada.id));
+                    if (atualizada) {
+                        this.coordenacaoSelecionada = atualizada;
+                        return;
+                    }
+                    this.coordenacaoSelecionada = null;
+                    if (this.modalDetalhes) this.modalDetalhes.hide();
                 },
                 montarCaminhoPasta(pastaId) {
                     if (!pastaId) return [];
@@ -400,6 +493,7 @@
                                 this.caminhoPastas = this.montarCaminhoPasta(aindaExiste.id);
                             }
                         }
+                        this.sincronizarCoordenacaoSelecionada();
                     } finally {
                         this.carregando = false;
                     }
@@ -431,6 +525,14 @@
                     this.form = { id: c.id, pasta_id: c.pasta_id || Number(this.pastaAtual?.id || null), periodo: c.periodo || '', descricao: c.descricao || '' };
                     if (!this.modalCoord) this.modalCoord = new bootstrap.Modal(document.getElementById('modalCoord'));
                     this.modalCoord.show();
+                },
+                abrirDetalhesCoordenacao(c) {
+                    this.coordenacaoSelecionada = c;
+                    this.searchQuery = '';
+                    this.searchResults = [];
+                    this.tipoMembro = 'JOVEM';
+                    if (!this.modalDetalhes) this.modalDetalhes = new bootstrap.Modal(document.getElementById('modalDetalhesCoordenacao'));
+                    this.modalDetalhes.show();
                 },
                 abrirModalNovaPasta() {
                     this.formPasta = { id: null, nome: '', parent_id: this.pastaAtual ? Number(this.pastaAtual.id) : null };
@@ -508,13 +610,22 @@
                     }
                     await this.carregar();
                 },
-                abrirModalAdicionarJovem(c) {
+                abrirModalAdicionarJovem(c, retornarParaDetalhes = false) {
                     this.coordenacaoSelecionada = c;
                     this.searchQuery = '';
                     this.searchResults = [];
                     this.tipoMembro = 'JOVEM';
                     this.carregarTios();
+                    this.reabrirDetalhesAposAdicionar = !!retornarParaDetalhes;
                     if (!this.modalAdicionar) this.modalAdicionar = new bootstrap.Modal(document.getElementById('modalAdicionarJovem'));
+                    if (retornarParaDetalhes && this.modalDetalhes) {
+                        const modalDetalhesEl = document.getElementById('modalDetalhesCoordenacao');
+                        modalDetalhesEl.addEventListener('hidden.bs.modal', () => {
+                            this.modalAdicionar.show();
+                        }, { once: true });
+                        this.modalDetalhes.hide();
+                        return;
+                    }
                     this.modalAdicionar.show();
                 },
                 async abrirHistorico(c) {
@@ -578,6 +689,7 @@
                     this.searchResults = [];
                     this.searchQuery = '';
                     await this.carregar();
+                    if (this.modalAdicionar) this.modalAdicionar.hide();
                 },
                 async carregarTios() {
                     if (this.tiosList.length) return;
@@ -601,6 +713,17 @@
                 }
             },
             mounted() {
+                const modalAdicionarEl = document.getElementById('modalAdicionarJovem');
+                if (modalAdicionarEl) {
+                    modalAdicionarEl.addEventListener('hidden.bs.modal', () => {
+                        if (!this.reabrirDetalhesAposAdicionar) return;
+                        this.reabrirDetalhesAposAdicionar = false;
+                        this.sincronizarCoordenacaoSelecionada();
+                        if (!this.coordenacaoSelecionada) return;
+                        if (!this.modalDetalhes) this.modalDetalhes = new bootstrap.Modal(document.getElementById('modalDetalhesCoordenacao'));
+                        this.modalDetalhes.show();
+                    });
+                }
                 this.carregar();
             }
         }).mount('#app');

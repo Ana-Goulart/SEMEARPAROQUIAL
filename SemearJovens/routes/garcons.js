@@ -59,8 +59,214 @@ async function garantirEstrutura() {
         await pool.query('ALTER TABLE garcons_membros ADD UNIQUE KEY uniq_garcons_equipe_tio (equipe_id, tio_casal_id)');
     } catch (e) { }
 
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS garcons_reservas (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            tenant_id INT NOT NULL,
+            jovem_id INT NOT NULL,
+            lista ENUM('MULHERES','HOMENS') NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            KEY idx_garcons_reservas_tenant (tenant_id),
+            UNIQUE KEY uniq_garcons_reserva_tenant_jovem (tenant_id, jovem_id),
+            CONSTRAINT fk_garcons_reserva_jovem FOREIGN KEY (jovem_id) REFERENCES jovens(id) ON DELETE CASCADE
+        )
+    `);
+
     estruturaGarantida = true;
 }
+
+router.get('/reservas', async (req, res) => {
+    const tenantId = getTenantId(req);
+    if (!tenantId) return res.status(401).json({ error: 'Tenant não identificado.' });
+
+    try {
+        await garantirEstrutura();
+        const [rows] = await pool.query(`
+            SELECT gr.id, gr.jovem_id, gr.lista, gr.created_at,
+                   j.nome_completo, j.telefone, j.circulo, j.sexo, j.data_nascimento,
+                   j.numero_ejc_fez,
+                   eorig.numero AS ejc_origem_numero
+            FROM garcons_reservas gr
+            JOIN jovens j ON j.id = gr.jovem_id AND j.tenant_id = gr.tenant_id
+            LEFT JOIN ejc eorig ON eorig.id = j.numero_ejc_fez AND eorig.tenant_id = j.tenant_id
+            WHERE gr.tenant_id = ?
+            ORDER BY j.nome_completo ASC
+        `, [tenantId]);
+
+        res.json({
+            mulheres: rows.filter(r => r.lista === 'MULHERES'),
+            homens: rows.filter(r => r.lista === 'HOMENS')
+        });
+    } catch (err) {
+        console.error('Erro ao listar reservas de garçons:', err);
+        res.status(500).json({ error: 'Erro ao listar reservas de garçons' });
+    }
+});
+
+router.post('/reservas', async (req, res) => {
+    const tenantId = getTenantId(req);
+    if (!tenantId) return res.status(401).json({ error: 'Tenant não identificado.' });
+
+    const jovemId = Number(req.body.jovem_id);
+    const listaRaw = String(req.body.lista || '').trim().toUpperCase();
+    const lista = ['MULHERES', 'HOMENS'].includes(listaRaw) ? listaRaw : null;
+
+    if (!jovemId || !lista) {
+        return res.status(400).json({ error: 'Dados inválidos.' });
+    }
+
+    try {
+        await garantirEstrutura();
+        const [[jovem]] = await pool.query(
+            `SELECT id, sexo
+             FROM jovens
+             WHERE id = ?
+               AND tenant_id = ?
+               AND COALESCE(origem_ejc_tipo, 'INCONFIDENTES') <> 'OUTRO_EJC'
+               AND COALESCE(lista_mestre_ativo, 1) = 1
+             LIMIT 1`,
+            [jovemId, tenantId]
+        );
+
+        if (!jovem) return res.status(404).json({ error: 'Jovem não encontrado.' });
+
+        if (jovem.sexo === 'Feminino' && lista !== 'MULHERES') {
+            return res.status(409).json({ error: 'Este jovem é do sexo feminino e deve estar na lista de mulheres.' });
+        }
+        if (jovem.sexo === 'Masculino' && lista !== 'HOMENS') {
+            return res.status(409).json({ error: 'Este jovem é do sexo masculino e deve estar na lista de homens.' });
+        }
+
+        const [exists] = await pool.query(
+            'SELECT id FROM garcons_reservas WHERE tenant_id = ? AND jovem_id = ? LIMIT 1',
+            [tenantId, jovemId]
+        );
+        if (exists.length) {
+            return res.status(409).json({ error: 'Este jovem já está em uma lista de reserva de garçons.' });
+        }
+
+        const [result] = await pool.query(
+            'INSERT INTO garcons_reservas (tenant_id, jovem_id, lista) VALUES (?, ?, ?)',
+            [tenantId, jovemId, lista]
+        );
+
+        res.status(201).json({ id: result.insertId, message: 'Jovem adicionado à reserva de garçons.' });
+    } catch (err) {
+        console.error('Erro ao adicionar jovem na reserva de garçons:', err);
+        res.status(500).json({ error: 'Erro ao adicionar jovem na reserva de garçons' });
+    }
+});
+
+router.delete('/reservas/:id', async (req, res) => {
+    const tenantId = getTenantId(req);
+    if (!tenantId) return res.status(401).json({ error: 'Tenant não identificado.' });
+
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido.' });
+
+    try {
+        await garantirEstrutura();
+        const [result] = await pool.query(
+            'DELETE FROM garcons_reservas WHERE id = ? AND tenant_id = ?',
+            [id, tenantId]
+        );
+        if (!result.affectedRows) return res.status(404).json({ error: 'Registro não encontrado.' });
+        res.json({ message: 'Jovem removido da reserva de garçons.' });
+    } catch (err) {
+        console.error('Erro ao remover jovem da reserva de garçons:', err);
+        res.status(500).json({ error: 'Erro ao remover jovem da reserva de garçons' });
+    }
+});
+
+router.post('/reservas/:id/titular', async (req, res) => {
+    const tenantId = getTenantId(req);
+    if (!tenantId) return res.status(401).json({ error: 'Tenant não identificado.' });
+
+    const reservaId = Number(req.params.id);
+    const equipeId = Number(req.body.equipe_id);
+    const papel = String(req.body.papel || '').trim();
+
+    if (!reservaId || !equipeId || !papel) {
+        return res.status(400).json({ error: 'Selecione a equipe e a função do jovem.' });
+    }
+
+    const connection = await pool.getConnection();
+    try {
+        await garantirEstrutura();
+        await connection.beginTransaction();
+
+        const [[reserva]] = await connection.query(
+            `SELECT gr.id, gr.jovem_id
+             FROM garcons_reservas gr
+             JOIN jovens j ON j.id = gr.jovem_id AND j.tenant_id = gr.tenant_id
+             WHERE gr.id = ? AND gr.tenant_id = ?
+             LIMIT 1`,
+            [reservaId, tenantId]
+        );
+        if (!reserva) {
+            await connection.rollback();
+            return res.status(404).json({ error: 'Reserva não encontrada.' });
+        }
+
+        const [[equipe]] = await connection.query(
+            `SELECT id, ejc_numero, outro_ejc_id, data_inicio, data_fim
+             FROM garcons_equipes
+             WHERE id = ?
+             LIMIT 1`,
+            [equipeId]
+        );
+        if (!equipe) {
+            await connection.rollback();
+            return res.status(404).json({ error: 'Equipe não encontrada.' });
+        }
+
+        const [jaExiste] = await connection.query(
+            'SELECT id FROM garcons_membros WHERE equipe_id = ? AND jovem_id = ? LIMIT 1',
+            [equipeId, reserva.jovem_id]
+        );
+        if (jaExiste.length) {
+            await connection.rollback();
+            return res.status(409).json({ error: 'Este jovem já está na equipe selecionada.' });
+        }
+
+        const [comissaoResult] = await connection.query(
+            `INSERT INTO jovens_comissoes
+             (tenant_id, jovem_id, tipo, ejc_numero, outro_ejc_id, data_inicio, data_fim, funcao_garcom, observacao)
+             VALUES (?, ?, 'GARCOM_EQUIPE', ?, ?, ?, ?, ?, ?)`,
+            [
+                tenantId,
+                reserva.jovem_id,
+                equipe.ejc_numero || null,
+                equipe.outro_ejc_id || null,
+                equipe.data_inicio || null,
+                equipe.data_fim || null,
+                papel,
+                'Equipe de Garçom'
+            ]
+        );
+
+        await connection.query(
+            `INSERT INTO garcons_membros
+                (equipe_id, jovem_id, membro_tipo, tio_casal_id, papel, situacao, comissao_id)
+             VALUES (?, ?, 'JOVEM', NULL, ?, 'TITULAR', ?)`,
+            [equipeId, reserva.jovem_id, papel, comissaoResult.insertId]
+        );
+
+        await connection.query(
+            'DELETE FROM garcons_reservas WHERE id = ? AND tenant_id = ?',
+            [reservaId, tenantId]
+        );
+
+        await connection.commit();
+        return res.status(201).json({ message: 'Jovem promovido para titular de garçom com sucesso.' });
+    } catch (err) {
+        await connection.rollback();
+        console.error('Erro ao promover jovem da reserva de garçons para titular:', err);
+        return res.status(500).json({ error: 'Erro ao promover jovem da reserva para titular.' });
+    } finally {
+        connection.release();
+    }
+});
 
 router.get('/equipes', async (req, res) => {
     try {
@@ -104,7 +310,8 @@ router.get('/equipes', async (req, res) => {
                            ''
                        )
                    ) AS telefone,
-                   j.circulo
+                   j.circulo,
+                   j.data_nascimento
             FROM garcons_membros gm
             LEFT JOIN jovens j ON j.id = gm.jovem_id
             LEFT JOIN tios_casais tc ON tc.id = gm.tio_casal_id

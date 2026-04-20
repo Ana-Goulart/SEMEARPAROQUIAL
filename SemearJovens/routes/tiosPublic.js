@@ -1,6 +1,7 @@
 const express = require('express');
 const crypto = require('crypto');
 const { pool } = require('../database');
+const { normalizeUpperText } = require('../lib/personNameFormatting');
 
 const router = express.Router();
 const TOKEN_TTL_MS = 15 * 60 * 1000;
@@ -169,8 +170,8 @@ router.get('/ecc', async (_req, res) => {
 router.post('/validar', async (req, res) => {
     try {
         await ensureEstrutura();
-        const nomeTio = String(req.body.nome_tio || '').trim();
-        const nomeTia = String(req.body.nome_tia || '').trim();
+        const nomeTio = normalizeUpperText(req.body.nome_tio);
+        const nomeTia = normalizeUpperText(req.body.nome_tia);
         const telefoneTio = String(req.body.telefone_tio || '').trim();
         const telefoneTia = String(req.body.telefone_tia || '').trim();
         const dataTio = normalizeDate(req.body.data_nascimento_tio);
@@ -296,8 +297,8 @@ router.post('/atualizar', async (req, res) => {
 router.post('/criar', async (req, res) => {
     try {
         await ensureEstrutura();
-        const nomeTio = String(req.body.nome_tio || '').trim();
-        const nomeTia = String(req.body.nome_tia || '').trim();
+        const nomeTio = normalizeUpperText(req.body.nome_tio);
+        const nomeTia = normalizeUpperText(req.body.nome_tia);
         const telefoneTio = String(req.body.telefone_tio || '').trim();
         const telefoneTia = String(req.body.telefone_tia || '').trim();
         const dataTio = normalizeDate(req.body.data_nascimento_tio);

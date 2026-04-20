@@ -111,8 +111,8 @@ router.post('/', async (req, res) => {
         if (nome.length > 80) return res.status(400).json({ error: 'Nome da cor deve ter no máximo 80 caracteres.' });
 
         const corHex = validarHexCor(req.body && req.body.cor_hex);
-        if ((req.body && req.body.cor_hex) && !corHex) {
-            return res.status(400).json({ error: 'Cor HEX inválida. Exemplo válido: #1A2B3C' });
+        if (!corHex) {
+            return res.status(400).json({ error: 'Escolha uma cor para o círculo na paleta.' });
         }
 
         const ativo = (req.body && (req.body.ativo === false || req.body.ativo === 0 || req.body.ativo === '0')) ? 0 : 1;
@@ -143,8 +143,8 @@ router.put('/:id', async (req, res) => {
         if (nome.length > 80) return res.status(400).json({ error: 'Nome da cor deve ter no máximo 80 caracteres.' });
 
         const corHex = validarHexCor(req.body && req.body.cor_hex);
-        if ((req.body && req.body.cor_hex) && !corHex) {
-            return res.status(400).json({ error: 'Cor HEX inválida. Exemplo válido: #1A2B3C' });
+        if (!corHex) {
+            return res.status(400).json({ error: 'Escolha uma cor para o círculo na paleta.' });
         }
 
         const ativo = (req.body && (req.body.ativo === false || req.body.ativo === 0 || req.body.ativo === '0')) ? 0 : 1;

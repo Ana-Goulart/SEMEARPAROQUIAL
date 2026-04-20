@@ -1,5 +1,6 @@
 (() => {
     const DATE_RE = /^\d{2}\/\d{2}\/\d{4}$/;
+    const ISO_DATE_RE = /^(\d{4})-(\d{2})-(\d{2})(?:$|[T\s])/;
     const MONTHS = [
         'janeiro', 'fevereiro', 'marco', 'abril', 'maio', 'junho',
         'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'
@@ -53,7 +54,16 @@
         return null;
     }
 
+    function extractIsoDate(value) {
+        const raw = String(value || '').trim();
+        const match = raw.match(ISO_DATE_RE);
+        if (!match) return '';
+        return `${match[1]}-${match[2]}-${match[3]}`;
+    }
+
     function toIsoDate(value) {
+        const isoDate = extractIsoDate(value);
+        if (isoDate) return isoDate;
         const parsed = parseBrDate(value);
         if (!parsed) return value;
         const { dd, mm, yyyy } = parsed;
@@ -61,7 +71,8 @@
     }
 
     function toBrDate(value) {
-        const m = String(value || '').trim().match(/^(\d{4})-(\d{2})-(\d{2})$/);
+        const isoDate = extractIsoDate(value);
+        const m = isoDate.match(/^(\d{4})-(\d{2})-(\d{2})$/);
         if (!m) return value;
         const monthIdx = Number(m[2]) - 1;
         const monthName = MONTHS[monthIdx] || m[2];
@@ -75,8 +86,28 @@
             for (const [k, v] of Object.entries(obj)) out[k] = convertDates(v);
             return out;
         }
-        if (typeof obj === 'string' && (DATE_RE.test(obj) || /\d{2}\/[a-zçãéíóú]+\/\d{4}/i.test(obj))) return toIsoDate(obj);
+        if (typeof obj === 'string' && (DATE_RE.test(obj) || /\d{2}\/[a-zçãéíóú]+\/\d{4}/i.test(obj) || !!extractIsoDate(obj))) {
+            return toIsoDate(obj);
+        }
         return obj;
+    }
+
+    const inputValueDescriptor = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+    if (inputValueDescriptor && inputValueDescriptor.get && inputValueDescriptor.set) {
+        Object.defineProperty(HTMLInputElement.prototype, 'value', {
+            configurable: true,
+            enumerable: inputValueDescriptor.enumerable,
+            get() {
+                return inputValueDescriptor.get.call(this);
+            },
+            set(value) {
+                inputValueDescriptor.set.call(this, value);
+                if (!this || !this.classList || !this.classList.contains('date-br')) return;
+                const formatted = toBrDate(value);
+                if (!formatted || formatted === value) return;
+                inputValueDescriptor.set.call(this, formatted);
+            }
+        });
     }
 
     document.addEventListener('input', (e) => {

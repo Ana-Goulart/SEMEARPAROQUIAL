@@ -18,7 +18,7 @@ const menuTemplate = `
 
             <div class="menu-group" data-group="gestao">
                 <button type="button" class="menu-group-toggle" data-group-toggle="gestao">
-                    <span class="group-title"><span class="menu-group-icon"><i class="fa-solid fa-calendar-check"></i></span><span>Encontro</span></span>
+                    <span class="group-title"><span class="menu-group-icon"><i class="fa-solid fa-calendar-check"></i></span><span>GERENCIA</span></span>
                     <span class="menu-chevron">▸</span>
                 </button>
                 <div class="menu-group-links" data-group-links="gestao">
@@ -43,6 +43,9 @@ const menuTemplate = `
                     <a href="/gestaodoencontro/formularios-atualizacao" class="nav-link" title="Formulários">
                         <span class="menu-link-icon"><i class="fa-solid fa-file-lines"></i></span><span class="link-text">Formulários</span>
                     </a>
+                    <a href="/gestaodoencontro/missaoexterna" class="nav-link" title="Missão Externa">
+                        <span class="menu-link-icon"><i class="fa-solid fa-compass"></i></span><span class="link-text">Missão Externa</span>
+                    </a>
                 </div>
             </div>
 
@@ -57,12 +60,6 @@ const menuTemplate = `
                     </a>
                     <a href="/gestaodoencontro/jovensoutroejc" class="nav-link" title="Membros de Outro EJC">
                         <span class="menu-link-icon"><i class="fa-solid fa-id-card"></i></span><span class="link-text">Membros de Outro EJC</span>
-                    </a>
-                    <a href="/gestaodoencontro/moita" class="nav-link" title="Moita">
-                        <span class="menu-link-icon"><i class="fa-solid fa-seedling"></i></span><span class="link-text">Moita</span>
-                    </a>
-                    <a href="/gestaodoencontro/garcons" class="nav-link" title="Garçons">
-                        <span class="menu-link-icon"><i class="fa-solid fa-utensils"></i></span><span class="link-text">Garçons</span>
                     </a>
                 </div>
             </div>
@@ -707,8 +704,133 @@ function injetarMenu(selector = '#app', position = 'prepend') {
     carregarNomeMeuEJC();
     inicializarMascaraTelefoneGlobal();
     garantirUxUi();
+    window.requestAnimationFrame(() => ocultarTituloDoMenuAtivo(window.location.pathname));
+    window.setTimeout(() => ocultarTituloDoMenuAtivo(window.location.pathname), 180);
 
     return true;
+}
+
+const MENU_ROUTE_ALIASES = {
+    '/historico-equipes': '/gestaodoencontro/ejc',
+    '/ejc': '/gestaodoencontro/ejc',
+    '/equipes': '/gestaodoencontro/equipes',
+    '/outros-ejcs': '/gestaodoencontro/outrosejcs',
+    '/jovens-outro-ejc': '/gestaodoencontro/jovensoutroejc',
+    '/visitantes': '/gestaodoencontro/visitantes',
+    '/tios': '/gestaodoencontro/tios',
+    '/montar-encontro': '/gestaodoencontro/montarencontro',
+    '/gestaodoencontro/regras': '/gestaodoencontro/regras',
+    '/gestaodoencontro/formularios-atualizacao': '/gestaodoencontro/formularios-atualizacao',
+    '/moita': '/gestaodoencontro/missaoexterna',
+    '/garcons': '/gestaodoencontro/missaoexterna',
+    '/gestaodoencontro/moita': '/gestaodoencontro/missaoexterna',
+    '/gestaodoencontro/garcons': '/gestaodoencontro/missaoexterna',
+    '/votacao': '/gestaodoencontro/votacao',
+    '/calendario': '/planejamento/calendario',
+    '/eventos': '/planejamento/inscricoes',
+    '/formularios': '/planejamento/inscricoes',
+    '/inscricoes': '/planejamento/inscricoes',
+    '/planejamento/eventos': '/planejamento/inscricoes',
+    '/ata-reunioes': '/planejamento/atasdereuniao',
+    '/financeiro': '/administrativo/financeiro',
+    '/backup': '/administrativo/backup',
+    '/uso-sistema': '/administrativo/uso-sistema',
+    '/anexos': '/administrativo/anexos',
+    '/contatos': '/administrativo/contatos',
+    '/usuarios': '/configuracoes/usuarios',
+    '/coordenadores': '/configuracoes/coordenacoes',
+    '/funcoes-dirigencia': '/configuracoes/funcoes-dirigencia',
+    '/meu-ejc': '/configuracoes/meuejc',
+    '/circulos': '/configuracoes/circulos'
+};
+
+const MENU_TITLE_TERMS = {
+    '/gestaodoencontro/listamestre': ['lista mestre'],
+    '/gestaodoencontro/tios': ['tios'],
+    '/gestaodoencontro/equipes': ['equipes', 'equipes e funcoes'],
+    '/gestaodoencontro/ejc': ['ejc', 'edicoes do ejc'],
+    '/gestaodoencontro/montarencontro': ['montagem do encontro', 'montando'],
+    '/gestaodoencontro/regras': ['regras'],
+    '/gestaodoencontro/formularios-atualizacao': ['formularios'],
+    '/gestaodoencontro/missaoexterna': ['missao externa'],
+    '/gestaodoencontro/outrosejcs': ['outros ejcs'],
+    '/gestaodoencontro/jovensoutroejc': ['membros de outro ejc'],
+    '/gestaodoencontro/visitantes': ['visitantes'],
+    '/planejamento/calendario': ['calendario'],
+    '/planejamento/espacos': ['espacos da igreja'],
+    '/planejamento/atasdereuniao': ['atas de reuniao'],
+    '/administrativo/financeiro': ['financeiro'],
+    '/administrativo/contatos': ['contatos'],
+    '/administrativo/almoxarifado': ['almoxarifado'],
+    '/administrativo/ajuda': ['ajuda'],
+    '/administrativo/logs': ['log', 'logs', 'log do sistema'],
+    '/configuracoes/usuarios': ['usuarios'],
+    '/configuracoes/coordenacoes': ['coordenacoes'],
+    '/configuracoes/funcoes-dirigencia': ['funcoes da dirigencia'],
+    '/configuracoes/meuejc': ['meu ejc'],
+    '/configuracoes/circulos': ['circulos']
+};
+
+function canonicalizarRotaMenu(valor) {
+    return MENU_ROUTE_ALIASES[String(valor || '').trim()] || String(valor || '').trim();
+}
+
+function normalizarTextoMenu(valor) {
+    return String(valor || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function ocultarTituloDoMenuAtivo(identifier) {
+    const appRoot = document.getElementById('app');
+    if (!appRoot) return;
+
+    const activeLink = document.querySelector('#sidebar .nav-link.active');
+    const termos = new Set();
+    const rotaCanonica = canonicalizarRotaMenu(identifier || window.location.pathname || '');
+
+    if (activeLink) {
+        const textSpan = activeLink.querySelector('.link-text');
+        const textoAtivo = textSpan ? textSpan.textContent.trim() : activeLink.textContent.trim();
+        const normalizado = normalizarTextoMenu(textoAtivo);
+        if (normalizado) {
+            termos.add(normalizado);
+            if (normalizado.includes(' e ')) {
+                normalizado.split(' e ').map((parte) => parte.trim()).filter(Boolean).forEach((parte) => termos.add(parte));
+            }
+        }
+    }
+
+    (MENU_TITLE_TERMS[rotaCanonica] || []).forEach((termo) => {
+        const normalizado = normalizarTextoMenu(termo);
+        if (normalizado) termos.add(normalizado);
+    });
+
+    if (!termos.size) return;
+
+    const rootRect = appRoot.getBoundingClientRect();
+    const candidates = Array.from(appRoot.querySelectorAll('h1, h2, h3, h4')).filter((heading) => {
+        if (!heading || heading.dataset.menuTitleHidden === 'true') return false;
+        if (heading.closest('.modal, .offcanvas, .toast, .accordion, .hero-panel')) return false;
+        if (heading.matches('.hero-title, .section-title, .panel-title, .card-title')) return false;
+        const rect = heading.getBoundingClientRect();
+        return rect.top - rootRect.top <= 260 && rect.bottom >= rootRect.top;
+    });
+
+    const target = candidates.find((heading) => {
+        const texto = normalizarTextoMenu(heading.textContent || '');
+        if (!texto) return false;
+        return Array.from(termos).some((termo) => texto.includes(termo) || termo.includes(texto));
+    });
+
+    if (!target) return;
+
+    target.dataset.menuTitleHidden = 'true';
+    target.style.display = 'none';
 }
 
 /**
@@ -718,44 +840,12 @@ function injetarMenu(selector = '#app', position = 'prepend') {
 function ativarMenu(identifier) {
     const links = document.querySelectorAll('#sidebar .nav-link');
     const pathAtual = window.location.pathname;
-    const aliases = {
-        '/historico-equipes': '/gestaodoencontro/ejc',
-        '/ejc': '/gestaodoencontro/ejc',
-        '/equipes': '/gestaodoencontro/equipes',
-        '/outros-ejcs': '/gestaodoencontro/outrosejcs',
-        '/jovens-outro-ejc': '/gestaodoencontro/jovensoutroejc',
-        '/visitantes': '/gestaodoencontro/visitantes',
-        '/tios': '/gestaodoencontro/tios',
-        '/montar-encontro': '/gestaodoencontro/montarencontro',
-        '/gestaodoencontro/regras': '/gestaodoencontro/regras',
-        '/gestaodoencontro/formularios-atualizacao': '/gestaodoencontro/formularios-atualizacao',
-        '/moita': '/gestaodoencontro/moita',
-        '/garcons': '/gestaodoencontro/garcons',
-        '/votacao': '/gestaodoencontro/votacao',
-        '/calendario': '/planejamento/calendario',
-        '/eventos': '/planejamento/inscricoes',
-        '/formularios': '/planejamento/inscricoes',
-        '/inscricoes': '/planejamento/inscricoes',
-        '/planejamento/eventos': '/planejamento/inscricoes',
-        '/ata-reunioes': '/planejamento/atasdereuniao',
-        '/financeiro': '/administrativo/financeiro',
-        '/backup': '/administrativo/backup',
-        '/uso-sistema': '/administrativo/uso-sistema',
-        '/anexos': '/administrativo/anexos',
-        '/contatos': '/administrativo/contatos',
-        '/usuarios': '/configuracoes/usuarios',
-        '/coordenadores': '/configuracoes/coordenacoes',
-        '/funcoes-dirigencia': '/configuracoes/funcoes-dirigencia',
-        '/meu-ejc': '/configuracoes/meuejc',
-        '/circulos': '/configuracoes/circulos'
-    };
-    const canonicalizar = (valor) => aliases[String(valor || '').trim()] || String(valor || '').trim();
-    const identifierCanonico = canonicalizar(identifier);
-    const pathAtualCanonico = canonicalizar(pathAtual);
+    const identifierCanonico = canonicalizarRotaMenu(identifier);
+    const pathAtualCanonico = canonicalizarRotaMenu(pathAtual);
 
     links.forEach(link => {
         const href = link.getAttribute('href');
-        const hrefCanonico = canonicalizar(href);
+        const hrefCanonico = canonicalizarRotaMenu(href);
         // Buscar texto dentro do span .link-text se existir, senão textContent normal
         const textSpan = link.querySelector('.link-text');
         const text = textSpan ? textSpan.textContent.trim() : link.textContent.trim();
@@ -789,4 +879,8 @@ function ativarMenu(identifier) {
             localStorage.setItem('menuGroupOpen', JSON.stringify(estado));
         }
     }
+
+    const rotaParaOcultar = identifierCanonico || pathAtualCanonico || identifier || pathAtual;
+    window.requestAnimationFrame(() => ocultarTituloDoMenuAtivo(rotaParaOcultar));
+    window.setTimeout(() => ocultarTituloDoMenuAtivo(rotaParaOcultar), 180);
 }

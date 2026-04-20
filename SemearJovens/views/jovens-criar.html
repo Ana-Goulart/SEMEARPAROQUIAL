@@ -132,7 +132,7 @@
 
                             <div class="col-12"><h6 class="text-muted mb-0">Saúde e serviço</h6></div>
                             <div class="col-md-4">
-                                <label class="form-label">Possui deficiência?</label>
+                                <label class="form-label">Pessoa com Deficiência(PcD)?</label>
                                 <select class="form-select" v-model="form.deficiencia">
                                     <option :value="false">Não</option>
                                     <option :value="true">Sim</option>
@@ -364,9 +364,28 @@
                     const txt = String(valor).trim();
                     if (!txt) return null;
                     if (/^\d{4}-\d{2}-\d{2}$/.test(txt)) return txt;
+                    const isoMatch = txt.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s].*)?$/);
+                    if (isoMatch) return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
                     const match = txt.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})$/);
-                    if (!match) return null;
-                    return `${match[3]}-${match[2]}-${match[1]}`;
+                    const txtNormalizado = txt.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                    const meses = {
+                        janeiro: '01', jan: '01',
+                        fevereiro: '02', fev: '02',
+                        marco: '03', mar: '03',
+                        abril: '04', abr: '04',
+                        maio: '05', mai: '05',
+                        junho: '06', jun: '06',
+                        julho: '07', jul: '07',
+                        agosto: '08', ago: '08',
+                        setembro: '09', set: '09',
+                        outubro: '10', out: '10',
+                        novembro: '11', nov: '11',
+                        dezembro: '12', dez: '12'
+                    };
+                    if (match) return `${match[3]}-${match[2]}-${match[1]}`;
+                    const matchMes = txtNormalizado.match(/^(\d{2})[\/\-]([a-z]+)[\/\-](\d{4})$/);
+                    if (!matchMes || !meses[matchMes[2]]) return null;
+                    return `${matchMes[3]}-${meses[matchMes[2]]}-${matchMes[1]}`;
                 },
                 onMusicoToggle() {
                     if (!this.form.eh_musico) this.form.instrumentos_musicais = [];

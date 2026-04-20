@@ -57,6 +57,7 @@ router.get('/:equipeId/jovens/:ejcId', async (req, res) => {
                 COALESCE(he.nome_completo_snapshot, j.nome_completo) AS nome_completo,
                 COALESCE(he.telefone_snapshot, j.telefone) AS telefone,
                 he.papel,
+                j.sexo AS sexo,
                 ${subfuncaoSelect},
                 eorig.numero AS numero_ejc_fez,
                 COALESCE(he.origem_ejc_tipo_snapshot, j.origem_ejc_tipo, 'INCONFIDENTES') AS origem_ejc_tipo,
@@ -94,6 +95,7 @@ router.get('/:equipeId/jovens/:ejcId', async (req, res) => {
                     COALESCE(c.telefone_tia, ts.telefone_tia_snapshot, '-')
                 ) AS telefone,
                 'Tios' AS papel,
+                NULL AS sexo,
                 NULL AS subfuncao,
                 NULL AS numero_ejc_fez,
                 e.numero AS ecc_numero,
@@ -133,6 +135,7 @@ router.get('/:equipeId/jovens/:ejcId', async (req, res) => {
                     COALESCE(c.telefone_tia, th.telefone_tia_snapshot, '-')
                 ) AS telefone,
                 'Tios' AS papel,
+                NULL AS sexo,
                 NULL AS subfuncao,
                 NULL AS numero_ejc_fez,
                 e.numero AS ecc_numero,

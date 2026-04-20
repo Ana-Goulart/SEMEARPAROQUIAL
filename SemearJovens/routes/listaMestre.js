@@ -1497,6 +1497,7 @@ router.post('/', async (req, res) => {
         } = req.body;
 
         const nomeCompletoNormalizado = normalizeUpperText(nome_completo);
+        const apelidoNormalizado = normalizeUpperText(apelido);
         const telefoneNormalizado = normalizeTrimmedText(telefone);
         const enderecoRuaNormalizado = normalizeUpperText(endereco_rua);
         const enderecoBairroNormalizado = normalizeUpperText(endereco_bairro);
@@ -1567,7 +1568,7 @@ router.post('/', async (req, res) => {
         const valores = [
             tenantId,
             nomeCompletoNormalizado,
-            apelido ? String(apelido).trim() : null,
+            apelidoNormalizado,
             telefoneNormalizado,
             email || null,
             normalizeDate(data_nascimento),
@@ -1742,11 +1743,13 @@ router.put('/:id', async (req, res) => {
         }
 
         merged.nome_completo = normalizeUpperText(merged.nome_completo);
+        merged.apelido = normalizeUpperText(merged.apelido);
         merged.telefone = normalizeTrimmedText(merged.telefone);
         merged.endereco_rua = normalizeUpperText(merged.endereco_rua);
         merged.endereco_bairro = normalizeUpperText(merged.endereco_bairro);
         merged.endereco_cidade = normalizeUpperText(merged.endereco_cidade);
         merged.endereco_estado = normalizeUpperText(merged.endereco_estado);
+        merged.conjuge_nome = normalizeUpperText(merged.conjuge_nome);
 
         if (!merged.nome_completo || !merged.telefone) {
             return res.status(400).json({ error: 'Nome completo e telefone são obrigatórios' });
@@ -2834,6 +2837,21 @@ router.post('/comissoes', async (req, res) => {
 
     try {
         const tenantId = getTenantId(req);
+        if (String(tipo).trim().toUpperCase() === 'MOITA_OUTRO') {
+            const [exists] = await pool.query(
+                `SELECT id
+                 FROM jovens_comissoes
+                 WHERE tenant_id = ?
+                   AND jovem_id = ?
+                   AND tipo = 'MOITA_OUTRO'
+                 LIMIT 1`,
+                [tenantId, jovem_id]
+            );
+            if (exists.length) {
+                return res.status(409).json({ error: 'Este jovem já foi moita e não pode ser adicionado novamente.' });
+            }
+        }
+
         const [result] = await pool.query(
             `INSERT INTO jovens_comissoes (tenant_id, jovem_id, tipo, ejc_numero, paroquia, data_inicio, data_fim, funcao_garcom, semestre, circulo, observacao, outro_ejc_id)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,

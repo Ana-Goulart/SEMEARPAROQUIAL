@@ -3,6 +3,7 @@ const { pool } = require('../database');
 const crypto = require('crypto');
 const { getTenantId } = require('../lib/tenantIsolation');
 const { ensurePastoraisTables } = require('../lib/pastorais');
+const { normalizeUpperText } = require('../lib/personNameFormatting');
 
 const router = express.Router();
 const TOKEN_TTL_MS = 15 * 60 * 1000;
@@ -792,7 +793,7 @@ router.get('/cadastro-opcoes', async (req, res) => {
 
 router.post('/validar-cadastro', async (req, res) => {
     try {
-        const nomeCompleto = String(req.body.nome_completo || '').trim();
+        const nomeCompleto = normalizeUpperText(req.body.nome_completo);
         const telefone = String(req.body.telefone || '').trim();
         const dataNascimento = normalizeDate(req.body.data_nascimento);
         const ultimaEquipe = String(req.body.ultima_equipe || '').trim();
@@ -837,7 +838,7 @@ router.post('/atualizar', async (req, res) => {
         }
 
         const jovem = jovemRows[0];
-        const nomeCompletoNovo = String(req.body.nome_completo_novo || '').trim() || null;
+        const nomeCompletoNovo = normalizeUpperText(req.body.nome_completo_novo) || null;
         const telefoneNovo = String(req.body.telefone_novo || '').trim() || String(jovem.telefone || '').trim();
         const email = String(req.body.email || '').trim() || null;
         const instagram = String(req.body.instagram || '').trim() || null;
@@ -884,7 +885,7 @@ router.post('/atualizar', async (req, res) => {
             restricaoAlimentar ? 1 : 0,
             detalhesRestricao
         ];
-        const apelido = String(req.body.apelido || '').trim() || null;
+        const apelido = normalizeUpperText(req.body.apelido) || null;
         const equipeSaude = req.body.equipe_saude === true || req.body.equipe_saude === 'true' || req.body.equipe_saude === 1 || req.body.equipe_saude === '1';
         const tioCasalId = Number(req.body.tio_casal_id || 0) || null;
 
@@ -1025,7 +1026,7 @@ router.post('/atualizar', async (req, res) => {
 router.post('/nao-encontrado', async (req, res) => {
     try {
         await ensureAtualizacaoTables();
-        const nome = String(req.body.nome_completo || '').trim();
+        const nome = normalizeUpperText(req.body.nome_completo);
         const telefone = String(req.body.telefone || '').trim();
         const ejc = String(req.body.ejc_que_fez || '').trim();
         const observacoesAdicionais = String(req.body.observacoes_adicionais || '').trim() || null;
@@ -1051,8 +1052,8 @@ router.post('/nao-encontrado', async (req, res) => {
 
 router.post('/criar-cadastro', async (req, res) => {
     try {
-        const nomeCompleto = String(req.body.nome_completo || '').trim();
-        const apelido = String(req.body.apelido || '').trim() || null;
+        const nomeCompleto = normalizeUpperText(req.body.nome_completo);
+        const apelido = normalizeUpperText(req.body.apelido) || null;
         const telefone = String(req.body.telefone || '').trim();
         const email = String(req.body.email || '').trim() || null;
         const instagram = String(req.body.instagram || '').trim() || null;
@@ -1086,7 +1087,7 @@ router.post('/criar-cadastro', async (req, res) => {
         const ehMusico = !!req.body.eh_musico;
         const instrumentos = serializarInstrumentos(req.body.instrumentos_musicais, ehMusico);
         const tioCasalId = Number(req.body.tio_casal_id || 0) || null;
-        const conjugeNome = ['Casado', 'Amasiado'].includes(estadoCivil) ? (String(req.body.conjuge_nome || '').trim() || null) : null;
+        const conjugeNome = ['Casado', 'Amasiado'].includes(estadoCivil) ? (normalizeUpperText(req.body.conjuge_nome) || null) : null;
         const conjugeTelefone = ['Casado', 'Amasiado'].includes(estadoCivil) ? (String(req.body.conjuge_telefone || '').trim() || null) : null;
         const conjugeOutroEjcId = ['Casado', 'Amasiado'].includes(estadoCivil) ? (Number(req.body.conjuge_outro_ejc_id || 0) || null) : null;
         const conjugeParoquia = ['Casado', 'Amasiado'].includes(estadoCivil) ? (String(req.body.conjuge_paroquia || '').trim() || null) : null;

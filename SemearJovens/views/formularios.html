@@ -439,7 +439,7 @@
                         { id: 'sexo', label: 'Sexo', tipo: 'select', obrigatorio: true, opcoes: ['Masculino', 'Feminino'] },
                         { id: 'data_nascimento', label: 'Data de nascimento', tipo: 'data', obrigatorio: true },
                         { id: 'estado_civil', label: 'Estado civil', tipo: 'select', obrigatorio: false, opcoes: ['Solteiro(a)', 'Casado(a)', 'Outro'] },
-                        { id: 'deficiencia', label: 'Possui deficiencia? Qual?', tipo: 'texto', obrigatorio: false },
+                        { id: 'deficiencia', label: 'Pessoa com Deficiência(PcD)?', tipo: 'texto', obrigatorio: false },
                         { id: 'restricao_alimentar', label: 'Possui restricao alimentar? Qual?', tipo: 'texto', obrigatorio: false },
                         { id: 'musico', label: 'E musico? Qual instrumento?', tipo: 'texto', obrigatorio: false },
                         { id: 'endereco_completo', label: 'Endereco completo (rua, numero, bairro, cidade, CEP)', tipo: 'endereco', obrigatorio: true },
@@ -458,6 +458,19 @@
                     if (!dataHora) return '-';
                     const dt = new Date(dataHora);
                     return Number.isNaN(dt.getTime()) ? dataHora : dt.toLocaleString('pt-BR');
+                },
+                normalizarLabelCampo(campo) {
+                    const id = String((campo && campo.id) || '').trim().toLowerCase();
+                    const labelOriginal = String((campo && campo.label) || '').trim();
+                    const labelNormalizado = labelOriginal
+                        .normalize('NFD')
+                        .replace(/[\u0300-\u036f]/g, '')
+                        .toLowerCase();
+
+                    if (id === 'deficiencia' || (labelNormalizado.includes('deficiencia') && labelNormalizado.includes('qual'))) {
+                        return 'Pessoa com Deficiência(PcD)?';
+                    }
+                    return labelOriginal;
                 },
                 formatarValorResposta(valor) {
                     if (Array.isArray(valor)) return valor.join(', ');
@@ -821,7 +834,7 @@
                     return {
                         uid: `${Date.now()}-${Math.random()}`,
                         id: c.id || '',
-                        label: c.label || '',
+                        label: this.normalizarLabelCampo(c),
                         tipo: c.tipo || 'texto',
                         obrigatorio: !!c.obrigatorio,
                         placeholder: c.placeholder || '',
@@ -864,7 +877,7 @@
                     if (this.formDraft.tipo === 'INSCRICAO') {
                         payload.campos = this.formDraft.campos.map((c) => ({
                             id: String(c.id || '').trim() || null,
-                            label: String(c.label || '').trim(),
+                            label: this.normalizarLabelCampo(c),
                             tipo: c.tipo,
                             obrigatorio: !!c.obrigatorio,
                             placeholder: String(c.placeholder || '').trim() || null,

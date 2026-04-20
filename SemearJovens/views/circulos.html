@@ -23,6 +23,43 @@
             margin-right: 8px;
             background: #f8f9fa;
         }
+
+        .circulo-color-picker-wrap {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            flex-wrap: wrap;
+        }
+
+        .circulo-color-picker-input {
+            width: 72px;
+            height: 48px;
+            padding: 0.2rem;
+            border: 1px solid rgba(191, 161, 111, 0.45);
+            border-radius: 14px;
+            background: #fffdf9;
+            cursor: pointer;
+        }
+
+        .circulo-color-picker-input::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        .circulo-color-picker-input::-webkit-color-swatch {
+            border: 0;
+            border-radius: 10px;
+        }
+
+        .circulo-color-picker-input::-moz-color-swatch {
+            border: 0;
+            border-radius: 10px;
+        }
+
+        .circulo-color-picker-meta {
+            min-width: 0;
+            flex: 1 1 180px;
+        }
+
     </style>
 </head>
 
@@ -32,7 +69,7 @@
             <div v-if="feedback.text" class="alert py-2" :class="feedbackClass" role="alert">
                 {{ feedback.text }}
             </div>
-            <div class="d-flex justify-content-between align-items-center mb-3">
+            <div class="d-flex justify-content-start align-items-center gap-3 flex-wrap mb-3">
                 <h4 class="mb-0">Círculos</h4>
                 <button type="button" class="btn btn-primary" @click="abrirNovo">Nova Cor</button>
             </div>
@@ -57,9 +94,8 @@
                                 </tr>
                                 <tr v-for="c in circulos" :key="c.id">
                                     <td>
-                                        <span class="swatch" :style="{ backgroundColor: c.cor_hex || '#f8f9fa' }"></span>
+                                        <span class="swatch" :style="{ backgroundColor: c.cor_hex || '#D9A650' }"></span>
                                         <span class="fw-medium">{{ c.nome }}</span>
-                                        <span v-if="c.cor_hex" class="text-muted small ms-2">{{ c.cor_hex }}</span>
                                     </td>
                                     <td>
                                         <span class="badge" :class="c.ativo ? 'bg-success' : 'bg-secondary'">
@@ -104,14 +140,17 @@
                                     placeholder="Ex: Lilás">
                             </div>
                             <div class="mb-3">
-                                <label class="form-label">Cor HEX (opcional)</label>
-                                <input type="text" class="form-control" v-model.trim="form.cor_hex" maxlength="7"
-                                    placeholder="#A855F7">
-                            </div>
-                            <div class="mb-3">
-                                <div class="form-check">
-                                <input type="checkbox" class="form-check-input" id="ativoCirculo" v-model="form.ativo">
-                                <label class="form-check-label" for="ativoCirculo">Ativo (aparece na Lista Mestre)</label>
+                                <label class="form-label">Cor do círculo *</label>
+                                <div class="circulo-color-picker-wrap">
+                                    <input
+                                        type="color"
+                                        class="form-control form-control-color circulo-color-picker-input"
+                                        v-model="form.cor_hex"
+                                        title="Escolher cor do círculo"
+                                        aria-label="Escolher cor do círculo">
+                                    <div class="circulo-color-picker-meta">
+                                        <div class="small text-muted mt-2">Escolha a cor na paleta.</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -178,7 +217,7 @@
                     circulos: [],
                     modal: null,
                     abaModal: 'dados',
-                    form: { id: null, nome: '', cor_hex: '', ativo: true },
+                    form: { id: null, nome: '', cor_hex: '#D9A650', ativo: true },
                     jovensCirculo: [],
                     jovensLoading: false,
                     removendoId: null,
@@ -222,7 +261,7 @@
                 },
                 abrirNovo() {
                     this.abaModal = 'dados';
-                    this.form = { id: null, nome: '', cor_hex: '', ativo: true };
+                    this.form = { id: null, nome: '', cor_hex: '#D9A650', ativo: true };
                     this.jovensCirculo = [];
                     if (!this.modal) this.modal = new bootstrap.Modal(document.getElementById('modalCirculo'));
                     this.modal.show();
@@ -232,7 +271,7 @@
                     this.form = {
                         id: c.id,
                         nome: c.nome || '',
-                        cor_hex: c.cor_hex || '',
+                        cor_hex: c.cor_hex || '#D9A650',
                         ativo: !!c.ativo
                     };
                     this.jovensCirculo = [];
@@ -270,11 +309,16 @@
                         this.mostrarFeedback('Informe o nome da cor.', 'warning');
                         return;
                     }
+                    const corHex = String(this.form.cor_hex || '').trim().toUpperCase();
+                    if (!/^#[0-9A-F]{6}$/.test(corHex)) {
+                        this.mostrarFeedback('Escolha uma cor para o círculo na paleta.', 'warning');
+                        return;
+                    }
 
                     const payload = {
                         nome: this.form.nome,
-                        cor_hex: this.form.cor_hex || null,
-                        ativo: this.form.ativo ? 1 : 0
+                        cor_hex: corHex,
+                        ativo: 1
                     };
 
                     try {

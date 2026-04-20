@@ -90,6 +90,19 @@ async function garantirEstrutura() {
     estruturaGarantida = true;
 }
 
+async function jovemJaFoiMoita(tenantId, jovemId, executor = pool) {
+    const [rows] = await executor.query(
+        `SELECT id
+         FROM jovens_comissoes
+         WHERE tenant_id = ?
+           AND jovem_id = ?
+           AND tipo = 'MOITA_OUTRO'
+         LIMIT 1`,
+        [tenantId, jovemId]
+    );
+    return Array.isArray(rows) && rows.length > 0;
+}
+
 router.get('/funcoes', async (req, res) => {
     const tenantId = getTenantId(req);
     if (!tenantId) return res.status(401).json({ error: 'Tenant não identificado.' });
@@ -158,6 +171,10 @@ router.post('/reservas', async (req, res) => {
             return res.status(409).json({ error: 'Este jovem é do sexo masculino e deve estar na lista de homens.' });
         }
 
+        if (await jovemJaFoiMoita(tenantId, jovemId)) {
+            return res.status(409).json({ error: 'Este jovem já foi moita e não pode ser adicionado novamente nem entrar na lista de reserva de moita.' });
+        }
+
         const [exists] = await pool.query(
             'SELECT id FROM moita_reservas WHERE tenant_id = ? AND jovem_id = ? LIMIT 1',
             [tenantId, jovemId]
@@ -195,6 +212,10 @@ router.post('/reservas/automatico', async (req, res) => {
         }
 
         const lista = jovem.sexo === 'Feminino' ? 'MULHERES' : 'HOMENS';
+        if (await jovemJaFoiMoita(tenantId, jovemId)) {
+            return res.status(409).json({ error: 'Este jovem já foi moita e não pode ser adicionado novamente nem entrar na lista de reserva de moita.' });
+        }
+
         const [exists] = await pool.query(
             'SELECT id FROM moita_reservas WHERE tenant_id = ? AND jovem_id = ? LIMIT 1',
             [tenantId, jovemId]
@@ -214,6 +235,77 @@ router.post('/reservas/automatico', async (req, res) => {
     } catch (err) {
         console.error('Erro ao adicionar jovem automaticamente na reserva de moita:', err);
         res.status(500).json({ error: 'Erro ao adicionar jovem automaticamente na reserva de moita' });
+    }
+});
+
+router.post('/reservas/:id/titular', async (req, res) => {
+    const tenantId = getTenantId(req);
+    if (!tenantId) return res.status(401).json({ error: 'Tenant não identificado.' });
+
+    const reservaId = Number(req.params.id);
+    const ejcNumero = Number(req.body.ejc_numero);
+    const outroEjcId = Number(req.body.outro_ejc_id);
+    const funcaoMoita = String(req.body.funcao_moita || '').trim();
+
+    if (!reservaId || !Number.isInteger(ejcNumero) || ejcNumero <= 0 || !outroEjcId || !funcaoMoita) {
+        return res.status(400).json({ error: 'Informe número do EJC, outro EJC e função no moita.' });
+    }
+
+    const connection = await pool.getConnection();
+    try {
+        await garantirEstrutura();
+        await connection.beginTransaction();
+
+        const [[reserva]] = await connection.query(
+            `SELECT mr.id, mr.jovem_id
+             FROM moita_reservas mr
+             JOIN jovens j ON j.id = mr.jovem_id AND j.tenant_id = mr.tenant_id
+             WHERE mr.id = ? AND mr.tenant_id = ?
+             LIMIT 1`,
+            [reservaId, tenantId]
+        );
+        if (!reserva) {
+            await connection.rollback();
+            return res.status(404).json({ error: 'Reserva não encontrada.' });
+        }
+
+        const [outroRows] = await connection.query(
+            'SELECT id FROM outros_ejcs WHERE id = ? AND tenant_id = ? LIMIT 1',
+            [outroEjcId, tenantId]
+        );
+        if (!outroRows.length) {
+            await connection.rollback();
+            return res.status(404).json({ error: 'Outro EJC não encontrado.' });
+        }
+
+        if (await jovemJaFoiMoita(tenantId, reserva.jovem_id, connection)) {
+            await connection.rollback();
+            return res.status(409).json({ error: 'Este jovem já foi moita e não pode ser adicionado novamente.' });
+        }
+
+        const [comissaoResult] = await connection.query(
+            `INSERT INTO jovens_comissoes
+                (tenant_id, jovem_id, tipo, ejc_numero, funcao_garcom, outro_ejc_id)
+             VALUES (?, ?, 'MOITA_OUTRO', ?, ?, ?)`,
+            [tenantId, reserva.jovem_id, ejcNumero, funcaoMoita, outroEjcId]
+        );
+
+        await connection.query(
+            'DELETE FROM moita_reservas WHERE id = ? AND tenant_id = ?',
+            [reservaId, tenantId]
+        );
+
+        await connection.commit();
+        return res.status(201).json({
+            id: comissaoResult.insertId,
+            message: 'Jovem promovido para titular de moita com sucesso.'
+        });
+    } catch (err) {
+        await connection.rollback();
+        console.error('Erro ao promover jovem da reserva de moita para titular:', err);
+        return res.status(500).json({ error: 'Erro ao promover jovem da reserva para moita.' });
+    } finally {
+        connection.release();
     }
 });
 

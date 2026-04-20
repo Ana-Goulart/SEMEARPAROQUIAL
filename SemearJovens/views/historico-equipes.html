@@ -16,6 +16,409 @@
     <script src="/js/ui-kit.js"></script>
     <script src="/js/menu.js"></script>
     <script src="/js/excel-utils.js"></script>
+    <style>
+        .ejc-page-shell {
+            padding-bottom: 1.5rem;
+        }
+
+        .ejc-page-header {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .ejc-page-header-actions-only {
+            align-items: flex-end;
+        }
+
+        .ejc-page-eyebrow {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 700;
+            color: #b57c20;
+            margin-bottom: 0.35rem;
+        }
+
+        .ejc-page-title {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            margin: 0;
+            color: #1f3b67;
+        }
+
+        .ejc-page-subtitle {
+            margin: 0;
+            color: #64748b;
+        }
+
+        .ejc-toolbar-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            width: 100%;
+        }
+
+        .ejc-toolbar-actions>* {
+            flex: 1 1 180px;
+        }
+
+        .ejc-toolbar-actions-single {
+            width: auto;
+            justify-content: flex-end;
+        }
+
+        .ejc-toolbar-actions-single>* {
+            flex: 0 0 auto;
+        }
+
+        .ejc-toolbar-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            padding: 1rem;
+            margin-bottom: 0.9rem;
+            border-radius: 24px;
+            border: 1px solid #ece5d8;
+            background: linear-gradient(145deg, rgba(255, 251, 243, 0.98), #ffffff);
+            box-shadow: 0 18px 34px rgba(15, 23, 42, 0.06);
+        }
+
+        .ejc-toolbar-search {
+            width: 100%;
+        }
+
+        .ejc-toolbar-search .form-label,
+        .ejc-advanced-filters .form-label {
+            color: #64748b;
+            font-size: 0.82rem;
+            font-weight: 600;
+        }
+
+        .ejc-toolbar-search .form-control {
+            min-height: 50px;
+        }
+
+        .ejc-toolbar-secondary {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .ejc-toolbar-summary {
+            color: #64748b;
+            font-size: 0.92rem;
+        }
+
+        .ejc-advanced-filters {
+            margin-bottom: 1rem;
+            padding: 1rem;
+            border-radius: 24px;
+            border: 1px solid #ece5d8;
+            background: #ffffff;
+            box-shadow: 0 16px 34px rgba(15, 23, 42, 0.05);
+        }
+
+        .ejc-cards-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .ejc-edition-card {
+            border-radius: 24px;
+            overflow: hidden;
+            border: 1px solid #ebe3d5;
+            background: #ffffff;
+            box-shadow: 0 14px 28px rgba(15, 23, 42, 0.05);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+
+        .ejc-edition-card:hover {
+            transform: translateY(-2px);
+            border-color: #d9a650;
+            box-shadow: 0 20px 40px rgba(181, 124, 32, 0.18);
+        }
+
+        .ejc-card-trigger {
+            width: 100%;
+            border: 0;
+            padding: 1.1rem;
+            text-align: left;
+            background: linear-gradient(150deg, rgba(255, 250, 242, 0.96), rgba(255, 255, 255, 1));
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            cursor: pointer;
+        }
+
+        .ejc-card-topline {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+        }
+
+        .ejc-card-kind {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.4rem 0.8rem;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            background: rgba(217, 166, 80, 0.12);
+            color: #9a6715;
+        }
+
+        .ejc-card-kind.is-montagem {
+            background: rgba(14, 165, 233, 0.12);
+            color: #0369a1;
+        }
+
+        .ejc-card-chevron {
+            width: 40px;
+            height: 40px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background: rgba(31, 59, 103, 0.08);
+            color: #1f3b67;
+            transition: transform 0.2s ease;
+        }
+
+        .ejc-edition-card:hover .ejc-card-chevron {
+            transform: rotate(180deg);
+        }
+
+        .ejc-card-title-row {
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+        }
+
+        .ejc-card-title {
+            margin: 0;
+            font-size: 1.4rem;
+            color: #1f3b67;
+        }
+
+        .ejc-card-summary-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+        }
+
+        .ejc-card-summary-item {
+            border-radius: 18px;
+            border: 1px solid #eee8de;
+            background: rgba(255, 255, 255, 0.92);
+            padding: 0.85rem 0.95rem;
+        }
+
+        .ejc-card-summary-label {
+            display: block;
+            margin-bottom: 0.3rem;
+            font-size: 0.73rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            font-weight: 700;
+            color: #94a3b8;
+        }
+
+        .ejc-card-summary-value {
+            color: #334155;
+            font-weight: 700;
+        }
+
+        .ejc-card-details {
+            padding: 1.1rem;
+            border-top: 1px solid #efe6d9;
+            background: #ffffff;
+        }
+
+        .ejc-card-details-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        .ejc-detail-panel {
+            height: 100%;
+            border-radius: 20px;
+            border: 1px solid #f0eadf;
+            background: #fffdf9;
+            padding: 1rem;
+        }
+
+        .ejc-detail-header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            margin-bottom: 0.9rem;
+        }
+
+        .ejc-detail-title {
+            margin: 0;
+            font-size: 1rem;
+            color: #1f3b67;
+            font-weight: 700;
+        }
+
+        .ejc-detail-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+        }
+
+        .ejc-info-row {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid #f1ebdf;
+        }
+
+        .ejc-info-row:last-child {
+            border-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .ejc-info-label {
+            font-size: 0.73rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #94a3b8;
+            font-weight: 700;
+        }
+
+        .ejc-info-value {
+            color: #334155;
+            font-weight: 600;
+        }
+
+        .ejc-description-box {
+            margin-top: 0.9rem;
+            padding: 0.9rem 1rem;
+            border-radius: 18px;
+            border: 1px solid #eee7da;
+            background: #ffffff;
+            color: #475569;
+        }
+
+        .ejc-team-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .ejc-team-row {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            padding: 0.9rem;
+            border-radius: 18px;
+            border: 1px solid #eee7da;
+            background: #ffffff;
+        }
+
+        .ejc-team-row-title {
+            margin: 0;
+            font-size: 1rem;
+            color: #243b53;
+            font-weight: 700;
+        }
+
+        .ejc-team-row-text {
+            margin: 0.25rem 0 0;
+            color: #64748b;
+            font-size: 0.88rem;
+        }
+
+        .ejc-card-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+
+        .ejc-card-actions>* {
+            flex: 1 1 180px;
+        }
+
+        .ejc-empty-state {
+            padding: 2rem 1.5rem;
+            border-radius: 24px;
+            border: 1px dashed rgba(181, 124, 32, 0.35);
+            background: linear-gradient(145deg, rgba(255, 250, 242, 0.96), #ffffff);
+            color: #64748b;
+            text-align: center;
+            box-shadow: 0 16px 32px rgba(15, 23, 42, 0.04);
+        }
+
+        @media (min-width: 768px) {
+            .ejc-page-header {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: flex-end;
+            }
+
+            .ejc-toolbar-actions {
+                width: auto;
+                justify-content: flex-end;
+            }
+
+            .ejc-toolbar-actions>* {
+                flex: 0 0 auto;
+            }
+
+            .ejc-toolbar-panel {
+                flex-direction: row;
+                align-items: flex-end;
+                justify-content: space-between;
+            }
+
+            .ejc-toolbar-search {
+                max-width: 700px;
+                flex: 1;
+            }
+
+            .ejc-toolbar-secondary {
+                justify-content: flex-end;
+            }
+
+            .ejc-cards-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .ejc-card-summary-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .ejc-card-details-grid {
+                grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
+            }
+
+            .ejc-team-row {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+        }
+
+        @media (min-width: 1200px) {
+            .ejc-cards-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+    </style>
 </head>
 
 <body>
@@ -24,143 +427,57 @@
 
 
             <main class="container-fluid">
-                <div class="d-flex justify-content-between mb-4 align-items-center">
-                    <h3 class="mb-0"><i class="fa-solid fa-bullseye icon-accent"></i> EJC</h3>
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-outline-success btn-ejc-action" @click="exportarExcel" title="Exportar" aria-label="Exportar">
-                            <span class="btn-ejc-icon"><i class="fa-solid fa-folder-open icon-accent"></i></span>
-                            <span class="btn-ejc-text">Exportar</span>
-                        </button>
-                        <label class="btn btn-outline-primary btn-ejc-action mb-0" title="Importar" aria-label="Importar">
-                            <span class="btn-ejc-icon"><i class="fa-solid fa-file-import icon-accent"></i></span>
-                            <span class="btn-ejc-text">Importar</span>
-                            <input type="file" class="d-none" accept=".xlsx" @change="importarExcel">
-                        </label>
+                <div class="ejc-page-shell">
+                    <div class="ejc-page-header ejc-page-header-actions-only">
+                        <div class="ejc-toolbar-actions ejc-toolbar-actions-single">
+                            <button class="btn btn-primary btn-ejc-action" @click="abrirModalAdicionar" title="Novo" aria-label="Novo">
+                                <span class="btn-ejc-icon"><i class="fa-solid fa-plus icon-accent"></i></span>
+                                <span class="btn-ejc-text">Novo EJC</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div v-if="ejcs.length === 0" class="ejc-empty-state">
+                        <div class="mb-2 fw-semibold">Nenhum EJC cadastrado.</div>
+                        <div class="mb-3">Crie a primeira edição para começar a organizar o encontro.</div>
                         <button class="btn btn-primary btn-ejc-action" @click="abrirModalAdicionar" title="Novo" aria-label="Novo">
                             <span class="btn-ejc-icon"><i class="fa-solid fa-plus icon-accent"></i></span>
-                            <span class="btn-ejc-text">Novo EJC</span>
-                        </button>
-                    </div>
-                </div>
-                <div class="mb-2 text-muted small">
-                    Total: <strong class="text-dark">{{ ejcs.length }}</strong>
-                    • Filtrados: <strong class="text-dark">{{ ejcsFiltrados.length }}</strong>
-                </div>
-                <div class="card border-0 shadow-sm mb-3">
-                    <div class="card-body">
-                        <label class="form-label small text-muted">Filtrar EJCs</label>
-                        <input v-model.trim="filtroEjc" class="form-control" placeholder="Número, ano ou paróquia">
-                    </div>
-                </div>
-
-                <!-- Lista de EJCs como acordeão -->
-                <div class="accordion corporate-accordion shadow-sm" id="acordeaoEJCs">
-                    <div v-if="ejcs.length === 0" class="alert alert-info d-flex justify-content-between align-items-center">
-                        <span>Nenhum EJC cadastrado.</span>
-                        <button class="btn btn-soft-secondary btn-ejc-action" @click="abrirModalAdicionar" title="Novo" aria-label="Novo">
-                            <span class="btn-ejc-icon"><i class="fa-solid fa-plus icon-accent"></i></span>
-                            <span class="btn-ejc-text">Criar Primeiro EJC</span>
+                            <span class="btn-ejc-text">Criar primeiro EJC</span>
                         </button>
                     </div>
 
-                    <div v-for="(ejc, index) in ejcsOrdenados" :key="ejc.id" class="accordion-item">
-                        <h2 class="accordion-header">
-                            <button class="accordion-button" :class="{ collapsed: index !== 0 }" type="button"
-                                data-bs-toggle="collapse"
-                                :data-bs-target="`#collapse${ejc.isMontagem ? 'mont_' : ''}${ejc.id}`"
-                                :aria-expanded="index === 0">
-                                <strong>{{ numeroParaRomano(ejc.numero) }}º EJC</strong>
-                                <span v-if="ejc.isMontagem" class="badge bg-warning text-dark ms-2"><i class="fa-solid fa-puzzle-piece icon-accent"></i> Montagem</span>
-                                <span v-else>&nbsp;—&nbsp;{{ nomeMeuEJC || ejc.paroquia }}&nbsp;<span class="text-muted">({{ ejc.ano
-                                        || 'Ano não informado' }})</span></span>
+                    <div v-else class="ejc-cards-grid">
+                        <article v-for="ejc in ejcsOrdenados" :key="chaveItemEjc(ejc)" class="ejc-edition-card">
+                            <button type="button" class="ejc-card-trigger" @click="abrirDetalhesEjc(ejc)"
+                                :aria-label="`Abrir detalhes do ${numeroParaRomano(ejc.numero)}º EJC`">
+                                <div class="ejc-card-topline">
+                                    <span class="ejc-card-kind" :class="{ 'is-montagem': ejc.isMontagem }">
+                                        <i :class="ejc.isMontagem ? 'fa-solid fa-puzzle-piece' : 'fa-solid fa-book-open'"></i>
+                                        {{ ejc.isMontagem ? 'Montagem' : 'Edição histórica' }}
+                                    </span>
+                                    <span class="ejc-card-chevron">
+                                        <i class="fa-solid fa-chevron-down"></i>
+                                    </span>
+                                </div>
+
+                                <div class="ejc-card-title-row">
+                                    <div>
+                                        <h4 class="ejc-card-title">{{ numeroParaRomano(ejc.numero) }}º EJC</h4>
+                                    </div>
+                                </div>
+
+                                <div class="ejc-card-summary-grid">
+                                    <div class="ejc-card-summary-item">
+                                        <span class="ejc-card-summary-label">Período</span>
+                                        <span class="ejc-card-summary-value">{{ resumoPeriodoEjc(ejc) }}</span>
+                                    </div>
+                                    <div class="ejc-card-summary-item">
+                                        <span class="ejc-card-summary-label">Quantidade de equipes</span>
+                                        <span class="ejc-card-summary-value">{{ totalEquipesDoItem(ejc) }}</span>
+                                    </div>
+                                </div>
                             </button>
-                        </h2>
-                        <div :id="`collapse${ejc.isMontagem ? 'mont_' : ''}${ejc.id}`"
-                            class="accordion-collapse collapse" :class="{ show: index === 0 }"
-                            data-bs-parent="#acordeaoEJCs">
-                            <div class="accordion-body">
-                                <!-- Tabela com todas as equipes -->
-                                <table class="table table-hover table-sm">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>Equipe</th>
-                                            <th class="text-center">Visualizar</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody v-if="ejc.isMontagem">
-                                        <tr v-for="equipe in ejc.estrutura" :key="equipe.id">
-                                            <td><strong>{{ equipe.nome }}</strong></td>
-                                            <td class="text-center">
-                                                <button class="btn btn-corporate-view btn-sm btn-ejc-action"
-                                                    @click="abrirModalMontagem(ejc, equipe)"
-                                                    title="Ver dados dessa equipe">
-                                                    <span class="btn-ejc-icon"><i class="fas fa-eye"></i></span>
-                                                    <span class="btn-ejc-text">Ver</span>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                    <tbody v-else>
-                                        <tr v-if="equipesDoEJC(ejc.id).length === 0">
-                                            <td colspan="2" class="text-muted text-center py-3">Nenhuma equipe vinculada a este EJC.</td>
-                                        </tr>
-                                        <tr v-for="equipe in equipesDoEJC(ejc.id)" :key="equipe.id">
-                                            <td><strong>{{ equipe.nome }}</strong></td>
-                                            <td class="text-center">
-                                                <button class="btn btn-corporate-view btn-sm btn-ejc-action"
-                                                    @click="abrirModalJovens(ejc, equipe)"
-                                                    title="Ver integrantes dessa equipe">
-                                                    <span class="btn-ejc-icon"><i class="fas fa-eye"></i></span>
-                                                    <span class="btn-ejc-text">Ver</span>
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-
-                                <!-- Info do EJC -->
-                                <div class="mt-4 corporate-soft-panel" v-if="!ejc.isMontagem">
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <h6 class="mb-0">Informações da Edição</h6>
-                                        <div class="d-flex gap-2">
-                                            <button class="btn btn-corporate-view btn-sm btn-ejc-action" @click="abrirModalEncontristas(ejc)" title="Visualizar" aria-label="Visualizar">
-                                                <span class="btn-ejc-icon"><i class="fas fa-eye"></i></span>
-                                                <span class="btn-ejc-text">Encontristas</span>
-                                            </button>
-                                            <span class="badge bg-soft-secondary text-muted d-inline-flex align-items-center">Histórico congelado</span>
-                                        </div>
-                                    </div>
-                                    <div class="row text-sm">
-                                        <div class="col-md-3"><small><strong>Paróquia:</strong> {{ nomeMeuEJC || ejc.paroquia
-                                                }}</small></div>
-                                        <div class="col-md-3"><small><strong>Ano:</strong> {{ ejc.ano || '-' }}</small>
-                                        </div>
-                                        <div class="col-md-3"><small><strong>Data Início:</strong> {{
-                                                formatarData(ejc.data_inicio) }}</small></div>
-                                        <div class="col-md-3"><small><strong>Data Fim:</strong> {{
-                                                formatarData(ejc.data_fim) }}</small></div>
-                                    </div>
-                                    <div class="mt-2" v-if="ejc.descricao">
-                                        <small><strong>Descrição:</strong> {{ ejc.descricao }}</small>
-                                    </div>
-                                </div>
-                                <div class="mt-4 corporate-soft-panel" v-else>
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <h6 class="mb-0">Status da Montagem</h6>
-                                        <button class="btn btn-corporate-view btn-sm btn-ejc-action" @click="abrirModalEncontristas(ejc)" title="Visualizar" aria-label="Visualizar">
-                                            <span class="btn-ejc-icon"><i class="fas fa-eye"></i></span>
-                                            <span class="btn-ejc-text">Encontristas</span>
-                                        </button>
-                                    </div>
-                                    <div class="row text-sm">
-                                        <div class="col-md-6"><small><strong>Data Início:</strong> {{
-                                                formatarData(ejc.data_inicio || ejc.data_encontro) }}</small></div>
-                                        <div class="col-md-6"><small><strong>Data Fim:</strong> {{
-                                                formatarData(ejc.data_fim || ejc.data_encontro) }}</small></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+                        </article>
                     </div>
                 </div>
             </main>
@@ -333,7 +650,7 @@
             // Injetar menu lateral
             document.addEventListener('DOMContentLoaded', () => {
                 injetarMenu('#app');
-                ativarMenu('/historico-equipes');
+                ativarMenu('/gestaodoencontro/ejc');
             });
 
             const { createApp } = Vue;
@@ -343,7 +660,13 @@
                         ejcs: [],
                         editando: false,
                         nomeMeuEJC: (window.__NOME_EJC_ATUAL && String(window.__NOME_EJC_ATUAL).trim()) || 'Inconfidentes',
-                        filtroEjc: '',
+                        pesquisaRapida: '',
+                        mostrarFiltrosAvancados: false,
+                        filtros: {
+                            ano: '',
+                            tipo: '',
+                            paroquia: ''
+                        },
                         formulario: {
                             id: null,
                             numero: null,
@@ -364,21 +687,32 @@
                         equipesPorEJC: {}
                     }
                 },
-            computed: {
-                ejcsFiltrados() {
-                    const termo = String(this.filtroEjc || '').trim().toLowerCase();
-                    if (!termo) return this.ejcs || [];
-                    return (this.ejcs || []).filter((e) => {
-                        const base = [
-                            e.numero,
-                            e.ano,
-                            e.paroquia,
-                            e.nome
-                        ].map(v => String(v || '').toLowerCase()).join(' ');
-                        return base.includes(termo);
-                    });
-                },
-                ejcsOrdenados() {
+                computed: {
+                    ejcsFiltrados() {
+                        const termosPesquisa = this.normalizarTextoBusca(this.pesquisaRapida).split(' ').filter(Boolean);
+                        const anoFiltro = this.normalizarTextoBusca(this.filtros.ano);
+                        const paroquiaFiltro = this.normalizarTextoBusca(this.filtros.paroquia);
+                        const tipoFiltro = String(this.filtros.tipo || '').trim().toUpperCase();
+
+                        return (this.ejcs || []).filter((ejc) => {
+                            if (!this.registroAtendePesquisaRapida(ejc, termosPesquisa)) return false;
+
+                            if (anoFiltro && !this.normalizarTextoBusca(ejc.ano).includes(anoFiltro)) {
+                                return false;
+                            }
+
+                            if (tipoFiltro === 'EDICAO' && ejc.isMontagem) return false;
+                            if (tipoFiltro === 'MONTAGEM' && !ejc.isMontagem) return false;
+
+                            if (paroquiaFiltro) {
+                                const baseParoquia = this.normalizarTextoBusca(this.paroquiaExibicao(ejc));
+                                if (!baseParoquia.includes(paroquiaFiltro)) return false;
+                            }
+
+                            return true;
+                        });
+                    },
+                    ejcsOrdenados() {
                         return [...this.ejcsFiltrados].sort((a, b) => {
                             let numA = parseFloat(a.numero) || 0;
                             let numB = parseFloat(b.numero) || 0;
@@ -388,6 +722,83 @@
                     }
                 },
                 methods: {
+                    chaveItemEjc(ejc) {
+                        return `${ejc && ejc.isMontagem ? 'montagem' : 'edicao'}-${ejc ? ejc.id : 'novo'}`;
+                    },
+                    abrirDetalhesEjc(ejc) {
+                        const params = new URLSearchParams({
+                            tipo: ejc && ejc.isMontagem ? 'montagem' : 'edicao',
+                            id: String(ejc && ejc.id ? ejc.id : '')
+                        });
+                        window.location.href = `/gestaodoencontro/ejc/detalhes?${params.toString()}`;
+                    },
+                    limparFiltrosAvancados() {
+                        this.filtros = {
+                            ano: '',
+                            tipo: '',
+                            paroquia: ''
+                        };
+                    },
+                    normalizarTextoBusca(valor) {
+                        return String(valor || '')
+                            .normalize('NFD')
+                            .replace(/[\u0300-\u036f]/g, '')
+                            .toLowerCase()
+                            .replace(/[^a-z0-9\s]/g, ' ')
+                            .replace(/\s+/g, ' ')
+                            .trim();
+                    },
+                    apenasDigitos(valor) {
+                        return String(valor || '').replace(/\D/g, '');
+                    },
+                    paroquiaExibicao(ejc) {
+                        return this.nomeMeuEJC || (ejc && ejc.paroquia ? ejc.paroquia : '-');
+                    },
+                    totalEquipesDoItem(ejc) {
+                        if (!ejc) return 0;
+                        if (ejc.isMontagem) return Array.isArray(ejc.estrutura) ? ejc.estrutura.length : 0;
+                        return this.equipesDoEJC(ejc.id).length;
+                    },
+                    resumoPeriodoEjc(ejc) {
+                        const inicio = this.formatarData(ejc?.data_inicio || ejc?.data_encontro);
+                        const fim = this.formatarData(ejc?.data_fim || ejc?.data_encontro);
+                        if (inicio === '--/--/----' && fim === '--/--/----') return 'Não informado';
+                        if (inicio === fim) return inicio;
+                        if (inicio === '--/--/----') return fim;
+                        if (fim === '--/--/----') return inicio;
+                        return `${inicio} a ${fim}`;
+                    },
+                    montarTextoPesquisaEjc(ejc) {
+                        const campos = [
+                            ejc?.numero,
+                            this.numeroParaRomano(ejc?.numero),
+                            ejc?.ano,
+                            this.paroquiaExibicao(ejc),
+                            ejc?.descricao,
+                            ejc?.musica_tema,
+                            ejc?.isMontagem ? 'montagem encontro em andamento' : 'edicao historico edicao do ejc',
+                            this.resumoPeriodoEjc(ejc),
+                            this.totalEquipesDoItem(ejc),
+                            this.formatarData(ejc?.data_inicio),
+                            this.formatarData(ejc?.data_fim),
+                            this.formatarData(ejc?.data_encontro)
+                        ];
+
+                        const digitos = [
+                            this.apenasDigitos(ejc?.numero),
+                            this.apenasDigitos(ejc?.ano),
+                            this.apenasDigitos(ejc?.data_inicio),
+                            this.apenasDigitos(ejc?.data_fim),
+                            this.apenasDigitos(ejc?.data_encontro)
+                        ].join(' ');
+
+                        return `${this.normalizarTextoBusca(campos.join(' '))} ${digitos}`.trim();
+                    },
+                    registroAtendePesquisaRapida(ejc, termos) {
+                        if (!termos.length) return true;
+                        const textoBase = this.montarTextoPesquisaEjc(ejc);
+                        return termos.every((termo) => textoBase.includes(termo));
+                    },
                     async exportarExcel() {
                         const lista = this.ejcsOrdenados || [];
                         if (!lista.length) {

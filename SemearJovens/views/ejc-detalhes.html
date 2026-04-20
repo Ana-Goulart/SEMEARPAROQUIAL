@@ -1,0 +1,948 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <title>EJC - Detalhes da Edição</title>
+    <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
+    <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/velzon-theme.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/ui-kit.js"></script>
+    <script src="/js/menu.js"></script>
+    <style>
+        .ejc-detail-shell {
+            padding-bottom: 2rem;
+        }
+
+        .ejc-detail-header {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .ejc-detail-title {
+            margin: 0;
+            color: #1f3b67;
+            font-size: 1.8rem;
+        }
+
+        .ejc-detail-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+        }
+
+        .ejc-summary-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.9rem;
+            margin-bottom: 1rem;
+        }
+
+        .ejc-summary-card {
+            border-radius: 22px;
+            border: 1px solid #ece4d7;
+            background: linear-gradient(145deg, rgba(255, 251, 243, 0.98), #ffffff);
+            box-shadow: 0 16px 30px rgba(15, 23, 42, 0.05);
+            padding: 1rem 1.1rem;
+        }
+
+        .ejc-summary-label {
+            display: block;
+            margin-bottom: 0.35rem;
+            font-size: 0.76rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #94a3b8;
+            font-weight: 700;
+        }
+
+        .ejc-summary-value {
+            color: #243b53;
+            font-weight: 700;
+            font-size: 1.05rem;
+        }
+
+        .ejc-content-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .ejc-panel {
+            border-radius: 24px;
+            border: 1px solid #ece4d7;
+            background: #ffffff;
+            box-shadow: 0 18px 34px rgba(15, 23, 42, 0.05);
+            overflow: hidden;
+        }
+
+        .ejc-panel-body {
+            padding: 1.1rem;
+        }
+
+        .ejc-panel-header {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .ejc-panel-title {
+            margin: 0;
+            color: #1f3b67;
+            font-size: 1.08rem;
+            font-weight: 700;
+        }
+
+        .ejc-info-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+        }
+
+        .ejc-info-item {
+            border-radius: 18px;
+            border: 1px solid #f0e9dd;
+            background: #fffdf9;
+            padding: 0.9rem 1rem;
+        }
+
+        .ejc-info-label {
+            display: block;
+            font-size: 0.74rem;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: #94a3b8;
+            font-weight: 700;
+            margin-bottom: 0.3rem;
+        }
+
+        .ejc-info-value {
+            color: #334155;
+            font-weight: 600;
+        }
+
+        .ejc-team-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .ejc-team-row {
+            display: flex;
+            flex-direction: column;
+            gap: 0.85rem;
+            padding: 0.95rem 1rem;
+            border-radius: 18px;
+            border: 1px solid #efe7da;
+            background: #fffdf9;
+        }
+
+        .ejc-team-title {
+            margin: 0;
+            color: #243b53;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .ejc-team-text {
+            margin: 0.25rem 0 0;
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        .ejc-empty-state {
+            padding: 2rem 1.5rem;
+            border-radius: 24px;
+            border: 1px dashed rgba(181, 124, 32, 0.35);
+            background: linear-gradient(145deg, rgba(255, 250, 242, 0.96), #ffffff);
+            color: #64748b;
+            text-align: center;
+            box-shadow: 0 16px 32px rgba(15, 23, 42, 0.04);
+        }
+
+        @media (min-width: 768px) {
+            .ejc-detail-header {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: flex-end;
+            }
+
+            .ejc-summary-grid {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+
+            .ejc-content-grid {
+                grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            }
+
+            .ejc-info-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .ejc-team-row {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <main class="container-fluid">
+            <div class="ejc-detail-shell">
+                <div class="ejc-detail-header">
+                    <div>
+                        <button type="button" class="btn btn-soft-secondary btn-sm btn-ejc-action" @click="voltarParaLista">
+                            <span class="btn-ejc-icon"><i class="fa-solid fa-arrow-left icon-accent"></i></span>
+                            <span class="btn-ejc-text">Voltar</span>
+                        </button>
+                        <h3 class="ejc-detail-title">
+                            <span v-if="detalhe">{{ numeroParaRomano(detalhe.numero) }}º EJC</span>
+                            <span v-else>Detalhes da edição</span>
+                        </h3>
+                    </div>
+
+                    <div v-if="detalhe && !detalhe.isMontagem" class="ejc-detail-actions">
+                        <button type="button" class="btn btn-primary btn-ejc-action" @click="abrirModalEditar">
+                            <span class="btn-ejc-icon"><i class="fa-solid fa-pen-to-square icon-accent"></i></span>
+                            <span class="btn-ejc-text">Editar edição</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div v-if="carregando" class="ejc-empty-state">
+                    <div class="spinner-border text-primary mb-3" role="status"></div>
+                    <div class="fw-semibold">Carregando detalhes do EJC...</div>
+                </div>
+
+                <div v-else-if="erroCarregamento" class="ejc-empty-state">
+                    <div class="fw-semibold mb-2">Não foi possível carregar esta edição.</div>
+                    <div class="mb-3">{{ erroCarregamento }}</div>
+                    <button type="button" class="btn btn-soft-secondary btn-ejc-action" @click="voltarParaLista">
+                        <span class="btn-ejc-icon"><i class="fa-solid fa-arrow-left icon-accent"></i></span>
+                        <span class="btn-ejc-text">Voltar para a lista</span>
+                    </button>
+                </div>
+
+                <template v-else-if="detalhe">
+                    <div class="ejc-summary-grid">
+                        <article class="ejc-summary-card">
+                            <span class="ejc-summary-label">Encontreiros</span>
+                            <span class="ejc-summary-value">{{ totalEncontreiros }}</span>
+                        </article>
+                        <article class="ejc-summary-card">
+                            <span class="ejc-summary-label">Encontristas</span>
+                            <span class="ejc-summary-value">{{ encontristas.length }}</span>
+                        </article>
+                    </div>
+
+                    <div class="ejc-content-grid">
+                        <section class="ejc-panel">
+                            <div class="ejc-panel-body">
+                                <div class="ejc-panel-header">
+                                    <h4 class="ejc-panel-title">Informações da edição</h4>
+                                    <span class="badge" :class="detalhe.isMontagem ? 'bg-info-subtle text-info-emphasis' : 'bg-soft-secondary text-muted'">
+                                        {{ detalhe.isMontagem ? 'Montagem' : 'Edição histórica' }}
+                                    </span>
+                                </div>
+
+                                <div class="ejc-info-grid">
+                                    <div class="ejc-info-item">
+                                        <span class="ejc-info-label">Número do EJC</span>
+                                        <span class="ejc-info-value">{{ numeroParaRomano(detalhe.numero) }}º EJC</span>
+                                    </div>
+                                    <div class="ejc-info-item">
+                                        <span class="ejc-info-label">Ano</span>
+                                        <span class="ejc-info-value">{{ detalhe.ano || '-' }}</span>
+                                    </div>
+                                    <div class="ejc-info-item">
+                                        <span class="ejc-info-label">Data de início do encontro</span>
+                                        <span class="ejc-info-value">{{ formatarData(detalhe.data_inicio || detalhe.data_encontro) }}</span>
+                                    </div>
+                                    <div class="ejc-info-item">
+                                        <span class="ejc-info-label">Data de fim do encontro</span>
+                                        <span class="ejc-info-value">{{ formatarData(detalhe.data_fim || detalhe.data_encontro) }}</span>
+                                    </div>
+                                    <div class="ejc-info-item">
+                                        <span class="ejc-info-label">Música tema</span>
+                                        <span class="ejc-info-value">{{ detalhe.musica_tema || '-' }}</span>
+                                    </div>
+                                    <div class="ejc-info-item">
+                                        <span class="ejc-info-label">Tema do encontro</span>
+                                        <span class="ejc-info-value">{{ detalhe.descricao || '-' }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="ejc-panel">
+                            <div class="ejc-panel-body">
+                                <div class="ejc-panel-header">
+                                    <h4 class="ejc-panel-title">{{ detalhe.isMontagem ? 'Equipes da montagem' : 'Equipes vinculadas' }}</h4>
+                                    <span class="text-muted small">Clique em ver para abrir os integrantes.</span>
+                                </div>
+
+                                <div v-if="!equipes.length" class="text-muted small">
+                                    Nenhuma equipe disponível para esta edição.
+                                </div>
+
+                                <div v-else class="ejc-team-list">
+                                    <div v-for="equipe in equipes" :key="equipe.id" class="ejc-team-row">
+                                        <div>
+                                            <h5 class="ejc-team-title">{{ equipe.nome }}</h5>
+                                            <p class="ejc-team-text">{{ resumoEquipe(equipe) }}</p>
+                                        </div>
+                                        <button type="button" class="btn btn-corporate-view btn-sm btn-ejc-action" @click="abrirDetalhesEquipe(equipe)">
+                                            <span class="btn-ejc-icon"><i class="fa-solid fa-eye"></i></span>
+                                            <span class="btn-ejc-text">Ver equipe</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <section class="ejc-panel">
+                        <div class="ejc-panel-body">
+                            <div class="ejc-panel-header">
+                                <h4 class="ejc-panel-title">Encontristas da edição</h4>
+                                <span class="text-muted small">Total: {{ encontristas.length }}</span>
+                            </div>
+
+                            <div v-if="!encontristas.length" class="text-muted small">
+                                Nenhum encontrista registrado para esta edição.
+                            </div>
+
+                            <div v-else class="table-responsive">
+                                <table class="table table-hover table-sm align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="text-start">Nome</th>
+                                            <th>Círculo</th>
+                                            <th v-if="!detalhe.isMontagem">Moita</th>
+                                            <th v-if="!detalhe.isMontagem">Função de Moita</th>
+                                            <th>Telefone</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="enc in encontristas" :key="enc.id">
+                                            <td class="fw-semibold">{{ enc.nome_completo }}</td>
+                                            <td>{{ enc.circulo || '-' }}</td>
+                                            <td v-if="!detalhe.isMontagem">
+                                                <span class="badge" :class="enc.foi_moita ? 'bg-success' : 'bg-light text-dark'">
+                                                    {{ enc.foi_moita ? 'Foi Moita' : '-' }}
+                                                </span>
+                                            </td>
+                                            <td v-if="!detalhe.isMontagem">{{ enc.moita_funcao || '-' }}</td>
+                                            <td>{{ enc.telefone || '-' }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </section>
+                </template>
+            </div>
+
+            <div class="modal fade" id="modalJovens" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content border-0 shadow">
+                        <div class="modal-header bg-info text-white">
+                            <h5 class="modal-title"><i class="fas fa-eye me-2"></i>{{ nomeEquipeSelecionada }} - {{ nomeEJCSelecionado }}</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <div class="border rounded-3 bg-light px-3 py-2 h-100">
+                                        <div class="text-muted small text-uppercase fw-semibold">Homens</div>
+                                        <div class="fw-semibold fs-5">{{ resumoEquipeSelecionada.homens }}</div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="border rounded-3 bg-light px-3 py-2 h-100">
+                                        <div class="text-muted small text-uppercase fw-semibold">Mulheres</div>
+                                        <div class="fw-semibold fs-5">{{ resumoEquipeSelecionada.mulheres }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <table class="table table-hover table-sm">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Nome completo</th>
+                                        <th>Qual EJC</th>
+                                        <th>Telefone</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-if="!jovensEquipe.length">
+                                        <td colspan="3" class="text-muted text-center py-3">Nenhum integrante nessa equipe.</td>
+                                    </tr>
+                                    <tr v-for="jovem in jovensEquipe" :key="jovem.id">
+                                        <td><strong>{{ jovem.nome_completo }}</strong></td>
+                                        <td>{{ formatarOrigemEquipe(jovem) }}</td>
+                                        <td>{{ jovem.telefone || '-' }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-soft-secondary btn-ejc-action" data-bs-dismiss="modal">
+                                <span class="btn-ejc-icon"><i class="fa-solid fa-xmark icon-accent"></i></span>
+                                <span class="btn-ejc-text">Fechar</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" id="modalEJC" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content border-0 shadow">
+                        <div class="modal-header bg-primary text-white">
+                            <h5 class="modal-title"><i class="fas fa-pen-to-square me-2"></i>Editar EJC</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <form @submit.prevent="salvarEJC">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label class="form-label">Número do EJC *</label>
+                                        <input type="number" v-model.number="formulario.numero" class="form-control" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Paróquia *</label>
+                                        <select v-model="formulario.paroquia" class="form-select" required>
+                                            <option value="">Selecione a paróquia</option>
+                                            <option :value="nomeMeuEJC">{{ nomeMeuEJC }}</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Ano</label>
+                                        <input type="number" v-model.number="formulario.ano" class="form-control">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Música Tema</label>
+                                        <input type="text" v-model="formulario.musica_tema" class="form-control" placeholder="Ex: Nome da música">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Data Início</label>
+                                        <input type="text" v-model="formulario.data_inicio" class="form-control date-br" placeholder="dd/mm/aaaa">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="form-label">Data Fim</label>
+                                        <input type="text" v-model="formulario.data_fim" class="form-control date-br" placeholder="dd/mm/aaaa">
+                                    </div>
+                                    <div class="col-md-12">
+                                        <label class="form-label">Tema do encontro</label>
+                                        <textarea v-model="formulario.descricao" class="form-control" rows="3" placeholder="Ex: Servir com alegria e amor"></textarea>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-soft-secondary btn-ejc-action" data-bs-dismiss="modal">
+                                <span class="btn-ejc-icon"><i class="fa-solid fa-xmark icon-accent"></i></span>
+                                <span class="btn-ejc-text">Cancelar</span>
+                            </button>
+                            <button type="button" class="btn btn-danger me-auto btn-ejc-action" @click="deletarEJCModal">
+                                <span class="btn-ejc-icon"><i class="fa-solid fa-trash icon-accent"></i></span>
+                                <span class="btn-ejc-text">Deletar</span>
+                            </button>
+                            <button type="button" class="btn btn-primary btn-ejc-action" @click="salvarEJC">
+                                <span class="btn-ejc-icon"><i class="fa-solid fa-floppy-disk icon-accent"></i></span>
+                                <span class="btn-ejc-text">Atualizar</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            injetarMenu('#app');
+            ativarMenu('/gestaodoencontro/ejc');
+        });
+
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    carregando: true,
+                    erroCarregamento: '',
+                    tipoDetalhe: '',
+                    itemId: 0,
+                    detalhe: null,
+                    nomeMeuEJC: (window.__NOME_EJC_ATUAL && String(window.__NOME_EJC_ATUAL).trim()) || 'Inconfidentes',
+                    equipes: [],
+                    encontristas: [],
+                    jovensEquipe: [],
+                    nomeEquipeSelecionada: '',
+                    nomeEJCSelecionado: '',
+                    totalEncontreiros: 0,
+                    resumoEquipeSelecionada: {
+                        homens: 0,
+                        mulheres: 0
+                    },
+                    formulario: {
+                        id: null,
+                        numero: null,
+                        paroquia: '',
+                        ano: new Date().getFullYear(),
+                        musica_tema: '',
+                        data_inicio: '',
+                        data_fim: '',
+                        descricao: ''
+                    }
+                };
+            },
+            methods: {
+                async fetchJson(url) {
+                    const res = await fetch(url);
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok) {
+                        throw new Error((data && data.error) || `Erro ao acessar ${url}`);
+                    }
+                    return data;
+                },
+                voltarParaLista() {
+                    const destino = '/gestaodoencontro/ejc';
+                    try {
+                        const ref = document.referrer ? new URL(document.referrer) : null;
+                        if (ref && ref.origin === window.location.origin) {
+                            if (ref.pathname === destino || ref.pathname === '/historico-equipes') {
+                                window.history.back();
+                                return;
+                            }
+                        }
+                    } catch (_) { }
+                    window.location.href = destino;
+                },
+                resumoGeneroVazio() {
+                    return {
+                        homens: 0,
+                        mulheres: 0
+                    };
+                },
+                normalizarSexo(valor) {
+                    const sexo = String(valor || '').trim().toLowerCase();
+                    if (sexo === 'masculino') return 'masculino';
+                    if (sexo === 'feminino') return 'feminino';
+                    return '';
+                },
+                ehCasalTios(item) {
+                    const papel = String(item && item.papel || '').trim().toLowerCase();
+                    if (papel === 'tios') return true;
+                    if (papel === 'tio') {
+                        const nome = String(item && item.nome_completo || '');
+                        const telefone = String(item && item.telefone || '');
+                        return nome.includes(' e ') || telefone.includes(' / ');
+                    }
+                    return false;
+                },
+                quantidadePessoasIntegrante(item) {
+                    return this.ehCasalTios(item) ? 2 : 1;
+                },
+                chaveIntegranteUnico(item) {
+                    if (this.ehCasalTios(item)) {
+                        return [
+                            'casal',
+                            String(item && item.nome_completo || '').trim().toLowerCase(),
+                            String(item && item.telefone || '').trim()
+                        ].join('|');
+                    }
+
+                    const id = String(item && item.id || '').trim();
+                    if (id) return `pessoa|${id}`;
+
+                    return [
+                        'pessoa',
+                        String(item && item.nome_completo || '').trim().toLowerCase(),
+                        String(item && item.telefone || '').replace(/\D/g, '')
+                    ].join('|');
+                },
+                calcularResumoGeneros(lista) {
+                    return (Array.isArray(lista) ? lista : []).reduce((totais, item) => {
+                        if (this.ehCasalTios(item)) {
+                            totais.homens += 1;
+                            totais.mulheres += 1;
+                            return totais;
+                        }
+
+                        const sexo = this.normalizarSexo(item && item.sexo);
+                        if (sexo === 'masculino') totais.homens += 1;
+                        if (sexo === 'feminino') totais.mulheres += 1;
+                        return totais;
+                    }, this.resumoGeneroVazio());
+                },
+                definirIntegrantesEquipe(lista) {
+                    this.jovensEquipe = Array.isArray(lista) ? lista : [];
+                    this.resumoEquipeSelecionada = this.calcularResumoGeneros(this.jovensEquipe);
+                },
+                async carregarTotalEncontreirosEdicao(ejcId) {
+                    const equipes = Array.isArray(this.equipes) ? this.equipes : [];
+                    if (!equipes.length) {
+                        this.totalEncontreiros = 0;
+                        return;
+                    }
+
+                    const listasPorEquipe = await Promise.all(equipes.map(async (equipe) => {
+                        try {
+                            return await this.fetchJson(`/api/historico-equipes/${equipe.id}/jovens/${ejcId}`);
+                        } catch (err) {
+                            console.error(`Erro ao carregar integrantes da equipe ${equipe && equipe.nome ? equipe.nome : '-'}`, err);
+                            return [];
+                        }
+                    }));
+
+                    const unicos = new Map();
+                    listasPorEquipe.flat().forEach((item) => {
+                        const chave = this.chaveIntegranteUnico(item);
+                        if (!unicos.has(chave)) unicos.set(chave, item);
+                    });
+
+                    this.totalEncontreiros = Array.from(unicos.values()).reduce((total, item) => {
+                        return total + this.quantidadePessoasIntegrante(item);
+                    }, 0);
+                },
+                async carregarNomeMeuEJC() {
+                    try {
+                        const data = await this.fetchJson('/api/meu-ejc');
+                        const nome = data && data.nome ? String(data.nome).trim() : '';
+                        if (nome) this.nomeMeuEJC = nome;
+                    } catch (_) { }
+                },
+                async carregarDetalhes() {
+                    this.carregando = true;
+                    this.erroCarregamento = '';
+                    try {
+                        const params = new URLSearchParams(window.location.search);
+                        const tipo = String(params.get('tipo') || '').trim().toLowerCase();
+                        const id = Number(params.get('id') || 0);
+                        if (!id || !['edicao', 'montagem'].includes(tipo)) {
+                            throw new Error('Parâmetros inválidos para abrir os detalhes do EJC.');
+                        }
+
+                        this.tipoDetalhe = tipo;
+                        this.itemId = id;
+
+                        if (tipo === 'edicao') {
+                            await this.carregarDetalheEdicao(id);
+                        } else {
+                            await this.carregarDetalheMontagem(id);
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        this.erroCarregamento = err.message || 'Erro ao carregar os detalhes desta edição.';
+                    } finally {
+                        this.carregando = false;
+                    }
+                },
+                async carregarDetalheEdicao(id) {
+                    const [detalhe, equipes, encontristas] = await Promise.all([
+                        this.fetchJson(`/api/ejc/${id}`),
+                        this.fetchJson(`/api/equipes/por-ejc/${id}`),
+                        this.fetchJson(`/api/ejc/${id}/encontristas`)
+                    ]);
+
+                    this.detalhe = {
+                        ...detalhe,
+                        numero: detalhe.numero,
+                        isMontagem: false
+                    };
+                    this.equipes = Array.isArray(equipes) ? equipes : [];
+                    this.encontristas = Array.isArray(encontristas) ? encontristas.map((item) => ({
+                        id: item.id,
+                        nome_completo: item.nome_completo || item.nome_referencia || '-',
+                        circulo: item.circulo || '-',
+                        foi_moita: !!item.foi_moita,
+                        moita_funcao: item.moita_funcao || '-',
+                        telefone: item.telefone || item.telefone_referencia || '-'
+                    })) : [];
+                    await this.carregarTotalEncontreirosEdicao(id);
+                },
+                async carregarDetalheMontagem(id) {
+                    const montagens = await this.fetchJson('/api/montar-encontro');
+                    const detalheMontagem = (Array.isArray(montagens) ? montagens : []).find((item) => Number(item.id) === id);
+                    if (!detalheMontagem) {
+                        throw new Error('Montagem não encontrada.');
+                    }
+
+                    const [estrutura, encontristas] = await Promise.all([
+                        this.fetchJson(`/api/montar-encontro/${id}/estrutura`),
+                        this.fetchJson(`/api/montar-encontro/${id}/encontristas-selecionados`)
+                    ]);
+
+                    this.detalhe = {
+                        ...detalheMontagem,
+                        numero: detalheMontagem.numero_ejc,
+                        isMontagem: true
+                    };
+                    this.equipes = Array.isArray(estrutura) ? estrutura : [];
+                    this.encontristas = Array.isArray(encontristas) ? encontristas.map((item) => ({
+                        id: item.id || item.resposta_id,
+                        nome_completo: item.nome_completo || item.nome_referencia || '-',
+                        circulo: item.circulo || (item.resposta && item.resposta.circulo) || '-',
+                        foi_moita: !!item.foi_moita,
+                        moita_funcao: item.moita_funcao || '-',
+                        telefone: item.telefone || item.telefone_referencia || '-'
+                    })) : [];
+                    this.totalEncontreiros = this.equipes.reduce((total, equipe) => total + this.totalMembrosMontagem(equipe), 0);
+                },
+                abrirModalEditar() {
+                    if (!this.detalhe || this.detalhe.isMontagem) return;
+                    this.formulario = {
+                        id: this.detalhe.id,
+                        numero: this.detalhe.numero || null,
+                        paroquia: this.detalhe.paroquia || this.nomeMeuEJC,
+                        ano: this.detalhe.ano || new Date().getFullYear(),
+                        musica_tema: this.detalhe.musica_tema || '',
+                        data_inicio: this.detalhe.data_inicio || '',
+                        data_fim: this.detalhe.data_fim || '',
+                        descricao: this.detalhe.descricao || ''
+                    };
+                    bootstrap.Modal.getOrCreateInstance(document.getElementById('modalEJC')).show();
+                },
+                async salvarEJC() {
+                    try {
+                        const res = await fetch(`/api/ejc/${this.formulario.id}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(this.formulario)
+                        });
+
+                        if (!res.ok) {
+                            const erro = await res.json().catch(() => ({}));
+                            alert(erro.error || 'Erro ao salvar EJC');
+                            return;
+                        }
+
+                        bootstrap.Modal.getInstance(document.getElementById('modalEJC')).hide();
+                        await this.carregarDetalhes();
+                        alert('EJC atualizado com sucesso!');
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao salvar EJC');
+                    }
+                },
+                async deletarEJCModal() {
+                    if (!(await window.showFloatingConfirm(`Tem certeza que deseja deletar o EJC ${this.numeroParaRomano(this.formulario.numero)}? Esta ação não pode ser desfeita.`))) return;
+
+                    try {
+                        const res = await fetch(`/api/ejc/${this.formulario.id}`, { method: 'DELETE' });
+                        if (!res.ok) {
+                            const erro = await res.json().catch(() => ({}));
+                            alert(erro.error || 'Erro ao deletar EJC');
+                            return;
+                        }
+
+                        bootstrap.Modal.getInstance(document.getElementById('modalEJC')).hide();
+                        alert('EJC deletado com sucesso!');
+                        window.location.href = '/gestaodoencontro/ejc';
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao deletar EJC');
+                    }
+                },
+                resumoEquipe(equipe) {
+                    if (this.detalhe && this.detalhe.isMontagem) {
+                        const totalFuncoes = Array.isArray(equipe.funcoes) ? equipe.funcoes.length : 0;
+                        const totalMembros = this.totalMembrosMontagem(equipe);
+                        return `${totalFuncoes} função(ões) configurada(s) • ${totalMembros} membro(s) alocado(s)`;
+                    }
+                    return 'Visualize os integrantes que serviram nesta equipe.';
+                },
+                totalMembrosMontagem(equipe) {
+                    return (Array.isArray(equipe && equipe.funcoes) ? equipe.funcoes : []).reduce((total, funcao) => {
+                        return total + (Array.isArray(funcao && funcao.membros) ? funcao.membros.length : 0);
+                    }, 0);
+                },
+                abrirDetalhesEquipe(equipe) {
+                    if (this.detalhe && this.detalhe.isMontagem) {
+                        this.abrirModalMontagem(equipe);
+                        return;
+                    }
+                    this.abrirModalJovens(equipe);
+                },
+                async abrirModalJovens(equipe) {
+                    this.nomeEquipeSelecionada = equipe.nome;
+                    this.nomeEJCSelecionado = `${this.numeroParaRomano(this.detalhe.numero)}º EJC`;
+                    this.definirIntegrantesEquipe([]);
+
+                    const modalEl = document.getElementById('modalJovens');
+                    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                    modal.show();
+
+                    try {
+                        const res = await fetch(`/api/historico-equipes/${equipe.id}/jovens/${this.detalhe.id}`);
+                        if (!res.ok) {
+                            alert('Não foi possível carregar os integrantes da equipe.');
+                            return;
+                        }
+
+                        const jovens = await res.json();
+                        const normalizarNome = (valor) => String(valor || '')
+                            .trim()
+                            .toLowerCase()
+                            .normalize('NFD')
+                            .replace(/[\u0300-\u036f]/g, '');
+                        const normalizarTelefone = (valor) => String(valor || '').replace(/\D/g, '');
+                        const possuiOrigemOutroEJC = (item) => {
+                            return String(item && item.origem_ejc_tipo || '').toUpperCase() === 'OUTRO_EJC'
+                                || !!(item && item.outro_ejc_id)
+                                || !!(item && item.outro_ejc_nome)
+                                || !!(item && item.outro_ejc_paroquia)
+                                || !!(item && item.outro_ejc_numero);
+                        };
+
+                        try {
+                            const resOutro = await fetch('/api/lista-mestre/jovens-outro-ejc');
+                            if (!resOutro.ok) {
+                                this.definirIntegrantesEquipe(Array.isArray(jovens) ? jovens : []);
+                                return;
+                            }
+
+                            const listaOutro = await resOutro.json();
+                            const indicePorNome = new Map();
+                            const indicePorNomeTel = new Map();
+                            (Array.isArray(listaOutro) ? listaOutro : []).forEach((item) => {
+                                const nomeKey = normalizarNome(item.nome_completo);
+                                const telKey = normalizarTelefone(item.telefone);
+                                if (nomeKey && !indicePorNome.has(nomeKey)) indicePorNome.set(nomeKey, item);
+                                if (nomeKey && telKey) indicePorNomeTel.set(`${nomeKey}|${telKey}`, item);
+                            });
+
+                            this.definirIntegrantesEquipe((Array.isArray(jovens) ? jovens : []).map((jovem) => {
+                                if (possuiOrigemOutroEJC(jovem)) return jovem;
+                                const nomeKey = normalizarNome(jovem.nome_completo);
+                                const telKey = normalizarTelefone(jovem.telefone);
+                                const match = (nomeKey && telKey && indicePorNomeTel.get(`${nomeKey}|${telKey}`))
+                                    || (nomeKey && indicePorNome.get(nomeKey))
+                                    || null;
+                                if (!match) return jovem;
+                                return {
+                                    ...jovem,
+                                    origem_ejc_tipo: 'OUTRO_EJC',
+                                    outro_ejc_id: jovem.outro_ejc_id || match.outro_ejc_id || null,
+                                    outro_ejc_nome: jovem.outro_ejc_nome || match.outro_ejc_nome || null,
+                                    outro_ejc_paroquia: jovem.outro_ejc_paroquia || match.outro_ejc_paroquia || null,
+                                    outro_ejc_numero: jovem.outro_ejc_numero || match.outro_ejc_numero || null
+                                };
+                            }));
+                        } catch (_) {
+                            this.definirIntegrantesEquipe(Array.isArray(jovens) ? jovens : []);
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro de conexão ao buscar integrantes.');
+                    }
+                },
+                abrirModalMontagem(equipe) {
+                    this.nomeEquipeSelecionada = equipe.nome;
+                    this.nomeEJCSelecionado = `${this.numeroParaRomano(this.detalhe.numero)}º EJC (Montagem)`;
+                    this.definirIntegrantesEquipe([]);
+
+                    let membrosFlat = [];
+                    if (Array.isArray(equipe.funcoes)) {
+                        for (const funcao of equipe.funcoes) {
+                            if (!Array.isArray(funcao.membros)) continue;
+                            for (const membro of funcao.membros) {
+                                membrosFlat.push({
+                                    id: membro.membro_id,
+                                    nome_completo: membro.jovem_nome || membro.nome_externo,
+                                    telefone: membro.telefone || membro.telefone_externo || '-',
+                                    papel: funcao.papel_base || 'Membro',
+                                    sexo: membro.sexo || null,
+                                    subfuncao: funcao.nome || null
+                                });
+                            }
+                        }
+                    }
+                    this.definirIntegrantesEquipe(membrosFlat);
+
+                    const modalEl = document.getElementById('modalJovens');
+                    const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+                    modal.show();
+                },
+                formatarOrigemEquipe(jovem) {
+                    if (String(jovem && jovem.papel || '').toUpperCase() === 'TIOS') {
+                        if (jovem && jovem.ecc_numero) {
+                            return `${jovem.ecc_numero} ${jovem && jovem.ecc_tipo || 'ECC'}`.trim();
+                        }
+                        if (jovem && jovem.outro_ejc_nome) {
+                            return jovem.outro_ejc_nome;
+                        }
+                        return this.nomeMeuEJC;
+                    }
+                    const ehOutro = String(jovem && jovem.origem_ejc_tipo || '').toUpperCase() === 'OUTRO_EJC'
+                        || !!(jovem && jovem.outro_ejc_id)
+                        || !!(jovem && jovem.outro_ejc_nome)
+                        || !!(jovem && jovem.outro_ejc_paroquia)
+                        || !!(jovem && jovem.outro_ejc_numero);
+                    if (ehOutro) {
+                        const numeroOutro = jovem && jovem.outro_ejc_numero ? this.numeroParaRomano(jovem.outro_ejc_numero) : '';
+                        if (numeroOutro && jovem && jovem.outro_ejc_nome) return `${numeroOutro} (${jovem.outro_ejc_nome})`;
+                        return (jovem && jovem.outro_ejc_nome) || numeroOutro || 'Outro EJC';
+                    }
+                    const numeroProprio = jovem && jovem.numero_ejc_fez ? `${this.numeroParaRomano(jovem.numero_ejc_fez)}º EJC` : '';
+                    return [numeroProprio, this.nomeMeuEJC].filter(Boolean).join(' ') || this.nomeMeuEJC;
+                },
+                formatarData(d) {
+                    if (!d) return '--/--/----';
+                    const data = new Date(d);
+                    if (isNaN(data.getTime())) return '--/--/----';
+                    return data.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+                },
+                numeroParaRomano(num) {
+                    if (!num) return '';
+                    const roman = [
+                        { value: 1000, numeral: 'M' },
+                        { value: 900, numeral: 'CM' },
+                        { value: 500, numeral: 'D' },
+                        { value: 400, numeral: 'CD' },
+                        { value: 100, numeral: 'C' },
+                        { value: 90, numeral: 'XC' },
+                        { value: 50, numeral: 'L' },
+                        { value: 40, numeral: 'XL' },
+                        { value: 10, numeral: 'X' },
+                        { value: 9, numeral: 'IX' },
+                        { value: 5, numeral: 'V' },
+                        { value: 4, numeral: 'IV' },
+                        { value: 1, numeral: 'I' }
+                    ];
+                    let result = '';
+                    let n = parseInt(num, 10);
+                    for (let i = 0; i < roman.length; i += 1) {
+                        while (n >= roman[i].value) {
+                            result += roman[i].numeral;
+                            n -= roman[i].value;
+                        }
+                    }
+                    return result;
+                }
+            },
+            async mounted() {
+                await this.carregarNomeMeuEJC();
+                await this.carregarDetalhes();
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

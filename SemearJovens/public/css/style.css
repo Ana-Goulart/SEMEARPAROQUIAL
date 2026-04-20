@@ -167,6 +167,13 @@ h1, h2, h3, h4, h5, h6, .brand-name {
     white-space: nowrap;
 }
 
+.btn-ejc-action.dropdown-toggle::after,
+.dropup .btn-ejc-action.dropdown-toggle::before,
+.dropend .btn-ejc-action.dropdown-toggle::after,
+.dropstart .btn-ejc-action.dropdown-toggle::before {
+    display: none !important;
+}
+
 .btn-ejc-icon {
     display: inline-flex;
     align-items: center;

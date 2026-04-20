@@ -721,7 +721,7 @@
                                     </div>
                                     <div class="row g-3">
                                         <div class="col-lg-4">
-                                            <label class="form-label">Possui deficiência?</label>
+                                            <label class="form-label">Pessoa com Deficiência(PcD)?</label>
                                             <select class="form-select" v-model="novo.deficiencia">
                                                 <option :value="false">Não</option>
                                                 <option :value="true">Sim</option>
@@ -965,7 +965,7 @@
 
                                         <template v-else-if="subAbaDadosOutro === 'saude'">
                                             <div class="col-md-4">
-                                                <label class="text-muted small mb-0">Deficiência</label>
+                                                <label class="text-muted small mb-0">Pessoa com Deficiência(PcD)?</label>
                                                 <div v-if="!isEditingOutroFicha" class="py-1 px-2 bg-light border rounded">{{ jovemOutroFicha.deficiencia ? (jovemOutroFicha.qual_deficiencia || 'Sim') : 'Não' }}</div>
                                                 <div v-else>
                                                     <select class="form-select mb-2" v-model="jovemOutroFicha.deficiencia">
@@ -1303,11 +1303,11 @@
                                             <div class="row g-3">
                                                 <div class="col-12 pt-2"><h6 class="text-muted mb-0">Saúde do Tio</h6></div>
                                                 <div class="col-md-12">
-                                                    <label class="form-label d-block">Possui deficiência?</label>
+                                                    <label class="form-label d-block">Pessoa com Deficiência(PcD)?</label>
                                                     <div class="d-flex gap-2 align-items-center flex-wrap">
                                                         <div class="form-check mb-0">
                                                             <input class="form-check-input" type="checkbox" id="checkDeficienciaTioOutro" v-model="formCasal.deficiencia_tio" :true-value="1" :false-value="0">
-                                                            <label class="form-check-label" for="checkDeficienciaTioOutro">Possui deficiência</label>
+                                                            <label class="form-check-label" for="checkDeficienciaTioOutro">Sim</label>
                                                         </div>
                                                         <input v-if="formCasal.deficiencia_tio" class="form-control flex-grow-1" style="min-width: 260px;" v-model.trim="formCasal.qual_deficiencia_tio" placeholder="Qual?">
                                                     </div>
@@ -1331,11 +1331,11 @@
                                                 </div>
                                                 <div class="col-12 pt-2"><h6 class="text-muted mb-0">Saúde da Tia</h6></div>
                                                 <div class="col-md-12">
-                                                    <label class="form-label d-block">Possui deficiência?</label>
+                                                    <label class="form-label d-block">Pessoa com Deficiência(PcD)?</label>
                                                     <div class="d-flex gap-2 align-items-center flex-wrap">
                                                         <div class="form-check mb-0">
                                                             <input class="form-check-input" type="checkbox" id="checkDeficienciaTiaOutro" v-model="formCasal.deficiencia_tia" :true-value="1" :false-value="0">
-                                                            <label class="form-check-label" for="checkDeficienciaTiaOutro">Possui deficiência</label>
+                                                            <label class="form-check-label" for="checkDeficienciaTiaOutro">Sim</label>
                                                         </div>
                                                         <input v-if="formCasal.deficiencia_tia" class="form-control flex-grow-1" style="min-width: 260px;" v-model.trim="formCasal.qual_deficiencia_tia" placeholder="Qual?">
                                                     </div>

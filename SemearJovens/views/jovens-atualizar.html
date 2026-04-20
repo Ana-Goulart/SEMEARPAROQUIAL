@@ -143,7 +143,7 @@
                             </div>
 
                             <div class="col-md-4">
-                                <label class="form-label">Possui deficiência?</label>
+                                <label class="form-label">Pessoa com Deficiência(PcD)?</label>
                                 <select class="form-select" v-model="form.deficiencia" :disabled="!cadastroValidado">
                                     <option :value="false">Não</option>
                                     <option :value="true">Sim</option>
@@ -389,13 +389,37 @@
                     const txt = String(valor || '').trim();
                     if (!txt) return null;
                     if (/^\d{4}-\d{2}-\d{2}$/.test(txt)) return txt;
+                    const isoMatch = txt.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s].*)?$/);
+                    if (isoMatch) return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
                     const match = txt.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})$/);
-                    if (!match) return null;
-                    const dia = Number(match[1]);
-                    const mes = Number(match[2]);
-                    const ano = Number(match[3]);
+                    const txtNormalizado = txt.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                    const meses = {
+                        janeiro: '01', jan: '01',
+                        fevereiro: '02', fev: '02',
+                        marco: '03', mar: '03',
+                        abril: '04', abr: '04',
+                        maio: '05', mai: '05',
+                        junho: '06', jun: '06',
+                        julho: '07', jul: '07',
+                        agosto: '08', ago: '08',
+                        setembro: '09', set: '09',
+                        outubro: '10', out: '10',
+                        novembro: '11', nov: '11',
+                        dezembro: '12', dez: '12'
+                    };
+                    const matchMes = txtNormalizado.match(/^(\d{2})[\/\-]([a-z]+)[\/\-](\d{4})$/);
+                    const dia = Number(match ? match[1] : (matchMes ? matchMes[1] : 0));
+                    const mes = Number(match ? match[2] : (matchMes ? meses[matchMes[2]] : 0));
+                    const ano = Number(match ? match[3] : (matchMes ? matchMes[3] : 0));
                     if (!dia || !mes || !ano) return null;
                     return `${String(ano).padStart(4, '0')}-${String(mes).padStart(2, '0')}-${String(dia).padStart(2, '0')}`;
+                },
+                formatarDataIsoParaBr(valor) {
+                    if (!valor) return '';
+                    const txt = String(valor || '').trim();
+                    const match = txt.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s].*)?$/);
+                    if (match) return `${match[3]}/${match[2]}/${match[1]}`;
+                    return txt;
                 },
                 async carregarEquipes() {
                     try {
@@ -442,7 +466,7 @@
                         this.form.email = jovem.email || '';
                         this.form.instagram = jovem.instagram || '';
                         this.form.estado_civil = jovem.estado_civil || '';
-                        this.form.data_nascimento_novo = jovem.data_nascimento ? String(jovem.data_nascimento).split('-').reverse().join('/') : this.form.data_nascimento_novo;
+                        this.form.data_nascimento_novo = this.formatarDataIsoParaBr(jovem.data_nascimento) || this.form.data_nascimento_novo;
                         this.form.endereco_cep = jovem.endereco_cep || '';
                         this.form.endereco_rua = jovem.endereco_rua || '';
                         this.form.endereco_numero = jovem.endereco_numero || '';

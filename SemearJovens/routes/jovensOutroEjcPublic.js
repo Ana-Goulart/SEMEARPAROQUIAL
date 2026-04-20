@@ -1,6 +1,7 @@
 const express = require('express');
 const crypto = require('crypto');
 const { pool } = require('../database');
+const { normalizeUpperText } = require('../lib/personNameFormatting');
 
 const router = express.Router();
 const TOKEN_TTL_MS = 15 * 60 * 1000;
@@ -302,7 +303,7 @@ router.post('/atualizar-jovem', async (req, res) => {
         }
 
         const telefone = String(req.body.telefone || '').trim();
-        const apelido = String(req.body.apelido || '').trim() || null;
+        const apelido = normalizeUpperText(req.body.apelido) || null;
         const email = String(req.body.email || '').trim() || null;
         const instagram = String(req.body.instagram || '').trim() || null;
         const estadoCivil = String(req.body.estado_civil || '').trim() || null;
