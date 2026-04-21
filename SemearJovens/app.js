@@ -42,7 +42,6 @@ const rotasBackup = require('./routes/backup');
 const rotasAlmoxarifado = require('./routes/almoxarifado');
 const rotasDashboard = require('./routes/dashboard');
 const rotasAjuda = require('./routes/ajuda');
-const rotasRegrasEjc = require('./routes/regrasEjc');
 const rotasRelacoesFamiliares = require('./routes/relacoesFamiliares');
 const rotasLogs = require('./routes/logs');
 const { activityLoggerMiddleware } = require('./lib/activityLogs');
@@ -72,7 +71,7 @@ app.use(express.json());
 app.use(personNameResponseMiddleware);
 app.use(attachUserFromSession);
 app.use(attachAdminFromSession);
-app.use(express.static('public')); // Serve arquivos estáticos
+app.use(express.static(path.join(__dirname, 'public'))); // Serve arquivos estáticos
 app.get('/favicon.ico', (_req, res) => res.redirect('/assets/logo-oficial.png'));
 app.use((req, res, next) => {
     if (!isAdminHost(req)) return next();
@@ -162,11 +161,20 @@ app.get('/', (req, res) => {
 app.get('/dashboard', requireLoginView, (req, res) => res.sendFile(path.join(__dirname, 'views', 'dashboard.html')));
 app.get('/ejc', (req, res) => res.redirect('/historico-equipes'));
 app.get('/equipes', requireLoginView, (req, res) => res.sendFile(path.join(__dirname, 'views', 'equipes.html')));
-app.get('/historico-equipes', requireLoginView, (req, res) => res.sendFile(path.join(__dirname, 'views', 'historico-equipes.html')));
+app.get('/historico-equipes', requireLoginView, (req, res) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    return res.sendFile(path.join(__dirname, 'views', 'historico-equipes.html'));
+});
 app.get('/anexos', requireLoginView, (req, res) => res.sendFile(path.join(__dirname, 'views', 'anexos.html')));
 app.get('/usuarios', requireLoginView, (req, res) => res.sendFile(path.join(__dirname, 'views', 'usuarios.html')));
 app.get('/votacao', requireLoginView, (req, res) => res.sendFile(path.join(__dirname, 'views', 'votacao.html')));
-app.get('/outros-ejcs', requireLoginView, (req, res) => res.sendFile(path.join(__dirname, 'views', 'outros-ejcs.html')));
+app.get('/outros-ejcs', requireLoginView, (req, res) => {
+    const params = new URLSearchParams(req.query || {});
+    const query = params.toString();
+    return res.redirect(`/gestaodoencontro/outrosejcs${query ? `?${query}` : ''}`);
+});
 app.get('/montar-encontro', requireLoginView, (req, res) => res.sendFile(path.join(__dirname, 'views', 'montar-encontro.html')));
 app.get('/gestaodoencontro/montarencontro/equipe', requireLoginView, (req, res) => res.sendFile(path.join(__dirname, 'views', 'montar-encontro-equipe.html')));
 app.get('/financeiro', requireLoginView, (req, res) => res.sendFile(path.join(__dirname, 'views', 'financeiro.html')));
@@ -187,7 +195,12 @@ app.get('/tios', requireLoginView, (req, res) => res.sendFile(path.join(__dirnam
 // --- ROTAS NOVAS DE NAVEGAÇÃO AGRUPADA ---
 app.get('/gestaodoencontro/listamestre', requireLoginView, (req, res) => res.sendFile(path.join(__dirname, 'views', 'listaMestre.html')));
 app.get('/gestaodoencontro/equipes', requireLoginView, (req, res) => res.sendFile(path.join(__dirname, 'views', 'equipes.html')));
-app.get('/gestaodoencontro/ejc', requireLoginView, (req, res) => res.sendFile(path.join(__dirname, 'views', 'historico-equipes.html')));
+app.get('/gestaodoencontro/ejc', requireLoginView, (req, res) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    return res.sendFile(path.join(__dirname, 'views', 'historico-equipes.html'));
+});
 app.get(
     [
         '/gestaodoencontro/ejc/detalhes',
@@ -197,12 +210,16 @@ app.get(
     requireLoginView,
     (req, res) => res.sendFile(path.join(__dirname, 'views', 'ejc-detalhes.html'))
 );
-app.get('/gestaodoencontro/outrosejcs', requireLoginView, (req, res) => res.sendFile(path.join(__dirname, 'views', 'outros-ejcs.html')));
-app.get('/gestaodoencontro/jovensoutroejc', requireLoginView, (req, res) => res.sendFile(path.join(__dirname, 'views', 'jovens-outro-ejc.html')));
+app.get('/gestaodoencontro/outrosejcs', requireLoginView, (req, res) => res.sendFile(path.join(__dirname, 'views', 'jovens-outro-ejc.html')));
+app.get('/gestaodoencontro/jovensoutroejc', requireLoginView, (req, res) => {
+    const params = new URLSearchParams(req.query || {});
+    params.set('aba', 'membros');
+    return res.redirect(`/gestaodoencontro/outrosejcs?${params.toString()}`);
+});
 app.get('/gestaodoencontro/visitantes', requireLoginView, (req, res) => res.sendFile(path.join(__dirname, 'views', 'visitantes.html')));
 app.get('/gestaodoencontro/tios', requireLoginView, (req, res) => res.sendFile(path.join(__dirname, 'views', 'tios.html')));
 app.get('/gestaodoencontro/montarencontro', requireLoginView, (req, res) => res.sendFile(path.join(__dirname, 'views', 'montar-encontro.html')));
-app.get('/gestaodoencontro/regras', requireLoginView, (req, res) => res.sendFile(path.join(__dirname, 'views', 'regras-ejc.html')));
+app.get('/gestaodoencontro/regras', requireLoginView, (_req, res) => res.redirect('/gestaodoencontro/ejc'));
 app.get('/gestaodoencontro/missaoexterna', requireLoginView, (req, res) => res.sendFile(path.join(__dirname, 'views', 'missao-externa.html')));
 app.get('/gestaodoencontro/moita', requireLoginView, (req, res) => {
     if (String(req.query.embed || '') === '1') {
@@ -278,7 +295,6 @@ app.use('/api/backup', rotasBackup);
 app.use('/api/almoxarifado', rotasAlmoxarifado);
 app.use('/api/dashboard', rotasDashboard);
 app.use('/api/ajuda', rotasAjuda);
-app.use('/api/regras-ejc', rotasRegrasEjc);
 app.use('/api/relacoes-familiares', rotasRelacoesFamiliares);
 app.use('/api/logs', rotasLogs);
 

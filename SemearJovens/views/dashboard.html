@@ -526,9 +526,7 @@
                             : 'Última edição';
                     },
                     edicaoLink() {
-                        return this.resumo.edicao_atual && this.resumo.edicao_atual.origem === 'MONTAGEM'
-                            ? '/gestaodoencontro/montarencontro'
-                            : '/gestaodoencontro/ejc';
+                        return '/gestaodoencontro/ejc';
                     },
                     resumoCards() {
                         return [

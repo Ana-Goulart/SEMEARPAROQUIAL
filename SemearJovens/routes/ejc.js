@@ -82,36 +82,6 @@ async function garantirEstruturaEjcMusicaTema() {
     await runAlterIgnoreDuplicate("ALTER TABLE ejc ADD COLUMN musica_tema VARCHAR(180) NULL AFTER descricao");
 }
 
-async function garantirRegrasPadraoParaEjc(tenantId, ejcId) {
-    await pool.query(`
-        CREATE TABLE IF NOT EXISTS ejc_regras (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            tenant_id INT NOT NULL,
-            ejc_id INT NOT NULL,
-            coordenador_tipo_casal VARCHAR(40) NOT NULL DEFAULT 'LIVRE',
-            permite_tios_coordenadores TINYINT(1) NOT NULL DEFAULT 1,
-            idade_maxima_coordenador_jovem INT NULL DEFAULT NULL,
-            permite_casal_amasiado_servir TINYINT(1) NOT NULL DEFAULT 1,
-            casal_amasiado_regra_equipe VARCHAR(40) NOT NULL DEFAULT 'INDIFERENTE',
-            anos_casado_sem_ecc_pode_servir INT NULL DEFAULT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            UNIQUE KEY uniq_ejc_regras_tenant (tenant_id, ejc_id),
-            KEY idx_ejc_regras_ejc (ejc_id),
-            CONSTRAINT fk_ejc_regras_ejc FOREIGN KEY (ejc_id) REFERENCES ejc(id) ON DELETE CASCADE
-        )
-    `);
-
-    await pool.query(
-        `INSERT IGNORE INTO ejc_regras (
-            tenant_id, ejc_id, coordenador_tipo_casal, permite_tios_coordenadores,
-            idade_maxima_coordenador_jovem, permite_casal_amasiado_servir,
-            casal_amasiado_regra_equipe, anos_casado_sem_ecc_pode_servir
-        ) VALUES (?, ?, 'LIVRE', 1, NULL, 1, 'INDIFERENTE', NULL)`,
-        [tenantId, ejcId]
-    );
-}
-
 function normalizarData(value) {
     if (!value) return null;
     const txt = String(value).trim();
@@ -120,7 +90,24 @@ function normalizarData(value) {
     if (/^\d{4}-\d{2}-\d{2}T/.test(txt)) return txt.split('T')[0];
     const m = txt.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})$/);
     if (m) return `${m[3]}-${m[2]}-${m[1]}`;
-    return null;
+    const txtNormalizado = txt.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    const meses = {
+        janeiro: '01', jan: '01',
+        fevereiro: '02', fev: '02',
+        marco: '03', mar: '03',
+        abril: '04', abr: '04',
+        maio: '05', mai: '05',
+        junho: '06', jun: '06',
+        julho: '07', jul: '07',
+        agosto: '08', ago: '08',
+        setembro: '09', set: '09',
+        outubro: '10', out: '10',
+        novembro: '11', nov: '11',
+        dezembro: '12', dez: '12'
+    };
+    const matchMes = txtNormalizado.match(/^(\d{2})[\/\-]([a-z]+)[\/\-](\d{4})$/);
+    if (!matchMes || !meses[matchMes[2]]) return null;
+    return `${matchMes[3]}-${meses[matchMes[2]]}-${matchMes[1]}`;
 }
 
 // GET - Listar todos os EJCs
@@ -262,14 +249,11 @@ router.post('/', async (req, res) => {
             [result.insertId, tenantId]
         );
 
-        await garantirRegrasPadraoParaEjc(tenantId, result.insertId);
-
         await registrarLog('sistema', 'CREATE', `EJC ${numero} criado`);
 
         res.status(201).json({
             message: "EJC criado com sucesso",
-            id: result.insertId,
-            regras_ejc_id: result.insertId
+            id: result.insertId
         });
     } catch (err) {
         console.error("Erro ao criar EJC:", err);

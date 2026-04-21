@@ -2146,29 +2146,11 @@ router.post('/importacao', async (req, res) => {
         await ensureEquipeSaudeColumn();
         await ensureNaoServeEjcColumns();
         const hasHistorico = await hasTable('historico_equipes');
+        const comMontagemEjcId = await hasColumn('jovens', 'montagem_ejc_id');
         const comSubfuncao = await hasSubfuncaoColumn();
         const comSexo = await hasSexoColumn();
         const comEhMusico = await hasEhMusicoColumn();
         const comInstrumentos = await hasInstrumentosMusicaisColumn();
-        const [ejcsRows] = await connection.query('SELECT id, numero FROM ejc WHERE tenant_id = ?', [tenantId]);
-        const ejcIdsValidos = new Set((ejcsRows || []).map(r => Number(r.id)).filter(n => Number.isFinite(n)));
-        const ejcNumeroParaId = new Map();
-        (ejcsRows || []).forEach((r) => {
-            const numero = Number(r.numero);
-            const id = Number(r.id);
-            if (Number.isFinite(numero) && Number.isFinite(id)) {
-                ejcNumeroParaId.set(numero, id);
-            }
-        });
-
-        const resolverEjcId = (valorOriginal) => {
-            if (valorOriginal === undefined || valorOriginal === null || valorOriginal === '') return null;
-            const valor = Number(valorOriginal);
-            if (!Number.isFinite(valor)) return null;
-            if (ejcIdsValidos.has(valor)) return valor;
-            if (ejcNumeroParaId.has(valor)) return ejcNumeroParaId.get(valor);
-            return null;
-        };
         const estadosCivisValidos = new Set(['Solteiro', 'Casado', 'Amasiado']);
         const sexosValidos = new Set(['Feminino', 'Masculino']);
         let circulosValidos = new Set();
@@ -2217,7 +2199,7 @@ router.post('/importacao', async (req, res) => {
             const texto = normalizarTextoOuNull(valor, maxLen);
             return texto ? texto.toLocaleUpperCase('pt-BR') : null;
         };
-        const normalizarJovemImportacao = (j) => {
+        const normalizarJovemImportacao = async (j) => {
             if (!j || typeof j !== 'object') throw new Error('Registro de jovem inválido.');
 
             j.nome_completo = normalizarTextoOuNullMaiusculo(j.nome_completo, 120);
@@ -2291,9 +2273,17 @@ router.post('/importacao', async (req, res) => {
             }
 
             const numeroEjcOriginal = j.numero_ejc_fez;
-            j.numero_ejc_fez = resolverEjcId(j.numero_ejc_fez);
-            if (numeroEjcOriginal !== undefined && numeroEjcOriginal !== null && String(numeroEjcOriginal).trim() !== '' && !j.numero_ejc_fez) {
-                throw new Error(`Campo numero_ejc fora do padrão: "${numeroEjcOriginal}". Informe um EJC existente.`);
+            j._informou_numero_ejc_fez = !(numeroEjcOriginal === undefined || numeroEjcOriginal === null || String(numeroEjcOriginal).trim() === '');
+            const numeroEjcResolvido = j._informou_numero_ejc_fez
+                ? await resolveNumeroEjcFezInput({ tenantId, value: numeroEjcOriginal })
+                : { numero_ejc_fez: null, montagem_ejc_id: null };
+            j.numero_ejc_fez = numeroEjcResolvido.numero_ejc_fez || null;
+            j.montagem_ejc_id = numeroEjcResolvido.montagem_ejc_id || null;
+            if (j._informou_numero_ejc_fez && !j.numero_ejc_fez && !j.montagem_ejc_id) {
+                throw new Error(`Campo numero_ejc fora do padrão: "${numeroEjcOriginal}". Informe um EJC existente ou uma montagem válida.`);
+            }
+            if (j.montagem_ejc_id && !comMontagemEjcId) {
+                throw new Error('A base atual ainda não suporta vincular jovens diretamente a uma montagem.');
             }
 
             j.apelido = normalizarTextoOuNull(j.apelido, 120);
@@ -2338,7 +2328,7 @@ router.post('/importacao', async (req, res) => {
                 }
                 j.nome_completo = nomeFinal;
                 nomeJovem = j.nome_completo || nomeJovem;
-                normalizarJovemImportacao(j);
+                await normalizarJovemImportacao(j);
                 let jovemId = null;
 
                 const [exists] = await connection.query(
@@ -2360,73 +2350,87 @@ router.post('/importacao', async (req, res) => {
 
                 if (exists.length > 0) {
                     jovemId = exists[0].id;
-                    let updateSql = `UPDATE jovens SET
-                            nome_completo = COALESCE(?, nome_completo),
-                            telefone = COALESCE(?, telefone),
-                            apelido = COALESCE(?, apelido),
-                            email = COALESCE(?, email),
-                            data_nascimento = COALESCE(?, data_nascimento),
-                            numero_ejc_fez = COALESCE(?, numero_ejc_fez),
-                            instagram = COALESCE(?, instagram),
-                            estado_civil = COALESCE(?, estado_civil),
-                            data_casamento = COALESCE(?, data_casamento),
-                            circulo = COALESCE(?, circulo),
-                            deficiencia = COALESCE(?, deficiencia),
-                            qual_deficiencia = COALESCE(?, qual_deficiencia),
-                            restricao_alimentar = COALESCE(?, restricao_alimentar),
-                            detalhes_restricao = COALESCE(?, detalhes_restricao),
-                            conjuge_nome = COALESCE(?, conjuge_nome),
-                            termos_aceitos_em = COALESCE(?, termos_aceitos_em),
-                            termos_aceitos_email = COALESCE(?, termos_aceitos_email),
-                            endereco_rua = COALESCE(?, endereco_rua),
-                            endereco_numero = COALESCE(?, endereco_numero),
-                            endereco_bairro = COALESCE(?, endereco_bairro),
-                            endereco_cidade = COALESCE(?, endereco_cidade),
-                            endereco_estado = COALESCE(?, endereco_estado),
-                            endereco_cep = COALESCE(?, endereco_cep),
-                            nao_serve_ejc = COALESCE(?, nao_serve_ejc),
-                            motivo_nao_serve_ejc = COALESCE(?, motivo_nao_serve_ejc),
-                            equipe_saude = COALESCE(?, equipe_saude)`;
+                    const updateSets = [
+                        'nome_completo = COALESCE(?, nome_completo)',
+                        'telefone = COALESCE(?, telefone)',
+                        'apelido = COALESCE(?, apelido)',
+                        'email = COALESCE(?, email)',
+                        'data_nascimento = COALESCE(?, data_nascimento)',
+                        'instagram = COALESCE(?, instagram)',
+                        'estado_civil = COALESCE(?, estado_civil)',
+                        'data_casamento = COALESCE(?, data_casamento)',
+                        'circulo = COALESCE(?, circulo)',
+                        'deficiencia = COALESCE(?, deficiencia)',
+                        'qual_deficiencia = COALESCE(?, qual_deficiencia)',
+                        'restricao_alimentar = COALESCE(?, restricao_alimentar)',
+                        'detalhes_restricao = COALESCE(?, detalhes_restricao)',
+                        'conjuge_nome = COALESCE(?, conjuge_nome)',
+                        'termos_aceitos_em = COALESCE(?, termos_aceitos_em)',
+                        'termos_aceitos_email = COALESCE(?, termos_aceitos_email)',
+                        'endereco_rua = COALESCE(?, endereco_rua)',
+                        'endereco_numero = COALESCE(?, endereco_numero)',
+                        'endereco_bairro = COALESCE(?, endereco_bairro)',
+                        'endereco_cidade = COALESCE(?, endereco_cidade)',
+                        'endereco_estado = COALESCE(?, endereco_estado)',
+                        'endereco_cep = COALESCE(?, endereco_cep)',
+                        'nao_serve_ejc = COALESCE(?, nao_serve_ejc)',
+                        'motivo_nao_serve_ejc = COALESCE(?, motivo_nao_serve_ejc)',
+                        'equipe_saude = COALESCE(?, equipe_saude)'
+                    ];
                     const updateParams = [
-                        j.nome_completo, j.telefone, j.apelido, j.email, j.data_nascimento, j.numero_ejc_fez, j.instagram,
+                        j.nome_completo, j.telefone, j.apelido, j.email, j.data_nascimento, j.instagram,
                         j.estado_civil, j.data_casamento, j.circulo, j.deficiencia, j.qual_deficiencia,
                         j.restricao_alimentar, j.detalhes_restricao, j.conjuge_nome, j.termos_aceitos_em,
                         j.termos_aceitos_email, j.endereco_rua, j.endereco_numero, j.endereco_bairro,
                         j.endereco_cidade, j.endereco_estado, j.endereco_cep, j.nao_serve_ejc, j.motivo_nao_serve_ejc, j.equipe_saude
                     ];
+                    if (j._informou_numero_ejc_fez) {
+                        updateSets.push('numero_ejc_fez = ?');
+                        updateParams.push(j.numero_ejc_fez);
+                        if (comMontagemEjcId) {
+                            updateSets.push('montagem_ejc_id = ?');
+                            updateParams.push(j.montagem_ejc_id || null);
+                        }
+                    }
                     if (comSexo) {
-                        updateSql += ', sexo = COALESCE(?, sexo)';
+                        updateSets.push('sexo = COALESCE(?, sexo)');
                         updateParams.push(j.sexo);
                     }
                     if (comEhMusico) {
-                        updateSql += ', eh_musico = COALESCE(?, eh_musico)';
+                        updateSets.push('eh_musico = COALESCE(?, eh_musico)');
                         updateParams.push(j.eh_musico);
                     }
                     if (comInstrumentos) {
-                        updateSql += ', instrumentos_musicais = COALESCE(?, instrumentos_musicais)';
+                        updateSets.push('instrumentos_musicais = COALESCE(?, instrumentos_musicais)');
                         updateParams.push(j.eh_musico === null || j.eh_musico === undefined ? null : (j.eh_musico ? JSON.stringify(j.instrumentos_musicais || []) : '[]'));
                     }
-                    updateSql += ' WHERE id = ? AND tenant_id = ?';
+                    const updateSql = `UPDATE jovens SET ${updateSets.join(', ')} WHERE id = ? AND tenant_id = ?`;
                     updateParams.push(jovemId, tenantId);
                     await connection.query(updateSql, updateParams);
                     atualizados++;
                 } else {
                     const insertFields = [
                         'tenant_id', 'nome_completo', 'telefone', 'apelido', 'email', 'data_nascimento',
-                        'numero_ejc_fez', 'instagram', 'estado_civil', 'data_casamento', 'circulo',
+                        'numero_ejc_fez',
                         'deficiencia', 'qual_deficiencia', 'restricao_alimentar', 'detalhes_restricao',
+                        'instagram', 'estado_civil', 'data_casamento', 'circulo',
                         'conjuge_nome', 'termos_aceitos_em', 'termos_aceitos_email', 'endereco_rua',
                         'endereco_numero', 'endereco_bairro', 'endereco_cidade', 'endereco_estado', 'endereco_cep',
                         'nao_serve_ejc', 'motivo_nao_serve_ejc', 'equipe_saude'
                     ];
                     const insertParams = [
                         tenantId, j.nome_completo, j.telefone, j.apelido, j.email, j.data_nascimento,
-                        j.numero_ejc_fez, j.instagram, j.estado_civil, j.data_casamento, j.circulo,
+                        j.numero_ejc_fez,
                         j.deficiencia ? 1 : 0, j.qual_deficiencia, j.restricao_alimentar ? 1 : 0,
-                        j.detalhes_restricao, j.conjuge_nome, j.termos_aceitos_em, j.termos_aceitos_email,
+                        j.detalhes_restricao, j.instagram, j.estado_civil, j.data_casamento, j.circulo,
+                        j.conjuge_nome, j.termos_aceitos_em, j.termos_aceitos_email,
                         j.endereco_rua, j.endereco_numero, j.endereco_bairro, j.endereco_cidade, j.endereco_estado,
                         j.endereco_cep, j.nao_serve_ejc ? 1 : 0, j.motivo_nao_serve_ejc, j.equipe_saude ? 1 : 0
                     ];
+                    if (comMontagemEjcId) {
+                        insertFields.splice(7, 0, 'montagem_ejc_id');
+                        insertParams.splice(7, 0, j.montagem_ejc_id || null);
+                    }
                     if (comSexo) {
                         insertFields.push('sexo');
                         insertParams.push(j.sexo);

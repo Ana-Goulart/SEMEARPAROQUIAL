@@ -13,7 +13,7 @@ const menuTemplate = `
         </div>
         <div class="nav flex-column mt-2">
             <a href="/dashboard" class="nav-link" title="Dashboard">
-                <span class="menu-link-icon"><i class="fa-solid fa-chart-line"></i></span><span class="link-text">Visão Geral</span>
+                <span class="menu-link-icon"><i class="fa-solid fa-chart-line"></i></span><span class="link-text">Dashboard</span>
             </a>
 
             <div class="menu-group" data-group="gestao">
@@ -28,105 +28,116 @@ const menuTemplate = `
                     <a href="/gestaodoencontro/tios" class="nav-link" title="Tios">
                         <span class="menu-link-icon"><i class="fa-solid fa-people-group"></i></span><span class="link-text">Tios</span>
                     </a>
-                    <a href="/gestaodoencontro/equipes" class="nav-link" title="Equipes">
-                        <span class="menu-link-icon"><i class="fa-solid fa-users"></i></span><span class="link-text">Equipes e Funções</span>
-                    </a>
-                    <a href="/gestaodoencontro/ejc" class="nav-link" title="EJC">
-                        <span class="menu-link-icon"><i class="fa-solid fa-bullseye"></i></span><span class="link-text">Edições do EJC</span>
-                    </a>
-                    <a href="/gestaodoencontro/montarencontro" class="nav-link" title="Montar Encontro">
-                        <span class="menu-link-icon"><i class="fa-solid fa-puzzle-piece"></i></span><span class="link-text">Montagem do Encontro</span>
-                    </a>
-                    <a href="/gestaodoencontro/regras" class="nav-link" title="Regras">
-                        <span class="menu-link-icon"><i class="fa-solid fa-scale-balanced"></i></span><span class="link-text">Regras</span>
-                    </a>
                     <a href="/gestaodoencontro/formularios-atualizacao" class="nav-link" title="Formulários">
                         <span class="menu-link-icon"><i class="fa-solid fa-file-lines"></i></span><span class="link-text">Formulários</span>
                     </a>
                     <a href="/gestaodoencontro/missaoexterna" class="nav-link" title="Missão Externa">
-                        <span class="menu-link-icon"><i class="fa-solid fa-compass"></i></span><span class="link-text">Missão Externa</span>
+                        <span class="menu-link-icon"><i class="fa-solid fa-compass"></i></span><span class="link-text">Missão externa</span>
+                    </a>
+                    <a href="/configuracoes/coordenacoes" class="nav-link" title="Coordenações">
+                        <span class="menu-link-icon"><i class="fa-solid fa-compass-drafting"></i></span><span class="link-text">Coordenações</span>
+                    </a>
+                    <a href="/configuracoes/circulos" class="nav-link" title="Circulos">
+                        <span class="menu-link-icon"><i class="fa-solid fa-palette"></i></span><span class="link-text">Circulos</span>
+                    </a>
+                    <a href="/configuracoes/meuejc" class="nav-link" title="Info">
+                        <span class="menu-link-icon"><i class="fa-solid fa-circle-info"></i></span><span class="link-text">Info</span>
                     </a>
                 </div>
             </div>
 
-            <div class="menu-group" data-group="participacoes">
-                <button type="button" class="menu-group-toggle" data-group-toggle="participacoes">
-                    <span class="group-title"><span class="menu-group-icon"><i class="fa-solid fa-user-group"></i></span><span>Participações</span></span>
+            <div class="menu-group" data-group="encontros">
+                <button type="button" class="menu-group-toggle" data-group-toggle="encontros">
+                    <span class="group-title"><span class="menu-group-icon"><i class="fa-solid fa-bullseye"></i></span><span>ENCONTROS</span></span>
                     <span class="menu-chevron">▸</span>
                 </button>
-                <div class="menu-group-links" data-group-links="participacoes">
+                <div class="menu-group-links" data-group-links="encontros">
+                    <a href="/gestaodoencontro/equipes" class="nav-link" title="Equipes e Funções">
+                        <span class="menu-link-icon"><i class="fa-solid fa-users"></i></span><span class="link-text">Equipes e funções</span>
+                    </a>
+                    <a href="/gestaodoencontro/ejc" class="nav-link" title="Edições">
+                        <span class="menu-link-icon"><i class="fa-solid fa-book-open-reader"></i></span><span class="link-text">Edições</span>
+                    </a>
+                </div>
+            </div>
+
+            <div class="menu-group" data-group="outros-ejcs">
+                <button type="button" class="menu-group-toggle" data-group-toggle="outros-ejcs">
+                    <span class="group-title"><span class="menu-group-icon"><i class="fa-solid fa-globe"></i></span><span>OUTROS EJCs</span></span>
+                    <span class="menu-chevron">▸</span>
+                </button>
+                <div class="menu-group-links" data-group-links="outros-ejcs">
                     <a href="/gestaodoencontro/outrosejcs" class="nav-link" title="Outros EJCs">
                         <span class="menu-link-icon"><i class="fa-solid fa-globe"></i></span><span class="link-text">Outros EJCs</span>
-                    </a>
-                    <a href="/gestaodoencontro/jovensoutroejc" class="nav-link" title="Membros de Outro EJC">
-                        <span class="menu-link-icon"><i class="fa-solid fa-id-card"></i></span><span class="link-text">Membros de Outro EJC</span>
                     </a>
                 </div>
             </div>
 
             <div class="menu-group" data-group="planejamento">
                 <button type="button" class="menu-group-toggle" data-group-toggle="planejamento">
-                    <span class="group-title"><span class="menu-group-icon"><i class="fa-solid fa-calendar-days"></i></span><span>Planejamento</span></span>
+                    <span class="group-title"><span class="menu-group-icon"><i class="fa-solid fa-calendar-days"></i></span><span>PLANEJAMENTO</span></span>
                     <span class="menu-chevron">▸</span>
                 </button>
                 <div class="menu-group-links" data-group-links="planejamento">
                     <a href="/planejamento/calendario" class="nav-link" title="Calendário">
                         <span class="menu-link-icon"><i class="fa-solid fa-calendar-days"></i></span><span class="link-text">Calendário</span>
                     </a>
-                    <a href="/planejamento/espacos" class="nav-link" title="Espaços da Igreja">
-                        <span class="menu-link-icon"><i class="fa-solid fa-landmark"></i></span><span class="link-text">Espaços da Igreja</span>
-                    </a>
-                    <a href="/planejamento/atasdereuniao" class="nav-link" title="Atas de Reunião">
-                        <span class="menu-link-icon"><i class="fa-solid fa-clipboard"></i></span><span class="link-text">Atas de Reunião</span>
+                </div>
+            </div>
+
+            <div class="menu-group" data-group="secretaria">
+                <button type="button" class="menu-group-toggle" data-group-toggle="secretaria">
+                    <span class="group-title"><span class="menu-group-icon"><i class="fa-solid fa-clipboard"></i></span><span>SECRETARIA</span></span>
+                    <span class="menu-chevron">▸</span>
+                </button>
+                <div class="menu-group-links" data-group-links="secretaria">
+                    <a href="/planejamento/atasdereuniao" class="nav-link" title="Atas de reuniões">
+                        <span class="menu-link-icon"><i class="fa-solid fa-clipboard"></i></span><span class="link-text">Atas de reuniões</span>
                     </a>
                 </div>
             </div>
 
-            <div class="menu-group" data-group="administrativo">
-                <button type="button" class="menu-group-toggle" data-group-toggle="administrativo">
-                    <span class="group-title"><span class="menu-group-icon"><i class="fa-solid fa-briefcase"></i></span><span>Administrativo</span></span>
+            <div class="menu-group" data-group="financeiro">
+                <button type="button" class="menu-group-toggle" data-group-toggle="financeiro">
+                    <span class="group-title"><span class="menu-group-icon"><i class="fa-solid fa-wallet"></i></span><span>FINANCEIRO</span></span>
                     <span class="menu-chevron">▸</span>
                 </button>
-                <div class="menu-group-links" data-group-links="administrativo">
-                    <a href="/administrativo/financeiro" class="nav-link" title="Financeiro">
-                        <span class="menu-link-icon"><i class="fa-solid fa-wallet"></i></span><span class="link-text">Financeiro</span>
+                <div class="menu-group-links" data-group-links="financeiro">
+                    <a href="/administrativo/financeiro" class="nav-link" title="Caixa">
+                        <span class="menu-link-icon"><i class="fa-solid fa-cash-register"></i></span><span class="link-text">Caixa</span>
                     </a>
-                    <!-- Backup, Uso do Sistema e Anexos permanecem disponíveis no projeto, mas ocultos do menu. -->
+                </div>
+            </div>
+
+            <div class="menu-group" data-group="minha-igreja">
+                <button type="button" class="menu-group-toggle" data-group-toggle="minha-igreja">
+                    <span class="group-title"><span class="menu-group-icon"><i class="fa-solid fa-church"></i></span><span>MINHA IGREJA</span></span>
+                    <span class="menu-chevron">▸</span>
+                </button>
+                <div class="menu-group-links" data-group-links="minha-igreja">
                     <a href="/administrativo/contatos" class="nav-link" title="Contatos">
                         <span class="menu-link-icon"><i class="fa-solid fa-address-book"></i></span><span class="link-text">Contatos</span>
+                    </a>
+                    <a href="/planejamento/espacos" class="nav-link" title="Espaços da Igreja">
+                        <span class="menu-link-icon"><i class="fa-solid fa-landmark"></i></span><span class="link-text">Espaços</span>
                     </a>
                     <a href="/administrativo/almoxarifado" class="nav-link" title="Almoxarifado">
                         <span class="menu-link-icon"><i class="fa-solid fa-boxes-stacked"></i></span><span class="link-text">Almoxarifado</span>
                     </a>
-                    <a href="/administrativo/ajuda" class="nav-link" title="Ajuda">
-                        <span class="menu-link-icon"><i class="fa-solid fa-life-ring"></i></span><span class="link-text">Ajuda</span>
-                    </a>
-                    <a href="/administrativo/logs" class="nav-link" title="Log">
-                        <span class="menu-link-icon"><i class="fa-solid fa-clock-rotate-left"></i></span><span class="link-text">Log</span>
-                    </a>
                 </div>
             </div>
 
-            <div class="menu-group" data-group="configuracoes">
-                <button type="button" class="menu-group-toggle" data-group-toggle="configuracoes">
-                    <span class="group-title"><span class="menu-group-icon"><i class="fa-solid fa-sliders"></i></span><span>Cadastros Base</span></span>
+            <div class="menu-group" data-group="sistema">
+                <button type="button" class="menu-group-toggle" data-group-toggle="sistema">
+                    <span class="group-title"><span class="menu-group-icon"><i class="fa-solid fa-gear"></i></span><span>SISTEMA</span></span>
                     <span class="menu-chevron">▸</span>
                 </button>
-                <div class="menu-group-links" data-group-links="configuracoes">
+                <div class="menu-group-links" data-group-links="sistema">
                     <a href="/configuracoes/usuarios" class="nav-link" title="Usuários">
                         <span class="menu-link-icon"><i class="fa-solid fa-users"></i></span><span class="link-text">Usuários</span>
                     </a>
-                    <a href="/configuracoes/coordenacoes" class="nav-link" title="Coordenações">
-                        <span class="menu-link-icon"><i class="fa-solid fa-compass"></i></span><span class="link-text">Coordenações</span>
-                    </a>
-                    <a href="/configuracoes/funcoes-dirigencia" class="nav-link" title="Funções da Dirigência">
-                        <span class="menu-link-icon"><i class="fa-solid fa-sitemap"></i></span><span class="link-text">Funções da Dirigência</span>
-                    </a>
-                    <a href="/configuracoes/meuejc" class="nav-link" title="Meu EJC">
-                        <span class="menu-link-icon"><i class="fa-solid fa-tag"></i></span><span class="link-text">Meu EJC</span>
-                    </a>
-                    <a href="/configuracoes/circulos" class="nav-link" title="Círculos">
-                        <span class="menu-link-icon"><i class="fa-solid fa-palette"></i></span><span class="link-text">Círculos</span>
+                    <a href="/configuracoes/funcoes-dirigencia" class="nav-link" title="Funções">
+                        <span class="menu-link-icon"><i class="fa-solid fa-sitemap"></i></span><span class="link-text">Funções</span>
                     </a>
                 </div>
             </div>
@@ -159,11 +170,11 @@ const menuTemplate = `
                                 <small>Alternar aparência do sistema</small>
                             </span>
                         </button>
-                        <a href="/configuracoes/meuejc" class="dropdown-item topbar-settings-item" title="Meu EJC">
+                        <a href="/configuracoes/meuejc" class="dropdown-item topbar-settings-item" title="Info">
                             <span class="topbar-settings-icon"><i class="fas fa-sliders"></i></span>
                             <span>
-                                <strong>Configurações</strong>
-                                <small>Personalizar dados do sistema</small>
+                                <strong>Info</strong>
+                                <small>Dados do encontro</small>
                             </span>
                         </a>
                     </div>
@@ -715,11 +726,13 @@ const MENU_ROUTE_ALIASES = {
     '/ejc': '/gestaodoencontro/ejc',
     '/equipes': '/gestaodoencontro/equipes',
     '/outros-ejcs': '/gestaodoencontro/outrosejcs',
-    '/jovens-outro-ejc': '/gestaodoencontro/jovensoutroejc',
+    '/jovens-outro-ejc': '/gestaodoencontro/outrosejcs',
+    '/gestaodoencontro/jovensoutroejc': '/gestaodoencontro/outrosejcs',
     '/visitantes': '/gestaodoencontro/visitantes',
     '/tios': '/gestaodoencontro/tios',
-    '/montar-encontro': '/gestaodoencontro/montarencontro',
-    '/gestaodoencontro/regras': '/gestaodoencontro/regras',
+    '/montar-encontro': '/gestaodoencontro/ejc',
+    '/gestaodoencontro/montarencontro': '/gestaodoencontro/ejc',
+    '/gestaodoencontro/montarencontro/equipe': '/gestaodoencontro/ejc',
     '/gestaodoencontro/formularios-atualizacao': '/gestaodoencontro/formularios-atualizacao',
     '/moita': '/gestaodoencontro/missaoexterna',
     '/garcons': '/gestaodoencontro/missaoexterna',
@@ -745,29 +758,28 @@ const MENU_ROUTE_ALIASES = {
 };
 
 const MENU_TITLE_TERMS = {
+    '/dashboard': ['dashboard'],
     '/gestaodoencontro/listamestre': ['lista mestre'],
     '/gestaodoencontro/tios': ['tios'],
     '/gestaodoencontro/equipes': ['equipes', 'equipes e funcoes'],
-    '/gestaodoencontro/ejc': ['ejc', 'edicoes do ejc'],
+    '/gestaodoencontro/ejc': ['ejc', 'edicoes', 'edicoes do ejc'],
     '/gestaodoencontro/montarencontro': ['montagem do encontro', 'montando'],
-    '/gestaodoencontro/regras': ['regras'],
     '/gestaodoencontro/formularios-atualizacao': ['formularios'],
     '/gestaodoencontro/missaoexterna': ['missao externa'],
-    '/gestaodoencontro/outrosejcs': ['outros ejcs'],
-    '/gestaodoencontro/jovensoutroejc': ['membros de outro ejc'],
+    '/gestaodoencontro/outrosejcs': ['outros ejcs', 'membros', 'membros de outro ejc', 'tios de outro ejc'],
     '/gestaodoencontro/visitantes': ['visitantes'],
     '/planejamento/calendario': ['calendario'],
-    '/planejamento/espacos': ['espacos da igreja'],
-    '/planejamento/atasdereuniao': ['atas de reuniao'],
-    '/administrativo/financeiro': ['financeiro'],
+    '/planejamento/espacos': ['espacos', 'espacos da igreja'],
+    '/planejamento/atasdereuniao': ['atas', 'atas de reuniao'],
+    '/administrativo/financeiro': ['caixa', 'financeiro'],
     '/administrativo/contatos': ['contatos'],
     '/administrativo/almoxarifado': ['almoxarifado'],
     '/administrativo/ajuda': ['ajuda'],
     '/administrativo/logs': ['log', 'logs', 'log do sistema'],
     '/configuracoes/usuarios': ['usuarios'],
     '/configuracoes/coordenacoes': ['coordenacoes'],
-    '/configuracoes/funcoes-dirigencia': ['funcoes da dirigencia'],
-    '/configuracoes/meuejc': ['meu ejc'],
+    '/configuracoes/funcoes-dirigencia': ['funcoes', 'funcoes da dirigencia'],
+    '/configuracoes/meuejc': ['info', 'meu ejc'],
     '/configuracoes/circulos': ['circulos']
 };
 
@@ -816,7 +828,7 @@ function ocultarTituloDoMenuAtivo(identifier) {
     const candidates = Array.from(appRoot.querySelectorAll('h1, h2, h3, h4')).filter((heading) => {
         if (!heading || heading.dataset.menuTitleHidden === 'true') return false;
         if (heading.closest('.modal, .offcanvas, .toast, .accordion, .hero-panel')) return false;
-        if (heading.matches('.hero-title, .section-title, .panel-title, .card-title')) return false;
+        if (heading.matches('.hero-title, .section-title, .panel-title, .card-title, .ejc-card-title, .ejc-detail-title, .ejc-panel-title, .ejc-team-title')) return false;
         const rect = heading.getBoundingClientRect();
         return rect.top - rootRect.top <= 260 && rect.bottom >= rootRect.top;
     });

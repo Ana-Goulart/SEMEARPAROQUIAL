@@ -143,9 +143,7 @@
                         const edicao = this.resumo.edicao_atual && this.resumo.edicao_atual.numero
                             ? `${this.resumo.edicao_atual.numero}º`
                             : 'Sem edição';
-                        const edicaoLink = this.resumo.edicao_atual && this.resumo.edicao_atual.origem === 'MONTAGEM'
-                            ? '/gestaodoencontro/montarencontro'
-                            : '/gestaodoencontro/ejc';
+                        const edicaoLink = '/gestaodoencontro/ejc';
                         return [
                             {
                                 key: 'jovens',

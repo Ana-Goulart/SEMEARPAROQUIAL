@@ -51,169 +51,25 @@
         <main class="container-fluid">
             <div class="d-flex justify-content-between mb-4 align-items-center border-bottom pb-3">
                 <div>
-                    <button class="btn btn-sm btn-soft-secondary mb-2" @click="voltar">← Voltar para equipes</button>
+                    <button class="btn btn-sm btn-soft-secondary mb-2" @click="voltar">Voltar para equipes</button>
                     <h3 class="mb-0">Equipe: <span class="text-primary">{{ (equipe && equipe.nome) || '-' }}</span></h3>
                     <p class="text-muted small mb-0">Montagem: {{ numeroParaRomano((montagem && montagem.numero_ejc) || '') }} EJC</p>
                 </div>
             </div>
 
-            <div class="card border-0 shadow-sm mb-4">
+            <div class="card border-0 shadow-sm">
                 <div class="card-body">
-                    <ul class="nav nav-tabs mb-3">
-                        <li class="nav-item">
-                            <button class="nav-link" :class="{active: abaEquipe==='titulares'}" @click="abaEquipe='titulares'">Titulares</button>
-                        </li>
-                        <li class="nav-item">
-                            <button class="nav-link" :class="{active: abaEquipe==='reservas'}" @click="abaEquipe='reservas'">Reservas</button>
-                        </li>
-                        <li class="nav-item">
-                            <button class="nav-link" :class="{active: abaEquipe==='presenca'}" @click="abrirPresenca">Controle de Presença</button>
-                        </li>
-                    </ul>
-
-                    <div v-if="abaEquipe==='titulares'">
-                        <h6 class="mb-3">Adicionar Membro (Titular)</h6>
-                        <div class="row g-2 align-items-end">
-                            <div class="col-md-4">
-                                <label class="form-label small text-muted mb-1">Fonte</label>
-                                <select class="form-select form-select-sm" v-model="fonteSelecionada">
-                                    <option value="LISTA_MESTRE">Lista Mestre</option>
-                                    <option value="TIOS">Tios</option>
-                                    <option value="OUTRO_EJC">Jovens de outro EJC</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4" v-if="fonteSelecionada === 'OUTRO_EJC'">
-                                <label class="form-label small text-muted mb-1">Selecionar EJC</label>
-                                <select class="form-select form-select-sm" v-model.number="outroEjcSelecionado" @change="onOutroEjcChange">
-                                    <option :value="0">Selecione o EJC...</option>
-                                    <option v-for="oe in outrosEjcs" :key="`oe-${oe.id}`" :value="oe.id">
-                                        {{ [oe.paroquia, oe.nome].filter(Boolean).join(' - ') || ('EJC #' + oe.id) }}
-                                    </option>
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label small text-muted mb-1">Função</label>
-                                <select class="form-select form-select-sm" v-model.number="funcaoSelecionada">
-                                    <option :value="0">Selecione...</option>
-                                    <option v-for="f in funcoes" :key="`f-${f.id}`" :value="f.id">{{ f.nome }}</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <button class="btn btn-sm btn-outline-primary" @click="abrirBusca('titular')" :disabled="!funcaoSelecionada || (fonteSelecionada === 'OUTRO_EJC' && !outroEjcSelecionado)">Adicionar membro</button>
-                            </div>
+                    <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-start gap-3 mb-3">
+                        <div>
+                            <h5 class="mb-2">Ligações da equipe</h5>
+                            <p class="text-muted mb-1">Selecione o status e salve.</p>
+                            <p class="text-muted small mb-0">Total de pessoas nesta lista: {{ totalPessoasLista(membros) }}</p>
                         </div>
+                        <button class="btn btn-sm btn-primary d-inline-flex align-items-center gap-2 align-self-start" @click="abrirModalAdicionarMembro">
+                            <i class="fas fa-user-plus"></i>
+                            <span>Adicionar membro</span>
+                        </button>
                     </div>
-
-                    <div v-else-if="abaEquipe==='reservas'">
-                        <h6 class="mb-3">Adicionar Membro (Reserva)</h6>
-                        <div class="row g-2 align-items-end">
-                            <div class="col-md-4">
-                                <label class="form-label small text-muted mb-1">Fonte</label>
-                                <select class="form-select form-select-sm" v-model="fonteSelecionada">
-                                    <option value="LISTA_MESTRE">Lista Mestre</option>
-                                    <option value="TIOS">Tios</option>
-                                    <option value="OUTRO_EJC">Jovens de outro EJC</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4" v-if="fonteSelecionada === 'OUTRO_EJC'">
-                                <label class="form-label small text-muted mb-1">Selecionar EJC</label>
-                                <select class="form-select form-select-sm" v-model.number="outroEjcSelecionado" @change="onOutroEjcChange">
-                                    <option :value="0">Selecione o EJC...</option>
-                                    <option v-for="oe in outrosEjcs" :key="`oe-r-${oe.id}`" :value="oe.id">
-                                        {{ [oe.paroquia, oe.nome].filter(Boolean).join(' - ') || ('EJC #' + oe.id) }}
-                                    </option>
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <label class="form-label small text-muted mb-1">Função</label>
-                                <select class="form-select form-select-sm" v-model.number="funcaoReservaSelecionada">
-                                    <option :value="0">Selecione...</option>
-                                    <option v-for="f in funcoes" :key="`f-r-${f.id}`" :value="f.id">{{ f.nome }}</option>
-                                </select>
-                            </div>
-                            <div class="col-md-4">
-                                <button class="btn btn-sm btn-outline-primary" @click="abrirBusca('reserva')" :disabled="!funcaoReservaSelecionada || (fonteSelecionada === 'OUTRO_EJC' && !outroEjcSelecionado)">Adicionar reserva</button>
-                            </div>
-                        </div>
-
-                        <div class="table-responsive mt-3">
-                            <div class="text-muted small mb-2">Total de pessoas nesta lista: {{ totalPessoasLista(reservas) }}</div>
-                            <table class="table table-sm table-hover align-middle">
-                                <thead>
-                                    <tr>
-                                        <th>Nome</th>
-                                        <th>Função</th>
-                                        <th>Telefone</th>
-                                        <th class="text-end"></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr v-for="r in reservas" :key="`res-${r.membro_id}`">
-                                        <td class="fw-semibold">{{ r.jovem_nome || r.nome_externo }}</td>
-                                        <td>{{ r.funcao_nome }}</td>
-                                        <td>{{ telefoneExibicao(r) }}</td>
-                                        <td class="text-end">
-                                            <button class="btn btn-sm btn-outline-success me-2" @click="moverParaTitular(r)">Tornar titular</button>
-                                            <button class="btn btn-sm btn-outline-danger" @click="removerMembro(r.membro_id)">Remover</button>
-                                        </td>
-                                    </tr>
-                                    <tr v-if="!reservas.length">
-                                        <td colspan="4" class="text-muted text-center py-3">Nenhuma reserva cadastrada.</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <div v-else>
-                        <h6 class="mb-3">Controle de Presença</h6>
-                        <div v-if="carregandoPresenca" class="text-center py-3">
-                            <div class="spinner-border spinner-border-sm text-primary me-2"></div>Carregando...
-                        </div>
-                        <div v-else>
-                            <div v-if="reunioes.length">
-                                <div class="table-responsive">
-                                    <table class="table table-sm table-hover align-middle">
-                                        <thead>
-                                            <tr>
-                                                <th style="min-width: 220px;">Membro</th>
-                                                <th v-for="r in reunioes" :key="`pres-${r.id}`" class="text-center">
-                                                    {{ formatarData(r.data_reuniao) }}
-                                                </th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr v-for="j in membrosPresenca" :key="`j-pres-${j.id}`">
-                                                <td class="fw-semibold">{{ j.nome_completo }}</td>
-                                                <td v-for="r in reunioes" :key="`p-${r.id}-${j.id}`" class="text-center">
-                                                    <button class="btn btn-sm" :class="presencasLocal[`${r.id}-${j.id}`] ? 'btn-success' : 'btn-outline-secondary'"
-                                                        @click="togglePresenca(r.id, j.id)">
-                                                        <i v-if="presencasLocal[`${r.id}-${j.id}`]" class="fa-solid fa-circle icon-accent"></i>
-                                                        <i v-else class="fa-regular fa-circle icon-accent"></i>
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                            <tr v-if="!membrosPresenca.length">
-                                                <td :colspan="reunioes.length + 1" class="text-muted text-center py-3">Nenhum membro apto.</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <div class="text-end">
-                                    <button class="btn btn-soft-secondary d-flex align-items-center gap-1" @click="salvarPresencas" :disabled="salvandoPresenca">Salvar</button>
-                                </div>
-                            </div>
-                            <div v-else class="text-muted text-center py-3">Nenhuma reunião cadastrada.</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card border-0 shadow-sm" v-if="abaEquipe==='titulares'">
-                <div class="card-body">
-                    <h5 class="mb-2">Ligações (Titulares)</h5>
-                    <p class="text-muted mb-1">Selecione o status e salve.</p>
-                    <p class="text-muted small mb-3">Total de pessoas nesta lista: {{ totalPessoasLista(membros) }}</p>
 
                     <ul class="nav nav-tabs mb-3">
                         <li class="nav-item">
@@ -288,7 +144,7 @@
                                     </td>
                                 </tr>
                                 <tr v-if="!membros.length">
-                                    <td colspan="8" class="text-muted text-center py-3">Nenhum jovem alocado.</td>
+                                    <td colspan="8" class="text-muted text-center py-3">Nenhum membro alocado.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -327,11 +183,63 @@
             </div>
         </main>
 
+        <div class="modal fade" id="modalAdicionarMembro" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-light">
+                        <h5 class="modal-title">Adicionar membro</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p class="text-muted small mb-3">Escolha a fonte e a função antes de buscar a pessoa.</p>
+
+                        <div class="mb-3">
+                            <label class="form-label small text-muted mb-1">Fonte</label>
+                            <select class="form-select" v-model="fonteSelecionada">
+                                <option value="LISTA_MESTRE">Lista Mestre</option>
+                                <option value="TIOS">Tios</option>
+                                <option value="TIOS_OUTRO_EJC">Tios de outro EJC</option>
+                                <option value="OUTRO_EJC">Jovens de outro EJC</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3" v-if="fonteSelecionada === 'OUTRO_EJC' || fonteSelecionada === 'TIOS_OUTRO_EJC'">
+                            <label class="form-label small text-muted mb-1">Selecionar EJC</label>
+                            <select class="form-select" v-model.number="outroEjcSelecionado" @change="onOutroEjcChange">
+                                <option :value="0">Selecione o EJC...</option>
+                                <option v-for="oe in outrosEjcs" :key="`oe-${oe.id}`" :value="oe.id">
+                                    {{ [oe.paroquia, oe.nome].filter(Boolean).join(' - ') || ('EJC #' + oe.id) }}
+                                </option>
+                            </select>
+                        </div>
+
+                        <div class="mb-0">
+                            <label class="form-label small text-muted mb-1">Função</label>
+                            <select class="form-select" v-model.number="funcaoSelecionada">
+                                <option :value="0">Selecione...</option>
+                                <option v-for="f in funcoes" :key="`f-${f.id}`" :value="f.id">{{ f.nome }}</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-soft-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary d-inline-flex align-items-center gap-2" @click="confirmarAdicionarMembro" :disabled="!podeAdicionarMembro()">
+                            <i class="fas fa-arrow-right"></i>
+                            <span>Continuar</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="modal fade" id="modalBuscarJovem" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content border-0 shadow">
                     <div class="modal-header bg-light">
-                        <h5 class="modal-title">Adicionar membro</h5>
+                        <div>
+                            <h5 class="modal-title mb-1">Adicionar membro</h5>
+                            <p class="text-muted small mb-0">{{ resumoSelecaoAdicionarMembro() }}</p>
+                        </div>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
@@ -369,7 +277,9 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             injetarMenu('#app');
-            ativarMenu('/gestaodoencontro/montarencontro');
+            const params = new URLSearchParams(window.location.search);
+            const origem = String(params.get('origem') || '').trim().toLowerCase();
+            ativarMenu(origem === 'edicoes-ejc' ? '/gestaodoencontro/ejc' : '/gestaodoencontro/montarencontro');
         });
 
         const { createApp } = Vue;
@@ -378,21 +288,14 @@
                 return {
                     montagemId: 0,
                     equipeId: 0,
+                    origemAcesso: '',
                     montagem: null,
                     equipe: null,
                     funcoes: [],
                     funcaoSelecionada: 0,
                     membros: [],
-                    reservas: [],
                     recusas: [],
-                    membrosPresenca: [],
-                    reunioes: [],
-                    presencasLocal: {},
-                    presencasOrig: {},
-                    carregandoPresenca: false,
-                    salvandoPresenca: false,
                     abaLigacoes: 'ativas',
-                    abaEquipe: 'titulares',
                     outrosEjcs: [],
                     outroEjcSelecionado: 0,
                     nomeMeuEJC: (window.__NOME_EJC_ATUAL && String(window.__NOME_EJC_ATUAL).trim()) || 'Inconfidentes',
@@ -400,16 +303,18 @@
                     searchResults: [],
                     searchTimer: null,
                     searchErroMsg: '',
+                    modalAdicionarMembroInstance: null,
                     modalBuscaInstance: null,
-                    buscaDestino: 'titular',
-                    funcaoReservaSelecionada: 0,
                     fonteSelecionada: 'LISTA_MESTRE'
                 };
             },
             methods: {
                 voltar() {
-                    const id = this.montagemId || '';
-                    window.location.href = id ? `/gestaodoencontro/montarencontro?montagem_id=${id}` : '/gestaodoencontro/montarencontro';
+                    const params = new URLSearchParams();
+                    if (this.montagemId) params.set('montagem_id', String(this.montagemId));
+                    if (this.origemAcesso) params.set('origem', this.origemAcesso);
+                    const query = params.toString();
+                    window.location.href = query ? `/gestaodoencontro/montarencontro?${query}` : '/gestaodoencontro/montarencontro';
                 },
                 numeroParaRomano(num) {
                     if (!num) return '';
@@ -461,12 +366,6 @@
                         confirmado: String(m.status_ligacao || '').toUpperCase() === 'ACEITOU'
                     })) : [];
                     this.recusas = (Array.isArray(data.recusas) ? data.recusas : []).filter(r => Number(r.equipe_id) === Number(this.equipeId));
-                    await this.carregarReservas();
-                },
-                async carregarReservas() {
-                    const res = await fetch(`/api/montar-encontro/${this.montagemId}/equipes/${this.equipeId}/detalhes`);
-                    const data = res.ok ? await res.json().catch(() => ({})) : {};
-                    this.reservas = Array.isArray(data.substituicoes) ? data.substituicoes : [];
                 },
                 async carregarOutrosEjcs() {
                     const res = await fetch('/api/outros-ejcs');
@@ -493,8 +392,50 @@
                     return (Array.isArray(lista) ? lista : []).reduce((total, membro) => total + this.pesoMembro(membro), 0);
                 },
                 onOutroEjcChange() {},
-                abrirBusca(destino) {
-                    this.buscaDestino = destino || 'titular';
+                podeAdicionarMembro() {
+                    const precisaOutroEjc = this.fonteSelecionada === 'OUTRO_EJC' || this.fonteSelecionada === 'TIOS_OUTRO_EJC';
+                    return Boolean(this.funcaoSelecionada) && (!precisaOutroEjc || this.outroEjcSelecionado);
+                },
+                nomeFonteSelecionada() {
+                    const fonte = String(this.fonteSelecionada || '').toUpperCase();
+                    if (fonte === 'TIOS') return 'Tios';
+                    if (fonte === 'TIOS_OUTRO_EJC') {
+                        const ejc = (this.outrosEjcs || []).find((item) => Number(item.id) === Number(this.outroEjcSelecionado));
+                        if (!ejc) return 'Tios de outro EJC';
+                        return `Tios de outro EJC - ${[ejc.paroquia, ejc.nome].filter(Boolean).join(' - ') || `EJC #${ejc.id}`}`;
+                    }
+                    if (fonte === 'OUTRO_EJC') {
+                        const ejc = (this.outrosEjcs || []).find((item) => Number(item.id) === Number(this.outroEjcSelecionado));
+                        if (!ejc) return 'Jovens de outro EJC';
+                        return [ejc.paroquia, ejc.nome].filter(Boolean).join(' - ') || `EJC #${ejc.id}`;
+                    }
+                    return 'Lista Mestre';
+                },
+                nomeFuncaoSelecionada() {
+                    const funcao = (this.funcoes || []).find((item) => Number(item.id) === Number(this.funcaoSelecionada));
+                    return funcao ? funcao.nome : 'Função não selecionada';
+                },
+                resumoSelecaoAdicionarMembro() {
+                    return `Fonte: ${this.nomeFonteSelecionada()} | Função: ${this.nomeFuncaoSelecionada()}`;
+                },
+                abrirModalAdicionarMembro() {
+                    if (!this.modalAdicionarMembroInstance) {
+                        this.modalAdicionarMembroInstance = new bootstrap.Modal(document.getElementById('modalAdicionarMembro'));
+                    }
+                    this.searchErroMsg = '';
+                    this.modalAdicionarMembroInstance.show();
+                },
+                confirmarAdicionarMembro() {
+                    if (!this.podeAdicionarMembro()) return;
+                    const modalEl = document.getElementById('modalAdicionarMembro');
+                    const abrirBuscaDepois = () => {
+                        modalEl.removeEventListener('hidden.bs.modal', abrirBuscaDepois);
+                        this.abrirBusca();
+                    };
+                    modalEl.addEventListener('hidden.bs.modal', abrirBuscaDepois);
+                    this.modalAdicionarMembroInstance.hide();
+                },
+                abrirBusca() {
                     if (!this.modalBuscaInstance) {
                         this.modalBuscaInstance = new bootstrap.Modal(document.getElementById('modalBuscarJovem'));
                     }
@@ -518,7 +459,7 @@
                         params.set('q', this.searchQuery.trim());
                         const fonte = String(this.fonteSelecionada || 'LISTA_MESTRE').toUpperCase();
                         params.set('fonte', fonte);
-                        if (fonte === 'OUTRO_EJC') {
+                        if (fonte === 'OUTRO_EJC' || fonte === 'TIOS_OUTRO_EJC') {
                             if (!this.outroEjcSelecionado) {
                                 this.searchErroMsg = 'Selecione o EJC.';
                                 return;
@@ -536,14 +477,14 @@
                 async alocarJovem(jovem) {
                     const jovemId = Number((jovem && (jovem.id || jovem.jovem_id)) || 0);
                     try {
-                        const funcaoId = this.buscaDestino === 'reserva' ? this.funcaoReservaSelecionada : this.funcaoSelecionada;
+                        const funcaoId = this.funcaoSelecionada;
                         if (!funcaoId) {
                             this.searchErroMsg = 'Selecione a função antes de adicionar.';
                             return;
                         }
                         const fonte = String((jovem && jovem._fonte) || this.fonteSelecionada || 'LISTA_MESTRE').toUpperCase();
                         let res;
-                        if (fonte === 'TIOS') {
+                        if (fonte === 'TIOS' || fonte === 'TIOS_OUTRO_EJC') {
                             const nome = String(jovem.nome_completo || '').trim();
                             if (!nome) {
                                 this.searchErroMsg = 'Nome do tio não encontrado.';
@@ -557,9 +498,9 @@
                                     funcao_id: funcaoId,
                                     nome_completo: nome,
                                     telefone: jovem.telefone || null,
-                                    origem_tipo: 'TIOS',
+                                    origem_tipo: fonte,
                                     tio_casal_id: jovem.id || null,
-                                    eh_substituicao: this.buscaDestino === 'reserva'
+                                    eh_substituicao: false
                                 })
                             });
                         } else {
@@ -571,23 +512,15 @@
                                     equipe_id: this.equipeId,
                                     funcao_id: funcaoId,
                                     jovem_id: jovemId,
-                                    eh_substituicao: this.buscaDestino === 'reserva'
+                                    eh_substituicao: false
                                 })
                             });
                         }
                         if (!res.ok) {
                             const err = await res.json().catch(() => ({}));
-                            const msg = err.error || 'Erro ao adicionar jovem.';
+                            const msg = err.error || 'Erro ao adicionar membro.';
                             this.searchErroMsg = msg;
-                            if (res.status === 409 && err.conflict && this.buscaDestino === 'reserva') {
-                                const ok = await uiConfirm(`${msg} Deseja remover da equipe atual e passar para reserva aqui?`);
-                                if (ok && err.conflict.membro_id) {
-                                    await fetch(`/api/montar-encontro/membro/${err.conflict.membro_id}`, { method: 'DELETE' });
-                                    return await this.alocarJovem(jovem);
-                                }
-                            } else {
-                                alert(msg);
-                            }
+                            alert(msg);
                             return;
                         }
                         this.modalBuscaInstance.hide();
@@ -595,7 +528,7 @@
                         await this.carregarMembros();
                     } catch (err) {
                         console.error(err);
-                        this.searchErroMsg = 'Erro ao adicionar jovem.';
+                        this.searchErroMsg = 'Erro ao adicionar membro.';
                     }
                 },
                 async onStatusChange(membro) {
@@ -679,114 +612,6 @@
                         console.error(err);
                     }
                 },
-                async moverParaTitular(membro) {
-                    if (!membro || !membro.membro_id) return;
-                    try {
-                        let res = await fetch(`/api/montar-encontro/membro/${membro.membro_id}/mover-titular`, {
-                            method: 'PATCH'
-                        });
-                        if (res.status === 409) {
-                            const err = await res.json().catch(() => ({}));
-                            const msg = err.error || 'Esse jovem já está em outra equipe. Deseja mover para esta?';
-                            if (!(await uiConfirm(msg))) return;
-                            res = await fetch(`/api/montar-encontro/membro/${membro.membro_id}/mover-titular`, {
-                                method: 'PATCH',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ forcar: true })
-                            });
-                        }
-                        if (!res.ok) {
-                            const err = await res.json().catch(() => ({}));
-                            alert(err.error || 'Erro ao mover para titular.');
-                            return;
-                        }
-                        await this.carregarMembros();
-                    } catch (err) {
-                        console.error(err);
-                        alert('Erro ao mover para titular.');
-                    }
-                },
-                async abrirPresenca() {
-                    this.abaEquipe = 'presenca';
-                    await this.ensureReunioesConfiguradas();
-                    await this.carregarPresencas();
-                },
-                async ensureReunioesConfiguradas() {
-                    if (!this.montagem || !this.montagemId) return;
-                    const res = await fetch(`/api/montar-encontro/${this.montagemId}/reunioes`);
-                    const data = await res.json().catch(() => ({}));
-                    const existe = Array.isArray(data.reunioes) && data.reunioes.length;
-                    if (existe) return;
-                    const diRaw = this.montagem.data_inicio_reunioes || '';
-                    const dfRaw = this.montagem.data_fim_reunioes || '';
-                    const di = String(diRaw).includes('T') ? String(diRaw).split('T')[0] : String(diRaw);
-                    const df = String(dfRaw).includes('T') ? String(dfRaw).split('T')[0] : String(dfRaw);
-                    const diaSemana = Number.isFinite(Number(this.montagem.dia_semana_reunioes)) ? Number(this.montagem.dia_semana_reunioes) : 0;
-                    if (!di || !df) return;
-                    await fetch(`/api/montar-encontro/${this.montagemId}/reunioes/gerar`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            data_inicio: di,
-                            data_fim: df,
-                            dia_semana: diaSemana,
-                            periodo: null
-                        })
-                    });
-                },
-                async carregarPresencas() {
-                    if (!this.montagemId) return;
-                    this.carregandoPresenca = true;
-                    try {
-                        const res = await fetch(`/api/montar-encontro/${this.montagemId}/reunioes`);
-                        const data = await res.json().catch(() => ({}));
-                        this.reunioes = Array.isArray(data.reunioes) ? data.reunioes : [];
-                        const equipe = (Array.isArray(data.equipes) ? data.equipes : []).find(e => Number(e.id) === Number(this.equipeId));
-                        this.membrosPresenca = equipe ? (equipe.membros || []) : [];
-                        const map = {};
-                        (data.presencas || []).forEach(p => {
-                            const membroRef = Number(p.membro_ref || p.membro_id || p.jovem_id || 0);
-                            if (!membroRef) return;
-                            map[`${p.reuniao_id}-${membroRef}`] = !!p.presente;
-                        });
-                        this.presencasOrig = { ...map };
-                        this.presencasLocal = { ...map };
-                    } catch (err) {
-                        console.error(err);
-                        this.reunioes = [];
-                        this.membrosPresenca = [];
-                        this.presencasOrig = {};
-                        this.presencasLocal = {};
-                    } finally {
-                        this.carregandoPresenca = false;
-                    }
-                },
-                togglePresenca(reuniaoId, jovemId) {
-                    const key = `${reuniaoId}-${jovemId}`;
-                    this.presencasLocal[key] = !this.presencasLocal[key];
-                },
-                async salvarPresencas() {
-                    if (!this.montagemId) return;
-                    this.salvandoPresenca = true;
-                    try {
-                        const changes = Object.entries(this.presencasLocal).filter(([k, v]) => this.presencasOrig[k] !== v);
-                        for (const [key, val] of changes) {
-                            const [reuniaoId, jovemId] = key.split('-').map(Number);
-                            await fetch(`/api/montar-encontro/${this.montagemId}/reunioes/${reuniaoId}/presencas/${jovemId}`, {
-                                method: 'PATCH',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ presente: val })
-                            });
-                        }
-                        await this.carregarPresencas();
-                        alert('Presenças salvas.');
-                    } catch (err) {
-                        console.error(err);
-                        alert('Erro ao salvar presenças.');
-                    } finally {
-                        this.salvandoPresenca = false;
-                    }
-                },
                 formatarData(d) {
                     if (!d) return '--/--/----';
                     const data = new Date(d);
@@ -797,6 +622,7 @@
                     const params = new URLSearchParams(window.location.search);
                     this.montagemId = Number(params.get('montagem_id') || 0);
                     this.equipeId = Number(params.get('equipe_id') || 0);
+                    this.origemAcesso = String(params.get('origem') || '').trim().toLowerCase();
                 }
             },
             async mounted() {

@@ -11,7 +11,6 @@ const MENU_BY_PREFIX = [
     ['/api/equipes', 'Equipes e Funções'],
     ['/api/ejc', 'Edições do EJC'],
     ['/api/montar-encontro', 'Montagem do Encontro'],
-    ['/api/regras-ejc', 'Regras'],
     ['/api/formularios', 'Formulários'],
     ['/api/votacao', 'Votação'],
     ['/api/outros-ejcs', 'Outros EJCs'],

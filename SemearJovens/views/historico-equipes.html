@@ -11,11 +11,11 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="/css/velzon-theme.css">
-    <link rel="stylesheet" href="/css/style.css">
-    <script src="/js/ui-kit.js"></script>
-    <script src="/js/menu.js"></script>
-    <script src="/js/excel-utils.js"></script>
+    <link rel="stylesheet" href="/css/velzon-theme.css?v=20260420b">
+    <link rel="stylesheet" href="/css/style.css?v=20260420b">
+    <script src="/js/ui-kit.js?v=20260420b"></script>
+    <script src="/js/menu.js?v=20260420b"></script>
+    <script src="/js/excel-utils.js?v=20260420b"></script>
     <style>
         .ejc-page-shell {
             padding-bottom: 1.5rem;
@@ -30,6 +30,7 @@
 
         .ejc-page-header-actions-only {
             align-items: flex-end;
+            justify-content: flex-end;
         }
 
         .ejc-page-eyebrow {
@@ -199,7 +200,7 @@
         .ejc-card-title-row {
             display: flex;
             flex-direction: column;
-            gap: 0.85rem;
+            gap: 0.45rem;
         }
 
         .ejc-card-title {
@@ -208,32 +209,15 @@
             color: #1f3b67;
         }
 
-        .ejc-card-summary-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 0.75rem;
-        }
-
-        .ejc-card-summary-item {
-            border-radius: 18px;
-            border: 1px solid #eee8de;
-            background: rgba(255, 255, 255, 0.92);
-            padding: 0.85rem 0.95rem;
-        }
-
-        .ejc-card-summary-label {
-            display: block;
-            margin-bottom: 0.3rem;
+        .ejc-card-year-text {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
             font-size: 0.73rem;
             text-transform: uppercase;
             letter-spacing: 0.06em;
             font-weight: 700;
             color: #94a3b8;
-        }
-
-        .ejc-card-summary-value {
-            color: #334155;
-            font-weight: 700;
         }
 
         .ejc-card-details {
@@ -363,6 +347,105 @@
             box-shadow: 0 16px 32px rgba(15, 23, 42, 0.04);
         }
 
+        .ejc-choice-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.85rem;
+        }
+
+        .ejc-choice-card {
+            border: 1px solid #ece4d7;
+            border-radius: 22px;
+            background: linear-gradient(145deg, rgba(255, 251, 243, 0.98), #ffffff);
+            box-shadow: 0 14px 26px rgba(15, 23, 42, 0.05);
+            padding: 1rem;
+            text-align: left;
+        }
+
+        .ejc-choice-title {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            margin-bottom: 0.45rem;
+            color: #1f3b67;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .ejc-choice-title i {
+            color: #b57c20;
+        }
+
+        .ejc-choice-card p {
+            margin: 0 0 0.9rem;
+            color: #64748b;
+        }
+
+        .ejc-team-picker-toolbar {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.85rem;
+        }
+
+        .ejc-team-picker-summary {
+            color: #64748b;
+            font-size: 0.88rem;
+            font-weight: 600;
+        }
+
+        .ejc-team-picker-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+        }
+
+        .ejc-team-picker-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            min-height: 100%;
+            padding: 0.9rem 1rem;
+            border: 1px solid #ece4d7;
+            border-radius: 18px;
+            background: #fffdf9;
+        }
+
+        .ejc-team-picker-item .form-check-input {
+            margin-top: 0.2rem;
+            width: 1.1rem;
+            height: 1.1rem;
+        }
+
+        .ejc-team-picker-item .form-check {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            width: 100%;
+            margin: 0;
+        }
+
+        .ejc-team-picker-item .form-check-label {
+            width: 100%;
+            cursor: pointer;
+        }
+
+        .ejc-team-picker-name {
+            display: block;
+            color: #243b53;
+            font-size: 0.98rem;
+            font-weight: 700;
+        }
+
+        .ejc-team-picker-text {
+            display: block;
+            margin-top: 0.18rem;
+            color: #64748b;
+            font-size: 0.88rem;
+        }
+
         @media (min-width: 768px) {
             .ejc-page-header {
                 flex-direction: row;
@@ -398,10 +481,6 @@
                 grid-template-columns: repeat(2, minmax(0, 1fr));
             }
 
-            .ejc-card-summary-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr));
-            }
-
             .ejc-card-details-grid {
                 grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
             }
@@ -410,6 +489,11 @@
                 flex-direction: row;
                 justify-content: space-between;
                 align-items: center;
+            }
+
+            .ejc-choice-grid,
+            .ejc-team-picker-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
             }
         }
 
@@ -449,7 +533,7 @@
                     <div v-else class="ejc-cards-grid">
                         <article v-for="ejc in ejcsOrdenados" :key="chaveItemEjc(ejc)" class="ejc-edition-card">
                             <button type="button" class="ejc-card-trigger" @click="abrirDetalhesEjc(ejc)"
-                                :aria-label="`Abrir detalhes do ${numeroParaRomano(ejc.numero)}º EJC`">
+                                :aria-label="`Abrir detalhes do ${ejc.titulo_card || tituloNumeroEjc(ejc)}`">
                                 <div class="ejc-card-topline">
                                     <span class="ejc-card-kind" :class="{ 'is-montagem': ejc.isMontagem }">
                                         <i :class="ejc.isMontagem ? 'fa-solid fa-puzzle-piece' : 'fa-solid fa-book-open'"></i>
@@ -462,18 +546,8 @@
 
                                 <div class="ejc-card-title-row">
                                     <div>
-                                        <h4 class="ejc-card-title">{{ numeroParaRomano(ejc.numero) }}º EJC</h4>
-                                    </div>
-                                </div>
-
-                                <div class="ejc-card-summary-grid">
-                                    <div class="ejc-card-summary-item">
-                                        <span class="ejc-card-summary-label">Período</span>
-                                        <span class="ejc-card-summary-value">{{ resumoPeriodoEjc(ejc) }}</span>
-                                    </div>
-                                    <div class="ejc-card-summary-item">
-                                        <span class="ejc-card-summary-label">Quantidade de equipes</span>
-                                        <span class="ejc-card-summary-value">{{ totalEquipesDoItem(ejc) }}</span>
+                                        <h4 class="ejc-card-title">{{ ejc.titulo_card || tituloNumeroEjc(ejc) }}</h4>
+                                        <div class="ejc-card-year-text">Ano: {{ ejc.ano_card || anoExibicaoEjc(ejc) }}</div>
                                     </div>
                                 </div>
                             </button>
@@ -488,7 +562,7 @@
                     <div class="modal-content border-0 shadow">
                         <div class="modal-header bg-info text-white">
                             <h5 class="modal-title"><i class="fas fa-eye me-2"></i>Encontristas <span v-if="ejcSelecionado">({{
-                                    numeroParaRomano(ejcSelecionado.numero) }} EJC)</span></h5>
+                                    tituloNumeroEjc(ejcSelecionado) }}</span></h5>
                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body p-0">
@@ -535,49 +609,112 @@
                 </div>
             </div>
 
+            <div class="modal fade" id="modalNovoTipoEJC" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-lg modal-dialog-centered">
+                    <div class="modal-content border-0 shadow">
+                        <div class="modal-header bg-light">
+                            <h5 class="modal-title"><i class="fa-solid fa-layer-group me-2"></i>Novo EJC</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="text-muted mb-3">Escolha como você quer cadastrar esta nova edição.</p>
+                            <div class="ejc-choice-grid">
+                                <div class="ejc-choice-card">
+                                    <div class="ejc-choice-title">
+                                        <i class="fa-solid fa-puzzle-piece"></i>
+                                        <span>Montar Nova Edição</span>
+                                    </div>
+                                    <p>Comece a montagem com número, datas, tema, música tema e as equipes que vão participar desta edição.</p>
+                                    <button type="button" class="btn btn-outline-primary btn-ejc-action" @click="abrirFluxoMontagemNovaEdicao">
+                                        <span class="btn-ejc-icon"><i class="fa-solid fa-arrow-right icon-accent"></i></span>
+                                        <span class="btn-ejc-text">Montar</span>
+                                    </button>
+                                </div>
+
+                                <div class="ejc-choice-card">
+                                    <div class="ejc-choice-title">
+                                        <i class="fa-solid fa-book-open"></i>
+                                        <span>Cadastrar edição passada</span>
+                                    </div>
+                                    <p>Crie uma edição histórica e escolha exatamente quais equipes participaram dela.</p>
+                                    <button type="button" class="btn btn-primary btn-ejc-action" @click="abrirCadastroEdicaoPassada">
+                                        <span class="btn-ejc-icon"><i class="fa-solid fa-plus icon-accent"></i></span>
+                                        <span class="btn-ejc-text">Cadastrar</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-soft-secondary btn-ejc-action" data-bs-dismiss="modal">
+                                <span class="btn-ejc-icon"><i class="fa-solid fa-xmark icon-accent"></i></span>
+                                <span class="btn-ejc-text">Fechar</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Modal Adicionar/Editar EJC -->
             <div class="modal fade" id="modalEJC" tabindex="-1" aria-hidden="true">
                 <div class="modal-dialog modal-lg">
                     <div class="modal-content border-0 shadow">
                         <div class="modal-header bg-primary text-white">
-                            <h5 class="modal-title"><i :class="editando ? 'fas fa-pen-to-square me-2' : 'fas fa-plus me-2'"></i>{{ editando ? 'Editar EJC' : 'Novo EJC' }}</h5>
+                            <h5 class="modal-title"><i :class="editando ? 'fas fa-pen-to-square me-2' : (cadastroEhMontagem ? 'fa-solid fa-puzzle-piece me-2' : 'fas fa-book-open me-2')"></i>{{ tituloModalCadastro }}</h5>
                             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                         </div>
                         <div class="modal-body">
                             <form @submit.prevent="salvarEJC">
                                 <div class="row g-3">
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <label class="form-label">Número do EJC *</label>
-                                        <input type="number" v-model.number="formulario.numero" class="form-control"
-                                            required>
+                                        <input type="number" v-model.number="formulario.numero" class="form-control" required min="1">
                                     </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">Paróquia *</label>
-                                        <select v-model="formulario.paroquia" class="form-select" required>
-                                            <option value="">Selecione a paróquia</option>
-                                            <option :value="nomeMeuEJC">{{ nomeMeuEJC }}</option>
-                                        </select>
+                                    <div class="col-md-4">
+                                        <label class="form-label">Início do encontro *</label>
+                                        <input type="text" v-model="formulario.data_inicio" class="form-control date-br" placeholder="dd/mm/aaaa" required>
                                     </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">Ano</label>
-                                        <input type="number" v-model.number="formulario.ano" class="form-control">
+                                    <div class="col-md-4">
+                                        <label class="form-label">Fim do encontro *</label>
+                                        <input type="text" v-model="formulario.data_fim" class="form-control date-br" placeholder="dd/mm/aaaa" required>
                                     </div>
                                     <div class="col-md-6">
                                         <label class="form-label">Música Tema</label>
                                         <input type="text" v-model="formulario.musica_tema" class="form-control" placeholder="Ex: Nome da música">
                                     </div>
                                     <div class="col-md-6">
-                                        <label class="form-label">Data Início</label>
-                                        <input type="text" v-model="formulario.data_inicio" class="form-control date-br" placeholder="dd/mm/aaaa">
+                                        <label class="form-label">Tema</label>
+                                        <textarea v-model="formulario.descricao" class="form-control" rows="2" placeholder="Ex: Servir com alegria e amor"></textarea>
                                     </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label">Data Fim</label>
-                                        <input type="text" v-model="formulario.data_fim" class="form-control date-br" placeholder="dd/mm/aaaa">
-                                    </div>
-                                    <div class="col-md-12">
-                                        <label class="form-label">Descrição</label>
-                                        <textarea v-model="formulario.descricao" class="form-control"
-                                            rows="3"></textarea>
+                                    <div class="col-12">
+                                        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-2">
+                                            <div>
+                                                <label class="form-label mb-1">Equipes da edição *</label>
+                                                <div class="text-muted small">{{ cadastroEhMontagem ? 'Escolha quais equipes vão participar desta nova edição.' : 'Escolha quais equipes participaram desta edição passada.' }}</div>
+                                            </div>
+                                            <div class="ejc-team-picker-toolbar">
+                                                <span class="ejc-team-picker-summary">{{ formulario.equipe_ids.length }} selecionada(s)</span>
+                                                <div class="d-flex flex-wrap gap-2">
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary" @click="limparSelecaoEquipes">Limpar</button>
+                                                    <button type="button" class="btn btn-sm btn-outline-primary" @click="selecionarTodasEquipes">Selecionar todas</button>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div v-if="!todasEquipesOrdenadas.length" class="text-muted small border rounded p-3 bg-light">
+                                            Nenhuma equipe cadastrada para selecionar.
+                                        </div>
+
+                                        <div v-else class="ejc-team-picker-grid">
+                                            <label v-for="equipe in todasEquipesOrdenadas" :key="`cad-eq-${equipe.id}`" class="ejc-team-picker-item">
+                                                <div class="form-check">
+                                                    <input class="form-check-input" type="checkbox" :value="Number(equipe.id)" v-model="formulario.equipe_ids">
+                                                    <div class="form-check-label">
+                                                        <span class="ejc-team-picker-name">{{ equipe.nome || '-' }}</span>
+                                                        <span class="ejc-team-picker-text">{{ equipe.descricao || 'Equipe cadastrada no sistema.' }}</span>
+                                                    </div>
+                                                </div>
+                                            </label>
+                                        </div>
                                     </div>
                                 </div>
                             </form>
@@ -594,7 +731,7 @@
                             </button>
                             <button type="button" class="btn btn-primary btn-ejc-action" @click="salvarEJC" title="Salvar" aria-label="Salvar">
                                 <span class="btn-ejc-icon"><i class="fa-solid fa-floppy-disk icon-accent"></i></span>
-                                <span class="btn-ejc-text">{{ editando ? 'Atualizar' : 'Criar' }}</span>
+                                <span class="btn-ejc-text">{{ textoBotaoSalvarCadastro }}</span>
                             </button>
                         </div>
                     </div>
@@ -659,6 +796,8 @@
                     return {
                         ejcs: [],
                         editando: false,
+                        tipoCadastroAtual: 'edicao_passada',
+                        modalNovoTipoInstance: null,
                         nomeMeuEJC: (window.__NOME_EJC_ATUAL && String(window.__NOME_EJC_ATUAL).trim()) || 'Inconfidentes',
                         pesquisaRapida: '',
                         mostrarFiltrosAvancados: false,
@@ -671,11 +810,12 @@
                             id: null,
                             numero: null,
                             paroquia: '',
-                            ano: new Date().getFullYear(),
+                            ano: null,
                             musica_tema: '',
                             data_inicio: '',
                             data_fim: '',
-                            descricao: ''
+                            descricao: '',
+                            equipe_ids: []
                         },
                         encontristas: [],
                         ejcSelecionado: null,
@@ -688,6 +828,21 @@
                     }
                 },
                 computed: {
+                    cadastroEhMontagem() {
+                        return this.tipoCadastroAtual === 'montagem';
+                    },
+                    tituloModalCadastro() {
+                        if (this.editando) return 'Editar edição passada';
+                        return this.cadastroEhMontagem ? 'Montar Nova Edição' : 'Cadastrar edição passada';
+                    },
+                    textoBotaoSalvarCadastro() {
+                        if (this.editando) return 'Atualizar';
+                        return this.cadastroEhMontagem ? 'Criar e montar' : 'Cadastrar';
+                    },
+                    todasEquipesOrdenadas() {
+                        return [...(Array.isArray(this.todasEquipes) ? this.todasEquipes : [])]
+                            .sort((a, b) => String(a && a.nome || '').localeCompare(String(b && b.nome || ''), 'pt-BR'));
+                    },
                     ejcsFiltrados() {
                         const termosPesquisa = this.normalizarTextoBusca(this.pesquisaRapida).split(' ').filter(Boolean);
                         const anoFiltro = this.normalizarTextoBusca(this.filtros.ano);
@@ -697,7 +852,7 @@
                         return (this.ejcs || []).filter((ejc) => {
                             if (!this.registroAtendePesquisaRapida(ejc, termosPesquisa)) return false;
 
-                            if (anoFiltro && !this.normalizarTextoBusca(ejc.ano).includes(anoFiltro)) {
+                            if (anoFiltro && !this.normalizarTextoBusca(this.anoExibicaoEjc(ejc)).includes(anoFiltro)) {
                                 return false;
                             }
 
@@ -714,20 +869,172 @@
                     },
                     ejcsOrdenados() {
                         return [...this.ejcsFiltrados].sort((a, b) => {
-                            let numA = parseFloat(a.numero) || 0;
-                            let numB = parseFloat(b.numero) || 0;
+                            let numA = this.valorNumericoEjc(a);
+                            let numB = this.valorNumericoEjc(b);
                             if (numA === numB) return a.isMontagem ? -1 : 1;
-                            return numA - numB;
+                            return numB - numA;
                         });
                     }
                 },
                 methods: {
+                    resetFormularioEdicaoPassada() {
+                        this.editando = false;
+                        this.formulario = {
+                            id: null,
+                            numero: null,
+                            paroquia: this.nomeMeuEJC,
+                            ano: null,
+                            musica_tema: '',
+                            data_inicio: '',
+                            data_fim: '',
+                            descricao: '',
+                            equipe_ids: []
+                        };
+                    },
                     chaveItemEjc(ejc) {
                         return `${ejc && ejc.isMontagem ? 'montagem' : 'edicao'}-${ejc ? ejc.id : 'novo'}`;
                     },
+                    abrirModalAdicionar() {
+                        if (!this.modalNovoTipoInstance) {
+                            this.modalNovoTipoInstance = new bootstrap.Modal(document.getElementById('modalNovoTipoEJC'));
+                        }
+                        this.modalNovoTipoInstance.show();
+                    },
+                    async abrirCadastroEdicaoPassada() {
+                        if (this.modalNovoTipoInstance) this.modalNovoTipoInstance.hide();
+                        if (!this.todasEquipes.length) await this.buscarTodasEquipes();
+                        this.tipoCadastroAtual = 'edicao_passada';
+                        this.resetFormularioEdicaoPassada();
+                        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalEJC')).show();
+                    },
+                    async abrirFluxoMontagemNovaEdicao() {
+                        if (this.modalNovoTipoInstance) this.modalNovoTipoInstance.hide();
+                        if (!this.todasEquipes.length) await this.buscarTodasEquipes();
+                        this.tipoCadastroAtual = 'montagem';
+                        this.resetFormularioEdicaoPassada();
+                        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalEJC')).show();
+                    },
+                    selecionarTodasEquipes() {
+                        this.formulario.equipe_ids = this.todasEquipesOrdenadas
+                            .map((equipe) => Number(equipe && equipe.id))
+                            .filter((id) => Number.isInteger(id) && id > 0);
+                    },
+                    limparSelecaoEquipes() {
+                        this.formulario.equipe_ids = [];
+                    },
+                    anoDoFormularioEdicao() {
+                        const candidatos = [this.formulario.data_inicio, this.formulario.data_fim];
+                        for (const valor of candidatos) {
+                            const texto = String(valor || '').trim();
+                            if (!texto) continue;
+                            const matchBr = texto.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})$/);
+                            if (matchBr && matchBr[3]) return Number(matchBr[3]);
+                            const matchIso = texto.match(/^(\d{4})[-/]/);
+                            if (matchIso && matchIso[1]) return Number(matchIso[1]);
+                        }
+                        return new Date().getFullYear();
+                    },
+                    parseDateBrToIso(valor) {
+                        if (!valor) return null;
+                        const txt = String(valor).trim();
+                        if (!txt) return null;
+                        if (/^\d{4}-\d{2}-\d{2}$/.test(txt)) return txt;
+                        const isoMatch = txt.match(/^(\d{4})-(\d{2})-(\d{2})(?:[T\s].*)?$/);
+                        if (isoMatch) return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+                        const match = txt.match(/^(\d{2})[\/\-](\d{2})[\/\-](\d{4})$/);
+                        if (match) return `${match[3]}-${match[2]}-${match[1]}`;
+
+                        const txtNormalizado = txt.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+                        const meses = {
+                            janeiro: '01', jan: '01',
+                            fevereiro: '02', fev: '02',
+                            marco: '03', mar: '03',
+                            abril: '04', abr: '04',
+                            maio: '05', mai: '05',
+                            junho: '06', jun: '06',
+                            julho: '07', jul: '07',
+                            agosto: '08', ago: '08',
+                            setembro: '09', set: '09',
+                            outubro: '10', out: '10',
+                            novembro: '11', nov: '11',
+                            dezembro: '12', dez: '12'
+                        };
+                        const matchMes = txtNormalizado.match(/^(\d{2})[\/\-]([a-z]+)[\/\-](\d{4})$/);
+                        if (!matchMes || !meses[matchMes[2]]) return null;
+                        return `${matchMes[3]}-${meses[matchMes[2]]}-${matchMes[1]}`;
+                    },
+                    montarPayloadMontagem(payload, equipeIdsSelecionadas) {
+                        const dataInicio = String(payload?.data_inicio || '').trim();
+                        const dataFim = String(payload?.data_fim || '').trim() || dataInicio;
+                        return {
+                            numero_ejc: payload.numero,
+                            data_inicio_encontro: dataInicio,
+                            data_fim_encontro: dataFim,
+                            data_tarde_revelacao: dataFim,
+                            data_inicio_reunioes: dataInicio,
+                            data_fim_reunioes: dataFim,
+                            musica_tema: payload.musica_tema,
+                            descricao: payload.descricao,
+                            equipe_ids: equipeIdsSelecionadas
+                        };
+                    },
+                    async sincronizarEquipesDaEdicao(ejcId, equipeIdsSelecionadas) {
+                        const alvoId = Number(ejcId);
+                        if (!Number.isInteger(alvoId) || alvoId <= 0) return;
+
+                        await this.buscarEquipesDoEJC(alvoId);
+
+                        const selecionadas = Array.from(new Set((Array.isArray(equipeIdsSelecionadas) ? equipeIdsSelecionadas : [])
+                            .map((id) => Number(id))
+                            .filter((id) => Number.isInteger(id) && id > 0)));
+                        const atuais = this.equipesDoEJC(alvoId)
+                            .map((equipe) => Number(equipe && equipe.id))
+                            .filter((id) => Number.isInteger(id) && id > 0);
+                        const atuaisSet = new Set(atuais);
+                        const selecionadasSet = new Set(selecionadas);
+
+                        for (const equipeId of selecionadas) {
+                            if (atuaisSet.has(equipeId)) continue;
+                            const equipe = this.todasEquipesOrdenadas.find((item) => Number(item && item.id) === equipeId);
+                            if (!equipe || !equipe.nome) continue;
+                            const res = await fetch('/api/equipes', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    nome: equipe.nome,
+                                    descricao: equipe.descricao || null,
+                                    ejc_id: alvoId
+                                })
+                            });
+                            if (!res.ok) {
+                                const erro = await res.json().catch(() => ({}));
+                                throw new Error(erro.error || `Erro ao vincular a equipe ${equipe.nome}.`);
+                            }
+                        }
+
+                        for (const equipeId of atuais) {
+                            if (selecionadasSet.has(equipeId)) continue;
+                            const res = await fetch(`/api/equipes-ejc/${alvoId}/${equipeId}`, { method: 'DELETE' });
+                            if (!res.ok) {
+                                const erro = await res.json().catch(() => ({}));
+                                throw new Error(erro.error || 'Erro ao atualizar as equipes da edição.');
+                            }
+                        }
+
+                        await this.buscarEquipesDoEJC(alvoId);
+                    },
                     abrirDetalhesEjc(ejc) {
+                        if (ejc && ejc.isMontagem) {
+                            const paramsMontagem = new URLSearchParams({
+                                montagem_id: String(ejc && ejc.id ? ejc.id : ''),
+                                origem: 'edicoes-ejc'
+                            });
+                            window.location.href = `/gestaodoencontro/montarencontro?${paramsMontagem.toString()}`;
+                            return;
+                        }
+
                         const params = new URLSearchParams({
-                            tipo: ejc && ejc.isMontagem ? 'montagem' : 'edicao',
+                            tipo: 'edicao',
                             id: String(ejc && ejc.id ? ejc.id : '')
                         });
                         window.location.href = `/gestaodoencontro/ejc/detalhes?${params.toString()}`;
@@ -768,11 +1075,122 @@
                         if (fim === '--/--/----') return inicio;
                         return `${inicio} a ${fim}`;
                     },
+                    normalizarCardEjc(ejc) {
+                        const item = ejc ? { ...ejc } : {};
+                        const infoNumero = this.extrairNumeroEjc(item);
+                        const numeroCard = infoNumero.numero > 0 ? infoNumero.numero : 0;
+                        const anoCard = this.anoExibicaoEjc(item);
+                        return {
+                            ...item,
+                            numero: numeroCard || item.numero || item.numero_ejc || null,
+                            numero_card: numeroCard,
+                            titulo_card: this.rotuloNumeroEjc(numeroCard),
+                            ano_card: anoCard
+                        };
+                    },
+                    rotuloNumeroEjc(numero) {
+                        const numeroLimpo = Number(numero);
+                        if (!Number.isFinite(numeroLimpo) || numeroLimpo <= 0) return 'EJC sem número';
+                        const valorInteiro = Math.trunc(numeroLimpo);
+                        const romano = this.numeroParaRomano(valorInteiro);
+                        return `${romano || valorInteiro}º EJC`;
+                    },
+                    romanoParaNumero(valor) {
+                        const texto = String(valor || '').trim().toUpperCase();
+                        if (!texto || !/^[IVXLCDM]+$/.test(texto)) return 0;
+                        const mapa = { I: 1, V: 5, X: 10, L: 50, C: 100, D: 500, M: 1000 };
+                        let total = 0;
+                        let anterior = 0;
+                        for (let i = texto.length - 1; i >= 0; i -= 1) {
+                            const atual = mapa[texto[i]] || 0;
+                            if (!atual) return 0;
+                            if (atual < anterior) total -= atual;
+                            else total += atual;
+                            anterior = atual;
+                        }
+                        return total > 0 ? total : 0;
+                    },
+                    extrairNumeroEjc(ejc) {
+                        const candidatos = [
+                            ejc?.numero,
+                            ejc?.numero_ejc,
+                            ejc?.edicao_ejc
+                        ];
+                        for (const candidato of candidatos) {
+                            const numeroDireto = Number(candidato);
+                            if (Number.isFinite(numeroDireto) && numeroDireto > 0) {
+                                const numeroLimpo = Math.trunc(numeroDireto);
+                                return {
+                                    numero: numeroLimpo,
+                                    romano: this.numeroParaRomano(numeroLimpo) || String(numeroLimpo)
+                                };
+                            }
+
+                            const texto = String(candidato || '').trim();
+                            if (!texto) continue;
+
+                            const matchNumero = texto.match(/(\d+)/);
+                            if (matchNumero) {
+                                const numeroTexto = Number(matchNumero[1]);
+                                if (Number.isFinite(numeroTexto) && numeroTexto > 0) {
+                                    const numeroLimpo = Math.trunc(numeroTexto);
+                                    return {
+                                        numero: numeroLimpo,
+                                        romano: this.numeroParaRomano(numeroLimpo) || String(numeroLimpo)
+                                    };
+                                }
+                            }
+
+                            const matchRomano = texto.match(/\b([IVXLCDM]+)\b/i);
+                            if (matchRomano) {
+                                const romano = String(matchRomano[1] || '').toUpperCase();
+                                const numeroRomano = this.romanoParaNumero(romano);
+                                if (numeroRomano > 0) {
+                                    return {
+                                        numero: numeroRomano,
+                                        romano
+                                    };
+                                }
+                            }
+                        }
+                        return { numero: 0, romano: '' };
+                    },
+                    valorNumericoEjc(ejc) {
+                        const numeroCard = Number(ejc?.numero_card);
+                        if (Number.isFinite(numeroCard) && numeroCard > 0) return numeroCard;
+                        return this.extrairNumeroEjc(ejc).numero || 0;
+                    },
+                    tituloNumeroEjc(ejc) {
+                        const info = this.extrairNumeroEjc(ejc);
+                        if (info.numero > 0) return this.rotuloNumeroEjc(info.numero);
+                        const tituloCard = String(ejc?.titulo_card || '').trim();
+                        if (tituloCard) return tituloCard;
+                        return 'EJC sem número';
+                    },
+                    anoExibicaoEjc(ejc) {
+                        const anoCard = String(ejc?.ano_card || '').trim();
+                        if (anoCard) return anoCard;
+                        const anoDireto = Number(ejc?.ano);
+                        if (Number.isFinite(anoDireto) && anoDireto > 0) return String(anoDireto);
+                        const valor = ejc?.data_inicio
+                            || ejc?.data_encontro
+                            || ejc?.data_fim
+                            || ejc?.data_tarde_revelacao
+                            || ejc?.data_inicio_reunioes
+                            || ejc?.data_fim_reunioes
+                            || '';
+                        const texto = String(valor || '').trim();
+                        const match = texto.match(/^(\d{4})[-/]/);
+                        if (match && match[1]) return match[1];
+                        const data = new Date(texto);
+                        if (isNaN(data.getTime())) return '-';
+                        return String(data.getUTCFullYear());
+                    },
                     montarTextoPesquisaEjc(ejc) {
                         const campos = [
-                            ejc?.numero,
-                            this.numeroParaRomano(ejc?.numero),
-                            ejc?.ano,
+                            this.valorNumericoEjc(ejc),
+                            this.tituloNumeroEjc(ejc),
+                            this.anoExibicaoEjc(ejc),
                             this.paroquiaExibicao(ejc),
                             ejc?.descricao,
                             ejc?.musica_tema,
@@ -785,8 +1203,8 @@
                         ];
 
                         const digitos = [
-                            this.apenasDigitos(ejc?.numero),
-                            this.apenasDigitos(ejc?.ano),
+                            this.apenasDigitos(this.valorNumericoEjc(ejc)),
+                            this.apenasDigitos(this.anoExibicaoEjc(ejc)),
                             this.apenasDigitos(ejc?.data_inicio),
                             this.apenasDigitos(ejc?.data_fim),
                             this.apenasDigitos(ejc?.data_encontro)
@@ -806,9 +1224,9 @@
                             return;
                         }
                         const rowsEjcs = lista.map(e => ({
-                            Numero: e.numero || '',
+                            Numero: this.valorNumericoEjc(e) || '',
                             Paroquia: e.paroquia || '',
-                            Ano: e.ano || '',
+                            Ano: this.anoExibicaoEjc(e),
                             DataInicio: e.data_inicio || '',
                             DataFim: e.data_fim || '',
                             Descricao: e.descricao || '',
@@ -861,7 +1279,9 @@
                                 return;
                             }
                             await this.buscarEJCs();
-                            const mapPorNumero = new Map((this.ejcs || []).filter(e => !e.isMontagem).map(e => [String(e.numero || '').trim(), e]));
+                            const mapPorNumero = new Map((this.ejcs || [])
+                                .filter(e => !e.isMontagem)
+                                .map(e => [String(this.valorNumericoEjc(e) || '').trim(), e]));
                             for (const r of rows) {
                                 const numero = String(r.Numero || r.numero || '').trim();
                                 if (!numero) continue;
@@ -925,52 +1345,132 @@
                             this.carregandoEncontristas = false;
                         }
                     },
-                    abrirModalAdicionar() {
-                        this.editando = false;
-                        this.formulario = {
-                            id: null,
-                            numero: null,
-                            paroquia: this.nomeMeuEJC,
-                            ano: new Date().getFullYear(),
-                            musica_tema: '',
-                            data_inicio: '',
-                            data_fim: '',
-                            descricao: ''
+                    async abrirModalEditar(ejc) {
+                        if (!ejc) return;
+
+                        if (!this.todasEquipes.length) {
+                            await this.buscarTodasEquipes();
+                        }
+
+                        await this.buscarEquipesDoEJC(ejc.id);
+
+                        const anoExistente = Number(this.anoExibicaoEjc(ejc));
+                        const formatarDataFormulario = (valor) => {
+                            const texto = String(valor || '').trim();
+                            if (!texto) return '';
+                            if (/^\d{2}\/\d{2}\/\d{4}$/.test(texto)) return texto;
+                            const dataFormatada = this.formatarData(texto);
+                            return dataFormatada === '--/--/----' ? '' : dataFormatada;
                         };
-                        bootstrap.Modal.getOrCreateInstance(document.getElementById('modalEJC')).show();
-                    },
-                    abrirModalEditar(ejc) {
+
                         this.editando = true;
-                        this.formulario = { ...ejc };
+                        this.formulario = {
+                            id: ejc.id,
+                            numero: this.valorNumericoEjc(ejc) || null,
+                            paroquia: this.nomeMeuEJC || ejc.paroquia || '',
+                            ano: Number.isFinite(anoExistente) && anoExistente > 0 ? anoExistente : null,
+                            musica_tema: ejc.musica_tema || '',
+                            data_inicio: formatarDataFormulario(ejc.data_inicio),
+                            data_fim: formatarDataFormulario(ejc.data_fim),
+                            descricao: ejc.descricao || '',
+                            equipe_ids: this.equipesDoEJC(ejc.id)
+                                .map((equipe) => Number(equipe && equipe.id))
+                                .filter((id) => Number.isInteger(id) && id > 0)
+                        };
+
+                        this.tipoCadastroAtual = 'edicao_passada';
                         bootstrap.Modal.getOrCreateInstance(document.getElementById('modalEJC')).show();
                     },
                     async salvarEJC() {
+                        if (!Number.isInteger(Number(this.formulario.numero)) || Number(this.formulario.numero) <= 0) {
+                            alert('Informe um número válido para a edição.');
+                            return;
+                        }
+
+                        if (!String(this.formulario.data_inicio || '').trim()) {
+                            alert('Informe a data de início do encontro.');
+                            return;
+                        }
+
+                        if (!String(this.formulario.data_fim || '').trim()) {
+                            alert('Informe a data de fim do encontro.');
+                            return;
+                        }
+
+                        const dataInicioIso = this.parseDateBrToIso(this.formulario.data_inicio);
+                        const dataFimIso = this.parseDateBrToIso(this.formulario.data_fim);
+                        if (!dataInicioIso || !dataFimIso) {
+                            alert('Informe datas válidas no formato dd/mm/aaaa ou dd/mês/aaaa.');
+                            return;
+                        }
+
+                        const equipeIdsSelecionadas = Array.from(new Set((Array.isArray(this.formulario.equipe_ids) ? this.formulario.equipe_ids : [])
+                            .map((id) => Number(id))
+                            .filter((id) => Number.isInteger(id) && id > 0)));
+
+                        if (!equipeIdsSelecionadas.length) {
+                            alert('Selecione pelo menos uma equipe para esta edição.');
+                            return;
+                        }
+
+                        const payload = {
+                            numero: Number(this.formulario.numero),
+                            paroquia: this.nomeMeuEJC || this.formulario.paroquia || '',
+                            ano: this.anoDoFormularioEdicao(),
+                            musica_tema: String(this.formulario.musica_tema || '').trim(),
+                            data_inicio: dataInicioIso,
+                            data_fim: dataFimIso,
+                            descricao: String(this.formulario.descricao || '').trim()
+                        };
+
                         try {
+                            if (this.cadastroEhMontagem && !this.editando) {
+                                const resMontagem = await fetch('/api/montar-encontro', {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify(this.montarPayloadMontagem(payload, equipeIdsSelecionadas))
+                                });
+
+                                const respostaMontagem = await resMontagem.json().catch(() => ({}));
+                                if (!resMontagem.ok) {
+                                    alert(respostaMontagem.error || 'Erro ao criar montagem');
+                                    return;
+                                }
+
+                                bootstrap.Modal.getOrCreateInstance(document.getElementById('modalEJC')).hide();
+                                window.location.href = `/gestaodoencontro/montarencontro?montagem_id=${encodeURIComponent(respostaMontagem.id)}&origem=edicoes-ejc`;
+                                return;
+                            }
+
                             const url = this.editando ? `/api/ejc/${this.formulario.id}` : '/api/ejc';
                             const metodo = this.editando ? 'PUT' : 'POST';
 
                             const res = await fetch(url, {
                                 method: metodo,
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify(this.formulario)
+                                body: JSON.stringify(payload)
                             });
 
+                            const resposta = await res.json().catch(() => ({}));
+
                             if (!res.ok) {
-                                const erro = await res.json();
-                                alert(erro.error || "Erro ao salvar EJC");
+                                alert(resposta.error || 'Erro ao salvar EJC');
                                 return;
                             }
 
-                            alert(this.editando ? "EJC atualizado com sucesso!" : "EJC criado com sucesso!");
-                            bootstrap.Modal.getInstance(document.getElementById('modalEJC')).hide();
+                            const ejcId = this.editando ? Number(this.formulario.id) : Number(resposta.id);
+                            await this.sincronizarEquipesDaEdicao(ejcId, equipeIdsSelecionadas);
+
+                            bootstrap.Modal.getOrCreateInstance(document.getElementById('modalEJC')).hide();
                             await this.buscarEJCs();
+                            alert(this.editando ? 'EJC atualizado com sucesso!' : 'Edição passada cadastrada com sucesso!');
                         } catch (err) {
-                            console.error("Erro ao salvar:", err);
-                            alert("Erro ao salvar EJC");
+                            console.error('Erro ao salvar:', err);
+                            alert(err && err.message ? err.message : 'Erro ao salvar EJC');
                         }
                     },
                     async deletarEJCModal() {
-                        if (!(await window.showFloatingConfirm(`Tem certeza que deseja deletar o EJC ${this.numeroParaRomano(this.formulario.numero)}? Esta ação não pode ser desfeita.`))) return;
+                        if (!(await window.showFloatingConfirm(`Tem certeza que deseja deletar o EJC ${this.rotuloNumeroEjc(this.formulario.numero)}? Esta ação não pode ser desfeita.`))) return;
 
                         try {
                             const res = await fetch(`/api/ejc/${this.formulario.id}`, { method: 'DELETE' });
@@ -997,15 +1497,15 @@
 
                             const combined = [];
                             for (let ejc of resEjcs) {
-                                combined.push({ ...ejc, isMontagem: false });
+                                combined.push(this.normalizarCardEjc({ ...ejc, isMontagem: false }));
                             }
                             for (let mont of resMontagens) {
-                                combined.push({
+                                combined.push(this.normalizarCardEjc({
                                     ...mont,
                                     numero: mont.numero_ejc,
                                     isMontagem: true,
                                     estrutura: []
-                                });
+                                }));
                             }
                             this.ejcs = combined;
 
@@ -1113,7 +1613,7 @@
                     },
                     async abrirModalJovens(ejc, equipe) {
                         this.nomeEquipeSelecionada = equipe.nome;
-                        this.nomeEJCSelecionado = `${this.numeroParaRomano(ejc.numero)}º EJC`;
+                        this.nomeEJCSelecionado = this.tituloNumeroEjc(ejc);
                         this.jovensEquipe = []; // Limpa dados anteriores
 
                         // Abre o modal
@@ -1186,7 +1686,7 @@
                     },
                     abrirModalMontagem(ejc, equipe) {
                         this.nomeEquipeSelecionada = equipe.nome;
-                        this.nomeEJCSelecionado = `${this.numeroParaRomano(ejc.numero)}º EJC (Montagem)`;
+                        this.nomeEJCSelecionado = `${this.tituloNumeroEjc(ejc)} (Montagem)`;
                         this.jovensEquipe = [];
 
                         let membrosFlat = [];

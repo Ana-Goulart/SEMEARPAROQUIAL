@@ -152,6 +152,113 @@
                 linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
             background-size: 24px 24px;
         }
+
+        .ficha-subtabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            margin-bottom: 1rem;
+            padding: 0.85rem;
+            border: 1px solid rgba(31, 53, 88, 0.08);
+            border-radius: 16px;
+            background: linear-gradient(180deg, #fffdf9 0%, #fff8ef 100%);
+        }
+
+        .ficha-subtab {
+            border: 1px solid #d9a650;
+            border-radius: 999px;
+            background: #fff;
+            color: #b67f1d;
+            font-size: 0.92rem;
+            font-weight: 700;
+            padding: 0.45rem 0.95rem;
+            min-height: 40px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: none;
+            transition: all 0.18s ease;
+        }
+
+        .ficha-subtab:hover {
+            border-color: #c8933f;
+            background: #fff6e8;
+            color: #9b6910;
+            transform: translateY(-1px);
+        }
+
+        .ficha-subtab.active {
+            border-color: transparent;
+            background: #d9a650;
+            color: #fff;
+            box-shadow: 0 8px 18px rgba(217, 166, 80, 0.28);
+        }
+
+        .ejc-summary-bar {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 0.7rem 0.9rem;
+            margin-bottom: 1rem;
+            padding: 0.9rem 1rem;
+            border: 1px solid #ece4d7;
+            border-radius: 20px;
+            background: linear-gradient(145deg, rgba(255, 251, 243, 0.98), #ffffff);
+            box-shadow: 0 12px 26px rgba(15, 23, 42, 0.04);
+        }
+
+        .ejc-summary-item {
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 0.18rem;
+        }
+
+        .ejc-summary-label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #94a3b8;
+            font-weight: 700;
+            line-height: 1.1;
+        }
+
+        .ejc-summary-value {
+            color: #243b53;
+            font-weight: 700;
+            font-size: 1rem;
+            line-height: 1.2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        @media (min-width: 768px) {
+            .ejc-summary-bar {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+                align-items: center;
+                gap: 0.75rem 1rem;
+                padding: 0.8rem 1rem;
+            }
+
+            .ejc-summary-item {
+                position: relative;
+                padding-left: 0.95rem;
+            }
+
+            .ejc-summary-item:first-child {
+                padding-left: 0;
+            }
+
+            .ejc-summary-item:not(:first-child)::before {
+                content: "";
+                position: absolute;
+                left: 0;
+                top: 0.2rem;
+                bottom: 0.2rem;
+                width: 1px;
+                background: rgba(148, 163, 184, 0.22);
+            }
+        }
     </style>
 </head>
 
@@ -182,22 +289,12 @@
                     <div v-for="m in montagens" :key="m.id" class="montagem-card" @click="entrarMontagem(m)">
                         <div class="d-flex justify-content-between">
                             <div>
-                                <h4 class="text-primary mb-1">{{ numeroParaRomano(m.numero_ejc) }} EJC — {{ nomeMeuEJC }}</h4>
-                                <span v-if="Number(m.encerrada) === 1" class="badge bg-soft-secondary text-muted">Encerrada nas datas</span>
+                                <h4 class="text-primary mb-1">{{ numeroParaRomano(m.numero_ejc) }} EJC</h4>
+                                <p class="text-muted small mb-0">Ano: <span class="fw-semibold text-dark">{{ anoMontagem(m) }}</span></p>
                             </div>
                             <button class="btn btn-sm btn-outline-danger border-0" @click.stop="deletarMontagem(m.id)"
                                 title="Excluir Montagem"><i class="fas fa-trash"></i></button>
                         </div>
-                        <p class="text-muted small mb-1">
-                            Início do encontro: <span class="fw-bold text-dark">{{ formatarData(m.data_inicio || m.data_encontro) }}</span>
-                            • Fim do encontro: <span class="fw-bold text-dark">{{ formatarData(m.data_fim || m.data_encontro) }}</span>
-                        </p>
-                        <p class="text-muted small mb-1">Tarde de revelação: <span class="fw-bold text-dark">{{
-                                formatarData(m.data_tarde_revelacao) }}</span></p>
-                        <p class="text-muted small mb-3">Reuniões: <span class="fw-bold text-dark">{{
-                                formatarData(m.data_inicio_reunioes || m.data_inicio) }}</span> até <span class="fw-bold text-dark">{{
-                                formatarData(m.data_fim_reunioes || m.data_fim) }}</span></p>
-                        <p class="text-muted small mb-3">Dia da semana: <span class="fw-bold text-dark">{{ nomeDiaSemana(m.dia_semana_reunioes) }}</span></p>
                         <div class="text-end">
                             <span class="btn btn-sm btn-soft-primary w-100">Abrir Montagem <i
                                     class="fas fa-arrow-right ms-1"></i></span>
@@ -208,25 +305,36 @@
 
             <!-- VISTA 2: Edição da Montagem (Alocação) -->
             <div v-else-if="estado === 'EDICAO'">
-                <div class="d-flex justify-content-between mb-4 align-items-center border-bottom pb-3">
+                <div class="d-flex flex-column flex-xl-row justify-content-between mb-2 gap-2 align-items-start pb-1">
                     <div>
-                        <button class="btn btn-sm btn-soft-secondary mb-2" @click="estado = 'LISTA'">← Voltar para
-                            listagem</button>
+                        <button class="btn btn-sm btn-soft-secondary mb-2" @click="voltarDaMontagem">
+                            {{ origemAcesso === 'edicoes-ejc' ? 'Voltar para edições do EJC' : 'Voltar para listagem' }}
+                        </button>
                         <h3 class="mb-0"><i class="fa-solid fa-gear icon-accent"></i> Montando <span class="text-primary">{{
                                 numeroParaRomano(montagemAtiva.numero_ejc) }} EJC — {{ nomeMeuEJC }}</span></h3>
-                        <p class="text-muted small mb-0">
-                            Encontro: {{ formatarData(montagemAtiva.data_inicio || montagemAtiva.data_encontro) }}
-                            a {{ formatarData(montagemAtiva.data_fim || montagemAtiva.data_encontro) }}
-                            | Tarde de revelação: {{ formatarData(montagemAtiva.data_tarde_revelacao) }}
-                        </p>
-                        <p class="text-muted small mb-0">Reuniões: {{ formatarData(montagemAtiva.data_inicio_reunioes || montagemAtiva.data_inicio) }} até {{ formatarData(montagemAtiva.data_fim_reunioes || montagemAtiva.data_fim) }} | {{ nomeDiaSemana(montagemAtiva.dia_semana_reunioes) }}</p>
                     </div>
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-edit-standard" @click="abrirModalEditarMontagem">Editar</button>
-                        <button class="btn btn-soft-primary" @click="carregarEstrutura"><i class="fas fa-sync-alt"></i>
-                            Atualizar Dados</button>
+                    <div class="d-flex gap-2 flex-wrap">
                         <button class="btn btn-primary" @click="exportarDadosEquipesExcel"><i class="fas fa-file-excel"></i> Exportar dados (em Excel)</button>
                         <button class="btn btn-success" @click="finalizarMontagem">Finalizar encontro</button>
+                    </div>
+                </div>
+
+                <div class="ejc-summary-bar">
+                    <div class="ejc-summary-item">
+                        <span class="ejc-summary-label">Edição</span>
+                        <span class="ejc-summary-value">{{ numeroParaRomano(montagemAtiva.numero_ejc) }} EJC</span>
+                    </div>
+                    <div class="ejc-summary-item">
+                        <span class="ejc-summary-label">Ano</span>
+                        <span class="ejc-summary-value">{{ anoMontagem(montagemAtiva) }}</span>
+                    </div>
+                    <div class="ejc-summary-item">
+                        <span class="ejc-summary-label">Encontreiros</span>
+                        <span class="ejc-summary-value">{{ totalMembrosAlocados }}</span>
+                    </div>
+                    <div class="ejc-summary-item">
+                        <span class="ejc-summary-label">Encontristas</span>
+                        <span class="ejc-summary-value">{{ encontristasSelecionadosExibicao.length }}</span>
                     </div>
                 </div>
 
@@ -249,7 +357,7 @@
                         <li class="nav-item">
                             <button class="nav-link"
                                 :class="{ active: abaPrincipalMontagem === 'info' }"
-                                @click="abaPrincipalMontagem = 'info'; if (!['coordenadores', 'restricoes'].includes(abaInfoMontagem)) abaInfoMontagem = 'coordenadores'; carregarInfoMontagem()">
+                                @click="abaPrincipalMontagem = 'info'; if (!['datas', 'coordenadores', 'restricoes'].includes(abaInfoMontagem)) abaInfoMontagem = 'datas'; carregarInfoMontagem()">
                                 Info
                             </button>
                         </li>
@@ -319,14 +427,10 @@
                                             <button class="nav-link" :class="{ active: abaSeparar === 'outro' }" @click="abaSeparar = 'outro'">Jovens de outro EJC</button>
                                         </li>
                                     </ul>
-                                    <ul class="nav nav-pills mb-3">
-                                        <li class="nav-item">
-                                            <button class="nav-link" :class="{ active: subAbaSepararAtual === 'titular' }" @click="subAbasSeparar[abaSeparar] = 'titular'">Titulares</button>
-                                        </li>
-                                        <li class="nav-item">
-                                            <button class="nav-link" :class="{ active: subAbaSepararAtual === 'reserva' }" @click="subAbasSeparar[abaSeparar] = 'reserva'">Reserva</button>
-                                        </li>
-                                    </ul>
+                                    <div class="ficha-subtabs">
+                                        <button type="button" class="ficha-subtab btn-edit-standard btn-sm" :class="{ active: subAbaSepararAtual === 'titular' }" @click="subAbasSeparar[abaSeparar] = 'titular'">Titulares</button>
+                                        <button type="button" class="ficha-subtab btn-edit-standard btn-sm" :class="{ active: subAbaSepararAtual === 'reserva' }" @click="subAbasSeparar[abaSeparar] = 'reserva'">Reserva</button>
+                                    </div>
                                     <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
                                         <div>
                                             <h5 class="mb-1">
@@ -334,18 +438,12 @@
                                             </h5>
                                             <p class="text-muted mb-0">Selecionados: {{ totalSelecionadosAtual }} • Total: {{ totalItensAtuais }}</p>
                                         </div>
-                                        <div class="d-flex gap-2 flex-wrap">
-                                            <button class="btn btn-sm btn-outline-primary" @click="salvarSelecaoServir" :disabled="salvandoSelecao">
-                                                {{ salvandoSelecao ? 'Salvando...' : 'Salvar seleção' }}
-                                            </button>
+                                        <div class="d-flex gap-2 flex-wrap justify-content-md-end">
                                             <button class="btn btn-soft-secondary d-flex align-items-center gap-1" @click="abrirModalDistribuicao" :disabled="!podeDistribuirSelecao">
-                                                {{ distribuindo ? 'Distribuindo...' : 'Distribuir aleatoriamente' }}
+                                                {{ salvandoSelecao ? 'Preparando distribuição...' : (distribuindo ? 'Distribuindo...' : 'Distribuir aleatoriamente') }}
                                             </button>
                                         </div>
                                     </div>
-                                    <p v-if="!selecaoSalvaAtual" class="text-muted small mb-3">
-                                        Salve a seleção atual para liberar a distribuição aleatória.
-                                    </p>
                                     <div class="row g-2 mb-3">
                                         <div class="col-12 col-md-6">
                                             <div class="input-group">
@@ -353,18 +451,25 @@
                                                 <input type="text" class="form-control" placeholder="Buscar jovem..." v-model="filtroJovensSemEquipe">
                                             </div>
                                         </div>
-                                        <div class="col-12 col-md-6" v-if="abaSeparar === 'jovens'">
-                                            <div class="d-flex gap-2 flex-wrap justify-content-md-end">
+                                        <div class="col-12 col-md-6">
+                                            <div class="d-flex gap-2 flex-wrap justify-content-md-end align-items-center" v-if="abaSeparar === 'jovens'">
                                                 <select class="form-select" style="max-width: 280px;" v-model="filtroSelecaoEjcFez">
                                                     <option value="">Selecionar por edição do EJC...</option>
                                                     <option v-for="opcao in opcoesEjcFezSelecao" :key="'sel-ejc-'+opcao" :value="opcao">{{ opcao }}</option>
                                                 </select>
                                                 <button class="btn btn-sm btn-outline-primary" @click="selecionarEmMassaPorEjcFez" :disabled="!filtroSelecaoEjcFez">Selecionar edição</button>
-                                                <button class="btn btn-sm btn-outline-secondary" @click="limparSelecaoPorEjcFez" :disabled="!filtroSelecaoEjcFez">Limpar edição</button>
+                                                <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1" @click="limparSelecaoAtual" :disabled="!totalSelecionadosAtual">
+                                                    <i class="fas fa-broom"></i>
+                                                    <span>Limpar seleção</span>
+                                                </button>
                                             </div>
-                                        </div>
-                                        <div class="col-12 col-md-6 text-md-end text-muted small" v-if="abaSeparar !== 'jovens'">
-                                            Selecione os jovens que irão servir.
+                                            <div class="d-flex gap-2 flex-wrap justify-content-md-end align-items-center" v-else>
+                                                <span class="text-muted small">Selecione quem irá servir.</span>
+                                                <button class="btn btn-sm btn-outline-secondary d-flex align-items-center gap-1" @click="limparSelecaoAtual" :disabled="!totalSelecionadosAtual">
+                                                    <i class="fas fa-broom"></i>
+                                                    <span>Limpar seleção</span>
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
 
@@ -399,9 +504,14 @@
                                                         <td>{{ calcularIdade(j.data_nascimento) || '-' }}</td>
                                                         <td>{{ formatarEjcFezNaSeparacao(j) }}</td>
                                                         <td class="text-end">
-                                                            <button class="btn btn-sm btn-outline-secondary" @click="alternarDestinoItem(j)">
-                                                                {{ labelMoverDestino(j) }}
-                                                            </button>
+                                                            <div class="d-flex flex-column flex-md-row justify-content-end align-items-stretch align-items-md-center gap-2">
+                                                                <button class="btn btn-sm btn-outline-primary" @click="abrirEscolhaEquipe(j)">
+                                                                    Escolher equipe
+                                                                </button>
+                                                                <button class="btn btn-sm btn-outline-secondary" @click="alternarDestinoItem(j)">
+                                                                    {{ labelMoverDestino(j) }}
+                                                                </button>
+                                                            </div>
                                                         </td>
                                                     </tr>
                                                     <tr v-if="!jovensSemEquipeFiltrados.length">
@@ -419,9 +529,14 @@
                                                         <td>{{ telefonesCasal(t) }}</td>
                                                         <td>{{ t.ecc_numero ? (t.ecc_numero + ' ' + t.ecc_tipo) : '-' }}</td>
                                                         <td class="text-end">
-                                                            <button class="btn btn-sm btn-outline-secondary" @click="alternarDestinoItem(t)">
-                                                                {{ labelMoverDestino(t) }}
-                                                            </button>
+                                                            <div class="d-flex flex-column flex-md-row justify-content-end align-items-stretch align-items-md-center gap-2">
+                                                                <button class="btn btn-sm btn-outline-primary" @click="abrirEscolhaEquipe(t)">
+                                                                    Escolher equipe
+                                                                </button>
+                                                                <button class="btn btn-sm btn-outline-secondary" @click="alternarDestinoItem(t)">
+                                                                    {{ labelMoverDestino(t) }}
+                                                                </button>
+                                                            </div>
                                                         </td>
                                                     </tr>
                                                     <tr v-if="!tiosFiltrados.length">
@@ -439,9 +554,14 @@
                                                         <td>{{ telefonesCasal(t) }}</td>
                                                         <td>{{ [t.outro_ejc_paroquia, t.outro_ejc_nome].filter(Boolean).join(' - ') || '-' }}</td>
                                                         <td class="text-end">
-                                                            <button class="btn btn-sm btn-outline-secondary" @click="alternarDestinoItem(t)">
-                                                                {{ labelMoverDestino(t) }}
-                                                            </button>
+                                                            <div class="d-flex flex-column flex-md-row justify-content-end align-items-stretch align-items-md-center gap-2">
+                                                                <button class="btn btn-sm btn-outline-primary" @click="abrirEscolhaEquipe(t)">
+                                                                    Escolher equipe
+                                                                </button>
+                                                                <button class="btn btn-sm btn-outline-secondary" @click="alternarDestinoItem(t)">
+                                                                    {{ labelMoverDestino(t) }}
+                                                                </button>
+                                                            </div>
                                                         </td>
                                                     </tr>
                                                     <tr v-if="!tiosOutroFiltrados.length">
@@ -469,9 +589,14 @@
                                                         <td>{{ [j.outro_ejc_paroquia, j.outro_ejc_nome].filter(Boolean).join(' - ') || '-' }}</td>
                                                         <td>{{ formatarNumeroEjcFez(j.numero_ejc_fez || j.outro_ejc_numero) }}</td>
                                                         <td class="text-end">
-                                                            <button class="btn btn-sm btn-outline-secondary" @click="alternarDestinoItem(j)">
-                                                                {{ labelMoverDestino(j) }}
-                                                            </button>
+                                                            <div class="d-flex flex-column flex-md-row justify-content-end align-items-stretch align-items-md-center gap-2">
+                                                                <button class="btn btn-sm btn-outline-primary" @click="abrirEscolhaEquipe(j)">
+                                                                    Escolher equipe
+                                                                </button>
+                                                                <button class="btn btn-sm btn-outline-secondary" @click="alternarDestinoItem(j)">
+                                                                    {{ labelMoverDestino(j) }}
+                                                                </button>
+                                                            </div>
                                                         </td>
                                                     </tr>
                                                     <tr v-if="!jovensOutroEjcFiltrados.length">
@@ -506,16 +631,15 @@
                                 <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
                                     <div>
                                         <h5 class="mb-1">Encontristas</h5>
-                                        <p class="text-muted mb-0">Cadastre aqui os jovens deste encontro. O número do EJC segue automaticamente a montagem atual.</p>
+                                        <p class="text-muted mb-0">Cadastre manualmente ou importe uma planilha Excel para os jovens desta montagem.</p>
                                     </div>
-                                    <button class="btn btn-primary" @click="abrirNovoEncontristaMontagem">Novo encontrista</button>
-                                </div>
-                                <div class="mt-3">
-                                    <label class="form-label small text-muted d-block">Link público do formulário</label>
-                                    <div class="input-group">
-                                        <input type="text" class="form-control" :value="linkPublicoEncontristaMontagem" readonly>
-                                        <button class="btn btn-outline-primary" type="button" @click="copiarLinkPublicoEncontrista">Copiar</button>
-                                        <a class="btn btn-outline-secondary" :href="linkPublicoEncontristaMontagem" target="_blank" rel="noopener">Abrir</a>
+                                    <div class="d-flex gap-2 flex-wrap">
+                                        <button class="btn btn-outline-primary" @click="abrirNovoEncontristaMontagem">
+                                            Cadastrar encontrista
+                                        </button>
+                                        <button class="btn btn-primary" @click="abrirModalImportarEncontristas">
+                                            Importar Excel
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -525,8 +649,8 @@
                             <div class="card-body">
                                 <div class="d-flex justify-content-between align-items-center mb-3">
                                     <div>
-                                        <h5 class="mb-1">Jovens cadastrados</h5>
-                                        <p class="text-muted mb-0">Os jovens criados aqui também aparecem na Lista Mestre e nas edições do EJC.</p>
+                                        <h5 class="mb-1">Encontristas da montagem</h5>
+                                        <p class="text-muted mb-0">Aqui ficam os jovens importados da planilha para este encontro.</p>
                                     </div>
                                     <div class="text-muted small">Total: {{ encontristasSelecionadosExibicao.length }}</div>
                                 </div>
@@ -603,6 +727,13 @@
                         <ul class="nav nav-tabs mb-3">
                             <li class="nav-item">
                                 <button class="nav-link"
+                                    :class="{ active: abaInfoMontagem === 'datas' }"
+                                    @click="abaInfoMontagem = 'datas'">
+                                    Datas
+                                </button>
+                            </li>
+                            <li class="nav-item">
+                                <button class="nav-link"
                                     :class="{ active: abaInfoMontagem === 'coordenadores' }"
                                     @click="abaInfoMontagem = 'coordenadores'; carregarInfoMontagem()">
                                     Coordenadores
@@ -619,7 +750,43 @@
 
                         <div class="card border-0 shadow-sm">
                             <div class="card-body">
-                                <div v-if="carregandoInfoMontagem" class="text-muted">Carregando informações...</div>
+                                <div v-if="carregandoInfoMontagem && abaInfoMontagem !== 'datas'" class="text-muted">Carregando informações...</div>
+
+                                <template v-else-if="abaInfoMontagem === 'datas'">
+                                    <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap mb-3">
+                                        <div>
+                                            <h5 class="mb-1">Datas do encontro</h5>
+                                            <p class="text-muted mb-0">Centralize aqui as datas principais da montagem e edite quando precisar.</p>
+                                        </div>
+                                        <button class="btn btn-edit-standard btn-sm" @click="abrirModalEditarMontagem">Editar</button>
+                                    </div>
+
+                                    <div class="row g-3">
+                                        <div class="col-12 col-md-6">
+                                            <div class="border rounded h-100 p-3 bg-light-subtle">
+                                                <div class="text-muted small fw-semibold mb-2">Edição</div>
+                                                <div class="fw-semibold">{{ numeroParaRomano(montagemAtiva.numero_ejc) }} EJC</div>
+                                                <div class="text-muted small">{{ nomeMeuEJC }}</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-12 col-md-6">
+                                            <div class="border rounded h-100 p-3 bg-light-subtle">
+                                                <div class="text-muted small fw-semibold mb-2">Ano</div>
+                                                <div class="fw-semibold">{{ anoMontagem(montagemAtiva) }}</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-12 col-md-6">
+                                            <div class="border rounded h-100 p-3 bg-light-subtle">
+                                                <div class="text-muted small fw-semibold mb-2">Encontro</div>
+                                                <div class="fw-semibold">
+                                                    {{ formatarData(montagemAtiva.data_inicio || montagemAtiva.data_encontro) }}
+                                                    a
+                                                    {{ formatarData(montagemAtiva.data_fim || montagemAtiva.data_encontro) }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </template>
 
                                 <template v-else-if="abaInfoMontagem === 'coordenadores'">
                                     <div class="d-flex justify-content-between align-items-center mb-3">
@@ -773,24 +940,6 @@
                             <label class="form-label text-muted">Data de fim do encontro</label>
                             <input type="text" v-model="formMontagem.data_fim_encontro" class="form-control date-br" placeholder="dd/mês/aaaa" required>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label text-muted">Data da tarde de revelação</label>
-                            <input type="text" v-model="formMontagem.data_tarde_revelacao" class="form-control date-br" placeholder="dd/mês/aaaa" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label text-muted">Data de início das reuniões</label>
-                            <input type="text" v-model="formMontagem.data_inicio_reunioes" class="form-control date-br" placeholder="dd/mês/aaaa" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label text-muted">Data de fim das reuniões</label>
-                            <input type="text" v-model="formMontagem.data_fim_reunioes" class="form-control date-br" placeholder="dd/mês/aaaa" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label text-muted">Dia da semana das reuniões</label>
-                            <select v-model.number="formMontagem.dia_semana_reunioes" class="form-select" required>
-                                <option v-for="dia in diasSemanaOptions" :key="dia.value" :value="dia.value">{{ dia.label }}</option>
-                            </select>
-                        </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -820,24 +969,6 @@
                         <div class="mb-3">
                             <label class="form-label text-muted">Data de fim do encontro</label>
                             <input type="text" v-model="formEditarMontagem.data_fim_encontro" class="form-control date-br" placeholder="dd/mês/aaaa">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label text-muted">Data da tarde de revelação</label>
-                            <input type="text" v-model="formEditarMontagem.data_tarde_revelacao" class="form-control date-br" placeholder="dd/mês/aaaa">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label text-muted">Data de início das reuniões</label>
-                            <input type="text" v-model="formEditarMontagem.data_inicio_reunioes" class="form-control date-br" placeholder="dd/mês/aaaa">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label text-muted">Data de fim das reuniões</label>
-                            <input type="text" v-model="formEditarMontagem.data_fim_reunioes" class="form-control date-br" placeholder="dd/mês/aaaa">
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label text-muted">Dia da semana das reuniões</label>
-                            <select v-model.number="formEditarMontagem.dia_semana_reunioes" class="form-select">
-                                <option v-for="dia in diasSemanaOptions" :key="dia.value" :value="dia.value">{{ dia.label }}</option>
-                            </select>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -1126,6 +1257,90 @@
             </div>
         </div>
 
+        <div class="modal fade" id="modalImportarEncontristas" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-light">
+                        <h5 class="modal-title">Importar encontristas por Excel</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
+                            <div>
+                                <h6 class="mb-1">Planilha da montagem</h6>
+                                <p class="text-muted mb-0">Selecione um arquivo <strong>.xlsx</strong>. Cada linha importada entra direto nesta montagem e na Lista Mestre.</p>
+                            </div>
+                        </div>
+                        <div class="row g-3 align-items-end mb-3">
+                            <div class="col-12 col-lg-8">
+                                <label class="form-label small text-muted mb-1">Arquivo Excel (.xlsx)</label>
+                                <input
+                                    id="arquivoImportacaoEncontristasExcel"
+                                    type="file"
+                                    class="form-control"
+                                    accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                                    @change="onArquivoImportacaoEncontristasChange"
+                                >
+                            </div>
+                            <div class="col-12 col-lg-4">
+                                <div class="small text-muted">
+                                    Datas: <strong>AAAA-MM-DD</strong> ou <strong>DD/MM/AAAA</strong><br>
+                                    Booleanos: <strong>Sim/Não</strong>, <strong>True/False</strong> ou <strong>1/0</strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="border rounded bg-light p-3 small mb-3">
+                            <div class="fw-semibold mb-2">Colunas aceitas</div>
+                            <div class="text-muted" style="white-space: pre-wrap;">nome_completo, telefone, apelido, email, sexo, data_nascimento, estado_civil, circulo, deficiencia, qual_deficiencia, restricao_alimentar, detalhes_restricao, instagram, eh_musico, instrumentos_musicais, equipe_saude, nao_serve_ejc, motivo_nao_serve_ejc, conjuge_nome, termos_aceitos_em, termos_aceitos_email, endereco_rua, endereco_numero, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep</div>
+                        </div>
+                        <div v-if="erroImportacaoEncontristasExcel" class="alert alert-warning py-2 px-3">
+                            {{ erroImportacaoEncontristasExcel }}
+                        </div>
+                        <div v-if="nomeArquivoImportacaoEncontristasExcel" class="d-flex justify-content-between align-items-center gap-2 flex-wrap mb-3">
+                            <div>
+                                <div class="fw-semibold">{{ nomeArquivoImportacaoEncontristasExcel }}</div>
+                                <div class="small text-muted">
+                                    Linhas prontas para importar: {{ linhasImportacaoEncontristasExcel.length }}
+                                    <span v-if="linhasIgnoradasImportacaoEncontristasExcel"> • Ignoradas: {{ linhasIgnoradasImportacaoEncontristasExcel }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div v-if="linhasImportacaoEncontristasExcel.length" class="table-responsive border rounded">
+                            <table class="table table-sm align-middle mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Nome</th>
+                                        <th>Telefone</th>
+                                        <th>Sexo</th>
+                                        <th>Nascimento</th>
+                                        <th>Círculo</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="(item, index) in linhasImportacaoEncontristasExcel.slice(0, 8)" :key="`preview-imp-enc-${index}`">
+                                        <td>{{ item.nome_completo || '-' }}</td>
+                                        <td>{{ item.telefone || '-' }}</td>
+                                        <td>{{ item.sexo || '-' }}</td>
+                                        <td>{{ item.data_nascimento ? formatarData(item.data_nascimento) : '-' }}</td>
+                                        <td>{{ item.circulo || '-' }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div v-if="linhasImportacaoEncontristasExcel.length > 8" class="small text-muted mt-2">
+                            Exibindo 8 linhas da prévia. O restante será importado normalmente.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button class="btn btn-primary" @click="confirmarImportacaoEncontristasExcel" :disabled="importandoArquivoEncontristasExcel || !linhasImportacaoEncontristasExcel.length">
+                            {{ importandoArquivoEncontristasExcel ? 'Importando...' : 'Importar para esta montagem' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="modal fade" id="modalEquipeDetalhes" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-xl modal-dialog-scrollable">
                 <div class="modal-content border-0 shadow">
@@ -1201,6 +1416,52 @@
                             </div>
                         </div>
 
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="modalEscolherEquipeSeparacao" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-light">
+                        <h5 class="modal-title">Escolher equipe</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="border rounded-3 bg-light p-3 mb-3">
+                            <div class="small text-muted mb-1">Pessoa selecionada</div>
+                            <div class="fw-semibold">{{ modalEscolhaEquipe.nome_completo || '-' }}</div>
+                            <div v-if="modalEscolhaEquipe.telefone" class="small text-muted mt-1">{{ modalEscolhaEquipe.telefone }}</div>
+                            <div class="small text-muted mt-2">Destino: {{ modalEscolhaEquipe.destino === 'reserva' ? 'Reserva' : 'Titular' }}</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Equipe</label>
+                            <select class="form-select" v-model.number="modalEscolhaEquipe.equipeId" @change="onEquipeEscolhaChange">
+                                <option :value="0">Selecione a equipe...</option>
+                                <option v-for="equipe in equipesEscolhaEquipe" :key="'escolha-equipe-'+equipe.id" :value="equipe.id">
+                                    {{ equipe.nome }}
+                                </option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="form-label">Função</label>
+                            <select class="form-select" v-model.number="modalEscolhaEquipe.funcaoId" :disabled="!modalEscolhaEquipe.equipeId || !funcoesEscolhaEquipe.length">
+                                <option :value="0">{{ modalEscolhaEquipe.equipeId ? 'Selecione a função...' : 'Escolha a equipe primeiro...' }}</option>
+                                <option v-for="funcao in funcoesEscolhaEquipe" :key="'escolha-funcao-'+funcao.id" :value="funcao.id">
+                                    {{ funcao.nome }}
+                                </option>
+                            </select>
+                        </div>
+                        <div v-if="!equipesEscolhaEquipe.length" class="alert alert-warning py-2 px-3 small mt-3 mb-0">
+                            Nenhuma equipe com função cadastrada foi encontrada para esta montagem.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button class="btn btn-primary" @click="confirmarEscolhaEquipe" :disabled="!podeConfirmarEscolhaEquipe">
+                            {{ salvandoEscolhaEquipe ? 'Salvando...' : 'Confirmar' }}
+                        </button>
                     </div>
                 </div>
             </div>
@@ -1319,7 +1580,9 @@
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             injetarMenu('#app');
-            ativarMenu('/gestaodoencontro/montarencontro');
+            const params = new URLSearchParams(window.location.search);
+            const origem = String(params.get('origem') || '').trim().toLowerCase();
+            ativarMenu(origem === 'edicoes-ejc' ? '/gestaodoencontro/ejc' : '/gestaodoencontro/montarencontro');
         });
 
         const { createApp } = Vue;
@@ -1329,13 +1592,14 @@
                     estado: 'LISTA',
                     montagens: [],
                     carregando: true,
+                    origemAcesso: '',
 
                     montagemAtiva: null,
                     estrutura: [],
                     carregandoEstrutura: false,
                     abaPrincipalMontagem: 'encontreiros',
                     abaMontagem: 'equipes',
-                    abaInfoMontagem: 'coordenadores',
+                    abaInfoMontagem: 'datas',
                     equipesFinalizadas: false,
                     // ligações agora ficam na página da equipe
                     nomeMeuEJC: (window.__NOME_EJC_ATUAL && String(window.__NOME_EJC_ATUAL).trim()) || 'Inconfidentes',
@@ -1348,6 +1612,7 @@
                     modalNovoEncontristaMontagemInstance: null,
                     modalEquipeInstance: null,
                     modalBuscaInstance: null,
+                    modalEscolhaEquipeInstance: null,
                     modalImportacaoExternaInstance: null,
 
                     equipeDetalhe: null,
@@ -1355,6 +1620,8 @@
                     abaEquipe: 'titular',
 
                     modalData: { equipeId: null, funcaoId: null, funcaoIdSub: null, destino: 'titular', funcaoNome: '', fonte: 'LISTA_MESTRE', outro_ejc_id: 0 },
+                    modalEscolhaEquipe: { tipo: 'jovem', jovem_id: 0, nome_completo: '', telefone: '', destino: 'titular', equipeId: 0, funcaoId: 0 },
+                    salvandoEscolhaEquipe: false,
                     searchQuery: '',
                     searchResults: [],
                     searchTimer: null,
@@ -1385,10 +1652,19 @@
                     modalDistribuirInstance: null,
                     encontristas: [],
                     carregandoEncontristas: false,
+                    modalImportarEncontristasInstance: null,
+                    arquivoImportacaoEncontristasExcel: null,
+                    nomeArquivoImportacaoEncontristasExcel: '',
+                    linhasImportacaoEncontristasExcel: [],
+                    linhasIgnoradasImportacaoEncontristasExcel: 0,
+                    erroImportacaoEncontristasExcel: '',
+                    filtroImportacaoEncontristas: '',
                     encontristasSelecionados: [],
                     carregandoEncontristasSelecionados: false,
                     carregandoInfoMontagem: false,
                     salvandoEncontristaId: null,
+                    importandoEncontristasEmLote: false,
+                    importandoArquivoEncontristasExcel: false,
                     infoMontagem: { coordenadores: [], restricoes: [], totalPessoasComRestricao: 0 },
                     restricaoInfoAberta: '',
                     coresCirculos: [],
@@ -1498,7 +1774,7 @@
                     return !!((this.selecaoSalvaPorTipo || {})[tipo]);
                 },
                 podeDistribuirSelecao() {
-                    return this.selecaoSalvaAtual && this.totalSelecionadosAtual > 0 && !this.distribuindo && !this.salvandoSelecao;
+                    return this.totalSelecionadosAtual > 0 && !this.distribuindo && !this.salvandoSelecao;
                 },
                 totalMembrosAlocados() {
                     let total = 0;
@@ -1613,6 +1889,19 @@
                     if (this.abaSeparar === 'tios_outro') return (this.tiosOutroParaServir || []).filter(t => this.destinoDoItem(t) === this.subAbaSepararAtual).length;
                     return (this.jovensOutroEjc || []).filter(j => this.destinoDoItem(j) === this.subAbaSepararAtual).length;
                 },
+                equipesEscolhaEquipe() {
+                    return (this.estrutura || []).filter((equipe) => Array.isArray(equipe.funcoes) && equipe.funcoes.length);
+                },
+                funcoesEscolhaEquipe() {
+                    const equipeId = Number(this.modalEscolhaEquipe && this.modalEscolhaEquipe.equipeId);
+                    const equipe = (this.equipesEscolhaEquipe || []).find((item) => Number(item.id) === equipeId);
+                    return Array.isArray(equipe && equipe.funcoes) ? equipe.funcoes : [];
+                },
+                podeConfirmarEscolhaEquipe() {
+                    return !this.salvandoEscolhaEquipe
+                        && Number(this.modalEscolhaEquipe && this.modalEscolhaEquipe.equipeId) > 0
+                        && Number(this.modalEscolhaEquipe && this.modalEscolhaEquipe.funcaoId) > 0;
+                },
                 idsEncontristasBloqueadosSet() {
                     return new Set(
                         Object.keys(this.bloqueadosEncontristas || {})
@@ -1621,11 +1910,10 @@
                     );
                 },
                 idsEncontristasSelecionados() {
-                    const bloqueados = this.idsEncontristasBloqueadosSet;
                     return new Set(
                         (this.encontristasSelecionados || [])
                             .map((item) => Number(item.id))
-                            .filter((id) => !bloqueados.has(id))
+                            .filter((id) => Number.isFinite(id))
                     );
                 },
                 encontristasSelecionadosExibicao() {
@@ -1646,15 +1934,28 @@
                         .filter((item) => !ids.has(Number(item.id)))
                         .map((item) => this.aplicarEdicaoEncontrista(item));
                 },
+                fichasDisponiveisFiltradas() {
+                    const q = String(this.filtroImportacaoEncontristas || '').trim().toLowerCase();
+                    if (!q) return this.fichasDisponiveis;
+                    return (this.fichasDisponiveis || []).filter((resp) => {
+                        const resumo = this.resumoEncontrista(resp);
+                        const campos = [
+                            resp && resp.nome_referencia,
+                            resp && resp.telefone_referencia,
+                            resp && resp.formulario_titulo,
+                            resumo && resumo.nome,
+                            resumo && resumo.telefone,
+                            resumo && resumo.idade,
+                            resumo && resumo.sexo
+                        ].map((item) => String(item || '').toLowerCase());
+                        return campos.some((texto) => texto.includes(q));
+                    });
+                },
                 labelNumeroEncontristaMontagem() {
                     if (!this.montagemAtiva || !this.montagemAtiva.id) return '';
                     const numero = Number(this.montagemAtiva.numero_ejc || 0);
                     if (!Number.isFinite(numero) || numero <= 0) return 'Montagem atual';
                     return `${this.numeroParaRomano(numero)} EJC ${this.nomeMeuEJC} (Montagem)`;
-                },
-                linkPublicoEncontristaMontagem() {
-                    if (!this.montagemAtiva || !this.montagemAtiva.id || typeof window === 'undefined') return '';
-                    return `${window.location.origin}/jovens/criar-cadastro?montagem_id=${this.montagemAtiva.id}`;
                 },
                 pontosMapaComCoord() {
                     return (this.pontosMapaEncontristas || []).filter((p) => Number.isFinite(Number(p.latitude)) && Number.isFinite(Number(p.longitude)));
@@ -1805,6 +2106,167 @@
                     this.sincronizarCasal(item, { destino: item.destino, selecionado: !!item.selecionado });
                     this.marcarSelecaoComoNaoSalva();
                 },
+                limparSelecaoAtual() {
+                    const destinoAtual = this.subAbaSepararAtual;
+                    let alterou = false;
+
+                    if (this.abaSeparar === 'tios' || this.abaSeparar === 'tios_outro') {
+                        const lista = this.abaSeparar === 'tios_outro' ? (this.tiosOutroParaServir || []) : (this.tiosOrigemParaServir || []);
+                        lista.forEach((item) => {
+                            if (this.destinoDoItem(item) !== destinoAtual || !item.selecionado) return;
+                            item.selecionado = false;
+                            alterou = true;
+                        });
+                    } else {
+                        const lista = this.abaSeparar === 'outro' ? (this.jovensOutroEjc || []) : (this.jovensSemEquipe || []);
+                        lista.forEach((item) => {
+                            if (this.destinoDoItem(item) !== destinoAtual || !item.selecionado) return;
+                            item.selecionado = false;
+                            this.sincronizarCasal(item, { selecionado: false, destino: this.destinoDoItem(item) });
+                            alterou = true;
+                        });
+                    }
+
+                    if (alterou) this.marcarSelecaoComoNaoSalva(this.abaSeparar);
+                },
+                normalizarPessoaParaAlocacao(item, opcoes = {}) {
+                    const tipoInformado = String((opcoes.tipo || (item && item.tipo) || '')).trim().toUpperCase();
+                    const ehExterno = !!opcoes.externo || tipoInformado === 'TIOS' || tipoInformado === 'TIOS_OUTRO_EJC';
+                    const nomeCasal = [item && item.nome_tio, item && item.nome_tia].filter(Boolean).join(' e ');
+                    const nome = String((opcoes.nome || (item && (item.nome_completo || item.nome)) || nomeCasal || '')).trim();
+                    const telefoneBase = opcoes.telefone !== undefined ? opcoes.telefone : (item && (item.telefone || this.telefonesCasal(item)));
+                    const telefoneNormalizado = String(telefoneBase || '').trim();
+                    const telefone = telefoneNormalizado === '-' ? '' : telefoneNormalizado;
+                    const destino = String((opcoes.destino || (item && item.destino) || 'titular')).trim().toLowerCase() === 'reserva' ? 'reserva' : 'titular';
+                    if (ehExterno) {
+                        return {
+                            tipo: 'externo',
+                            nome_completo: nome,
+                            telefone,
+                            destino
+                        };
+                    }
+                    return {
+                        tipo: 'jovem',
+                        jovem_id: Number((item && (item.jovem_id || item.id)) || 0),
+                        nome_completo: nome,
+                        telefone,
+                        destino
+                    };
+                },
+                abrirEscolhaEquipe(item) {
+                    const externo = this.abaSeparar === 'tios' || this.abaSeparar === 'tios_outro';
+                    const pessoa = this.normalizarPessoaParaAlocacao(item, {
+                        externo,
+                        destino: this.destinoDoItem(item)
+                    });
+                    if (!pessoa.nome_completo) {
+                        this.uiAlert('Não foi possível identificar a pessoa selecionada.');
+                        return;
+                    }
+                    if (!this.equipesEscolhaEquipe.length) {
+                        this.uiAlert('Nenhuma equipe com função cadastrada foi encontrada para esta montagem.');
+                        return;
+                    }
+                    this.modalEscolhaEquipe = {
+                        ...pessoa,
+                        equipeId: 0,
+                        funcaoId: 0
+                    };
+                    if (!this.modalEscolhaEquipeInstance) {
+                        this.modalEscolhaEquipeInstance = new bootstrap.Modal(document.getElementById('modalEscolherEquipeSeparacao'));
+                    }
+                    this.modalEscolhaEquipeInstance.show();
+                },
+                onEquipeEscolhaChange() {
+                    this.modalEscolhaEquipe.funcaoId = 0;
+                },
+                async recarregarDadosSeparacao() {
+                    await Promise.all([
+                        this.carregarJovensSemEquipe(),
+                        this.carregarTiosParaServir(),
+                        this.carregarJovensOutroEjc()
+                    ]);
+                },
+                async enviarAlocacaoParaEquipe(pessoa, opcoes = {}) {
+                    if (!this.montagemAtiva || !this.montagemAtiva.id) {
+                        return { ok: false, error: 'Montagem inválida.' };
+                    }
+                    const equipeId = Number(opcoes.equipeId || 0);
+                    const funcaoId = Number(opcoes.funcaoId || 0);
+                    const destino = String(opcoes.destino || 'titular').trim().toLowerCase() === 'reserva' ? 'reserva' : 'titular';
+                    if (!equipeId || !funcaoId) {
+                        return { ok: false, error: 'Selecione a equipe e a função.' };
+                    }
+                    try {
+                        const ehSubstituicao = destino === 'reserva';
+                        let res = null;
+                        if (String(pessoa && pessoa.tipo || '').trim().toLowerCase() === 'externo') {
+                            const nome = String(pessoa && pessoa.nome_completo || '').trim();
+                            if (!nome) return { ok: false, error: 'Não foi possível identificar a pessoa selecionada.' };
+                            res = await fetch(`/api/montar-encontro/${this.montagemAtiva.id}/membros-externos`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    equipe_id: equipeId,
+                                    funcao_id: funcaoId,
+                                    nome_completo: nome,
+                                    telefone: pessoa && pessoa.telefone ? pessoa.telefone : '',
+                                    eh_substituicao: ehSubstituicao
+                                })
+                            });
+                        } else {
+                            const jovemId = Number(pessoa && (pessoa.jovem_id || pessoa.id) || 0);
+                            if (!jovemId) return { ok: false, error: 'Não foi possível identificar o jovem selecionado.' };
+                            res = await fetch(`/api/montar-encontro/${this.montagemAtiva.id}/membros`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    equipe_id: equipeId,
+                                    funcao_id: funcaoId,
+                                    jovem_id: jovemId,
+                                    eh_substituicao: ehSubstituicao
+                                })
+                            });
+                        }
+                        if (!res.ok) {
+                            const err = await res.json().catch(() => ({}));
+                            return { ok: false, error: err.error || 'Erro ao alocar pessoa.' };
+                        }
+                        await this.carregarEstrutura();
+                        if (this.equipeDetalhe) {
+                            await this.carregarDetalhesEquipe();
+                        }
+                        await this.recarregarDadosSeparacao();
+                        return { ok: true };
+                    } catch (err) {
+                        console.error(err);
+                        return { ok: false, error: 'Erro ao alocar pessoa.' };
+                    }
+                },
+                async confirmarEscolhaEquipe() {
+                    if (!this.podeConfirmarEscolhaEquipe) {
+                        await this.uiAlert('Selecione a equipe e a função.');
+                        return;
+                    }
+                    this.salvandoEscolhaEquipe = true;
+                    try {
+                        const resultado = await this.enviarAlocacaoParaEquipe(this.modalEscolhaEquipe, {
+                            equipeId: this.modalEscolhaEquipe.equipeId,
+                            funcaoId: this.modalEscolhaEquipe.funcaoId,
+                            destino: this.modalEscolhaEquipe.destino
+                        });
+                        if (!resultado.ok) {
+                            await this.uiAlert(resultado.error || 'Erro ao alocar pessoa.');
+                            return;
+                        }
+                        if (this.modalEscolhaEquipeInstance) {
+                            this.modalEscolhaEquipeInstance.hide();
+                        }
+                    } finally {
+                        this.salvandoEscolhaEquipe = false;
+                    }
+                },
                 aplicarEdicaoEncontrista(resp) {
                     const id = String(resp && resp.id ? resp.id : '');
                     const edit = (id && this.edicoesEncontristas && this.edicoesEncontristas[id]) ? this.edicoesEncontristas[id] : null;
@@ -1879,14 +2341,248 @@
                         observacoes_extras: ''
                     };
                 },
-                async copiarLinkPublicoEncontrista() {
-                    const texto = String(this.linkPublicoEncontristaMontagem || '').trim();
-                    if (!texto) return;
+                resetImportacaoEncontristasExcel() {
+                    this.arquivoImportacaoEncontristasExcel = null;
+                    this.nomeArquivoImportacaoEncontristasExcel = '';
+                    this.linhasImportacaoEncontristasExcel = [];
+                    this.linhasIgnoradasImportacaoEncontristasExcel = 0;
+                    this.erroImportacaoEncontristasExcel = '';
+                    const input = document.getElementById('arquivoImportacaoEncontristasExcel');
+                    if (input) input.value = '';
+                },
+                normalizarCabecalhoImportacaoEncontristas(valor) {
+                    return String(valor || '')
+                        .normalize('NFD')
+                        .replace(/[\u0300-\u036f]/g, '')
+                        .toLowerCase()
+                        .replace(/[^a-z0-9]+/g, '_')
+                        .replace(/^_+|_+$/g, '');
+                },
+                temValorImportacaoEncontristas(valor) {
+                    if (valor === undefined || valor === null) return false;
+                    if (Array.isArray(valor)) return valor.length > 0;
+                    if (typeof valor === 'string') return String(valor).trim() !== '';
+                    return true;
+                },
+                normalizarBooleanoImportacaoEncontristas(valor) {
+                    if (!this.temValorImportacaoEncontristas(valor)) return null;
+                    if (typeof valor === 'boolean') return valor;
+                    if (typeof valor === 'number') return valor !== 0;
+                    const texto = String(valor || '').trim().toLowerCase();
+                    if (!texto) return null;
+                    if (['1', 'true', 'sim', 's', 'yes', 'y', 'x'].includes(texto)) return true;
+                    if (['0', 'false', 'nao', 'não', 'n', 'no'].includes(texto)) return false;
+                    return null;
+                },
+                normalizarDataImportacaoEncontristas(valor, { comHora = false } = {}) {
+                    if (!this.temValorImportacaoEncontristas(valor)) return null;
+                    if (typeof valor === 'number' && Number.isFinite(valor) && typeof XLSX !== 'undefined' && XLSX.SSF && typeof XLSX.SSF.parse_date_code === 'function') {
+                        const parsed = XLSX.SSF.parse_date_code(valor);
+                        if (parsed && parsed.y && parsed.m && parsed.d) {
+                            const yyyy = String(parsed.y).padStart(4, '0');
+                            const mm = String(parsed.m).padStart(2, '0');
+                            const dd = String(parsed.d).padStart(2, '0');
+                            if (!comHora) return `${yyyy}-${mm}-${dd}`;
+                            const hh = String(parsed.H || 0).padStart(2, '0');
+                            const min = String(parsed.M || 0).padStart(2, '0');
+                            const ss = String(Math.round(parsed.S || 0)).padStart(2, '0');
+                            return `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
+                        }
+                    }
+                    const texto = String(valor || '').trim();
+                    if (!texto) return null;
+                    if (/^\d{4}-\d{2}-\d{2}$/.test(texto)) return comHora ? `${texto} 00:00:00` : texto;
+                    if (/^\d{2}\/\d{2}\/\d{4}$/.test(texto)) {
+                        const iso = texto.split('/').reverse().join('-');
+                        return comHora ? `${iso} 00:00:00` : iso;
+                    }
+                    if (/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}(:\d{2})?$/.test(texto)) {
+                        const normalizado = texto.replace('T', ' ');
+                        const completo = normalizado.length === 16 ? `${normalizado}:00` : normalizado;
+                        return comHora ? completo : completo.slice(0, 10);
+                    }
+                    if (/^\d{2}\/\d{2}\/\d{4}[ T]\d{2}:\d{2}(:\d{2})?$/.test(texto)) {
+                        const [data, hora] = texto.split(/[ T]/);
+                        const iso = data.split('/').reverse().join('-');
+                        const horaCompleta = hora.length === 5 ? `${hora}:00` : hora;
+                        return comHora ? `${iso} ${horaCompleta}` : iso;
+                    }
+                    return texto;
+                },
+                normalizarEstadoCivilImportacaoEncontristas(valor) {
+                    if (!this.temValorImportacaoEncontristas(valor)) return null;
+                    const texto = String(valor || '').trim().toLowerCase();
+                    if (!texto) return null;
+                    if (['solteiro', 'solteira'].includes(texto)) return 'Solteiro';
+                    if (['casado', 'casada'].includes(texto)) return 'Casado';
+                    if (['amasiado', 'amasiada'].includes(texto)) return 'Amasiado';
+                    return String(valor || '').trim();
+                },
+                normalizarSexoImportacaoEncontristas(valor) {
+                    if (!this.temValorImportacaoEncontristas(valor)) return null;
+                    const texto = String(valor || '').trim().toLowerCase();
+                    if (!texto) return null;
+                    if (['f', 'fem', 'feminino', 'mulher'].includes(texto)) return 'Feminino';
+                    if (['m', 'masc', 'masculino', 'homem'].includes(texto)) return 'Masculino';
+                    return String(valor || '').trim();
+                },
+                normalizarCirculoImportacaoEncontristas(valor) {
+                    if (!this.temValorImportacaoEncontristas(valor)) return null;
+                    const texto = String(valor || '').trim();
+                    if (!texto) return null;
+                    const encontrado = (this.coresCirculos || []).find((item) => String(item && item.nome ? item.nome : '').trim().toLowerCase() === texto.toLowerCase());
+                    return encontrado && encontrado.nome ? encontrado.nome : texto;
+                },
+                montarLinhaImportacaoEncontristas(linha) {
+                    if (!linha || typeof linha !== 'object' || !this.montagemAtiva || !this.montagemAtiva.id) return null;
+                    const mapa = {};
+                    Object.keys(linha || {}).forEach((chave) => {
+                        mapa[chave] = linha[chave];
+                        mapa[this.normalizarCabecalhoImportacaoEncontristas(chave)] = linha[chave];
+                    });
+                    const get = (...nomes) => {
+                        for (const nome of nomes) {
+                            if (Object.prototype.hasOwnProperty.call(mapa, nome) && this.temValorImportacaoEncontristas(mapa[nome])) {
+                                return mapa[nome];
+                            }
+                            const normalizado = this.normalizarCabecalhoImportacaoEncontristas(nome);
+                            if (Object.prototype.hasOwnProperty.call(mapa, normalizado) && this.temValorImportacaoEncontristas(mapa[normalizado])) {
+                                return mapa[normalizado];
+                            }
+                        }
+                        return null;
+                    };
+                    const jovem = {
+                        nome_completo: this.temValorImportacaoEncontristas(get('nome_completo', 'nome', 'full_name', 'fullname')) ? String(get('nome_completo', 'nome', 'full_name', 'fullname')).trim() : '',
+                        telefone: this.temValorImportacaoEncontristas(get('telefone', 'celular', 'phone')) ? String(get('telefone', 'celular', 'phone')).trim() : null,
+                        apelido: this.temValorImportacaoEncontristas(get('apelido', 'nickname')) ? String(get('apelido', 'nickname')).trim() : null,
+                        email: this.temValorImportacaoEncontristas(get('email', 'e_mail', 'e-mail')) ? String(get('email', 'e_mail', 'e-mail')).trim() : null,
+                        sexo: this.normalizarSexoImportacaoEncontristas(get('sexo', 'gender')),
+                        data_nascimento: this.normalizarDataImportacaoEncontristas(get('data_nascimento', 'data nascimento', 'birthdate', 'birth_date')),
+                        estado_civil: this.normalizarEstadoCivilImportacaoEncontristas(get('estado_civil', 'estado civil', 'civil_status')),
+                        data_casamento: this.normalizarDataImportacaoEncontristas(get('data_casamento', 'data casamento', 'marriage_date', 'marriagedate')),
+                        circulo: this.normalizarCirculoImportacaoEncontristas(get('circulo', 'círculo', 'circle')),
+                        deficiencia: this.normalizarBooleanoImportacaoEncontristas(get('deficiencia', 'deficiência', 'has_disability', 'hasdisability')),
+                        qual_deficiencia: this.temValorImportacaoEncontristas(get('qual_deficiencia', 'qual deficiência', 'disability_detail', 'disabilitydetail')) ? String(get('qual_deficiencia', 'qual deficiência', 'disability_detail', 'disabilitydetail')).trim() : null,
+                        restricao_alimentar: this.normalizarBooleanoImportacaoEncontristas(get('restricao_alimentar', 'restrição alimentar', 'food_restriction', 'has_food_restriction', 'hasfoodrestriction')),
+                        detalhes_restricao: this.temValorImportacaoEncontristas(get('detalhes_restricao', 'detalhes restricao', 'food_restriction_detail', 'foodrestrictiondetail')) ? String(get('detalhes_restricao', 'detalhes restricao', 'food_restriction_detail', 'foodrestrictiondetail')).trim() : null,
+                        instagram: this.temValorImportacaoEncontristas(get('instagram')) ? String(get('instagram')).trim() : null,
+                        eh_musico: this.normalizarBooleanoImportacaoEncontristas(get('eh_musico', 'músico', 'musico', 'musician')),
+                        instrumentos_musicais: this.normalizarInstrumentosListaMestre(get('instrumentos_musicais', 'instrumentos musicais', 'instrumentos', 'instruments')),
+                        equipe_saude: this.normalizarBooleanoImportacaoEncontristas(get('equipe_saude', 'equipe de saude', 'equipe de saúde', 'health_team', 'healthteam')),
+                        nao_serve_ejc: this.normalizarBooleanoImportacaoEncontristas(get('nao_serve_ejc', 'não serve ejc', 'nao serve ejc')),
+                        motivo_nao_serve_ejc: this.temValorImportacaoEncontristas(get('motivo_nao_serve_ejc', 'motivo não serve ejc', 'motivo nao serve ejc')) ? String(get('motivo_nao_serve_ejc', 'motivo não serve ejc', 'motivo nao serve ejc')).trim() : null,
+                        conjuge_nome: this.temValorImportacaoEncontristas(get('conjuge_nome', 'cônjuge', 'conjuge', 'spouse')) ? String(get('conjuge_nome', 'cônjuge', 'conjuge', 'spouse')).trim() : null,
+                        termos_aceitos_em: this.normalizarDataImportacaoEncontristas(get('termos_aceitos_em', 'termos aceitos em', 'terms_accepted_at', 'termsacceptedat'), { comHora: true }),
+                        termos_aceitos_email: this.temValorImportacaoEncontristas(get('termos_aceitos_email', 'termos aceitos email', 'terms_accepted_email', 'termsacceptedemail')) ? String(get('termos_aceitos_email', 'termos aceitos email', 'terms_accepted_email', 'termsacceptedemail')).trim() : null,
+                        endereco_rua: this.temValorImportacaoEncontristas(get('endereco_rua', 'endereço rua', 'endereco', 'endereço', 'street', 'logradouro')) ? String(get('endereco_rua', 'endereço rua', 'endereco', 'endereço', 'street', 'logradouro')).trim() : null,
+                        endereco_numero: this.temValorImportacaoEncontristas(get('endereco_numero', 'endereço número', 'numero', 'número', 'address_number', 'addressnumber')) ? String(get('endereco_numero', 'endereço número', 'numero', 'número', 'address_number', 'addressnumber')).trim() : null,
+                        endereco_bairro: this.temValorImportacaoEncontristas(get('endereco_bairro', 'endereço bairro', 'bairro', 'neighborhood')) ? String(get('endereco_bairro', 'endereço bairro', 'bairro', 'neighborhood')).trim() : null,
+                        endereco_cidade: this.temValorImportacaoEncontristas(get('endereco_cidade', 'endereço cidade', 'cidade', 'city')) ? String(get('endereco_cidade', 'endereço cidade', 'cidade', 'city')).trim() : null,
+                        endereco_estado: this.temValorImportacaoEncontristas(get('endereco_estado', 'endereço estado', 'estado', 'state')) ? String(get('endereco_estado', 'endereço estado', 'estado', 'state')).trim() : null,
+                        endereco_cep: this.temValorImportacaoEncontristas(get('endereco_cep', 'endereço cep', 'cep', 'zip_code', 'zipcode')) ? String(get('endereco_cep', 'endereço cep', 'cep', 'zip_code', 'zipcode')).trim() : null,
+                        numero_ejc_fez: `montagem:${this.montagemAtiva.id}`
+                    };
+                    if (!jovem.nome_completo) return null;
+                    const temConteudo = Object.keys(jovem)
+                        .filter((campo) => campo !== 'numero_ejc_fez')
+                        .some((campo) => this.temValorImportacaoEncontristas(jovem[campo]));
+                    return temConteudo ? jovem : null;
+                },
+                async abrirModalImportarEncontristas() {
+                    if (!this.montagemAtiva || !this.montagemAtiva.id) return;
+                    this.resetImportacaoEncontristasExcel();
+                    await this.carregarEncontristasSelecionados();
+                    if (!this.modalImportarEncontristasInstance) {
+                        this.modalImportarEncontristasInstance = new bootstrap.Modal(document.getElementById('modalImportarEncontristas'));
+                    }
+                    this.modalImportarEncontristasInstance.show();
+                },
+                async onArquivoImportacaoEncontristasChange(event) {
+                    const file = event && event.target && event.target.files && event.target.files[0] ? event.target.files[0] : null;
+                    this.arquivoImportacaoEncontristasExcel = null;
+                    this.nomeArquivoImportacaoEncontristasExcel = '';
+                    this.linhasImportacaoEncontristasExcel = [];
+                    this.linhasIgnoradasImportacaoEncontristasExcel = 0;
+                    this.erroImportacaoEncontristasExcel = '';
+                    if (!file) return;
+                    if (!String(file.name || '').toLowerCase().endsWith('.xlsx')) {
+                        this.erroImportacaoEncontristasExcel = 'Selecione um arquivo Excel (.xlsx).';
+                        if (event && event.target) event.target.value = '';
+                        return;
+                    }
                     try {
-                        await navigator.clipboard.writeText(texto);
-                        await this.uiAlert('Link copiado com sucesso.');
-                    } catch (_) {
-                        await this.uiAlert(texto, 'Link do formulário');
+                        if (!this.coresCirculos.length) await this.carregarCoresCirculos();
+                        const rows = await ExcelUtils.readXlsxFile(file);
+                        if (!Array.isArray(rows) || !rows.length) {
+                            this.erroImportacaoEncontristasExcel = 'Arquivo vazio.';
+                            return;
+                        }
+                        const linhas = [];
+                        let ignoradas = 0;
+                        rows.forEach((row) => {
+                            const item = this.montarLinhaImportacaoEncontristas(row);
+                            if (!item) {
+                                ignoradas += 1;
+                                return;
+                            }
+                            linhas.push(item);
+                        });
+                        this.arquivoImportacaoEncontristasExcel = file;
+                        this.nomeArquivoImportacaoEncontristasExcel = String(file.name || '').trim();
+                        this.linhasImportacaoEncontristasExcel = linhas;
+                        this.linhasIgnoradasImportacaoEncontristasExcel = ignoradas;
+                        if (!linhas.length) {
+                            this.erroImportacaoEncontristasExcel = 'Nenhuma linha válida foi encontrada no arquivo.';
+                        }
+                    } catch (err) {
+                        console.error('Erro ao ler arquivo de encontristas:', err);
+                        this.erroImportacaoEncontristasExcel = 'Não foi possível ler o arquivo Excel.';
+                    }
+                },
+                async confirmarImportacaoEncontristasExcel() {
+                    if (!this.montagemAtiva || !this.montagemAtiva.id) return;
+                    const linhas = Array.isArray(this.linhasImportacaoEncontristasExcel) ? this.linhasImportacaoEncontristasExcel : [];
+                    if (!linhas.length) {
+                        await this.uiAlert('Selecione um arquivo Excel com encontristas para importar.');
+                        return;
+                    }
+                    const confirmar = await this.uiConfirm(`Deseja importar ${linhas.length} ${linhas.length === 1 ? 'encontrista' : 'encontristas'} para esta montagem?`);
+                    if (!confirmar) return;
+                    this.importandoArquivoEncontristasExcel = true;
+                    try {
+                        const payload = linhas.map((jovem) => ({ jovem }));
+                        const res = await fetch('/api/importacao', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        const resultado = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            await this.uiAlert(resultado.error || 'Erro ao importar os encontristas.');
+                            return;
+                        }
+                        await this.carregarEncontristasAba();
+                        if (this.modalImportarEncontristasInstance) this.modalImportarEncontristasInstance.hide();
+                        this.resetImportacaoEncontristasExcel();
+                        const resumo = resultado.resumo || { criados: 0, atualizados: 0, erros: 0 };
+                        const detalhesErros = Array.isArray(resultado.detalhesErros) ? resultado.detalhesErros : [];
+                        let mensagem = `Importação concluída.\nCriados: ${resumo.criados}\nAtualizados: ${resumo.atualizados}\nErros: ${resumo.erros}`;
+                        if (detalhesErros.length) {
+                            const limite = 6;
+                            const lista = detalhesErros
+                                .slice(0, limite)
+                                .map((item) => `- Linha ${item.linha} (${item.nome}): ${item.erro}`)
+                                .join('\n');
+                            const restante = detalhesErros.length > limite ? `\n... e mais ${detalhesErros.length - limite} erro(s).` : '';
+                            mensagem += `\n\nDetalhes:\n${lista}${restante}`;
+                        }
+                        await this.uiAlert(mensagem, resumo.erros ? 'Importação concluída com alertas' : 'Importação concluída');
+                    } catch (err) {
+                        console.error('Erro ao importar encontristas por Excel:', err);
+                        await this.uiAlert('Erro ao importar os encontristas por Excel.');
+                    } finally {
+                        this.importandoArquivoEncontristasExcel = false;
                     }
                 },
                 async carregarRecursosNovoEncontristaMontagem() {
@@ -2415,7 +3111,6 @@
                     this.salvarCirculosEncontristasLocal();
                 },
                 async carregarEncontristasAba() {
-                    await this.carregarEncontristas();
                     await this.carregarEncontristasSelecionados();
                     await this.carregarEncontristasDadosPersistidos();
                 },
@@ -2724,7 +3419,7 @@
                     }
                     await this.carregarMapaEncontristas();
                 },
-                async adicionarEncontrista(resp) {
+                async adicionarEncontrista(resp, { mostrarErro = true } = {}) {
                     if (!this.montagemAtiva || !this.montagemAtiva.id || !resp || !resp.id) return;
                     this.salvandoEncontristaId = resp.id;
                     try {
@@ -2742,8 +3437,8 @@
                         } else {
                             const data = await res.json().catch(() => ({}));
                             if (!res.ok) {
-                                await this.uiAlert(data.error || 'Erro ao adicionar encontrista.');
-                                return;
+                                if (mostrarErro) await this.uiAlert(data.error || 'Erro ao adicionar encontrista.');
+                                return false;
                             }
                             await this.carregarEncontristasSelecionados();
                         }
@@ -2751,11 +3446,44 @@
                         delete this.bloqueadosEncontristas[String(resp.id)];
                         this.salvarDesistenciasEncontristasLocal();
                         this.salvarBloqueadosEncontristasLocal();
+                        return true;
                     } catch (err) {
                         console.error('Erro ao adicionar encontrista:', err);
-                        await this.uiAlert('Erro ao adicionar encontrista.');
+                        if (mostrarErro) await this.uiAlert('Erro ao adicionar encontrista.');
+                        return false;
                     } finally {
                         this.salvandoEncontristaId = null;
+                    }
+                },
+                async importarEncontristaDisponivel(resp) {
+                    await this.adicionarEncontrista(resp);
+                },
+                async importarTodosEncontristasDisponiveis() {
+                    const fichas = Array.isArray(this.fichasDisponiveisFiltradas) ? this.fichasDisponiveisFiltradas : [];
+                    if (!fichas.length) {
+                        await this.uiAlert('Nenhuma ficha disponível para importar.');
+                        return;
+                    }
+                    this.importandoEncontristasEmLote = true;
+                    let totalImportados = 0;
+                    try {
+                        for (const resp of fichas) {
+                            // Importa em sequência para manter o feedback consistente e evitar concorrência no mesmo estado local.
+                            const ok = await this.adicionarEncontrista(resp, { mostrarErro: false });
+                            if (ok) totalImportados += 1;
+                        }
+                        await this.carregarEncontristasSelecionados();
+                        await this.uiAlert(
+                            totalImportados
+                                ? `${totalImportados} ${totalImportados === 1 ? 'encontrista importado com sucesso.' : 'encontristas importados com sucesso.'}`
+                                : 'Nenhum encontrista foi importado.',
+                            totalImportados ? 'Sucesso' : 'Aviso'
+                        );
+                    } catch (err) {
+                        console.error('Erro ao importar encontristas em lote:', err);
+                        await this.uiAlert('Erro ao importar encontristas.');
+                    } finally {
+                        this.importandoEncontristasEmLote = false;
                     }
                 },
                 async registrarDesistencia(resp) {
@@ -2912,6 +3640,28 @@
                     const dia = (this.diasSemanaOptions || []).find((item) => Number(item.value) === Number(valor));
                     return dia ? dia.label : 'Domingo';
                 },
+                atualizarUrlMontagemAtual(montagemId) {
+                    if (typeof window === 'undefined') return;
+                    const url = new URL(window.location.href);
+                    if (montagemId) {
+                        url.searchParams.set('montagem_id', String(montagemId));
+                    } else {
+                        url.searchParams.delete('montagem_id');
+                    }
+                    if (this.origemAcesso) {
+                        url.searchParams.set('origem', this.origemAcesso);
+                    } else {
+                        url.searchParams.delete('origem');
+                    }
+                    window.history.replaceState({}, '', url.pathname + (url.search || ''));
+                },
+                voltarDaMontagem() {
+                    if (this.origemAcesso === 'edicoes-ejc') {
+                        window.location.href = '/gestaodoencontro/ejc';
+                        return;
+                    }
+                    this.limparEstadoMontagemAtual();
+                },
                 async carregarMontagens() {
                     this.carregando = true;
                     try {
@@ -2946,25 +3696,18 @@
                 },
 
                 async salvarNovaMontagem() {
-                    if (!this.formMontagem.numero_ejc || !this.formMontagem.data_inicio_encontro || !this.formMontagem.data_fim_encontro || !this.formMontagem.data_tarde_revelacao || !this.formMontagem.data_inicio_reunioes || !this.formMontagem.data_fim_reunioes || this.formMontagem.dia_semana_reunioes === '' || this.formMontagem.dia_semana_reunioes === null || this.formMontagem.dia_semana_reunioes === undefined) {
-                        await this.uiAlert('Preencha todos os campos.');
+                    if (!this.formMontagem.numero_ejc || !this.formMontagem.data_inicio_encontro || !this.formMontagem.data_fim_encontro) {
+                        await this.uiAlert('Preencha número do EJC, início e fim do encontro.');
                         return;
                     }
                     const de = this.parseDateBr(this.formMontagem.data_inicio_encontro);
                     const dfenc = this.parseDateBr(this.formMontagem.data_fim_encontro);
-                    const dt = this.parseDateBr(this.formMontagem.data_tarde_revelacao);
-                    const di = this.parseDateBr(this.formMontagem.data_inicio_reunioes);
-                    const df = this.parseDateBr(this.formMontagem.data_fim_reunioes);
-                    if (!de || !dfenc || !dt || !di || !df) {
-                        await this.uiAlert('Informe as datas no formato dd/mês/aaaa.');
+                    if (!de || !dfenc) {
+                        await this.uiAlert('Informe início e fim do encontro no formato dd/mês/aaaa.');
                         return;
                     }
                     if (de > dfenc) {
                         await this.uiAlert('A data fim do encontro não pode ser menor que a data início.');
-                        return;
-                    }
-                    if (di > df) {
-                        await this.uiAlert('A data fim das reuniões não pode ser menor que a data início.');
                         return;
                     }
                     try {
@@ -2975,11 +3718,7 @@
                                 numero_ejc: this.formMontagem.numero_ejc,
                                 data_encontro: de,
                                 data_inicio_encontro: de,
-                                data_fim_encontro: dfenc,
-                                data_tarde_revelacao: dt,
-                                data_inicio_reunioes: di,
-                                data_fim_reunioes: df,
-                                dia_semana_reunioes: Number(this.formMontagem.dia_semana_reunioes)
+                                data_fim_encontro: dfenc
                             })
                         });
                         if (!res.ok) {
@@ -3014,25 +3753,18 @@
 
                 async salvarEdicaoMontagem() {
                     if (!this.montagemAtiva || !this.montagemAtiva.id) return;
-                    if (!this.formEditarMontagem.numero_ejc || !this.formEditarMontagem.data_inicio_encontro || !this.formEditarMontagem.data_fim_encontro || !this.formEditarMontagem.data_tarde_revelacao || !this.formEditarMontagem.data_inicio_reunioes || !this.formEditarMontagem.data_fim_reunioes || this.formEditarMontagem.dia_semana_reunioes === '' || this.formEditarMontagem.dia_semana_reunioes === null || this.formEditarMontagem.dia_semana_reunioes === undefined) {
-                        await this.uiAlert('Preencha todos os campos da montagem.');
+                    if (!this.formEditarMontagem.numero_ejc || !this.formEditarMontagem.data_inicio_encontro || !this.formEditarMontagem.data_fim_encontro) {
+                        await this.uiAlert('Preencha número do EJC, início e fim do encontro.');
                         return;
                     }
                     const de = this.parseDateBr(this.formEditarMontagem.data_inicio_encontro);
                     const dfenc = this.parseDateBr(this.formEditarMontagem.data_fim_encontro);
-                    const dt = this.parseDateBr(this.formEditarMontagem.data_tarde_revelacao);
-                    const di = this.parseDateBr(this.formEditarMontagem.data_inicio_reunioes);
-                    const df = this.parseDateBr(this.formEditarMontagem.data_fim_reunioes);
-                    if (!de || !dfenc || !dt || !di || !df) {
-                        await this.uiAlert('Informe as datas no formato dd/mês/aaaa.');
+                    if (!de || !dfenc) {
+                        await this.uiAlert('Informe início e fim do encontro no formato dd/mês/aaaa.');
                         return;
                     }
                     if (de > dfenc) {
                         await this.uiAlert('A data fim do encontro não pode ser menor que a data início.');
-                        return;
-                    }
-                    if (di > df) {
-                        await this.uiAlert('A data fim das reuniões não pode ser menor que a data início.');
                         return;
                     }
                     try {
@@ -3043,11 +3775,7 @@
                                 numero_ejc: this.formEditarMontagem.numero_ejc,
                                 data_encontro: de,
                                 data_inicio_encontro: de,
-                                data_fim_encontro: dfenc,
-                                data_tarde_revelacao: dt,
-                                data_inicio_reunioes: di,
-                                data_fim_reunioes: df,
-                                dia_semana_reunioes: Number(this.formEditarMontagem.dia_semana_reunioes)
+                                data_fim_encontro: dfenc
                             })
                         });
                         const data = await res.json().catch(() => ({}));
@@ -3060,10 +3788,10 @@
                             ...this.montagemAtiva,
                             numero_ejc: this.formEditarMontagem.numero_ejc,
                             data_encontro: de,
-                            data_tarde_revelacao: dt,
-                            data_inicio_reunioes: di,
-                            data_fim_reunioes: df,
-                            dia_semana_reunioes: Number(this.formEditarMontagem.dia_semana_reunioes),
+                            data_tarde_revelacao: this.montagemAtiva.data_tarde_revelacao || dfenc,
+                            data_inicio_reunioes: this.montagemAtiva.data_inicio_reunioes || de,
+                            data_fim_reunioes: this.montagemAtiva.data_fim_reunioes || de,
+                            dia_semana_reunioes: Number.isFinite(Number(this.montagemAtiva.dia_semana_reunioes)) ? Number(this.montagemAtiva.dia_semana_reunioes) : 0,
                             data_inicio: de,
                             data_fim: dfenc
                         };
@@ -3088,9 +3816,10 @@
                 entrarMontagem(montagem) {
                     this.montagemAtiva = montagem;
                     this.estado = 'EDICAO';
+                    this.atualizarUrlMontagemAtual(montagem && montagem.id ? montagem.id : null);
                     this.abaPrincipalMontagem = 'encontreiros';
                     this.abaMontagem = 'equipes';
-                    this.abaInfoMontagem = 'coordenadores';
+                    this.abaInfoMontagem = 'datas';
                     this.equipesFinalizadas = false;
                     this.infoMontagem = { coordenadores: [], restricoes: [], totalPessoasComRestricao: 0 };
                     this.restricaoInfoAberta = '';
@@ -3112,7 +3841,7 @@
                     this.estado = 'LISTA';
                     this.abaPrincipalMontagem = 'encontreiros';
                     this.abaMontagem = 'equipes';
-                    this.abaInfoMontagem = 'coordenadores';
+                    this.abaInfoMontagem = 'datas';
                     this.equipesFinalizadas = false;
                     this.estrutura = [];
                     this.jovensSemEquipe = [];
@@ -3128,13 +3857,13 @@
                     this.resetarControleSelecaoServir();
                     this.formReunioes = { dia_semana: 0, data_inicio: '', data_fim: '', periodo: '' };
                     if (typeof window !== 'undefined') {
-                        const url = new URL(window.location.href);
-                        url.searchParams.delete('montagem_id');
-                        window.history.replaceState({}, '', url.pathname + (url.search || ''));
+                        this.origemAcesso = '';
+                        this.atualizarUrlMontagemAtual(null);
                     }
                 },
                 aplicarMontagemPorUrl() {
                     const params = new URLSearchParams(window.location.search);
+                    this.origemAcesso = String(params.get('origem') || '').trim().toLowerCase();
                     const id = Number(params.get('montagem_id') || 0);
                     if (!id || !Array.isArray(this.montagens) || !this.montagens.length) return;
                     const m = this.montagens.find(item => Number(item.id) === id);
@@ -3273,8 +4002,8 @@
                     const tel = String(j.telefone || '').replace(/\D/g, '');
                     return `tmp:${nome}|${tel}`;
                 },
-                async salvarSelecaoServir() {
-                    if (!this.montagemAtiva || !this.montagemAtiva.id) return;
+                async persistirSelecaoAtual({ mostrarSucesso = false } = {}) {
+                    if (!this.montagemAtiva || !this.montagemAtiva.id) return false;
                     if (this.abaSeparar === 'tios' || this.abaSeparar === 'tios_outro') {
                         const tipoAtual = this.abaSeparar;
                         const fonteTios = this.abaSeparar === 'tios_outro' ? (this.tiosOutroParaServir || []) : (this.tiosOrigemParaServir || []);
@@ -3295,18 +4024,21 @@
                             const data = await res.json().catch(() => ({}));
                             if (!res.ok) {
                                 await this.uiAlert(data.error || 'Erro ao salvar seleção.');
-                                return;
+                                return false;
                             }
-                            await this.uiAlert(`Seleção salva com sucesso. ${ids.length} ${ids.length === 1 ? 'casal selecionado' : 'casais selecionados'}.`, 'Sucesso');
+                            if (mostrarSucesso) {
+                                await this.uiAlert(`Seleção salva com sucesso. ${ids.length} ${ids.length === 1 ? 'casal selecionado' : 'casais selecionados'}.`, 'Sucesso');
+                            }
                             await this.carregarTiosParaServir();
                             this.marcarSelecaoComoSalva(tipoAtual);
+                            return true;
                         } catch (err) {
                             console.error(err);
                             await this.uiAlert('Erro ao salvar seleção.');
+                            return false;
                         } finally {
                             this.salvandoSelecao = false;
                         }
-                        return;
                     }
                     if (this.abaSeparar === 'outro') {
                         const tipoAtual = this.abaSeparar;
@@ -3329,18 +4061,21 @@
                             const data = await res.json().catch(() => ({}));
                             if (!res.ok) {
                                 await this.uiAlert(data.error || 'Erro ao salvar seleção.');
-                                return;
+                                return false;
                             }
-                            await this.uiAlert(`Seleção salva com sucesso. ${totalSelecionados} ${totalSelecionados === 1 ? 'jovem selecionado' : 'jovens selecionados'}.`, 'Sucesso');
+                            if (mostrarSucesso) {
+                                await this.uiAlert(`Seleção salva com sucesso. ${totalSelecionados} ${totalSelecionados === 1 ? 'jovem selecionado' : 'jovens selecionados'}.`, 'Sucesso');
+                            }
                             await this.carregarJovensOutroEjc();
                             this.marcarSelecaoComoSalva(tipoAtual);
+                            return true;
                         } catch (err) {
                             console.error(err);
                             await this.uiAlert('Erro ao salvar seleção.');
+                            return false;
                         } finally {
                             this.salvandoSelecao = false;
                         }
-                        return;
                     }
                     const tipoAtual = this.abaSeparar;
                     const selecionados = (this.jovensSemEquipe || []).filter(j => j.selecionado).map(j => j.id);
@@ -3360,17 +4095,24 @@
                         const data = await res.json().catch(() => ({}));
                         if (!res.ok) {
                             await this.uiAlert(data.error || 'Erro ao salvar seleção.');
-                            return;
+                            return false;
                         }
-                        await this.uiAlert(`Seleção salva com sucesso. ${selecionados.length} ${selecionados.length === 1 ? 'jovem selecionado' : 'jovens selecionados'}.`, 'Sucesso');
+                        if (mostrarSucesso) {
+                            await this.uiAlert(`Seleção salva com sucesso. ${selecionados.length} ${selecionados.length === 1 ? 'jovem selecionado' : 'jovens selecionados'}.`, 'Sucesso');
+                        }
                         await this.carregarJovensSemEquipe();
                         this.marcarSelecaoComoSalva(tipoAtual);
+                        return true;
                     } catch (err) {
                         console.error(err);
                         await this.uiAlert('Erro ao salvar seleção.');
+                        return false;
                     } finally {
                         this.salvandoSelecao = false;
                     }
+                },
+                async salvarSelecaoServir() {
+                    return this.persistirSelecaoAtual({ mostrarSucesso: true });
                 },
                 async distribuirAleatorio() {
                     if (!this.montagemAtiva || !this.montagemAtiva.id) return;
@@ -3422,14 +4164,14 @@
                 limparExclusoes() {
                     this.equipesExcluidas = [];
                 },
-                abrirModalDistribuicao() {
-                    if (!this.selecaoSalvaAtual) {
-                        this.uiAlert('Salve a seleção antes de distribuir os membros.', 'Aviso');
+                async abrirModalDistribuicao() {
+                    if (this.totalSelecionadosAtual < 1) {
+                        await this.uiAlert('Não há nenhum jovem selecionado para distribuir.', 'Aviso');
                         return;
                     }
-                    if (this.totalSelecionadosAtual < 1) {
-                        this.uiAlert('Não há nenhum jovem selecionado para distribuir.', 'Aviso');
-                        return;
+                    if (!this.selecaoSalvaAtual) {
+                        const salvou = await this.persistirSelecaoAtual();
+                        if (!salvou) return;
                     }
                     if (!this.modalDistribuirInstance) {
                         this.modalDistribuirInstance = new bootstrap.Modal(document.getElementById('modalDistribuirJovens'));
@@ -3443,7 +4185,12 @@
                 },
                 abrirEquipePagina(equipe) {
                     if (!this.montagemAtiva || !equipe) return;
-                    const url = `/gestaodoencontro/montarencontro/equipe?montagem_id=${this.montagemAtiva.id}&equipe_id=${equipe.id}`;
+                    const params = new URLSearchParams({
+                        montagem_id: String(this.montagemAtiva.id),
+                        equipe_id: String(equipe.id)
+                    });
+                    if (this.origemAcesso) params.set('origem', this.origemAcesso);
+                    const url = `/gestaodoencontro/montarencontro/equipe?${params.toString()}`;
                     window.location.href = url;
                 },
                 async finalizarMontagem() {
@@ -3635,54 +4382,25 @@
                 },
 
                 async alocarJovem(jovem) {
-                    const jovemId = Number((jovem && (jovem.id || jovem.jovem_id)) || 0);
                     try {
                         this.searchErroMsg = '';
-                        const ehSub = this.modalData.destino === 'substituicao';
-                        let res = null;
-                        if (jovem && jovem.tipo === 'TIOS') {
-                            const nome = String(jovem.nome_completo || '').trim();
-                            if (!nome) {
-                                this.searchErroMsg = 'Não foi possível identificar o casal selecionado.';
-                                return;
-                            }
-                            res = await fetch(`/api/montar-encontro/${this.montagemAtiva.id}/membros-externos`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    equipe_id: this.modalData.equipeId,
-                                    funcao_id: this.modalData.funcaoId,
-                                    nome_completo: nome,
-                                    telefone: jovem.telefone || '',
-                                    eh_substituicao: ehSub
-                                })
-                            });
-                        } else {
-                            if (!jovemId) {
-                                this.searchErroMsg = 'Não foi possível identificar o jovem selecionado.';
-                                return;
-                            }
-                            res = await fetch(`/api/montar-encontro/${this.montagemAtiva.id}/membros`, {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({
-                                    equipe_id: this.modalData.equipeId,
-                                    funcao_id: this.modalData.funcaoId,
-                                    jovem_id: jovemId,
-                                    eh_substituicao: ehSub
-                                })
-                            });
-                        }
-                        if (!res.ok) {
-                            const err = await res.json().catch(() => ({}));
-                            this.searchErroMsg = err.error || 'Erro ao adicionar jovem.';
+                        const pessoa = this.normalizarPessoaParaAlocacao(jovem, {
+                            tipo: jovem && jovem.tipo,
+                            externo: String(jovem && jovem.tipo || '').trim().toUpperCase() === 'TIOS'
+                                || String(jovem && jovem.tipo || '').trim().toUpperCase() === 'TIOS_OUTRO_EJC',
+                            destino: this.modalData.destino === 'substituicao' ? 'reserva' : 'titular'
+                        });
+                        const resultado = await this.enviarAlocacaoParaEquipe(pessoa, {
+                            equipeId: this.modalData.equipeId,
+                            funcaoId: this.modalData.funcaoId,
+                            destino: this.modalData.destino === 'substituicao' ? 'reserva' : 'titular'
+                        });
+                        if (!resultado.ok) {
+                            this.searchErroMsg = resultado.error || 'Erro ao adicionar jovem.';
                             await this.uiAlert(this.searchErroMsg);
                             return;
                         }
                         this.modalBuscaInstance.hide();
-                        await this.carregarEstrutura();
-                        await this.carregarDetalhesEquipe();
-                        await this.carregarJovensSemEquipe();
                     } catch (err) {
                         console.error(err);
                         this.searchErroMsg = 'Erro ao adicionar jovem.';
@@ -3987,6 +4705,23 @@
                     if (isNaN(data.getTime())) return '--/--/----';
                     return data.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
                 },
+                anoMontagem(montagem) {
+                    const valor = montagem && (
+                        montagem.data_inicio
+                        || montagem.data_encontro
+                        || montagem.data_fim
+                        || montagem.data_tarde_revelacao
+                        || montagem.data_inicio_reunioes
+                        || montagem.data_fim_reunioes
+                    );
+                    if (!valor) return '----';
+                    const texto = String(valor).trim();
+                    const match = texto.match(/^(\d{4})[-/]/);
+                    if (match && match[1]) return match[1];
+                    const data = new Date(texto);
+                    if (isNaN(data.getTime())) return '----';
+                    return String(data.getUTCFullYear());
+                },
                 formatarDataHora(dataHora) {
                     if (!dataHora) return '--/--/---- --:--';
                     const d = new Date(dataHora);
@@ -4092,6 +4827,8 @@
                 bindDatepickers();
                 const obs = new MutationObserver(() => bindDatepickers());
                 obs.observe(document.body, { childList: true, subtree: true });
+                const params = new URLSearchParams(window.location.search);
+                this.origemAcesso = String(params.get('origem') || '').trim().toLowerCase();
                 this.carregarMontagens().then(() => {
                     this.aplicarMontagemPorUrl();
                 });

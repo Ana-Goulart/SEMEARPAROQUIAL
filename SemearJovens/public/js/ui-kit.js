@@ -1,8 +1,10 @@
 (() => {
-    const nativeAlert = window.alert;
-    const nativeConfirm = window.confirm;
+    const nativeAlert = window.alert ? window.alert.bind(window) : () => { };
+    const nativeConfirm = window.confirm ? window.confirm.bind(window) : () => false;
+    const nativePrompt = window.prompt ? window.prompt.bind(window) : () => null;
 
     const hasBootstrap = () => window.bootstrap && typeof window.bootstrap.Modal === 'function';
+    const canUseModal = () => hasBootstrap() && !!document.body;
 
     let modalEl = null;
     let modalInstance = null;
@@ -10,7 +12,8 @@
     let mode = 'alert';
 
     const ensureModal = () => {
-        if (modalEl) return;
+        if (modalEl) return true;
+        if (!canUseModal()) return false;
         const wrapper = document.createElement('div');
         wrapper.innerHTML = `
 <div class="modal fade" id="uiModalPadrao" tabindex="-1" aria-hidden="true">
@@ -70,10 +73,17 @@
                 if (input) input.focus();
             }
         });
+
+        return true;
     };
 
     const openModal = ({ title, message, confirm, prompt, defaultValue }) => {
-        ensureModal();
+        if (!ensureModal()) {
+            if (prompt) return Promise.resolve(nativePrompt(String(message || ''), defaultValue || ''));
+            if (confirm) return Promise.resolve(nativeConfirm(String(message || '')));
+            nativeAlert(String(message || ''));
+            return Promise.resolve(true);
+        }
         const titleEl = modalEl.querySelector('#uiModalTitulo');
         const msgEl = modalEl.querySelector('#uiModalMensagem');
         const footer = modalEl.querySelector('#uiModalFooter');
@@ -110,7 +120,7 @@
     };
 
     window.uiAlert = (message, options = {}) => {
-        if (!hasBootstrap()) {
+        if (!canUseModal()) {
             nativeAlert(message);
             return Promise.resolve(true);
         }
@@ -122,7 +132,7 @@
     };
 
     window.uiConfirm = (message, options = {}) => {
-        if (!hasBootstrap()) return Promise.resolve(nativeConfirm(message));
+        if (!canUseModal()) return Promise.resolve(nativeConfirm(message));
         return openModal({
             title: options.title || 'Confirmação',
             message: String(message || ''),
@@ -131,7 +141,7 @@
     };
 
     window.uiPrompt = (message, options = {}) => {
-        if (!hasBootstrap()) return Promise.resolve(null);
+        if (!canUseModal()) return Promise.resolve(nativePrompt(String(message || ''), options.defaultValue || ''));
         return openModal({
             title: options.title || 'Informe',
             message: String(message || ''),
@@ -142,6 +152,10 @@
     };
 
     window.alert = (message) => {
+        if (!canUseModal()) {
+            nativeAlert(message);
+            return;
+        }
         window.uiAlert(message);
     };
 })();

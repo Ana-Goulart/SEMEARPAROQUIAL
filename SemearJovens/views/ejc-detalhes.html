@@ -38,38 +38,7 @@
             gap: 0.75rem;
         }
 
-        .ejc-summary-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 0.9rem;
-            margin-bottom: 1rem;
-        }
-
-        .ejc-summary-card {
-            border-radius: 22px;
-            border: 1px solid #ece4d7;
-            background: linear-gradient(145deg, rgba(255, 251, 243, 0.98), #ffffff);
-            box-shadow: 0 16px 30px rgba(15, 23, 42, 0.05);
-            padding: 1rem 1.1rem;
-        }
-
-        .ejc-summary-label {
-            display: block;
-            margin-bottom: 0.35rem;
-            font-size: 0.76rem;
-            text-transform: uppercase;
-            letter-spacing: 0.06em;
-            color: #94a3b8;
-            font-weight: 700;
-        }
-
-        .ejc-summary-value {
-            color: #243b53;
-            font-weight: 700;
-            font-size: 1.05rem;
-        }
-
-        .ejc-content-grid {
+        .ejc-primary-grid {
             display: grid;
             grid-template-columns: 1fr;
             gap: 1rem;
@@ -86,6 +55,27 @@
 
         .ejc-panel-body {
             padding: 1.1rem;
+        }
+
+        .ejc-panel-secondary {
+            border-radius: 20px;
+            box-shadow: 0 12px 24px rgba(15, 23, 42, 0.04);
+        }
+
+        .ejc-summary-panel {
+            margin-bottom: 1rem;
+        }
+
+        .ejc-panel-secondary .ejc-panel-body {
+            padding: 0.95rem 1rem;
+        }
+
+        .ejc-panel-secondary .ejc-panel-header {
+            margin-bottom: 0.8rem;
+        }
+
+        .ejc-panel-secondary .ejc-panel-title {
+            font-size: 0.98rem;
         }
 
         .ejc-panel-header {
@@ -107,34 +97,57 @@
         .ejc-info-grid {
             display: grid;
             grid-template-columns: 1fr;
-            gap: 0.75rem;
+            gap: 0.6rem;
+        }
+
+        .ejc-info-grid--compact {
+            gap: 0.55rem;
+        }
+
+        .ejc-info-grid--summary {
+            gap: 0.55rem;
         }
 
         .ejc-info-item {
-            border-radius: 18px;
+            border-radius: 16px;
             border: 1px solid #f0e9dd;
             background: #fffdf9;
-            padding: 0.9rem 1rem;
+            padding: 0.78rem 0.9rem;
+        }
+
+        .ejc-info-item--compact {
+            background: #ffffff;
+        }
+
+        .ejc-info-item--metric {
+            background: linear-gradient(145deg, rgba(255, 251, 243, 0.98), #ffffff);
         }
 
         .ejc-info-label {
             display: block;
-            font-size: 0.74rem;
+            font-size: 0.68rem;
             text-transform: uppercase;
             letter-spacing: 0.06em;
             color: #94a3b8;
             font-weight: 700;
-            margin-bottom: 0.3rem;
+            margin-bottom: 0.2rem;
         }
 
         .ejc-info-value {
             color: #334155;
             font-weight: 600;
+            font-size: 0.98rem;
+        }
+
+        .ejc-info-item--metric .ejc-info-value {
+            color: #1f3b67;
+            font-size: 1.28rem;
+            line-height: 1.05;
         }
 
         .ejc-team-list {
-            display: flex;
-            flex-direction: column;
+            display: grid;
+            grid-template-columns: 1fr;
             gap: 0.75rem;
         }
 
@@ -142,10 +155,16 @@
             display: flex;
             flex-direction: column;
             gap: 0.85rem;
+            height: 100%;
             padding: 0.95rem 1rem;
             border-radius: 18px;
             border: 1px solid #efe7da;
             background: #fffdf9;
+        }
+
+        .ejc-team-main {
+            min-width: 0;
+            flex: 1;
         }
 
         .ejc-team-title {
@@ -178,12 +197,12 @@
                 align-items: flex-end;
             }
 
-            .ejc-summary-grid {
+            .ejc-info-grid--compact {
                 grid-template-columns: repeat(3, minmax(0, 1fr));
             }
 
-            .ejc-content-grid {
-                grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+            .ejc-info-grid--summary {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
             }
 
             .ejc-info-grid {
@@ -194,6 +213,18 @@
                 flex-direction: row;
                 justify-content: space-between;
                 align-items: center;
+            }
+        }
+
+        @media (min-width: 992px) {
+            .ejc-team-list {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (min-width: 1200px) {
+            .ejc-info-grid--summary {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
             }
         }
     </style>
@@ -209,10 +240,6 @@
                             <span class="btn-ejc-icon"><i class="fa-solid fa-arrow-left icon-accent"></i></span>
                             <span class="btn-ejc-text">Voltar</span>
                         </button>
-                        <h3 class="ejc-detail-title">
-                            <span v-if="detalhe">{{ numeroParaRomano(detalhe.numero) }}º EJC</span>
-                            <span v-else>Detalhes da edição</span>
-                        </h3>
                     </div>
 
                     <div v-if="detalhe && !detalhe.isMontagem" class="ejc-detail-actions">
@@ -238,56 +265,56 @@
                 </div>
 
                 <template v-else-if="detalhe">
-                    <div class="ejc-summary-grid">
-                        <article class="ejc-summary-card">
-                            <span class="ejc-summary-label">Encontreiros</span>
-                            <span class="ejc-summary-value">{{ totalEncontreiros }}</span>
-                        </article>
-                        <article class="ejc-summary-card">
-                            <span class="ejc-summary-label">Encontristas</span>
-                            <span class="ejc-summary-value">{{ encontristas.length }}</span>
-                        </article>
-                    </div>
-
-                    <div class="ejc-content-grid">
-                        <section class="ejc-panel">
-                            <div class="ejc-panel-body">
-                                <div class="ejc-panel-header">
-                                    <h4 class="ejc-panel-title">Informações da edição</h4>
-                                    <span class="badge" :class="detalhe.isMontagem ? 'bg-info-subtle text-info-emphasis' : 'bg-soft-secondary text-muted'">
-                                        {{ detalhe.isMontagem ? 'Montagem' : 'Edição histórica' }}
-                                    </span>
+                    <section class="ejc-panel ejc-panel-secondary ejc-summary-panel">
+                        <div class="ejc-panel-body">
+                            <div class="ejc-panel-header">
+                                <div>
+                                    <h4 class="ejc-panel-title">Resumo da edição</h4>
+                                    <div class="text-muted small">Visão rápida da edição antes de entrar nas equipes e nos membros.</div>
                                 </div>
+                                <span class="badge" :class="detalhe.isMontagem ? 'bg-info-subtle text-info-emphasis' : 'bg-soft-secondary text-muted'">
+                                    {{ detalhe.isMontagem ? 'Montagem' : 'Edição histórica' }}
+                                </span>
+                            </div>
 
-                                <div class="ejc-info-grid">
-                                    <div class="ejc-info-item">
-                                        <span class="ejc-info-label">Número do EJC</span>
-                                        <span class="ejc-info-value">{{ numeroParaRomano(detalhe.numero) }}º EJC</span>
-                                    </div>
-                                    <div class="ejc-info-item">
-                                        <span class="ejc-info-label">Ano</span>
-                                        <span class="ejc-info-value">{{ detalhe.ano || '-' }}</span>
-                                    </div>
-                                    <div class="ejc-info-item">
-                                        <span class="ejc-info-label">Data de início do encontro</span>
-                                        <span class="ejc-info-value">{{ formatarData(detalhe.data_inicio || detalhe.data_encontro) }}</span>
-                                    </div>
-                                    <div class="ejc-info-item">
-                                        <span class="ejc-info-label">Data de fim do encontro</span>
-                                        <span class="ejc-info-value">{{ formatarData(detalhe.data_fim || detalhe.data_encontro) }}</span>
-                                    </div>
-                                    <div class="ejc-info-item">
-                                        <span class="ejc-info-label">Música tema</span>
-                                        <span class="ejc-info-value">{{ detalhe.musica_tema || '-' }}</span>
-                                    </div>
-                                    <div class="ejc-info-item">
-                                        <span class="ejc-info-label">Tema do encontro</span>
-                                        <span class="ejc-info-value">{{ detalhe.descricao || '-' }}</span>
-                                    </div>
+                            <div class="ejc-info-grid ejc-info-grid--summary">
+                                <div class="ejc-info-item ejc-info-item--compact ejc-info-item--metric">
+                                    <span class="ejc-info-label">Encontreiros</span>
+                                    <span class="ejc-info-value">{{ totalEncontreiros }}</span>
+                                </div>
+                                <div class="ejc-info-item ejc-info-item--compact ejc-info-item--metric">
+                                    <span class="ejc-info-label">Encontristas</span>
+                                    <span class="ejc-info-value">{{ encontristas.length }}</span>
+                                </div>
+                                <div class="ejc-info-item ejc-info-item--compact">
+                                    <span class="ejc-info-label">Número do EJC</span>
+                                    <span class="ejc-info-value">{{ rotuloNumeroEjc(detalhe.numero) }}</span>
+                                </div>
+                                <div class="ejc-info-item ejc-info-item--compact">
+                                    <span class="ejc-info-label">Ano</span>
+                                    <span class="ejc-info-value">{{ detalhe.ano || '-' }}</span>
+                                </div>
+                                <div class="ejc-info-item ejc-info-item--compact">
+                                    <span class="ejc-info-label">Início do encontro</span>
+                                    <span class="ejc-info-value">{{ formatarData(detalhe.data_inicio || detalhe.data_encontro) }}</span>
+                                </div>
+                                <div class="ejc-info-item ejc-info-item--compact">
+                                    <span class="ejc-info-label">Fim do encontro</span>
+                                    <span class="ejc-info-value">{{ formatarData(detalhe.data_fim || detalhe.data_encontro) }}</span>
+                                </div>
+                                <div class="ejc-info-item ejc-info-item--compact">
+                                    <span class="ejc-info-label">Música tema</span>
+                                    <span class="ejc-info-value">{{ detalhe.musica_tema || '-' }}</span>
+                                </div>
+                                <div class="ejc-info-item ejc-info-item--compact">
+                                    <span class="ejc-info-label">Tema</span>
+                                    <span class="ejc-info-value">{{ detalhe.descricao || '-' }}</span>
                                 </div>
                             </div>
-                        </section>
+                        </div>
+                    </section>
 
+                    <div class="ejc-primary-grid">
                         <section class="ejc-panel">
                             <div class="ejc-panel-body">
                                 <div class="ejc-panel-header">
@@ -301,7 +328,7 @@
 
                                 <div v-else class="ejc-team-list">
                                     <div v-for="equipe in equipes" :key="equipe.id" class="ejc-team-row">
-                                        <div>
+                                        <div class="ejc-team-main">
                                             <h5 class="ejc-team-title">{{ equipe.nome }}</h5>
                                             <p class="ejc-team-text">{{ resumoEquipe(equipe) }}</p>
                                         </div>
@@ -313,47 +340,47 @@
                                 </div>
                             </div>
                         </section>
+
+                        <section class="ejc-panel">
+                            <div class="ejc-panel-body">
+                                <div class="ejc-panel-header">
+                                    <h4 class="ejc-panel-title">Encontristas da edição</h4>
+                                    <span class="text-muted small">Total: {{ encontristas.length }}</span>
+                                </div>
+
+                                <div v-if="!encontristas.length" class="text-muted small">
+                                    Nenhum encontrista registrado para esta edição.
+                                </div>
+
+                                <div v-else class="table-responsive">
+                                    <table class="table table-hover table-sm align-middle mb-0">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th class="text-start">Nome</th>
+                                                <th>Círculo</th>
+                                                <th v-if="!detalhe.isMontagem">Moita</th>
+                                                <th v-if="!detalhe.isMontagem">Função de Moita</th>
+                                                <th>Telefone</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr v-for="enc in encontristas" :key="enc.id">
+                                                <td class="fw-semibold">{{ enc.nome_completo }}</td>
+                                                <td>{{ enc.circulo || '-' }}</td>
+                                                <td v-if="!detalhe.isMontagem">
+                                                    <span class="badge" :class="enc.foi_moita ? 'bg-success' : 'bg-light text-dark'">
+                                                        {{ enc.foi_moita ? 'Foi Moita' : '-' }}
+                                                    </span>
+                                                </td>
+                                                <td v-if="!detalhe.isMontagem">{{ enc.moita_funcao || '-' }}</td>
+                                                <td>{{ enc.telefone || '-' }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </section>
                     </div>
-
-                    <section class="ejc-panel">
-                        <div class="ejc-panel-body">
-                            <div class="ejc-panel-header">
-                                <h4 class="ejc-panel-title">Encontristas da edição</h4>
-                                <span class="text-muted small">Total: {{ encontristas.length }}</span>
-                            </div>
-
-                            <div v-if="!encontristas.length" class="text-muted small">
-                                Nenhum encontrista registrado para esta edição.
-                            </div>
-
-                            <div v-else class="table-responsive">
-                                <table class="table table-hover table-sm align-middle mb-0">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th class="text-start">Nome</th>
-                                            <th>Círculo</th>
-                                            <th v-if="!detalhe.isMontagem">Moita</th>
-                                            <th v-if="!detalhe.isMontagem">Função de Moita</th>
-                                            <th>Telefone</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr v-for="enc in encontristas" :key="enc.id">
-                                            <td class="fw-semibold">{{ enc.nome_completo }}</td>
-                                            <td>{{ enc.circulo || '-' }}</td>
-                                            <td v-if="!detalhe.isMontagem">
-                                                <span class="badge" :class="enc.foi_moita ? 'bg-success' : 'bg-light text-dark'">
-                                                    {{ enc.foi_moita ? 'Foi Moita' : '-' }}
-                                                </span>
-                                            </td>
-                                            <td v-if="!detalhe.isMontagem">{{ enc.moita_funcao || '-' }}</td>
-                                            <td>{{ enc.telefone || '-' }}</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </section>
                 </template>
             </div>
 
@@ -639,14 +666,19 @@
                             throw new Error('Parâmetros inválidos para abrir os detalhes do EJC.');
                         }
 
+                        if (tipo === 'montagem') {
+                            const paramsMontagem = new URLSearchParams({
+                                montagem_id: String(id),
+                                origem: 'edicoes-ejc'
+                            });
+                            window.location.replace(`/gestaodoencontro/montarencontro?${paramsMontagem.toString()}`);
+                            return;
+                        }
+
                         this.tipoDetalhe = tipo;
                         this.itemId = id;
 
-                        if (tipo === 'edicao') {
-                            await this.carregarDetalheEdicao(id);
-                        } else {
-                            await this.carregarDetalheMontagem(id);
-                        }
+                        await this.carregarDetalheEdicao(id);
                     } catch (err) {
                         console.error(err);
                         this.erroCarregamento = err.message || 'Erro ao carregar os detalhes desta edição.';
@@ -742,7 +774,7 @@
                     }
                 },
                 async deletarEJCModal() {
-                    if (!(await window.showFloatingConfirm(`Tem certeza que deseja deletar o EJC ${this.numeroParaRomano(this.formulario.numero)}? Esta ação não pode ser desfeita.`))) return;
+                    if (!(await window.showFloatingConfirm(`Tem certeza que deseja deletar o EJC ${this.rotuloNumeroEjc(this.formulario.numero)}? Esta ação não pode ser desfeita.`))) return;
 
                     try {
                         const res = await fetch(`/api/ejc/${this.formulario.id}`, { method: 'DELETE' });
@@ -782,7 +814,7 @@
                 },
                 async abrirModalJovens(equipe) {
                     this.nomeEquipeSelecionada = equipe.nome;
-                    this.nomeEJCSelecionado = `${this.numeroParaRomano(this.detalhe.numero)}º EJC`;
+                    this.nomeEJCSelecionado = this.rotuloNumeroEjc(this.detalhe.numero);
                     this.definirIntegrantesEquipe([]);
 
                     const modalEl = document.getElementById('modalJovens');
@@ -855,7 +887,7 @@
                 },
                 abrirModalMontagem(equipe) {
                     this.nomeEquipeSelecionada = equipe.nome;
-                    this.nomeEJCSelecionado = `${this.numeroParaRomano(this.detalhe.numero)}º EJC (Montagem)`;
+                    this.nomeEJCSelecionado = `${this.rotuloNumeroEjc(this.detalhe.numero)} (Montagem)`;
                     this.definirIntegrantesEquipe([]);
 
                     let membrosFlat = [];
@@ -935,6 +967,13 @@
                         }
                     }
                     return result;
+                },
+                rotuloNumeroEjc(numero) {
+                    const numeroLimpo = Number(numero);
+                    if (!Number.isFinite(numeroLimpo) || numeroLimpo <= 0) return 'EJC sem número';
+                    const valorInteiro = Math.trunc(numeroLimpo);
+                    const romano = this.numeroParaRomano(valorInteiro);
+                    return `${romano || valorInteiro}º EJC`;
                 }
             },
             async mounted() {
