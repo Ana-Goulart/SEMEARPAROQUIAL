@@ -39,9 +39,234 @@
         .ligacoes-acoes {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.35rem;
             min-height: 38px;
             white-space: nowrap;
+            flex-wrap: nowrap;
+        }
+
+        .ligacoes-telefone {
+            white-space: nowrap;
+            min-width: max-content;
+        }
+
+        .ligacoes-telefone-multilinha {
+            white-space: normal;
+            min-width: 0;
+        }
+
+        .ligacoes-telefone-lista {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+            line-height: 1.3;
+        }
+
+        .ligacoes-telefone-item {
+            display: block;
+            white-space: nowrap;
+        }
+
+        .observacao-wrap {
+            position: relative;
+            display: inline-flex;
+            justify-content: center;
+        }
+
+        .observacao-toggle {
+            position: relative;
+            width: 2.2rem;
+            height: 2.2rem;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(139, 105, 20, 0.16);
+            border-radius: 0.85rem;
+            background: #fff;
+            color: #8b6914;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06);
+        }
+
+        .observacao-toggle:hover,
+        .observacao-toggle:focus {
+            background: #fff8ef;
+            color: #7d5c14;
+            border-color: rgba(139, 105, 20, 0.26);
+        }
+
+        .observacao-toggle.tem-conteudo {
+            background: #fff5df;
+            border-color: rgba(139, 105, 20, 0.28);
+            color: #7b5f2a;
+        }
+
+        .observacao-toggle.aberto {
+            box-shadow: 0 0 0 0.2rem rgba(184, 135, 50, 0.12);
+        }
+
+        .observacao-alerta {
+            position: absolute;
+            top: 0.32rem;
+            right: 0.32rem;
+            width: 0.58rem;
+            height: 0.58rem;
+            border-radius: 999px;
+            background: #c9a24a;
+            border: 2px solid #fff;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 0 1px rgba(139, 105, 20, 0.08);
+            pointer-events: none;
+        }
+
+        .observacao-popover {
+            position: absolute;
+            top: calc(100% + 0.45rem);
+            right: 0;
+            width: min(16rem, calc(100vw - 3rem));
+            padding: 0.75rem;
+            border: 1px solid rgba(31, 53, 88, 0.12);
+            border-radius: 0.95rem;
+            background: #fff;
+            box-shadow: 0 16px 30px rgba(15, 23, 42, 0.14);
+            z-index: 30;
+        }
+
+        .observacao-popover::before {
+            content: "";
+            position: absolute;
+            top: -0.42rem;
+            right: 0.95rem;
+            width: 0.8rem;
+            height: 0.8rem;
+            border-top: 1px solid rgba(31, 53, 88, 0.12);
+            border-left: 1px solid rgba(31, 53, 88, 0.12);
+            background: #fff;
+            transform: rotate(45deg);
+        }
+
+        .observacao-popover textarea {
+            width: 100%;
+            min-height: 5.5rem;
+            resize: vertical;
+            font-size: 0.92rem;
+        }
+
+        .observacao-popover-acoes {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 0.55rem;
+        }
+
+        .observacao-popover-salvar {
+            width: 2.1rem;
+            height: 2.1rem;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .ligacoes-cell-status {
+            min-width: 10rem;
+        }
+
+        .ligacoes-status-select {
+            min-width: 10rem;
+            white-space: nowrap;
+            font-size: 0.95rem;
+        }
+
+        .ligacoes-status-badge {
+            display: inline-flex;
+            align-items: center;
+            min-width: 10rem;
+            min-height: 31px;
+            padding: 0.3rem 0.8rem;
+            border: 1px solid rgba(15, 61, 94, 0.12);
+            border-radius: 0.85rem;
+            background: #f8fafc;
+            color: #0f3d5e;
+            font-weight: 600;
+            white-space: nowrap;
+            font-size: 0.95rem;
+        }
+
+        .ligacoes-cell-acoes {
+            white-space: nowrap;
+            min-width: 9rem;
+        }
+
+        .ligacoes-acao-principal {
+            min-width: 6.8rem;
+            justify-content: center;
+            font-size: 0.95rem;
+        }
+
+        .ligacoes-status-salvo {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 6.8rem;
+            min-height: 31px;
+            padding: 0.25rem 0.65rem;
+            border: 1px solid rgba(25, 135, 84, 0.16);
+            border-radius: 0.8rem;
+            background: rgba(25, 135, 84, 0.08);
+            color: #0f8a5f;
+            font-weight: 600;
+            font-size: 0.95rem;
+        }
+
+        .btn-icone-acao {
+            width: 1.9rem;
+            height: 1.9rem;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 1.9rem;
+            font-size: 0.95rem;
+        }
+
+        .cabecalho-equipe-acoes {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+            justify-content: flex-end;
+        }
+
+        .nome-caixa-alta {
+            text-transform: uppercase;
+        }
+
+        .equipe-resumo-lista {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            margin-top: 0.75rem;
+        }
+
+        .equipe-resumo-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            min-height: 34px;
+            padding: 0.35rem 0.8rem;
+            border-radius: 999px;
+            border: 1px solid rgba(31, 53, 88, 0.08);
+            background: #fffaf0;
+            color: #8b6914;
+            font-size: 0.92rem;
+            font-weight: 700;
+        }
+
+        .equipe-resumo-chip strong {
+            color: #5b4a1c;
+            font-weight: 800;
         }
     </style>
 </head>
@@ -63,12 +288,23 @@
                         <div>
                             <h5 class="mb-2">Ligações da equipe</h5>
                             <p class="text-muted mb-1">Selecione o status e salve.</p>
-                            <p class="text-muted small mb-0">Total de pessoas nesta lista: {{ totalPessoasLista(membros) }}</p>
+                            <div class="equipe-resumo-lista">
+                                <span class="equipe-resumo-chip">Total: <strong>{{ totalPessoasEquipe }}</strong></span>
+                                <span class="equipe-resumo-chip">Homens: <strong>{{ totalHomensEquipe }}</strong></span>
+                                <span class="equipe-resumo-chip">Mulheres: <strong>{{ totalMulheresEquipe }}</strong></span>
+                                <span class="equipe-resumo-chip">Tios: <strong>{{ totalTiosEquipe }}</strong></span>
+                            </div>
                         </div>
-                        <button class="btn btn-sm btn-primary d-inline-flex align-items-center gap-2 align-self-start" @click="abrirModalAdicionarMembro">
-                            <i class="fas fa-user-plus"></i>
-                            <span>Adicionar membro</span>
-                        </button>
+                        <div class="cabecalho-equipe-acoes align-self-start">
+                            <button class="btn btn-sm btn-primary d-inline-flex align-items-center gap-2" @click="abrirModalAdicionarMembro">
+                                <i class="fas fa-user-plus"></i>
+                                <span>Adicionar membro</span>
+                            </button>
+                            <button class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-2" @click="abrirModalPuxarReserva">
+                                <i class="fas fa-right-to-bracket"></i>
+                                <span>Puxar reserva</span>
+                            </button>
+                        </div>
                     </div>
 
                     <ul class="nav nav-tabs mb-3">
@@ -84,20 +320,20 @@
                     <div class="table-responsive">
                         <table class="table table-sm table-hover align-middle table-fixed">
                             <colgroup>
-                                <col style="width: 18%;">
+                                <col style="width: 19%;">
                                 <col style="width: 8%;">
+                                <col style="width: 11%;">
+                                <col style="width: 12%;">
+                                <col style="width: 10%;">
                                 <col style="width: 16%;">
-                                <col style="width: 12%;">
+                                <col style="width: 10%;">
                                 <col style="width: 14%;">
-                                <col style="width: 12%;">
-                                <col style="width: 12%;">
-                                <col style="width: 8%;">
                             </colgroup>
                             <thead>
                                 <tr>
                                     <th>Membro</th>
                                     <th>Idade</th>
-                                    <th>EJC</th>
+                                    <th>Origem</th>
                                     <th>Telefone</th>
                                     <th>Subfunção</th>
                                     <th>Status</th>
@@ -107,7 +343,7 @@
                             </thead>
                             <tbody>
                                 <tr v-for="m in membros" :key="`m-${m.membro_id}`">
-                                    <td class="fw-semibold">{{ m.jovem_nome || m.nome_externo }}</td>
+                                    <td class="fw-semibold nome-caixa-alta">{{ nomeMembro(m) }}</td>
                                     <td>
                                         {{
                                             (m.jovem_idade !== null && m.jovem_idade !== undefined)
@@ -115,16 +351,23 @@
                                                 : (calcularIdade(m.jovem_data_nascimento) ? (calcularIdade(m.jovem_data_nascimento) + ' anos') : '-')
                                         }}
                                     </td>
-                                    <td>
-                                        <span v-if="(m.origem_ejc_tipo || '').toUpperCase() === 'OUTRO_EJC'">
-                                            {{ [m.outro_ejc_numero, m.outro_ejc_paroquia, m.outro_ejc_nome].filter(Boolean).join(' - ') || 'Outro EJC' }}
-                                        </span>
-                                        <span v-else>{{ nomeMeuEJC }}</span>
+                                    <td>{{ origemExibicao(m) }}</td>
+                                    <td
+                                        :class="[
+                                            'ligacoes-telefone',
+                                            { 'ligacoes-telefone-multilinha': deveQuebrarTelefone(m) }
+                                        ]">
+                                        <div v-if="deveQuebrarTelefone(m)" class="ligacoes-telefone-lista">
+                                            <span v-for="(telefone, idx) in telefonesDoMembro(m)" :key="`tel-${m.membro_id}-${idx}`" class="ligacoes-telefone-item">
+                                                {{ telefone }}
+                                            </span>
+                                        </div>
+                                        <template v-else>{{ telefoneExibicao(m) }}</template>
                                     </td>
-                                    <td>{{ telefoneExibicao(m) }}</td>
                                     <td>{{ m.funcao_nome || '-' }}</td>
-                                    <td>
-                                        <select class="form-select form-select-sm" v-model="m.status_ligacao" @change="onStatusChange(m)" :disabled="m.confirmado">
+                                    <td class="ligacoes-cell-status">
+                                        <span v-if="m.confirmado" class="ligacoes-status-badge">{{ labelStatusLigacao(m.status_ligacao) }}</span>
+                                        <select v-else class="form-select form-select-sm ligacoes-status-select" v-model="m.status_ligacao" @change="onStatusChange(m)">
                                             <option value="">Selecionar</option>
                                             <option value="ACEITOU">Aceitou</option>
                                             <option value="RECUSOU">Recusou</option>
@@ -133,13 +376,54 @@
                                         </select>
                                     </td>
                                     <td>
-                                        <input class="form-control form-control-sm" v-model.trim="m.motivo_recusa" placeholder="Observação" :disabled="m.confirmado">
+                                        <div class="observacao-wrap" @click.stop>
+                                            <button
+                                                type="button"
+                                                class="btn observacao-toggle"
+                                                data-ui-skip-standardize
+                                                :class="{
+                                                    'tem-conteudo': temObservacao(m),
+                                                    'aberto': observacaoEstaAberta(m)
+                                                }"
+                                                @click.stop="toggleObservacao(m)"
+                                                :title="temObservacao(m) ? 'Ver observação' : 'Adicionar observação'"
+                                                :aria-label="temObservacao(m) ? 'Ver observação' : 'Adicionar observação'">
+                                                <i class="fa-solid fa-book-open"></i>
+                                                <span v-if="temObservacao(m)" class="observacao-alerta" aria-hidden="true"></span>
+                                            </button>
+                                            <div v-if="observacaoEstaAberta(m)" class="observacao-popover">
+                                                <textarea
+                                                    class="form-control form-control-sm"
+                                                    :id="`observacao-editor-${m.membro_id}`"
+                                                    v-model.trim="observacaoTexto"
+                                                    placeholder="Adicionar observação"></textarea>
+                                                <div class="observacao-popover-acoes">
+                                                    <button
+                                                        type="button"
+                                                        class="btn btn-success observacao-popover-salvar"
+                                                        data-ui-skip-standardize
+                                                        :disabled="observacaoSalvando"
+                                                        @click.stop="salvarObservacaoRapida(m)"
+                                                        title="Salvar observação"
+                                                        aria-label="Salvar observação">
+                                                        <i class="fa-solid fa-check"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </td>
-                                    <td>
+                                    <td class="ligacoes-cell-acoes">
                                         <div class="ligacoes-acoes">
-                                            <span v-if="m.confirmado" class="text-success fw-semibold">Salvo</span>
-                                            <button v-else class="btn btn-sm btn-outline-primary" @click="salvarObservacao(m)">Salvar</button>
-                                            <button class="btn btn-sm btn-outline-danger" @click="removerMembro(m.membro_id)">Remover</button>
+                                            <span v-if="m.confirmado" class="ligacoes-status-salvo">Salvo</span>
+                                            <button v-else class="btn btn-sm btn-outline-primary ligacoes-acao-principal" @click="salvarObservacao(m)">Salvar</button>
+                                            <button
+                                                class="btn btn-sm btn-danger btn-ejc-action btn-icone-acao"
+                                                data-ui-skip-standardize
+                                                @click="removerMembro(m.membro_id)"
+                                                title="Remover membro"
+                                                aria-label="Remover membro">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -154,7 +438,6 @@
                     <div v-else>
                         <div v-if="!recusas.length" class="text-muted text-center py-3">Nenhuma recusa registrada.</div>
                         <div v-else class="table-responsive">
-                            <div class="text-muted small mb-2">Total de pessoas nesta lista: {{ totalPessoasLista(recusas) }}</div>
                             <table class="table table-sm table-hover align-middle">
                                 <thead>
                                     <tr>
@@ -168,11 +451,18 @@
                                 <tbody>
                                     <tr v-for="r in recusas" :key="`rec-${r.membro_id}`">
                                         <td>{{ r.funcao_nome }}</td>
-                                        <td class="fw-semibold">{{ r.jovem_nome || r.nome_externo }}</td>
-                                        <td>{{ telefoneExibicao(r) }}</td>
+                                        <td class="fw-semibold nome-caixa-alta">{{ nomeMembro(r) }}</td>
+                                        <td class="ligacoes-telefone">{{ telefoneExibicao(r) }}</td>
                                         <td>{{ r.motivo_recusa || '-' }}</td>
                                         <td class="text-end">
-                                            <button class="btn btn-sm btn-outline-warning" @click="removerRecusa(r)">Remover recusa</button>
+                                            <button
+                                                class="btn btn-sm btn-danger btn-ejc-action btn-icone-acao"
+                                                data-ui-skip-standardize
+                                                @click="removerRecusa(r)"
+                                                title="Remover recusa"
+                                                aria-label="Remover recusa">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
                                         </td>
                                     </tr>
                                 </tbody>
@@ -232,6 +522,61 @@
             </div>
         </div>
 
+        <div class="modal fade" id="modalPuxarReserva" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-light">
+                        <h5 class="modal-title">Puxar reserva</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div v-if="modalPuxarReservaNomeAdicionado" class="alert alert-success py-2 px-3 small">
+                            <span class="nome-caixa-alta">{{ modalPuxarReservaNomeAdicionado }}</span> foi adicionado(a) nesta equipe.
+                        </div>
+                        <p class="text-muted small mb-3">Escolha a função e a lista de reserva para adicionar alguém direto nesta equipe.</p>
+
+                        <div class="mb-3">
+                            <label class="form-label small text-muted mb-1">Função</label>
+                            <select class="form-select" v-model.number="modalPuxarReserva.funcaoId">
+                                <option :value="0">Selecione...</option>
+                                <option v-for="f in funcoes" :key="`pull-f-${f.id}`" :value="f.id">{{ f.nome }}</option>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small text-muted mb-1">Lista de reserva</label>
+                            <select class="form-select" v-model="modalPuxarReserva.lista">
+                                <option value="jovens">Jovens</option>
+                                <option value="tios">Tios</option>
+                                <option value="outro">Membros de outro EJC</option>
+                                <option value="tios_outro">Tios de outro EJC</option>
+                            </select>
+                        </div>
+
+                        <div v-if="usaFiltroSexoPuxarReserva" class="mb-0">
+                            <label class="form-label small text-muted mb-1">Critério para puxar</label>
+                            <select class="form-select" v-model="modalPuxarReserva.criterioSexo">
+                                <option value="primeiro">Puxar o primeiro da lista</option>
+                                <option value="feminino">Puxar a primeira mulher da lista</option>
+                                <option value="masculino">Puxar o primeiro homem da lista</option>
+                            </select>
+                        </div>
+
+                        <div v-else class="small text-muted mb-0">
+                            Será puxado o primeiro item disponível dessa lista de reserva.
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-soft-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary d-inline-flex align-items-center gap-2" @click="confirmarPuxarReserva" :disabled="!podePuxarReserva()">
+                            <i class="fas fa-arrow-right"></i>
+                            <span>{{ puxandoReserva ? 'Puxando...' : 'Puxar para esta equipe' }}</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="modal fade" id="modalBuscarJovem" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content border-0 shadow">
@@ -253,7 +598,7 @@
                             <div v-if="searchResults.length > 0" class="busca-resultados bg-white border">
                                 <div v-for="jovem in searchResults" :key="jovem.id || jovem.jovem_id"
                                     class="busca-item d-flex justify-content-between" @click="alocarJovem(jovem)">
-                                    <span>{{ jovem.nome_completo }}</span>
+                                    <span class="nome-caixa-alta">{{ jovem.nome_completo }}</span>
                                     <span class="text-muted small">
                                         {{ (jovem.idade !== null && jovem.idade !== undefined) ? (jovem.idade + ' anos') : (calcularIdade(jovem.data_nascimento) || '-') }}
                                         • {{ jovem.estado_civil || '-' }}
@@ -304,9 +649,40 @@
                     searchTimer: null,
                     searchErroMsg: '',
                     modalAdicionarMembroInstance: null,
+                    modalPuxarReservaInstance: null,
                     modalBuscaInstance: null,
-                    fonteSelecionada: 'LISTA_MESTRE'
+                    fonteSelecionada: 'LISTA_MESTRE',
+                    modalPuxarReserva: { lista: 'jovens', criterioSexo: 'primeiro', funcaoId: 0 },
+                    modalPuxarReservaNomeAdicionado: '',
+                    puxandoReserva: false,
+                    observacaoMembroAbertoId: 0,
+                    observacaoTexto: '',
+                    observacaoSalvando: false
                 };
+            },
+            computed: {
+                usaFiltroSexoPuxarReserva() {
+                    const lista = String(this.modalPuxarReserva && this.modalPuxarReserva.lista || '').trim().toLowerCase();
+                    return lista === 'jovens' || lista === 'outro';
+                },
+                totalPessoasEquipe() {
+                    return this.totalPessoasLista(this.membros);
+                },
+                totalHomensEquipe() {
+                    return (this.membros || []).reduce((total, membro) => {
+                        return total + this.totalHomensDoMembro(membro);
+                    }, 0);
+                },
+                totalMulheresEquipe() {
+                    return (this.membros || []).reduce((total, membro) => {
+                        return total + this.totalMulheresDoMembro(membro);
+                    }, 0);
+                },
+                totalTiosEquipe() {
+                    return (this.membros || []).reduce((total, membro) => {
+                        return total + (this.ehMembroTio(membro) ? this.pesoMembro(membro) : 0);
+                    }, 0);
+                }
             },
             methods: {
                 voltar() {
@@ -334,6 +710,12 @@
                         }
                     }
                     return result;
+                },
+                formatarNumeroOrigemEjc(valor) {
+                    const romano = this.numeroParaRomano(valor);
+                    if (romano) return romano;
+                    const texto = String(valor || '').trim();
+                    return texto || '';
                 },
                 calcularIdade(dataNascimento) {
                     if (!dataNascimento) return '';
@@ -374,16 +756,154 @@
                         this.outroEjcSelecionado = Number(this.outrosEjcs[0].id) || 0;
                     }
                 },
-                telefoneExibicao(membro) {
+                nomeMembro(membro) {
+                    const nomeTios = [membro && membro.nome_tio, membro && membro.nome_tia].filter(Boolean).join(' e ');
+                    return String(membro && (membro.jovem_nome || membro.nome_externo || membro.nome_completo || nomeTios) || '').trim() || '-';
+                },
+                origemExibicao(membro) {
                     if (!membro) return '-';
-                    const lista = [membro.jovem_telefone, membro.telefone_tio, membro.telefone_tia, membro.telefone_externo]
-                        .map((valor) => String(valor || '').trim())
+                    const origem = String(membro.origem_ejc_tipo || 'INCONFIDENTES').trim().toUpperCase();
+                    if (this.ehMembroTio(membro)) {
+                        const ehOutroTio = origem === 'OUTRO_EJC'
+                            || !!membro.outro_ejc_id
+                            || !!String(membro.outro_ejc_paroquia || '').trim()
+                            || !!String(membro.outro_ejc_nome || '').trim();
+                        if (ehOutroTio) {
+                            const paroquia = String(membro.outro_ejc_paroquia || membro.outro_ejc_nome || '').trim();
+                            return `ECC${paroquia ? ' ' + paroquia : ''}`.trim();
+                        }
+                        return `ECC ${this.nomeMeuEJC || ''}`.trim();
+                    }
+                    if (origem === 'OUTRO_EJC') {
+                        const nomeOutroEjc = String(membro.outro_ejc_nome || membro.outro_ejc_paroquia || '').trim();
+                        return `EJC${nomeOutroEjc ? ' ' + nomeOutroEjc : ''}`.trim();
+                    }
+                    const numero = this.formatarNumeroOrigemEjc(membro.ejc_numero_fez || membro.numero_ejc_fez);
+                    if (numero) {
+                        return `${numero} EJC ${this.nomeMeuEJC || ''}`.trim();
+                    }
+                    return `EJC ${this.nomeMeuEJC || ''}`.trim();
+                },
+                observacaoEstaAberta(membro) {
+                    return Number(this.observacaoMembroAbertoId || 0) === Number(membro && membro.membro_id || 0);
+                },
+                temObservacao(membro) {
+                    return !!String(membro && membro.motivo_recusa || '').trim();
+                },
+                partesTelefone(valor) {
+                    return String(valor || '')
+                        .split(/\s*\/\s*|\s*\|\s*|\s*\n+\s*/g)
+                        .map((item) => String(item || '').trim())
                         .filter(Boolean);
-                    return lista.length ? Array.from(new Set(lista)).join(' / ') : '-';
+                },
+                toggleObservacao(membro) {
+                    const membroId = Number(membro && membro.membro_id || 0);
+                    if (!membroId) return;
+                    if (this.observacaoEstaAberta(membro)) {
+                        this.fecharObservacao();
+                        return;
+                    }
+                    this.observacaoMembroAbertoId = membroId;
+                    this.observacaoTexto = String(membro && membro.motivo_recusa || '').trim();
+                    this.$nextTick(() => {
+                        const campo = document.getElementById(`observacao-editor-${membroId}`);
+                        if (!campo) return;
+                        campo.focus();
+                        const tamanho = campo.value.length;
+                        if (typeof campo.setSelectionRange === 'function') {
+                            campo.setSelectionRange(tamanho, tamanho);
+                        }
+                    });
+                },
+                fecharObservacao(forcar = false) {
+                    if (this.observacaoSalvando && !forcar) return;
+                    this.observacaoMembroAbertoId = 0;
+                    this.observacaoTexto = '';
+                },
+                fecharObservacaoAoClicarFora(event) {
+                    if (!this.observacaoMembroAbertoId) return;
+                    if (event && event.target && event.target.closest('.observacao-wrap')) return;
+                    this.fecharObservacao();
+                },
+                sincronizarObservacaoLocal(membroId, texto) {
+                    const valor = String(texto || '').trim();
+                    const atualizarLista = (lista) => {
+                        (Array.isArray(lista) ? lista : []).forEach((item) => {
+                            if (Number(item && item.membro_id || 0) !== Number(membroId)) return;
+                            item.motivo_recusa = valor;
+                        });
+                    };
+                    atualizarLista(this.membros);
+                    atualizarLista(this.recusas);
+                },
+                telefonesDoMembro(membro) {
+                    if (!membro) return [];
+                    const lista = [membro.jovem_telefone, membro.telefone_tio, membro.telefone_tia, membro.telefone_externo]
+                        .reduce((acc, valor) => acc.concat(this.partesTelefone(valor)), []);
+                    const vistos = new Set();
+                    const unicos = [];
+                    for (const telefone of lista) {
+                        const chave = telefone.replace(/\D/g, '') || telefone.toLowerCase();
+                        if (!chave || vistos.has(chave)) continue;
+                        vistos.add(chave);
+                        unicos.push(telefone);
+                    }
+                    return unicos;
+                },
+                deveQuebrarTelefone(membro) {
+                    return this.ehMembroTio(membro) && this.telefonesDoMembro(membro).length > 1;
+                },
+                telefoneExibicao(membro) {
+                    const telefones = this.telefonesDoMembro(membro);
+                    return telefones.length ? telefones.join(' / ') : '-';
+                },
+                normalizarSexo(valor) {
+                    const sexo = String(valor || '').trim().toLowerCase();
+                    if (['m', 'masc', 'masculino', 'homem'].includes(sexo)) return 'masculino';
+                    if (['f', 'fem', 'feminino', 'mulher'].includes(sexo)) return 'feminino';
+                    return '';
+                },
+                labelStatusLigacao(valor) {
+                    const status = String(valor || '').trim().toUpperCase();
+                    if (status === 'ACEITOU') return 'Aceitou';
+                    if (status === 'RECUSOU') return 'Recusou';
+                    if (status === 'LIGAR_MAIS_TARDE') return 'Ligar depois';
+                    if (status === 'TELEFONE_INCORRETO') return 'Telefone incorreto';
+                    return 'Selecionar';
+                },
+                ehMembroTio(membro) {
+                    if (!membro) return false;
+                    return !!Number(membro.tio_casal_id || 0)
+                        || (!membro.jovem_id && [
+                            membro.nome_tio,
+                            membro.nome_tia,
+                            membro.telefone_tio,
+                            membro.telefone_tia
+                        ].some((valor) => String(valor || '').trim()));
+                },
+                totalHomensDoMembro(membro) {
+                    if (!membro) return 0;
+                    if (this.ehMembroTio(membro)) {
+                        const temNomeTio = !!String(membro.nome_tio || '').trim();
+                        const temNomeTia = !!String(membro.nome_tia || '').trim();
+                        if (temNomeTio || temNomeTia) return temNomeTio ? 1 : 0;
+                        return 1;
+                    }
+                    return this.normalizarSexo(membro.jovem_sexo || membro.sexo) === 'masculino' ? 1 : 0;
+                },
+                totalMulheresDoMembro(membro) {
+                    if (!membro) return 0;
+                    if (this.ehMembroTio(membro)) {
+                        const temNomeTio = !!String(membro.nome_tio || '').trim();
+                        const temNomeTia = !!String(membro.nome_tia || '').trim();
+                        if (temNomeTio || temNomeTia) return temNomeTia ? 1 : 0;
+                        return 1;
+                    }
+                    return this.normalizarSexo(membro.jovem_sexo || membro.sexo) === 'feminino' ? 1 : 0;
                 },
                 pesoMembro(membro) {
                     if (!membro) return 0;
-                    if (!membro.jovem_id && (String(membro.telefone_tio || '').trim() || String(membro.telefone_tia || '').trim())) {
+                    if (this.ehMembroTio(membro)) {
                         return 2;
                     }
                     return 1;
@@ -395,6 +915,9 @@
                 podeAdicionarMembro() {
                     const precisaOutroEjc = this.fonteSelecionada === 'OUTRO_EJC' || this.fonteSelecionada === 'TIOS_OUTRO_EJC';
                     return Boolean(this.funcaoSelecionada) && (!precisaOutroEjc || this.outroEjcSelecionado);
+                },
+                podePuxarReserva() {
+                    return !this.puxandoReserva && Number(this.modalPuxarReserva && this.modalPuxarReserva.funcaoId || 0) > 0;
                 },
                 nomeFonteSelecionada() {
                     const fonte = String(this.fonteSelecionada || '').toUpperCase();
@@ -424,6 +947,18 @@
                     }
                     this.searchErroMsg = '';
                     this.modalAdicionarMembroInstance.show();
+                },
+                abrirModalPuxarReserva() {
+                    if (!this.modalPuxarReservaInstance) {
+                        this.modalPuxarReservaInstance = new bootstrap.Modal(document.getElementById('modalPuxarReserva'));
+                    }
+                    this.modalPuxarReservaNomeAdicionado = '';
+                    this.modalPuxarReserva = {
+                        lista: 'jovens',
+                        criterioSexo: 'primeiro',
+                        funcaoId: Number(this.funcaoSelecionada || 0)
+                    };
+                    this.modalPuxarReservaInstance.show();
                 },
                 confirmarAdicionarMembro() {
                     if (!this.podeAdicionarMembro()) return;
@@ -474,6 +1009,267 @@
                         this.searchResults = [];
                     }
                 },
+                normalizarDestinoReserva(valor) {
+                    return String(valor || 'titular').trim().toLowerCase() === 'reserva' ? 'reserva' : 'titular';
+                },
+                normalizarSexoPessoa(valor) {
+                    const texto = String(valor || '').trim().toLowerCase();
+                    if (['f', 'fem', 'feminino', 'mulher'].includes(texto)) return 'feminino';
+                    if (['m', 'masc', 'masculino', 'homem'].includes(texto)) return 'masculino';
+                    return '';
+                },
+                ordemReservaValida(valor) {
+                    const ordem = Number(valor);
+                    return Number.isInteger(ordem) && ordem > 0 ? ordem : null;
+                },
+                ordenarReservaPorPrioridade(lista, tipo = '') {
+                    const itens = Array.isArray(lista) ? lista.slice() : [];
+                    return itens.sort((a, b) => {
+                        const ordemA = this.ordemReservaValida(a && a.ordem_reserva);
+                        const ordemB = this.ordemReservaValida(b && b.ordem_reserva);
+                        if (!!ordemA !== !!ordemB) return ordemA ? -1 : 1;
+                        if (ordemA && ordemB && ordemA !== ordemB) return ordemA - ordemB;
+                        if (tipo === 'tios' || tipo === 'tios_outro') {
+                            const nomeA = `${a && a.nome_tio || ''} ${a && a.nome_tia || ''}`.trim();
+                            const nomeB = `${b && b.nome_tio || ''} ${b && b.nome_tia || ''}`.trim();
+                            return nomeA.localeCompare(nomeB, 'pt-BR');
+                        }
+                        const nomeA = String(a && (a.nome_completo || a.nome_externo) || '').trim();
+                        const nomeB = String(b && (b.nome_completo || b.nome_externo) || '').trim();
+                        return nomeA.localeCompare(nomeB, 'pt-BR');
+                    });
+                },
+                keyOutroPessoa(item) {
+                    if (!item) return '';
+                    const id = Number(item.jovem_id || item.id || 0);
+                    if (id > 0) return `id:${id}`;
+                    const nome = String(item.nome_completo || item.nome_externo || item.nome || '').trim().toLowerCase();
+                    const tel = String(item.telefone || item.telefone_externo || '').replace(/\D/g, '');
+                    return `tmp:${nome}|${tel}`;
+                },
+                async carregarReservasJovens() {
+                    const res = await fetch(`/api/montar-encontro/${this.montagemId}/jovens-sem-equipe`);
+                    const rows = res.ok ? await res.json() : [];
+                    return (rows || []).map((item) => ({
+                        ...item,
+                        selecionado: Number(item.pode_servir || 0) === 1,
+                        destino: this.normalizarDestinoReserva(item.destino),
+                        ordem_reserva: this.ordemReservaValida(item.ordem_reserva)
+                    }));
+                },
+                async carregarReservasTios() {
+                    const res = await fetch(`/api/montar-encontro/${this.montagemId}/tios-para-servir`);
+                    const rows = res.ok ? await res.json() : [];
+                    return (rows || []).map((item) => ({
+                        ...item,
+                        selecionado: Number(item.pode_servir || 0) === 1,
+                        destino: this.normalizarDestinoReserva(item.destino),
+                        ordem_reserva: this.ordemReservaValida(item.ordem_reserva)
+                    }));
+                },
+                async carregarReservasOutroEjc() {
+                    const [resLista, resSel, resLigacoes] = await Promise.all([
+                        fetch('/api/lista-mestre/jovens-outro-ejc'),
+                        fetch(`/api/montar-encontro/${this.montagemId}/outro-ejc-servir`),
+                        fetch(`/api/montar-encontro/${this.montagemId}/ligacoes`)
+                    ]);
+                    const lista = resLista.ok ? await resLista.json() : [];
+                    const sel = resSel.ok ? await resSel.json() : [];
+                    const ligacoes = resLigacoes.ok ? await resLigacoes.json().catch(() => ({})) : {};
+
+                    const alocadosKeys = new Set();
+                    (Array.isArray(ligacoes.equipes) ? ligacoes.equipes : []).forEach((eq) => {
+                        (Array.isArray(eq.membros) ? eq.membros : []).forEach((m) => {
+                            const key = this.keyOutroPessoa({
+                                jovem_id: m.jovem_id || null,
+                                nome_completo: m.jovem_nome || m.nome_externo || '',
+                                telefone: m.jovem_telefone || m.telefone_externo || ''
+                            });
+                            if (key) alocadosKeys.add(key);
+                        });
+                    });
+                    (Array.isArray(ligacoes.recusas) ? ligacoes.recusas : []).forEach((m) => {
+                        const key = this.keyOutroPessoa({
+                            jovem_id: m.jovem_id || null,
+                            nome_completo: m.jovem_nome || m.nome_externo || '',
+                            telefone: m.jovem_telefone || m.telefone_externo || ''
+                        });
+                        if (key) alocadosKeys.add(key);
+                    });
+
+                    const selByKey = new Map();
+                    (sel || []).forEach((item) => {
+                        const key = this.keyOutroPessoa({
+                            jovem_id: item.jovem_id || null,
+                            nome_completo: item.nome_externo || '',
+                            telefone: item.telefone_externo || ''
+                        });
+                        if (key && !alocadosKeys.has(key)) {
+                            selByKey.set(key, item);
+                        }
+                    });
+
+                    const listaKeys = new Set();
+                    const itens = (lista || [])
+                        .filter((item) => {
+                            const key = this.keyOutroPessoa(item);
+                            return key ? !alocadosKeys.has(key) : true;
+                        })
+                        .map((item) => {
+                            const key = this.keyOutroPessoa(item);
+                            listaKeys.add(key);
+                            const selItem = selByKey.get(key) || {};
+                            return {
+                                ...item,
+                                selecionado: Number(selItem.pode_servir || 0) === 1,
+                                destino: this.normalizarDestinoReserva(selItem.destino),
+                                ordem_reserva: this.ordemReservaValida(selItem.ordem_reserva)
+                            };
+                        });
+
+                    (sel || []).forEach((item) => {
+                        const key = this.keyOutroPessoa({
+                            jovem_id: item.jovem_id || null,
+                            nome_completo: item.nome_externo || '',
+                            telefone: item.telefone_externo || ''
+                        });
+                        if (!key || listaKeys.has(key) || alocadosKeys.has(key)) return;
+                        itens.push({
+                            jovem_id: item.jovem_id || null,
+                            nome_completo: item.nome_externo || '',
+                            telefone: item.telefone_externo || '',
+                            sexo: null,
+                            selecionado: Number(item.pode_servir || 0) === 1,
+                            destino: this.normalizarDestinoReserva(item.destino),
+                            ordem_reserva: this.ordemReservaValida(item.ordem_reserva)
+                        });
+                    });
+
+                    return itens;
+                },
+                async listarReservasDisponiveis(tipo) {
+                    if (tipo === 'jovens') {
+                        const itens = await this.carregarReservasJovens();
+                        return this.ordenarReservaPorPrioridade(
+                            itens.filter((item) => this.normalizarDestinoReserva(item.destino) === 'reserva'),
+                            tipo
+                        );
+                    }
+                    if (tipo === 'tios' || tipo === 'tios_outro') {
+                        const itens = await this.carregarReservasTios();
+                        const origemEsperada = tipo === 'tios_outro' ? 'OUTRO_EJC' : 'EJC';
+                        return this.ordenarReservaPorPrioridade(
+                            itens.filter((item) => {
+                                const origem = String(item.origem_tipo || 'EJC').trim().toUpperCase();
+                                return this.normalizarDestinoReserva(item.destino) === 'reserva' && origem === origemEsperada;
+                            }),
+                            tipo
+                        );
+                    }
+                    const itens = await this.carregarReservasOutroEjc();
+                    return this.ordenarReservaPorPrioridade(
+                        itens.filter((item) => this.normalizarDestinoReserva(item.destino) === 'reserva'),
+                        tipo
+                    );
+                },
+                mensagemReservaVazia(tipo, criterioSexo) {
+                    const nomes = {
+                        jovens: 'jovem',
+                        tios: 'tio',
+                        outro: 'membro de outro EJC',
+                        tios_outro: 'tio de outro EJC'
+                    };
+                    const base = nomes[tipo] || 'membro';
+                    if (criterioSexo === 'feminino') return `Nenhuma pessoa feminina foi encontrada na reserva de ${base}.`;
+                    if (criterioSexo === 'masculino') return `Nenhuma pessoa masculina foi encontrada na reserva de ${base}.`;
+                    return `Nenhum item disponível foi encontrado na reserva de ${base}.`;
+                },
+                selecionarReservaPorCriterio(itens, criterioSexo) {
+                    if (!Array.isArray(itens) || !itens.length) return null;
+                    if (criterioSexo !== 'feminino' && criterioSexo !== 'masculino') return itens[0];
+                    return itens.find((item) => this.normalizarSexoPessoa(item && item.sexo) === criterioSexo) || null;
+                },
+                async alocarReservaNaEquipe(item, tipo, funcaoId) {
+                    if (!item || !funcaoId) return { ok: false, error: 'Selecione a função.' };
+                    try {
+                        let res = null;
+                        if (tipo === 'tios' || tipo === 'tios_outro' || (tipo === 'outro' && !Number(item.jovem_id || item.id || 0))) {
+                            const nome = String(item.nome_completo || [item.nome_tio, item.nome_tia].filter(Boolean).join(' e ') || '').trim();
+                            if (!nome) return { ok: false, error: 'Não foi possível identificar a pessoa da reserva.' };
+                            res = await fetch(`/api/montar-encontro/${this.montagemId}/membros-externos`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    equipe_id: this.equipeId,
+                                    funcao_id: funcaoId,
+                                    nome_completo: nome,
+                                    telefone: tipo === 'tios' || tipo === 'tios_outro' ? this.telefoneExibicao(item) : String(item.telefone || '').trim(),
+                                    tio_casal_id: tipo === 'tios' || tipo === 'tios_outro' ? Number(item.id || item.tio_casal_id || 0) || null : null,
+                                    eh_substituicao: false
+                                })
+                            });
+                        } else {
+                            const jovemId = Number(item.jovem_id || item.id || 0);
+                            if (!jovemId) return { ok: false, error: 'Não foi possível identificar o jovem da reserva.' };
+                            res = await fetch(`/api/montar-encontro/${this.montagemId}/membros`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    equipe_id: this.equipeId,
+                                    funcao_id: funcaoId,
+                                    jovem_id: jovemId,
+                                    eh_substituicao: false
+                                })
+                            });
+                        }
+                        if (!res.ok) {
+                            const err = await res.json().catch(() => ({}));
+                            return { ok: false, error: err.error || 'Erro ao puxar item da reserva.' };
+                        }
+                        return { ok: true };
+                    } catch (err) {
+                        console.error(err);
+                        return { ok: false, error: 'Erro ao puxar item da reserva.' };
+                    }
+                },
+                async confirmarPuxarReserva() {
+                    const tipo = String(this.modalPuxarReserva && this.modalPuxarReserva.lista || 'jovens').trim().toLowerCase();
+                    const funcaoId = Number(this.modalPuxarReserva && this.modalPuxarReserva.funcaoId || 0);
+                    const criterioSexo = this.usaFiltroSexoPuxarReserva
+                        ? String(this.modalPuxarReserva && this.modalPuxarReserva.criterioSexo || 'primeiro').trim().toLowerCase()
+                        : 'primeiro';
+                    if (!funcaoId) {
+                        await uiAlert('Selecione a função para puxar alguém da reserva.');
+                        return;
+                    }
+                    this.modalPuxarReservaNomeAdicionado = '';
+                    this.puxandoReserva = true;
+                    try {
+                        const itens = await this.listarReservasDisponiveis(tipo);
+                        const item = this.selecionarReservaPorCriterio(itens, criterioSexo);
+                        if (!item) {
+                            await uiAlert(this.mensagemReservaVazia(tipo, criterioSexo));
+                            return;
+                        }
+                        const resultado = await this.alocarReservaNaEquipe(item, tipo, funcaoId);
+                        if (!resultado.ok) {
+                            await uiAlert(resultado.error || 'Erro ao puxar item da reserva.');
+                            return;
+                        }
+                        const nomeAdicionado = String(
+                            item.nome_completo
+                            || item.nome_externo
+                            || [item.nome_tio, item.nome_tia].filter(Boolean).join(' e ')
+                            || 'Pessoa selecionada'
+                        ).trim();
+                        this.modalPuxarReservaNomeAdicionado = nomeAdicionado || 'Pessoa selecionada';
+                        this.funcaoSelecionada = funcaoId;
+                        await this.carregarEstruturaEquipe();
+                        await this.carregarMembros();
+                    } finally {
+                        this.puxandoReserva = false;
+                    }
+                },
                 async alocarJovem(jovem) {
                     const jovemId = Number((jovem && (jovem.id || jovem.jovem_id)) || 0);
                     try {
@@ -499,7 +1295,7 @@
                                     nome_completo: nome,
                                     telefone: jovem.telefone || null,
                                     origem_tipo: fonte,
-                                    tio_casal_id: jovem.id || null,
+                                    tio_casal_id: Number(jovem.id || jovem.tio_casal_id || 0) || null,
                                     eh_substituicao: false
                                 })
                             });
@@ -567,6 +1363,30 @@
                         alert('Erro ao remover recusa.');
                     }
                 },
+                async salvarObservacaoRapida(membro) {
+                    const membroId = Number(membro && membro.membro_id || 0);
+                    if (!membroId || this.observacaoSalvando) return;
+                    this.observacaoSalvando = true;
+                    try {
+                        const res = await fetch(`/api/montar-encontro/membro/${membroId}/observacao`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ motivo_recusa: this.observacaoTexto || '' })
+                        });
+                        if (!res.ok) {
+                            const err = await res.json().catch(() => ({}));
+                            alert(err.error || 'Erro ao salvar observação.');
+                            return;
+                        }
+                        this.sincronizarObservacaoLocal(membroId, this.observacaoTexto);
+                        this.fecharObservacao(true);
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao salvar observação.');
+                    } finally {
+                        this.observacaoSalvando = false;
+                    }
+                },
                 async salvarObservacao(membro) {
                     if (!membro || !membro.membro_id) return;
                     if (membro.confirmado) return;
@@ -625,7 +1445,11 @@
                     this.origemAcesso = String(params.get('origem') || '').trim().toLowerCase();
                 }
             },
+            beforeUnmount() {
+                document.removeEventListener('click', this.fecharObservacaoAoClicarFora);
+            },
             async mounted() {
+                document.addEventListener('click', this.fecharObservacaoAoClicarFora);
                 this.initParams();
                 await this.carregarOutrosEjcs();
                 await this.carregarMontagem();

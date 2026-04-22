@@ -44,6 +44,7 @@ async function garantirEstrutura() {
     await pool.query(`
         CREATE TABLE IF NOT EXISTS ata_reunioes (
             id INT AUTO_INCREMENT PRIMARY KEY,
+            titulo VARCHAR(255) NULL,
             data_reuniao DATE NOT NULL,
             horario TIME NULL,
             pasta_id INT NULL,
@@ -51,6 +52,11 @@ async function garantirEstrutura() {
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     `);
+
+    const comTitulo = await hasColumn('ata_reunioes', 'titulo');
+    if (!comTitulo) {
+        await pool.query(`ALTER TABLE ata_reunioes ADD COLUMN titulo VARCHAR(255) NULL AFTER id`);
+    }
 
     const comPastaId = await hasColumn('ata_reunioes', 'pasta_id');
     if (!comPastaId) {
@@ -253,7 +259,7 @@ router.get('/atas', async (req, res) => {
         const pastaId = req.query.pasta_id ? Number(req.query.pasta_id) : null;
         if (req.query.pasta_id && !pastaId) return res.status(400).json({ error: 'pasta_id inválido.' });
         const [atas] = await pool.query(`
-            SELECT id, data_reuniao, horario, pasta_id, observacoes_gerais, created_at
+            SELECT id, titulo, data_reuniao, horario, pasta_id, observacoes_gerais, created_at
             FROM ata_reunioes
             ${pastaId ? 'WHERE pasta_id = ?' : ''}
             ORDER BY data_reuniao DESC, horario DESC, id DESC
@@ -339,7 +345,7 @@ router.get('/atas/:id', async (req, res) => {
         if (!id) return res.status(400).json({ error: 'ID inválido.' });
 
         const [atas] = await pool.query(`
-            SELECT id, data_reuniao, horario, pasta_id, observacoes_gerais, created_at
+            SELECT id, titulo, data_reuniao, horario, pasta_id, observacoes_gerais, created_at
             FROM ata_reunioes
             WHERE id = ?
             LIMIT 1
@@ -411,6 +417,7 @@ router.get('/busca', async (req, res) => {
         const [rows] = await pool.query(`
             SELECT 
                 a.id,
+                a.titulo,
                 a.data_reuniao,
                 a.horario,
                 a.observacoes_gerais,
@@ -428,7 +435,7 @@ router.get('/busca', async (req, res) => {
                 OR p.titulo LIKE ?
                 OR p.decisoes LIKE ?
                 OR t.descricao LIKE ?
-            GROUP BY a.id, a.data_reuniao, a.horario, a.observacoes_gerais
+            GROUP BY a.id, a.titulo, a.data_reuniao, a.horario, a.observacoes_gerais
             ORDER BY a.data_reuniao DESC, a.horario DESC, a.id DESC
             LIMIT 100
         `, [like, like, like, like, like, like, like, like]);
@@ -507,6 +514,7 @@ router.put('/tarefas/:id/status', async (req, res) => {
 });
 
 router.post('/atas', async (req, res) => {
+    const titulo = String(req.body.titulo || '').trim() || null;
     const hoje = new Date();
     const dataReuniao = normalizarData(req.body.data_reuniao) || `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
     const horario = normalizarHorario(req.body.horario);
@@ -544,9 +552,9 @@ router.post('/atas', async (req, res) => {
         }
 
         const [ataResult] = await connection.query(
-            `INSERT INTO ata_reunioes (data_reuniao, horario, pasta_id, observacoes_gerais)
-             VALUES (?, ?, ?, ?)`,
-            [dataReuniao, horario, pastaId, observacoesGerais]
+            `INSERT INTO ata_reunioes (titulo, data_reuniao, horario, pasta_id, observacoes_gerais)
+             VALUES (?, ?, ?, ?, ?)`,
+            [titulo, dataReuniao, horario, pastaId, observacoesGerais]
         );
         const ataId = ataResult.insertId;
 
@@ -591,6 +599,110 @@ router.post('/atas', async (req, res) => {
         await connection.rollback();
         console.error('Erro ao criar ata:', err);
         res.status(500).json({ error: 'Erro ao criar ata' });
+    } finally {
+        connection.release();
+    }
+});
+
+router.put('/atas/:id', async (req, res) => {
+    const ataId = Number(req.params.id);
+    const titulo = String(req.body.titulo || '').trim() || null;
+    const horario = normalizarHorario(req.body.horario);
+    const pastaId = req.body.pasta_id ? Number(req.body.pasta_id) : null;
+    const observacoesGerais = String(req.body.observacoes_gerais || '').trim() || null;
+    const presencas = toIntArray(req.body.presencas);
+    const pautas = Array.isArray(req.body.pautas) ? req.body.pautas : [];
+
+    if (!ataId) return res.status(400).json({ error: 'ID inválido.' });
+    if (!pastaId) return res.status(400).json({ error: 'Selecione a pasta do mês para salvar a ata.' });
+    if (!pautas.length) return res.status(400).json({ error: 'Adicione ao menos uma pauta.' });
+
+    const pautasValidas = pautas
+        .map((p, idx) => ({
+            ordem: Number.isInteger(Number(p.ordem)) ? Number(p.ordem) : (idx + 1),
+            titulo: String(p.titulo || '').trim(),
+            decisoes: String(p.decisoes || '').trim() || null,
+            tarefas: Array.isArray(p.tarefas) ? p.tarefas : []
+        }))
+        .filter(p => p.titulo);
+
+    if (!pautasValidas.length) return res.status(400).json({ error: 'Adicione ao menos uma pauta com título.' });
+
+    const connection = await pool.getConnection();
+    try {
+        await garantirEstrutura();
+        await connection.beginTransaction();
+
+        const [[ataExistente]] = await connection.query(
+            `SELECT id, pasta_id, data_reuniao FROM ata_reunioes WHERE id = ? LIMIT 1`,
+            [ataId]
+        );
+        if (!ataExistente) {
+            await connection.rollback();
+            return res.status(404).json({ error: 'Ata não encontrada.' });
+        }
+
+        const [[pasta]] = await connection.query(
+            `SELECT id, tipo FROM ata_reunioes_pastas WHERE id = ? LIMIT 1`,
+            [pastaId]
+        );
+        if (!pasta || pasta.tipo !== 'MES') {
+            await connection.rollback();
+            return res.status(400).json({ error: 'Ata deve ser salva dentro de uma pasta de mês.' });
+        }
+
+        await connection.query(
+            `UPDATE ata_reunioes
+             SET titulo = ?, horario = ?, pasta_id = ?, observacoes_gerais = ?
+             WHERE id = ?`,
+            [titulo, horario, pastaId, observacoesGerais, ataId]
+        );
+
+        await connection.query(`DELETE FROM ata_reuniao_presencas WHERE ata_id = ?`, [ataId]);
+        await connection.query(`DELETE FROM ata_reuniao_tarefas WHERE ata_id = ?`, [ataId]);
+        await connection.query(`DELETE FROM ata_reuniao_pautas WHERE ata_id = ?`, [ataId]);
+
+        for (const usuarioId of presencas) {
+            await connection.query(
+                `INSERT INTO ata_reuniao_presencas (ata_id, usuario_id) VALUES (?, ?)`,
+                [ataId, usuarioId]
+            );
+        }
+
+        for (const pauta of pautasValidas) {
+            const [pautaResult] = await connection.query(
+                `INSERT INTO ata_reuniao_pautas (ata_id, ordem, titulo, decisoes) VALUES (?, ?, ?, ?)`,
+                [ataId, pauta.ordem, pauta.titulo, pauta.decisoes]
+            );
+            const pautaId = pautaResult.insertId;
+            const tarefasValidasDaPauta = pauta.tarefas
+                .map(t => ({
+                    descricao: String(t.descricao || '').trim(),
+                    responsavel_tipo: String(t.responsavel_tipo || 'USUARIO').trim().toUpperCase(),
+                    responsavel_usuario_id: t.responsavel_usuario_id ? Number(t.responsavel_usuario_id) : null,
+                    responsavel_funcao_id: t.responsavel_funcao_id ? Number(t.responsavel_funcao_id) : null,
+                    prazo: normalizarData(t.prazo),
+                    status: String(t.status || '').toUpperCase() === 'CONCLUIDA' ? 'CONCLUIDA' : 'PENDENTE'
+                }))
+                .filter(t => t.descricao);
+
+            for (const tarefa of tarefasValidasDaPauta) {
+                const usuarioId = tarefa.responsavel_tipo === 'USUARIO' ? (tarefa.responsavel_usuario_id || null) : null;
+                const funcaoId = tarefa.responsavel_tipo === 'FUNCAO' ? (tarefa.responsavel_funcao_id || null) : null;
+                await connection.query(
+                    `INSERT INTO ata_reuniao_tarefas (ata_id, pauta_id, descricao, responsavel_usuario_id, responsavel_funcao_id, prazo, status)
+                     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+                    [ataId, pautaId, tarefa.descricao, usuarioId, funcaoId, tarefa.prazo, tarefa.status]
+                );
+            }
+        }
+
+        await connection.commit();
+        res.json({ id: ataId, message: 'Ata atualizada com sucesso.' });
+    } catch (err) {
+        await connection.rollback();
+        console.error('Erro ao atualizar ata:', err);
+        res.status(500).json({ error: 'Erro ao atualizar ata' });
     } finally {
         connection.release();
     }

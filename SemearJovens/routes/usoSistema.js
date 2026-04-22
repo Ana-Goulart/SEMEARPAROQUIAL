@@ -173,39 +173,60 @@ async function countRowsWhere(tableName, tenantId, whereSql, params = []) {
 }
 
 async function buscarEdicaoAtual(tenantId) {
+    const candidatas = [];
+
     const hasMontagens = await tableExists('montagens');
     if (hasMontagens) {
         const hasTenant = await hasColumn('montagens', 'tenant_id');
+        const hasCreatedAt = await hasColumn('montagens', 'created_at');
         const [rows] = await pool.query(
-            `SELECT numero_ejc
+            `SELECT numero_ejc, ${hasCreatedAt ? 'created_at' : 'NULL AS created_at'}
              FROM montagens
              ${hasTenant ? 'WHERE tenant_id = ?' : ''}
-             ORDER BY created_at DESC
+             ORDER BY ${hasCreatedAt ? 'created_at DESC,' : ''} numero_ejc DESC
              LIMIT 1`,
             hasTenant ? [tenantId] : []
         );
         if (rows && rows[0] && rows[0].numero_ejc !== undefined && rows[0].numero_ejc !== null) {
-            return { numero: Number(rows[0].numero_ejc), origem: 'MONTAGEM' };
+            candidatas.push({
+                numero: Number(rows[0].numero_ejc),
+                origem: 'MONTAGEM',
+                created_at: rows[0].created_at || null
+            });
         }
     }
 
     const hasEjc = await tableExists('ejc');
     if (hasEjc) {
         const hasTenant = await hasColumn('ejc', 'tenant_id');
+        const hasCreatedAt = await hasColumn('ejc', 'created_at');
         const [rows] = await pool.query(
-            `SELECT numero
+            `SELECT numero, ${hasCreatedAt ? 'created_at' : 'NULL AS created_at'}
              FROM ejc
              ${hasTenant ? 'WHERE tenant_id = ?' : ''}
-             ORDER BY numero DESC
+             ORDER BY ${hasCreatedAt ? 'created_at DESC,' : ''} numero DESC
              LIMIT 1`,
             hasTenant ? [tenantId] : []
         );
         if (rows && rows[0] && rows[0].numero !== undefined && rows[0].numero !== null) {
-            return { numero: Number(rows[0].numero), origem: 'EJC' };
+            candidatas.push({
+                numero: Number(rows[0].numero),
+                origem: 'EJC',
+                created_at: rows[0].created_at || null
+            });
         }
     }
 
-    return null;
+    if (!candidatas.length) return null;
+
+    candidatas.sort((a, b) => {
+        const dataA = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const dataB = b.created_at ? new Date(b.created_at).getTime() : 0;
+        if (dataA !== dataB) return dataB - dataA;
+        return Number(b.numero || 0) - Number(a.numero || 0);
+    });
+
+    return candidatas[0];
 }
 
 router.get('/', async (req, res) => {
@@ -268,17 +289,45 @@ router.get('/', async (req, res) => {
         const resumo = {};
         if (await tableExists('jovens')) {
             const hasOrigem = await hasColumn('jovens', 'origem_ejc_tipo');
-            resumo.jovens = await countRowsWhere(
-                'jovens',
-                tenantId,
-                hasOrigem ? "COALESCE(origem_ejc_tipo, 'INCONFIDENTES') <> 'OUTRO_EJC'" : ''
-            );
+            const hasListaMestreAtivo = await hasColumn('jovens', 'lista_mestre_ativo');
+            const filtrosListaMestre = [
+                hasOrigem ? "COALESCE(origem_ejc_tipo, 'INCONFIDENTES') <> 'OUTRO_EJC'" : '',
+                hasListaMestreAtivo ? 'COALESCE(lista_mestre_ativo, 1) = 1' : ''
+            ].filter(Boolean).join(' AND ');
+
+            resumo.jovens = await countRowsWhere('jovens', tenantId, filtrosListaMestre);
             resumo.jovens_outro_ejc = hasOrigem
                 ? await countRowsWhere('jovens', tenantId, "origem_ejc_tipo = 'OUTRO_EJC'")
                 : 0;
+
+            const hasTenant = await hasColumn('jovens', 'tenant_id');
+            const whereSexo = [
+                hasTenant ? 'tenant_id = ?' : '',
+                hasOrigem ? "COALESCE(origem_ejc_tipo, 'INCONFIDENTES') <> 'OUTRO_EJC'" : '',
+                hasListaMestreAtivo ? 'COALESCE(lista_mestre_ativo, 1) = 1' : ''
+            ].filter(Boolean).join(' AND ');
+            const paramsSexo = hasTenant ? [tenantId] : [];
+            const [sexoRows] = await pool.query(
+                `SELECT
+                    COALESCE(SUM(CASE
+                        WHEN LOWER(TRIM(COALESCE(sexo, ''))) IN ('masculino', 'masc', 'm') THEN 1
+                        ELSE 0
+                    END), 0) AS homens,
+                    COALESCE(SUM(CASE
+                        WHEN LOWER(TRIM(COALESCE(sexo, ''))) IN ('feminino', 'fem', 'f') THEN 1
+                        ELSE 0
+                    END), 0) AS mulheres
+                 FROM jovens
+                 WHERE ${whereSexo || '1=1'}`,
+                paramsSexo
+            );
+            resumo.jovens_homens = Number(sexoRows && sexoRows[0] ? sexoRows[0].homens : 0);
+            resumo.jovens_mulheres = Number(sexoRows && sexoRows[0] ? sexoRows[0].mulheres : 0);
         } else {
             resumo.jovens = 0;
             resumo.jovens_outro_ejc = 0;
+            resumo.jovens_homens = 0;
+            resumo.jovens_mulheres = 0;
         }
 
         resumo.tios = (await tableExists('tios_casais'))
@@ -292,6 +341,12 @@ router.get('/', async (req, res) => {
             : 0;
         resumo.atas_reunioes = (await tableExists('ata_reunioes'))
             ? await countRowsWhere('ata_reunioes', tenantId, '')
+            : 0;
+        resumo.circulos = (await tableExists('circulos'))
+            ? await countRowsWhere('circulos', tenantId, 'COALESCE(ativo, 1) = 1')
+            : 0;
+        resumo.coordenacoes = (await tableExists('coordenacoes_pastas'))
+            ? await countRowsWhere('coordenacoes_pastas', tenantId, '')
             : 0;
 
         const hasPresencas = await tableExists('formularios_presencas');

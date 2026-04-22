@@ -139,6 +139,9 @@ const menuTemplate = `
                     <a href="/configuracoes/funcoes-dirigencia" class="nav-link" title="Funções">
                         <span class="menu-link-icon"><i class="fa-solid fa-sitemap"></i></span><span class="link-text">Funções</span>
                     </a>
+                    <a href="/administrativo/logs" class="nav-link" title="Log do sistema">
+                        <span class="menu-link-icon"><i class="fa-solid fa-scroll"></i></span><span class="link-text">Logs</span>
+                    </a>
                 </div>
             </div>
         </div>

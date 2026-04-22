@@ -1201,10 +1201,15 @@ router.get('/jovens-outro-ejc', async (req, res) => {
                     jovem_id: item.jovem_id || null,
                     nome_completo: nome,
                     telefone: telefone || '-',
+                    data_nascimento: item.data_nascimento || null,
+                    sexo: String(item.sexo || '').trim() || null,
                     outro_ejc_id: item.outro_ejc_id || null,
                     outro_ejc_nome: norm(item.outro_ejc_nome) || null,
                     outro_ejc_paroquia: norm(item.outro_ejc_paroquia) || null,
                     eh_musico: Number(item.eh_musico || 0) === 1,
+                    ja_foi_moita_inconfidentes: Number(item.ja_foi_moita_inconfidentes || 0) === 1,
+                    deficiencia: Number(item.deficiencia || 0) === 1,
+                    restricao_alimentar: Number(item.restricao_alimentar || 0) === 1,
                     termos_aceitos_em: item.termos_aceitos_em || null,
                     origem_ejc_tipo: origemTipo || null,
                     transferencia_outro_ejc: transferenciaOutroEjc ? 1 : 0,
@@ -1216,10 +1221,15 @@ router.get('/jovens-outro-ejc', async (req, res) => {
             const atual = mapa.get(key);
             if (item.jovem_id && !atual.jovem_id) atual.jovem_id = item.jovem_id;
             if (!atual.telefone || atual.telefone === '-') atual.telefone = telefone || '-';
+            if (!atual.data_nascimento && item.data_nascimento) atual.data_nascimento = item.data_nascimento;
+            if (!atual.sexo && item.sexo) atual.sexo = String(item.sexo).trim();
             if (!atual.outro_ejc_id && item.outro_ejc_id) atual.outro_ejc_id = item.outro_ejc_id;
             if (!atual.outro_ejc_nome && item.outro_ejc_nome) atual.outro_ejc_nome = norm(item.outro_ejc_nome);
             if (!atual.outro_ejc_paroquia && item.outro_ejc_paroquia) atual.outro_ejc_paroquia = norm(item.outro_ejc_paroquia);
             if (!atual.eh_musico && Number(item.eh_musico || 0) === 1) atual.eh_musico = true;
+            if (!atual.ja_foi_moita_inconfidentes && Number(item.ja_foi_moita_inconfidentes || 0) === 1) atual.ja_foi_moita_inconfidentes = true;
+            if (!atual.deficiencia && Number(item.deficiencia || 0) === 1) atual.deficiencia = true;
+            if (!atual.restricao_alimentar && Number(item.restricao_alimentar || 0) === 1) atual.restricao_alimentar = true;
             if (!atual.termos_aceitos_em && item.termos_aceitos_em) atual.termos_aceitos_em = item.termos_aceitos_em;
             if (!atual.origem_ejc_tipo && origemTipo) atual.origem_ejc_tipo = origemTipo;
             if (!atual.transferencia_outro_ejc && transferenciaOutroEjc) atual.transferencia_outro_ejc = 1;
@@ -1228,8 +1238,11 @@ router.get('/jovens-outro-ejc', async (req, res) => {
         };
 
         const [baseRows] = await pool.query(`
-            SELECT j.id AS jovem_id, j.nome_completo, j.telefone, j.outro_ejc_id,
+            SELECT j.id AS jovem_id, j.nome_completo, j.telefone, j.data_nascimento, j.sexo, j.outro_ejc_id,
                    ${comEhMusico ? 'j.eh_musico' : '0 AS eh_musico'},
+                   COALESCE(j.ja_foi_moita_inconfidentes, 0) AS ja_foi_moita_inconfidentes,
+                   COALESCE(j.deficiencia, 0) AS deficiencia,
+                   COALESCE(j.restricao_alimentar, 0) AS restricao_alimentar,
                    j.termos_aceitos_em,
                    j.origem_ejc_tipo, j.transferencia_outro_ejc,
                    ${hasOutrosEjcs ? 'oe.nome AS outro_ejc_nome, oe.paroquia AS outro_ejc_paroquia' : 'NULL AS outro_ejc_nome, NULL AS outro_ejc_paroquia'}
@@ -1247,8 +1260,13 @@ router.get('/jovens-outro-ejc', async (req, res) => {
                 SELECT jc.jovem_id,
                        COALESCE(j.nome_completo, '') AS nome_completo,
                        COALESCE(j.telefone, '') AS telefone,
+                       j.data_nascimento,
+                       j.sexo,
                        COALESCE(j.outro_ejc_id, jc.outro_ejc_id) AS outro_ejc_id,
                        ${comEhMusico ? 'COALESCE(j.eh_musico, 0) AS eh_musico,' : '0 AS eh_musico,'}
+                       COALESCE(j.ja_foi_moita_inconfidentes, 0) AS ja_foi_moita_inconfidentes,
+                       COALESCE(j.deficiencia, 0) AS deficiencia,
+                       COALESCE(j.restricao_alimentar, 0) AS restricao_alimentar,
                        j.termos_aceitos_em,
                        j.origem_ejc_tipo, j.transferencia_outro_ejc,
                        ${hasOutrosEjcs ? 'oe.nome AS outro_ejc_nome, oe.paroquia AS outro_ejc_paroquia' : 'NULL AS outro_ejc_nome, NULL AS outro_ejc_paroquia'},
@@ -1272,8 +1290,11 @@ router.get('/jovens-outro-ejc', async (req, res) => {
         if (hasHistorico) {
             const comSubfuncao = await hasSubfuncaoColumn();
             const [histRows] = await pool.query(`
-                SELECT he.jovem_id, j.nome_completo, j.telefone, j.outro_ejc_id,
+                SELECT he.jovem_id, j.nome_completo, j.telefone, j.data_nascimento, j.sexo, j.outro_ejc_id,
                        ${comEhMusico ? 'COALESCE(j.eh_musico, 0) AS eh_musico,' : '0 AS eh_musico,'}
+                       COALESCE(j.ja_foi_moita_inconfidentes, 0) AS ja_foi_moita_inconfidentes,
+                       COALESCE(j.deficiencia, 0) AS deficiencia,
+                       COALESCE(j.restricao_alimentar, 0) AS restricao_alimentar,
                        j.termos_aceitos_em,
                        j.origem_ejc_tipo, j.transferencia_outro_ejc,
                        ${hasOutrosEjcs ? 'oe.nome AS outro_ejc_nome, oe.paroquia AS outro_ejc_paroquia' : 'NULL AS outro_ejc_nome, NULL AS outro_ejc_paroquia'},
@@ -1320,8 +1341,13 @@ router.get('/jovens-outro-ejc', async (req, res) => {
                 SELECT fp.jovem_id,
                        COALESCE(fp.nome_completo, j.nome_completo) AS nome_completo,
                        COALESCE(fp.telefone, j.telefone) AS telefone,
+                       j.data_nascimento,
+                       j.sexo,
                        COALESCE(fp.outro_ejc_id, j.outro_ejc_id) AS outro_ejc_id,
                        ${comEhMusico ? 'COALESCE(j.eh_musico, 0) AS eh_musico,' : '0 AS eh_musico,'}
+                       COALESCE(j.ja_foi_moita_inconfidentes, 0) AS ja_foi_moita_inconfidentes,
+                       COALESCE(j.deficiencia, 0) AS deficiencia,
+                       COALESCE(j.restricao_alimentar, 0) AS restricao_alimentar,
                        j.termos_aceitos_em,
                        j.origem_ejc_tipo, j.transferencia_outro_ejc,
                        ${hasOutrosEjcs ? 'oe.nome AS outro_ejc_nome, oe.paroquia AS outro_ejc_paroquia' : 'NULL AS outro_ejc_nome, NULL AS outro_ejc_paroquia'},
@@ -1350,10 +1376,15 @@ router.get('/jovens-outro-ejc', async (req, res) => {
                 jovem_id: i.jovem_id,
                 nome_completo: i.nome_completo,
                 telefone: i.telefone,
+                data_nascimento: i.data_nascimento || null,
+                sexo: i.sexo || null,
                 outro_ejc_id: i.outro_ejc_id,
                 outro_ejc_nome: i.outro_ejc_nome,
                 outro_ejc_paroquia: i.outro_ejc_paroquia,
                 eh_musico: !!i.eh_musico,
+                ja_foi_moita_inconfidentes: !!i.ja_foi_moita_inconfidentes,
+                deficiencia: !!i.deficiencia,
+                restricao_alimentar: !!i.restricao_alimentar,
                 termos_aceitos_em: i.termos_aceitos_em || null,
                 fontes: Array.from(i.fontes).sort(),
                 detalhes: Array.from(i.detalhes).sort(),

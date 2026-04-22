@@ -65,6 +65,30 @@ function buildActionLabel(method, menuLabel, body) {
     return `${verb} um registro em ${menuLabel}`;
 }
 
+function formatCurrencyBRL(value) {
+    const amount = Number(value);
+    if (!Number.isFinite(amount)) return '';
+    return amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+function buildFinanceActionLabel(req, actor) {
+    const pathname = String(req.path || req.originalUrl || '');
+    const method = String(req.method || '').toUpperCase();
+    if (method !== 'POST') return null;
+
+    if (pathname.startsWith('/api/financeiro/movimentacoes')) {
+        const tipo = String(req.body?.tipo || '').trim().toUpperCase();
+        const descricao = String(req.body?.descricao || '').trim();
+        const valor = formatCurrencyBRL(req.body?.valor);
+        const tipoLabel = tipo === 'ENTRADA' ? 'entrada' : (tipo === 'SAIDA' ? 'saída' : 'movimentação');
+        const ator = String(actor?.actorName || actor?.actorIdentifier || 'usuário não identificado').trim();
+        const detalhes = [descricao || 'Sem descrição', valor].filter(Boolean).join(' - ');
+        return `Registrou ${tipoLabel} no Financeiro: ${detalhes} (lançado por ${ator})`;
+    }
+
+    return null;
+}
+
 async function purgeOldLogs() {
     await pool.query(
         `DELETE FROM system_activity_logs
@@ -100,7 +124,7 @@ async function writeLog(req) {
         const actor = await resolveActor(req);
         if (!actor) return;
         const menuLabel = getMenuLabel(req.originalUrl || req.path || '');
-        const actionLabel = buildActionLabel(req.method, menuLabel, req.body);
+        const actionLabel = buildFinanceActionLabel(req, actor) || buildActionLabel(req.method, menuLabel, req.body);
         await pool.query(
             `INSERT INTO system_activity_logs
              (system_code, tenant_id, actor_type, actor_user_id, actor_identifier, actor_name, menu_label, action_label, http_method, request_path, metadata_json)

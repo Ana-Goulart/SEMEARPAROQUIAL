@@ -15,9 +15,7 @@ let hasPapeisTableCache = null;
 let hasIconeClasseColumnCache = null;
 let hasCorIconeColumnCache = null;
 let hasMembrosOutroEjcColumnCache = null;
-let hasLimiteHomensColumnCache = null;
-let hasLimiteMulheresColumnCache = null;
-let hasLimiteCasaisTiosColumnCache = null;
+let hasEquipeAtivaColumnCache = null;
 
 async function hasPapelBaseColumn() {
     if (hasPapelBaseColumnCache !== null) return hasPapelBaseColumnCache;
@@ -116,82 +114,25 @@ async function hasMembrosOutroEjcColumn() {
     return true;
 }
 
-async function hasLimiteHomensColumn() {
-    if (hasLimiteHomensColumnCache !== null) return hasLimiteHomensColumnCache;
+async function hasEquipeAtivaColumn() {
+    if (hasEquipeAtivaColumnCache !== null) return hasEquipeAtivaColumnCache;
     const [rows] = await pool.query(`
         SELECT COUNT(*) AS cnt
         FROM information_schema.COLUMNS
         WHERE TABLE_SCHEMA = DATABASE()
           AND TABLE_NAME = 'equipes'
-          AND COLUMN_NAME = 'limite_homens'
+          AND COLUMN_NAME = 'ativa'
     `);
     const existe = !!(rows && rows[0] && rows[0].cnt > 0);
     if (!existe) {
         try {
-            await pool.query('ALTER TABLE equipes ADD COLUMN limite_homens INT NULL DEFAULT NULL');
+            await pool.query('ALTER TABLE equipes ADD COLUMN ativa TINYINT(1) NOT NULL DEFAULT 1');
         } catch (e) {
             if (!e || e.code !== 'ER_DUP_FIELDNAME') throw e;
         }
     }
-    hasLimiteHomensColumnCache = true;
+    hasEquipeAtivaColumnCache = true;
     return true;
-}
-
-async function hasLimiteMulheresColumn() {
-    if (hasLimiteMulheresColumnCache !== null) return hasLimiteMulheresColumnCache;
-    const [rows] = await pool.query(`
-        SELECT COUNT(*) AS cnt
-        FROM information_schema.COLUMNS
-        WHERE TABLE_SCHEMA = DATABASE()
-          AND TABLE_NAME = 'equipes'
-          AND COLUMN_NAME = 'limite_mulheres'
-    `);
-    const existe = !!(rows && rows[0] && rows[0].cnt > 0);
-    if (!existe) {
-        try {
-            await pool.query('ALTER TABLE equipes ADD COLUMN limite_mulheres INT NULL DEFAULT NULL');
-        } catch (e) {
-            if (!e || e.code !== 'ER_DUP_FIELDNAME') throw e;
-        }
-    }
-    hasLimiteMulheresColumnCache = true;
-    return true;
-}
-
-async function hasLimiteCasaisTiosColumn() {
-    if (hasLimiteCasaisTiosColumnCache !== null) return hasLimiteCasaisTiosColumnCache;
-    const [rows] = await pool.query(`
-        SELECT COUNT(*) AS cnt
-        FROM information_schema.COLUMNS
-        WHERE TABLE_SCHEMA = DATABASE()
-          AND TABLE_NAME = 'equipes'
-          AND COLUMN_NAME = 'limite_casais_tios'
-    `);
-    const existe = !!(rows && rows[0] && rows[0].cnt > 0);
-    if (!existe) {
-        try {
-            await pool.query('ALTER TABLE equipes ADD COLUMN limite_casais_tios INT NULL DEFAULT NULL');
-        } catch (e) {
-            if (!e || e.code !== 'ER_DUP_FIELDNAME') throw e;
-        }
-    }
-    hasLimiteCasaisTiosColumnCache = true;
-    return true;
-}
-
-async function ensureEquipeLimitesColumns() {
-    await Promise.all([
-        hasLimiteHomensColumn(),
-        hasLimiteMulheresColumn(),
-        hasLimiteCasaisTiosColumn()
-    ]);
-}
-
-function normalizarLimiteSexo(valor) {
-    if (valor === undefined || valor === null || String(valor).trim() === '') return null;
-    const numero = Number(valor);
-    if (!Number.isFinite(numero) || numero < 0) return null;
-    return Math.floor(numero);
 }
 
 async function listarPapeisConfigurados(tenantId) {
@@ -265,9 +206,13 @@ async function vincularTodasEquipesSeEjcSemVinculo(ejcId, tenantId) {
     );
     if (countRows && countRows[0] && Number(countRows[0].cnt) > 0) return;
 
+    await hasEquipeAtivaColumn();
     await pool.query(
         `INSERT IGNORE INTO equipes_ejc (tenant_id, ejc_id, equipe_id)
-         SELECT ?, ?, id FROM equipes WHERE tenant_id = ?`,
+         SELECT ?, ?, id
+         FROM equipes
+         WHERE tenant_id = ?
+           AND COALESCE(ativa, 1) = 1`,
         [tenantIdNumero, ejcIdNumero, tenantIdNumero]
     );
 }
@@ -276,12 +221,12 @@ async function vincularTodasEquipesSeEjcSemVinculo(ejcId, tenantId) {
 router.get('/', async (req, res) => {
     try {
         const tenantId = getTenantId(req);
-        await ensureEquipeLimitesColumns();
+        await hasEquipeAtivaColumn();
         const comMembrosOutroEjc = await hasMembrosOutroEjcColumn();
         const [rows] = await pool.query(
             comMembrosOutroEjc
-                ? 'SELECT * FROM equipes WHERE tenant_id = ? ORDER BY nome ASC'
-                : 'SELECT id, nome, descricao, created_at FROM equipes WHERE tenant_id = ? ORDER BY nome ASC',
+                ? 'SELECT * FROM equipes WHERE tenant_id = ? AND COALESCE(ativa, 1) = 1 ORDER BY nome ASC'
+                : 'SELECT id, nome, descricao, created_at FROM equipes WHERE tenant_id = ? AND COALESCE(ativa, 1) = 1 ORDER BY nome ASC',
             [tenantId]
         );
         res.json(rows);
@@ -445,9 +390,6 @@ router.delete('/papeis/:id', async (req, res) => {
 // POST - Criar equipe
 router.post('/', async (req, res) => {
     const { nome, descricao, ejc_id, icone_classe, cor_icone, membros_outro_ejc } = req.body;
-    const limiteHomens = normalizarLimiteSexo(req.body && req.body.limite_homens);
-    const limiteMulheres = normalizarLimiteSexo(req.body && req.body.limite_mulheres);
-    const limiteCasaisTios = normalizarLimiteSexo(req.body && req.body.limite_casais_tios);
 
     if (!nome) {
         return res.status(400).json({ error: "Nome da equipe é obrigatório" });
@@ -455,8 +397,9 @@ router.post('/', async (req, res) => {
 
     try {
         const tenantId = getTenantId(req);
+        await hasEquipeAtivaColumn();
         const [checkEquipe] = await pool.query(
-            'SELECT id FROM equipes WHERE tenant_id = ? AND nome = ?',
+            'SELECT id, COALESCE(ativa, 1) AS ativa FROM equipes WHERE tenant_id = ? AND nome = ? LIMIT 1',
             [tenantId, nome]
         );
 
@@ -464,15 +407,30 @@ router.post('/', async (req, res) => {
         let equipeCriada = false;
         if (checkEquipe.length > 0) {
             equipeId = checkEquipe[0].id;
+            if (Number(checkEquipe[0].ativa || 0) !== 1) {
+                const comIconeClasse = await hasIconeClasseColumn();
+                const comCorIcone = await hasCorIconeColumn();
+                const comMembrosOutroEjc = await hasMembrosOutroEjcColumn();
+                if (comIconeClasse && comCorIcone && comMembrosOutroEjc) {
+                    await pool.query(
+                        'UPDATE equipes SET nome = ?, descricao = ?, icone_classe = ?, cor_icone = ?, membros_outro_ejc = ?, ativa = 1 WHERE id = ? AND tenant_id = ?',
+                        [nome, descricao || null, icone_classe || null, cor_icone || '#2563eb', membros_outro_ejc ? 1 : 0, equipeId, tenantId]
+                    );
+                } else {
+                    await pool.query(
+                        'UPDATE equipes SET nome = ?, descricao = ?, ativa = 1 WHERE id = ? AND tenant_id = ?',
+                        [nome, descricao || null, equipeId, tenantId]
+                    );
+                }
+            }
         } else {
             const comIconeClasse = await hasIconeClasseColumn();
             const comCorIcone = await hasCorIconeColumn();
             const comMembrosOutroEjc = await hasMembrosOutroEjcColumn();
-            await ensureEquipeLimitesColumns();
             const [createResult] = (comIconeClasse && comCorIcone && comMembrosOutroEjc)
                 ? await pool.query(
-                    'INSERT INTO equipes (tenant_id, nome, descricao, icone_classe, cor_icone, membros_outro_ejc, limite_homens, limite_mulheres, limite_casais_tios) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                    [tenantId, nome, descricao || null, icone_classe || null, cor_icone || '#2563eb', membros_outro_ejc ? 1 : 0, limiteHomens, limiteMulheres, limiteCasaisTios]
+                    'INSERT INTO equipes (tenant_id, nome, descricao, icone_classe, cor_icone, membros_outro_ejc) VALUES (?, ?, ?, ?, ?, ?)',
+                    [tenantId, nome, descricao || null, icone_classe || null, cor_icone || '#2563eb', membros_outro_ejc ? 1 : 0]
                 )
                 : await pool.query(
                     'INSERT INTO equipes (tenant_id, nome, descricao) VALUES (?, ?, ?)',
@@ -519,9 +477,6 @@ router.post('/', async (req, res) => {
 // PUT - Atualizar equipe
 router.put('/:id', async (req, res) => {
     const { nome, descricao, icone_classe, cor_icone, membros_outro_ejc } = req.body;
-    const limiteHomens = normalizarLimiteSexo(req.body && req.body.limite_homens);
-    const limiteMulheres = normalizarLimiteSexo(req.body && req.body.limite_mulheres);
-    const limiteCasaisTios = normalizarLimiteSexo(req.body && req.body.limite_casais_tios);
     const { id } = req.params;
 
     if (!nome) {
@@ -530,17 +485,17 @@ router.put('/:id', async (req, res) => {
 
     try {
         const tenantId = getTenantId(req);
+        await hasEquipeAtivaColumn();
         const comIconeClasse = await hasIconeClasseColumn();
         const comCorIcone = await hasCorIconeColumn();
         const comMembrosOutroEjc = await hasMembrosOutroEjcColumn();
-        await ensureEquipeLimitesColumns();
         const [result] = (comIconeClasse && comCorIcone && comMembrosOutroEjc)
             ? await pool.query(
-                'UPDATE equipes SET nome = ?, descricao = ?, icone_classe = ?, cor_icone = ?, membros_outro_ejc = ?, limite_homens = ?, limite_mulheres = ?, limite_casais_tios = ? WHERE id = ? AND tenant_id = ?',
-                [nome, descricao || null, icone_classe || null, cor_icone || '#2563eb', membros_outro_ejc ? 1 : 0, limiteHomens, limiteMulheres, limiteCasaisTios, id, tenantId]
+                'UPDATE equipes SET nome = ?, descricao = ?, icone_classe = ?, cor_icone = ?, membros_outro_ejc = ?, ativa = 1 WHERE id = ? AND tenant_id = ?',
+                [nome, descricao || null, icone_classe || null, cor_icone || '#2563eb', membros_outro_ejc ? 1 : 0, id, tenantId]
             )
             : await pool.query(
-                'UPDATE equipes SET nome = ?, descricao = ? WHERE id = ? AND tenant_id = ?',
+                'UPDATE equipes SET nome = ?, descricao = ?, ativa = 1 WHERE id = ? AND tenant_id = ?',
                 [nome, descricao || null, id, tenantId]
             );
 
@@ -574,18 +529,20 @@ router.delete('/vinculo/:ejcId/:equipeId', async (req, res) => {
     }
 });
 
-// DELETE - Deletar equipe e suas dependências
+// DELETE - Arquivar equipe preservando vínculos já existentes
 router.delete('/:id', async (req, res) => {
     try {
         const tenantId = getTenantId(req);
-        await pool.query('DELETE FROM equipes_funcoes WHERE equipe_id = ? AND tenant_id = ?', [req.params.id, tenantId]);
-        await pool.query('DELETE FROM equipes_ejc WHERE equipe_id = ? AND tenant_id = ?', [req.params.id, tenantId]);
-        const [result] = await pool.query('DELETE FROM equipes WHERE id = ? AND tenant_id = ?', [req.params.id, tenantId]);
+        await hasEquipeAtivaColumn();
+        const [result] = await pool.query(
+            'UPDATE equipes SET ativa = 0 WHERE id = ? AND tenant_id = ?',
+            [req.params.id, tenantId]
+        );
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ error: "Equipe não encontrada" });
         }
-        res.json({ message: "Equipe deletada com sucesso" });
+        res.json({ message: "Equipe removida do menu e preservada nas edições já vinculadas." });
     } catch (err) {
         console.error("Erro ao deletar equipe:", err);
         res.status(500).json({ error: "Erro ao deletar equipe" });

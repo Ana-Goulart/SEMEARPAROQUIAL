@@ -34,6 +34,131 @@
             box-shadow: 0 10px 20px rgba(34, 55, 80, 0.08);
         }
 
+        .lista-mestre-profile-rail {
+            width: 100%;
+            max-width: 400px;
+            min-width: 0;
+        }
+
+        .lista-mestre-profile-photo {
+            width: 180px;
+            height: 180px;
+            background-color: #f8f9fa;
+            cursor: pointer;
+        }
+
+        .lista-mestre-profile-summary {
+            width: 100%;
+            margin-top: 1.1rem;
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.55rem 0.9rem;
+            align-items: start;
+        }
+
+        .lista-mestre-summary-item {
+            margin-bottom: 0 !important;
+            min-width: 0;
+        }
+
+        .lista-mestre-summary-item--wide {
+            grid-column: 1 / -1;
+        }
+
+        .lista-mestre-profile-summary label.text-muted.small.mb-0 {
+            display: block;
+            margin-bottom: 0.15rem !important;
+        }
+
+        .lista-mestre-profile-summary .bg-light.border.rounded {
+            min-height: calc(1.5em + 0.5rem + 2px);
+            line-height: 1.5;
+            word-break: break-word;
+            overflow-wrap: anywhere;
+        }
+
+        .lista-mestre-profile-summary .input-group {
+            flex-wrap: nowrap;
+        }
+
+        .lista-mestre-toolbar-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            width: 100%;
+            min-width: 0;
+            justify-content: flex-end;
+        }
+
+        .lista-mestre-toolbar-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .lista-mestre-toolbar-search {
+            width: 100%;
+            max-width: 100%;
+        }
+
+        .lista-mestre-page-title {
+            flex: 1 1 320px;
+            min-width: 0;
+            margin: 0;
+            color: #0f2440;
+            font-size: clamp(1.55rem, 1.45vw, 2rem);
+            line-height: 1.04;
+        }
+
+        .lista-mestre-search-label {
+            display: block;
+            margin-bottom: 0.4rem;
+            color: #8b6d41;
+            font-size: 0.76rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .lista-mestre-toolbar-search .input-group-text {
+            border-color: rgba(191, 161, 111, 0.35);
+            background: #fff8ee;
+            color: #8f6a24;
+        }
+
+        .lista-mestre-toolbar-search .input-group {
+            flex-wrap: nowrap;
+        }
+
+        .lista-mestre-toolbar-search .form-control,
+        .lista-mestre-toolbar-search .btn {
+            min-height: 44px;
+        }
+
+        .lista-mestre-toolbar-search .form-control {
+            color: #334155;
+            background: #fffdf9;
+        }
+
+        .lista-mestre-toolbar-search .form-control:focus {
+            background: #fff;
+        }
+
+        .lista-mestre-tabs-bar {
+            align-items: flex-end;
+            gap: 0.75rem;
+        }
+
+        .lista-mestre-tabs-search-item {
+            width: 100%;
+            list-style: none;
+        }
+
+        .lista-mestre-tabs-search-item .lista-mestre-toolbar-search {
+            padding-bottom: 0.35rem;
+        }
+
         .ficha-side-label {
             color: #6e6e6e;
             font-size: 0.95rem;
@@ -53,31 +178,37 @@
         }
 
         .ficha-subtab {
-            border: 1px solid rgba(31, 53, 88, 0.12);
+            border: 1px solid #d9a650;
             border-radius: 999px;
             background: #fff;
-            color: #4d596c;
+            color: #b67f1d;
             font-size: 0.92rem;
-            font-weight: 600;
-            padding: 0.5rem 0.95rem;
+            font-weight: 700;
+            padding: 0.45rem 0.95rem;
+            min-height: 40px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: none;
             transition: all 0.18s ease;
         }
 
         .ficha-subtab:hover {
-            border-color: rgba(197, 139, 42, 0.28);
-            background: #fff8ed;
-            color: #8b5b16;
+            border-color: #c8933f;
+            background: #fff6e8;
+            color: #9b6910;
+            transform: translateY(-1px);
         }
 
         .ficha-subtab.active {
             border-color: transparent;
-            background: linear-gradient(180deg, #355173 0%, #223750 100%);
+            background: #d9a650;
             color: #fff;
-            box-shadow: 0 10px 22px rgba(34, 55, 80, 0.18);
+            box-shadow: 0 8px 18px rgba(217, 166, 80, 0.28);
         }
 
         .ficha-subpane {
-            border: 1px solid rgba(31, 53, 88, 0.08);
+            border: 0;
             border-radius: 18px;
             background: #fff;
             padding: 1rem;
@@ -87,12 +218,12 @@
         .ficha-pane-title {
             margin-bottom: 1rem;
             padding-bottom: 0.75rem;
-            border-bottom: 1px solid rgba(31, 53, 88, 0.08);
+            border-bottom: 0;
         }
 
         .ficha-pane-title h6 {
             margin: 0;
-            color: #223750;
+            color: #b88732;
             font-size: 1rem;
             font-weight: 700;
         }
@@ -262,16 +393,32 @@
         }
 
         .btn-icon-delete {
-            width: 40px;
-            height: 40px;
-            border-radius: 14px;
-            border: 1px solid rgba(215, 109, 85, 0.24);
-            background: #fff;
-            color: #a790b6;
+            width: 40px !important;
+            height: 40px !important;
+            min-width: 40px !important;
+            padding: 0 !important;
+            overflow: hidden;
+            border-radius: 14px !important;
+            border: 1px solid rgba(169, 68, 56, 0.14) !important;
+            background: #fff !important;
+            color: #b45448 !important;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 10px 20px rgba(34, 55, 80, 0.05);
+            box-shadow: none !important;
+            flex: 0 0 40px;
+            font-size: 0 !important;
+            line-height: 0 !important;
+            vertical-align: middle;
+        }
+
+        .btn-icon-delete i,
+        .btn-icon-delete svg,
+        .btn-icon-delete .icon-accent {
+            font-size: 0.95rem !important;
+            line-height: 1 !important;
+            color: currentColor !important;
+            margin: 0 !important;
         }
 
         .history-add-row {
@@ -482,48 +629,6 @@
             padding: 0.25rem 0 1.5rem;
         }
 
-        .outros-ejcs-tabbar {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.65rem;
-        }
-
-        .outros-ejcs-tab {
-            border: 1px solid rgba(31, 53, 88, 0.1);
-            border-radius: 999px;
-            background: #f7f3eb;
-            color: #4d596c;
-            font-weight: 700;
-            padding: 0.72rem 1.1rem;
-            transition: all 0.18s ease;
-        }
-
-        .outros-ejcs-tab:hover {
-            border-color: rgba(197, 139, 42, 0.26);
-            background: #fff8ed;
-            color: #8b5b16;
-        }
-
-        .outros-ejcs-tab.active {
-            border-color: transparent;
-            background: linear-gradient(180deg, #355173 0%, #223750 100%);
-            color: #fff;
-            box-shadow: 0 12px 24px rgba(34, 55, 80, 0.16);
-        }
-
-        .quick-search-group .input-group-text {
-            border-right: 0;
-            background: #fff;
-        }
-
-        .quick-search-group .form-control {
-            border-left: 0;
-        }
-
-        .quick-search-input {
-            min-height: 46px;
-        }
-
         .outro-ejc-count {
             display: inline-flex;
             align-items: center;
@@ -578,6 +683,56 @@
             padding: 1.15rem 1.4rem;
         }
 
+        .outro-ejc-vinculo-section-head {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 0.9rem;
+        }
+
+        .outro-ejc-vinculo-section-head h6 {
+            margin: 0;
+            color: #223750;
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .outro-ejc-vinculo-section-head p {
+            margin: 0.25rem 0 0;
+            color: #7b8797;
+            font-size: 0.9rem;
+        }
+
+        .outro-ejc-vinculo-list {
+            max-height: 320px;
+            overflow-y: auto;
+            border: 1px solid rgba(34, 55, 80, 0.08);
+            border-radius: 16px;
+            background: #fff;
+        }
+
+        .outro-ejc-vinculo-list .list-group-item {
+            border-left: 0;
+            border-right: 0;
+            padding: 0.9rem 1rem;
+        }
+
+        .outro-ejc-vinculo-list .list-group-item:first-child {
+            border-top: 0;
+        }
+
+        .outro-ejc-vinculo-list .list-group-item:last-child {
+            border-bottom: 0;
+        }
+
+        .outro-ejc-vinculo-empty {
+            padding: 1.2rem 1rem;
+            text-align: center;
+            color: #6c757d;
+            font-size: 0.92rem;
+        }
+
         #modalCasal .ficha-aside-list {
             width: 100%;
             margin-top: 1.1rem;
@@ -600,6 +755,11 @@
                 width: 280px;
                 max-width: 100%;
             }
+
+            .lista-mestre-profile-rail {
+                width: 280px;
+                max-width: 100%;
+            }
         }
 
         @media (min-width: 768px) {
@@ -615,6 +775,53 @@
             #modalCasal .ficha-aside-list.tios-profile-summary {
                 grid-template-columns: 1fr;
             }
+
+            .lista-mestre-profile-rail {
+                width: 400px;
+            }
+
+            .lista-mestre-profile-summary {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (min-width: 992px) {
+            .lista-mestre-toolbar-actions {
+                width: auto;
+                flex: 0 1 760px;
+                margin-left: auto;
+            }
+
+            .lista-mestre-toolbar-buttons {
+                justify-content: flex-end;
+            }
+
+            .lista-mestre-toolbar-search {
+                max-width: 340px;
+            }
+
+            .lista-mestre-page-title {
+                white-space: nowrap;
+                max-width: calc(100% - 780px);
+                font-size: clamp(1.42rem, 1.15vw, 1.75rem);
+            }
+
+            .lista-mestre-tabs-search-item {
+                margin-left: auto;
+                width: auto;
+                flex: 0 0 340px;
+            }
+        }
+
+        @media (min-width: 1200px) {
+            .lista-mestre-toolbar-buttons {
+                flex-wrap: nowrap;
+                gap: 0.4rem;
+            }
+
+            .lista-mestre-toolbar-buttons > * {
+                flex-shrink: 0;
+            }
         }
     </style>
 </head>
@@ -622,88 +829,97 @@
     <div id="app">
         <main class="container-fluid">
             <div class="outros-ejcs-shell">
-                <div class="card border-0 shadow-sm mb-3">
-                    <div class="card-body p-3 p-lg-4">
-                        <div class="d-flex flex-column flex-xl-row justify-content-between align-items-xl-start gap-3">
-                            <div>
-                                <div class="text-uppercase text-muted small fw-semibold mb-2">Gestão unificada</div>
-                                <h3 class="mb-2">Outros EJCs</h3>
-                                <p class="text-muted mb-0">Centralize os cadastros de outros EJCs, membros e tios vinculados ao EJC {{ nomeMeuEJC }} em uma única tela.</p>
-                            </div>
-                            <div class="d-flex flex-wrap gap-2 justify-content-xl-end">
-                                <button class="btn btn-soft-secondary btn-ejc-action" @click="abrirModalNovoOutroEjc" title="Novo EJC" aria-label="Novo EJC">
-                                    <span class="btn-ejc-icon"><i class="fa-solid fa-globe icon-accent"></i></span>
-                                    <span class="btn-ejc-text">Novo EJC</span>
+                <div class="d-flex flex-wrap justify-content-between align-items-start mb-4 gap-3">
+                    <h3 class="lista-mestre-page-title">Outros EJCs - EJC {{ nomeMeuEJC }}</h3>
+                    <div class="lista-mestre-toolbar-actions">
+                        <div class="lista-mestre-toolbar-buttons">
+                            <button class="btn btn-soft-secondary btn-ejc-action"
+                                @click="abrirNovoRegistroAbaAtual"
+                                :title="tituloBotaoNovoAtual"
+                                :aria-label="tituloBotaoNovoAtual">
+                                <span class="btn-ejc-icon"><i class="fa-solid fa-plus icon-accent"></i></span>
+                                <span class="btn-ejc-text">Novo</span>
+                            </button>
+                            <button class="btn btn-soft-secondary btn-ejc-action" @click="exportarExcel" title="Exportar" aria-label="Exportar">
+                                <span class="btn-ejc-icon"><i class="fa-solid fa-folder-open icon-accent"></i></span>
+                                <span class="btn-ejc-text">Exportar</span>
+                            </button>
+                            <label class="btn btn-soft-secondary btn-ejc-action mb-0" title="Importar" aria-label="Importar">
+                                <span class="btn-ejc-icon"><i class="fa-solid fa-file-import icon-accent"></i></span>
+                                <span class="btn-ejc-text">Importar</span>
+                                <input type="file" class="d-none" accept=".xlsx" @change="importarExcel">
+                            </label>
+                            <div class="vr mx-1 d-none d-lg-flex"></div>
+                            <div v-if="aba !== 'outros'" class="btn-group">
+                                <button class="btn btn-soft-secondary dropdown-toggle btn-ejc-action" data-bs-toggle="dropdown" title="Colunas" aria-label="Colunas">
+                                    <span class="btn-ejc-icon"><i class="fa-solid fa-gear icon-accent"></i></span>
+                                    <span class="btn-ejc-text">Colunas</span>
                                 </button>
-                                <button class="btn btn-soft-secondary btn-ejc-action" @click="abrirEscolhaNovoOutroEjc" title="Novo membro" aria-label="Novo membro">
-                                    <span class="btn-ejc-icon"><i class="fa-solid fa-user-plus icon-accent"></i></span>
-                                    <span class="btn-ejc-text">Novo membro</span>
-                                </button>
-                                <button class="btn btn-soft-secondary btn-ejc-action" @click="exportarExcel" title="Exportar" aria-label="Exportar">
-                                    <span class="btn-ejc-icon"><i class="fa-solid fa-folder-open icon-accent"></i></span>
-                                    <span class="btn-ejc-text">Exportar</span>
-                                </button>
-                                <label class="btn btn-soft-secondary btn-ejc-action mb-0" title="Importar" aria-label="Importar">
-                                    <span class="btn-ejc-icon"><i class="fa-solid fa-file-import icon-accent"></i></span>
-                                    <span class="btn-ejc-text">Importar</span>
-                                    <input type="file" class="d-none" accept=".xlsx" @change="importarExcel">
-                                </label>
-                                <div v-if="aba !== 'outros'" class="btn-group">
-                                    <button class="btn btn-soft-secondary dropdown-toggle btn-ejc-action" data-bs-toggle="dropdown" title="Colunas" aria-label="Colunas">
-                                        <span class="btn-ejc-icon"><i class="fa-solid fa-gear icon-accent"></i></span>
-                                        <span class="btn-ejc-text">Colunas</span>
-                                    </button>
-                                    <ul class="dropdown-menu p-3" style="min-width: 280px;">
-                                        <template v-if="aba==='membros'">
-                                            <li v-for="(val, col) in colunasVisiveisJovens" :key="`col-j-${col}`" class="mb-1">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" v-model="colunasVisiveisJovens[col]">
-                                                    <label class="form-check-label">{{ labelColunaOutroEjc(col) }}</label>
-                                                </div>
-                                            </li>
-                                        </template>
-                                        <template v-else>
-                                            <li v-for="(val, col) in colunasVisiveisTios" :key="`col-t-${col}`" class="mb-1">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" v-model="colunasVisiveisTios[col]">
-                                                    <label class="form-check-label">{{ labelColunaOutroEjc(col) }}</label>
-                                                </div>
-                                            </li>
-                                        </template>
-                                    </ul>
-                                </div>
-                                <button class="btn btn-ejc-action" :class="mostrarFiltrosAbaAtual ? 'btn-primary' : 'btn-soft-primary'" @click="alternarFiltrosAbaAtual" title="Filtros avançados" aria-label="Filtros avançados">
-                                    <span class="btn-ejc-icon"><i class="fa-solid fa-sliders icon-accent"></i></span>
-                                    <span class="btn-ejc-text">Filtros avançados</span>
-                                </button>
+                                <ul class="dropdown-menu p-3" style="min-width: 280px;">
+                                    <template v-if="aba==='membros'">
+                                        <li v-for="(val, col) in colunasVisiveisJovens" :key="`col-j-${col}`" class="mb-1">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" v-model="colunasVisiveisJovens[col]">
+                                                <label class="form-check-label">{{ labelColunaOutroEjc(col) }}</label>
+                                            </div>
+                                        </li>
+                                    </template>
+                                    <template v-else>
+                                        <li v-for="(val, col) in colunasVisiveisTios" :key="`col-t-${col}`" class="mb-1">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" v-model="colunasVisiveisTios[col]">
+                                                <label class="form-check-label">{{ labelColunaOutroEjc(col) }}</label>
+                                            </div>
+                                        </li>
+                                    </template>
+                                </ul>
                             </div>
-                        </div>
-
-                        <div class="row g-3 align-items-end mt-1">
-                            <div class="col-12 col-xl-7">
-                                <div class="outros-ejcs-tabbar">
-                                    <button class="outros-ejcs-tab" :class="{ active: aba === 'outros' }" @click="definirAba('outros')">Outros EJCs</button>
-                                    <button class="outros-ejcs-tab" :class="{ active: aba === 'membros' }" @click="definirAba('membros')">Membros</button>
-                                    <button class="outros-ejcs-tab" :class="{ active: aba === 'tios' }" @click="definirAba('tios')">Tios</button>
-                                </div>
-                            </div>
-                            <div class="col-12 col-xl-5">
-                                <label class="form-label small text-muted mb-1">Pesquisa rápida</label>
-                                <div class="input-group quick-search-group">
-                                    <span class="input-group-text"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
-                                    <input v-model.trim="pesquisaRapidaAtual" class="form-control quick-search-input" :placeholder="placeholderPesquisaRapida">
-                                    <button v-if="pesquisaRapidaAtual" type="button" class="btn btn-outline-secondary" @click="pesquisaRapidaAtual = ''" title="Limpar pesquisa">
-                                        <i class="fa-solid fa-xmark"></i>
-                                    </button>
-                                </div>
-                            </div>
+                            <button class="btn btn-ejc-action" :class="mostrarFiltrosAbaAtual ? 'btn-primary' : 'btn-soft-primary'" @click="alternarFiltrosAbaAtual" title="Filtros avançados" aria-label="Filtros avançados">
+                                <span class="btn-ejc-icon"><i class="fa-solid fa-sliders icon-accent"></i></span>
+                                <span class="btn-ejc-text">Filtros avançados</span>
+                            </button>
                         </div>
                     </div>
                 </div>
 
+                <ul class="nav nav-tabs mb-3 lista-mestre-tabs-bar">
+                    <li class="nav-item">
+                        <button class="nav-link" :class="{ active: aba === 'outros' }" @click="definirAba('outros')">
+                            Outros EJCs
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" :class="{ active: aba === 'membros' }" @click="definirAba('membros')">
+                            Membros
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" :class="{ active: aba === 'tios' }" @click="definirAba('tios')">
+                            Tios
+                        </button>
+                    </li>
+                    <li class="lista-mestre-tabs-search-item">
+                        <div class="lista-mestre-toolbar-search">
+                            <label class="lista-mestre-search-label">Pesquisa rápida</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+                                <input v-model.trim="pesquisaRapidaAtual" class="form-control" :placeholder="placeholderPesquisaRapida">
+                                <button v-if="pesquisaRapidaAtual"
+                                    type="button"
+                                    class="btn btn-outline-secondary"
+                                    data-ui-skip-standardize
+                                    @click="pesquisaRapidaAtual = ''"
+                                    title="Limpar pesquisa"
+                                    aria-label="Limpar pesquisa">
+                                    <i class="fa-solid fa-xmark"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+
                 <div class="mb-2 text-muted small">
                     Total: <strong class="text-dark">{{ totalAbaAtual }}</strong>
-                    • Filtrados: <strong class="text-dark">{{ totalFiltradoAbaAtual }}</strong>
                 </div>
 
                 <div v-if="aba==='outros' && mostrarFiltrosAbaAtual" class="card border-0 shadow-sm mb-3">
@@ -754,6 +970,62 @@
                                 <label class="form-label small text-muted">EJC de origem</label>
                                 <input v-model.trim="filtroEjcOrigem" class="form-control" placeholder="Paróquia ou nome do EJC">
                             </div>
+                            <div class="col-6 col-md-3">
+                                <label class="form-label small text-muted">Músico</label>
+                                <select v-model="filtroMusico" class="form-select">
+                                    <option value="">Todos</option>
+                                    <option value="sim">Sim</option>
+                                    <option value="nao">Não</option>
+                                </select>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <label class="form-label small text-muted">Termos de uso</label>
+                                <select v-model="filtroTermosUso" class="form-select">
+                                    <option value="">Todos</option>
+                                    <option value="sim">Aceito</option>
+                                    <option value="nao">Não aceito</option>
+                                </select>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <label class="form-label small text-muted">Idade mínima</label>
+                                <input v-model.number="filtroIdadeMin" type="number" min="0" class="form-control" placeholder="Ex: 18">
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <label class="form-label small text-muted">Idade máxima</label>
+                                <input v-model.number="filtroIdadeMax" type="number" min="0" class="form-control" placeholder="Ex: 30">
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <label class="form-label small text-muted">Sexo</label>
+                                <select v-model="filtroSexo" class="form-select">
+                                    <option value="">Todos</option>
+                                    <option value="masculino">Masculino</option>
+                                    <option value="feminino">Feminino</option>
+                                </select>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <label class="form-label small text-muted">Moita</label>
+                                <select v-model="filtroMoita" class="form-select">
+                                    <option value="">Todos</option>
+                                    <option value="sim">Sim</option>
+                                    <option value="nao">Não</option>
+                                </select>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <label class="form-label small text-muted">PcD</label>
+                                <select v-model="filtroPcd" class="form-select">
+                                    <option value="">Todos</option>
+                                    <option value="sim">Sim</option>
+                                    <option value="nao">Não</option>
+                                </select>
+                            </div>
+                            <div class="col-6 col-md-3">
+                                <label class="form-label small text-muted">Restrição alimentar</label>
+                                <select v-model="filtroRestricaoAlimentar" class="form-select">
+                                    <option value="">Todos</option>
+                                    <option value="sim">Sim</option>
+                                    <option value="nao">Não</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -792,9 +1064,7 @@
                                     <th>Nome do EJC</th>
                                     <th>Paróquia</th>
                                     <th>Bairro</th>
-                                    <th>Membros</th>
-                                    <th>Tios</th>
-                                    <th style="width: 150px;">Ações</th>
+                                    <th style="width: 220px;">Ações</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -802,20 +1072,18 @@
                                     <td class="fw-semibold">{{ outro.nome || '-' }}</td>
                                     <td>{{ outro.paroquia || '-' }}</td>
                                     <td>{{ outro.bairro || '-' }}</td>
-                                    <td><span class="outro-ejc-count">{{ contarMembrosOutroEjc(outro.id) }}</span></td>
-                                    <td><span class="outro-ejc-count">{{ contarTiosOutroEjc(outro.id) }}</span></td>
                                     <td>
-                                        <div class="d-flex gap-2 flex-wrap">
+                                        <div class="d-flex gap-2 flex-nowrap align-items-center">
                                             <button class="btn btn-edit-standard btn-sm" @click="editarOutroEjc(outro)">Editar</button>
                                             <button class="btn btn-outline-danger btn-sm" @click="excluirOutroEjc(outro)">Excluir</button>
                                         </div>
                                     </td>
                                 </tr>
                                 <tr v-if="carregandoOutrosEjcs">
-                                    <td colspan="6" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Carregando...</td>
+                                    <td colspan="4" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Carregando...</td>
                                 </tr>
                                 <tr v-else-if="!outrosEjcsFiltrados.length">
-                                    <td colspan="6" class="text-center text-muted py-4">Nenhum outro EJC encontrado.</td>
+                                    <td colspan="4" class="text-center text-muted py-4">Nenhum outro EJC encontrado.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -832,6 +1100,11 @@
                                     <th v-if="colunasVisiveisJovens.EjcOrigem">EJC de Origem</th>
                                     <th v-if="colunasVisiveisJovens.Musico">Músico</th>
                                     <th v-if="colunasVisiveisJovens.TermosUso">Termos de uso</th>
+                                    <th v-if="colunasVisiveisJovens.Idade">Idade</th>
+                                    <th v-if="colunasVisiveisJovens.Sexo">Sexo</th>
+                                    <th v-if="colunasVisiveisJovens.Moita">Moita</th>
+                                    <th v-if="colunasVisiveisJovens.Pcd">PcD</th>
+                                    <th v-if="colunasVisiveisJovens.RestricaoAlimentar">Restrição alimentar</th>
                                     <th style="width: 120px;">Ações</th>
                                 </tr>
                             </thead>
@@ -842,6 +1115,11 @@
                                     <td v-if="colunasVisiveisJovens.EjcOrigem">{{ formatarOrigem(item) }}</td>
                                     <td v-if="colunasVisiveisJovens.Musico">{{ item.eh_musico ? 'Sim' : 'Não' }}</td>
                                     <td v-if="colunasVisiveisJovens.TermosUso">{{ item.termos_aceitos_em ? 'Aceito' : 'Não' }}</td>
+                                    <td v-if="colunasVisiveisJovens.Idade">{{ formatarIdadeLista(item.data_nascimento) }}</td>
+                                    <td v-if="colunasVisiveisJovens.Sexo">{{ formatarSexoLista(item.sexo) }}</td>
+                                    <td v-if="colunasVisiveisJovens.Moita">{{ item.ja_foi_moita_inconfidentes ? 'Sim' : 'Não' }}</td>
+                                    <td v-if="colunasVisiveisJovens.Pcd">{{ item.deficiencia ? 'Sim' : 'Não' }}</td>
+                                    <td v-if="colunasVisiveisJovens.RestricaoAlimentar">{{ item.restricao_alimentar ? 'Sim' : 'Não' }}</td>
                                     <td>
                                         <div class="d-flex gap-1 flex-wrap">
                                             <button class="btn btn-edit-standard btn-sm" @click="abrirModalEditar(item)">Editar</button>
@@ -911,7 +1189,12 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
-                        <div class="row g-4">
+                        <div class="ficha-subtabs mb-4">
+                            <button type="button" :class="['ficha-subtab', 'btn-edit-standard', 'btn-sm', { active: abaModalOutroEjc === 'informacoes' }]" @click="abaModalOutroEjc = 'informacoes'">Informações do EJC</button>
+                            <button v-if="editandoOutroEjc && formOutroEjc.id" type="button" :class="['ficha-subtab', 'btn-edit-standard', 'btn-sm', { active: abaModalOutroEjc === 'vinculos' }]" @click="abaModalOutroEjc = 'vinculos'">Jovens e Tios</button>
+                        </div>
+
+                        <div v-show="abaModalOutroEjc === 'informacoes'" class="row g-4">
                             <div class="col-12">
                                 <div class="novo-jovem-panel">
                                     <div class="novo-jovem-panel-title">
@@ -937,6 +1220,63 @@
                                         <div class="col-12">
                                             <label class="text-muted small">Observações</label>
                                             <textarea class="form-control" v-model.trim="formOutroEjc.observacoes" rows="4" maxlength="255" placeholder="Informações adicionais sobre este outro EJC"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div v-if="editandoOutroEjc && formOutroEjc.id && abaModalOutroEjc === 'vinculos'" class="row g-4">
+                            <div class="col-12">
+                                <div class="novo-jovem-panel">
+                                    <div class="novo-jovem-panel-title">
+                                        <span class="novo-jovem-panel-icon"><i class="fa-solid fa-people-group"></i></span>
+                                        <div>
+                                            <strong>Pessoas vinculadas</strong>
+                                            <span class="d-block">Veja todos os jovens e tios cadastrados neste outro EJC.</span>
+                                        </div>
+                                    </div>
+
+                                    <div class="row g-3">
+                                        <div class="col-lg-6">
+                                            <div class="outro-ejc-vinculo-section-head">
+                                                <div>
+                                                    <h6>Jovens vinculados</h6>
+                                                    <p>Cadastros de jovens associados a este EJC.</p>
+                                                </div>
+                                                <span class="outro-ejc-count">{{ jovensVinculadosOutroEjcAtual.length }}</span>
+                                            </div>
+                                            <div class="list-group outro-ejc-vinculo-list">
+                                                <div v-if="!jovensVinculadosOutroEjcAtual.length" class="outro-ejc-vinculo-empty">Nenhum jovem vinculado a este outro EJC.</div>
+                                                <div v-else v-for="jovem in jovensVinculadosOutroEjcAtual" :key="`outro-ejc-jovem-${jovem.jovem_id || jovem.id || jovem.nome_completo}`" class="list-group-item">
+                                                    <div class="fw-semibold">{{ jovem.nome_completo || 'Sem nome' }}</div>
+                                                    <div class="small text-muted">
+                                                        {{ jovem.telefone || 'Telefone não informado' }}
+                                                        <span v-if="jovem.circulo"> • {{ jovem.circulo }}</span>
+                                                        <span v-if="jovem.data_nascimento"> • {{ formatarIdade(jovem.data_nascimento) }}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-lg-6">
+                                            <div class="outro-ejc-vinculo-section-head">
+                                                <div>
+                                                    <h6>Tios vinculados</h6>
+                                                    <p>Casais de tios associados a este EJC.</p>
+                                                </div>
+                                                <span class="outro-ejc-count">{{ tiosVinculadosOutroEjcAtual.length }}</span>
+                                            </div>
+                                            <div class="list-group outro-ejc-vinculo-list">
+                                                <div v-if="!tiosVinculadosOutroEjcAtual.length" class="outro-ejc-vinculo-empty">Nenhum tio vinculado a este outro EJC.</div>
+                                                <div v-else v-for="casal in tiosVinculadosOutroEjcAtual" :key="`outro-ejc-tio-${casal.id || casal.nome_tio}`" class="list-group-item">
+                                                    <div class="fw-semibold">{{ casal.nome_tio || 'Tio não informado' }} e {{ casal.nome_tia || 'Tia não informada' }}</div>
+                                                    <div class="small text-muted">
+                                                        {{ casal.telefone_tio || 'Sem telefone do tio' }}
+                                                        <span v-if="casal.telefone_tia"> • {{ casal.telefone_tia }}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1056,22 +1396,15 @@
                                         </div>
                                         <div class="col-12">
                                             <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="checkNovoMoitaOutroEjc" v-model="novo.ja_foi_moita_inconfidentes" :true-value="1" :false-value="0">
+                                                <input class="form-check-input" type="checkbox" id="checkNovoMoitaOutroEjc" v-model="novo.ja_foi_moita_inconfidentes" :true-value="1" :false-value="0" @change="onMoitaToggleNovoOutroJovem">
                                                 <label class="form-check-label" for="checkNovoMoitaOutroEjc">Já foi moita no EJC {{ nomeMeuEJC }}</label>
                                             </div>
                                         </div>
                                         <div class="col-lg-6" v-if="novo.ja_foi_moita_inconfidentes">
-                                            <label class="text-muted small">Qual EJC no {{ nomeMeuEJC }}</label>
+                                            <label class="text-muted small">Em qual edição do EJC {{ nomeMeuEJC }}?</label>
                                             <select class="form-select" v-model="novo.moita_ejc_id">
                                                 <option value="">Selecione...</option>
                                                 <option v-for="ejc in ejcs" :key="`ejc-novo-outro-${ejc.id}`" :value="ejc.id">{{ formatarEjcOption(ejc) }}</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-lg-6" v-if="novo.ja_foi_moita_inconfidentes">
-                                            <label class="text-muted small">Função de moita</label>
-                                            <select class="form-select" v-model="novo.moita_funcao">
-                                                <option value="">Selecione...</option>
-                                                <option v-for="f in funcoesMoita" :key="`func-novo-outro-${f.id || f.nome}`" :value="f.nome">{{ f.nome }}</option>
                                             </select>
                                         </div>
                                     </div>
@@ -1145,11 +1478,6 @@
                                         <i class="fas fa-note-sticky me-1"></i> Observações
                                     </button>
                                 </li>
-                                <li class="nav-item">
-                                    <button class="nav-link" :class="{ active: abaFichaOutro === 'presencas' }" @click="carregarPresencasOutro(); abaFichaOutro = 'presencas'">
-                                        <i class="fas fa-square-check me-1"></i> Presença
-                                    </button>
-                                </li>
                             </ul>
 
                             <div v-show="abaFichaOutro === 'dados'" class="pb-1 align-self-end">
@@ -1159,47 +1487,99 @@
                         </div>
 
                         <div v-show="abaFichaOutro === 'dados'" class="clearfix">
-                            <div class="float-md-start me-md-3 mb-4 mt-2 d-flex flex-column align-items-center" style="width: 180px;">
-                                <div class="ficha-avatar-box">
-                                    {{ iniciaisOutroJovem }}
+                            <div class="float-md-start me-md-4 mb-4 mt-2 d-flex flex-column align-items-center lista-mestre-profile-rail">
+                                <div class="position-relative mb-3">
+                                    <img :src="jovemOutroFicha.foto_url || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(jovemOutroFicha.nome_completo || 'J') + '&background=e9ecef&color=6c757d&size=220')"
+                                        alt="Foto do jovem"
+                                        class="rounded border shadow-sm object-fit-cover lista-mestre-profile-photo"
+                                        :class="{ 'ficha-avatar-trigger': !isEditingOutroFicha }"
+                                        :data-bs-toggle="!isEditingOutroFicha ? 'modal' : null"
+                                        :data-bs-target="!isEditingOutroFicha ? '#modalVerFotoOutroJovem' : null"
+                                        :title="!isEditingOutroFicha ? 'Ver foto ampliada' : ''">
+                                    <label v-if="isEditingOutroFicha"
+                                        class="position-absolute bottom-0 end-0 rounded-circle d-flex justify-content-center align-items-center shadow cursor-pointer"
+                                        style="width: 32px; height: 32px; cursor: pointer; transform: translate(15%, 15%); background: #d9a650; border: 1px solid #d9a650;"
+                                        title="Adicionar ou trocar foto">
+                                        <span class="position-relative d-inline-flex align-items-center justify-content-center"
+                                            style="width: 18px; height: 18px;">
+                                            <i class="fa-solid fa-camera" style="font-size: 14px; color: #8a5a14;"></i>
+                                            <span class="position-absolute d-inline-flex align-items-center justify-content-center"
+                                                style="width: 11px; height: 11px; right: -5px; bottom: -4px; border-radius: 999px; background: #fff; color: #8a5a14; font-size: 7px; box-shadow: 0 0 0 1px rgba(138, 90, 20, 0.12);">
+                                                <i class="fa-solid fa-plus"></i>
+                                            </span>
+                                        </span>
+                                        <input type="file" accept="image/*" class="d-none" @change="uploadFotoOutroJovem">
+                                    </label>
                                 </div>
-                                <div class="w-100 px-3 mt-4 text-start">
-                                    <div class="mb-1">
-                                        <label class="text-muted small fw-bold mb-0">Círculo</label>
+                                <div v-if="isEditingOutroFicha" class="text-muted small text-center px-1">
+                                    Clique no ícone de câmera<br>para alterar a foto.
+                                </div>
+
+                                <div class="lista-mestre-profile-summary text-start">
+                                    <div class="lista-mestre-summary-item">
+                                        <label class="text-muted small mb-0">Círculo</label>
                                         <div v-if="!isEditingOutroFicha" class="py-1 px-2 bg-light border rounded">{{ jovemOutroFicha.circulo || 'Não informado' }}</div>
                                         <input v-else class="form-control form-control-sm" v-model.trim="jovemOutroFicha.circulo" placeholder="Círculo">
                                     </div>
-                                    <div class="mb-1">
-                                        <label class="text-muted small fw-bold mb-0">Origem no EJC</label>
+
+                                    <div class="lista-mestre-summary-item">
+                                        <label class="text-muted small mb-0">Origem no EJC</label>
                                         <div class="py-1 px-2 bg-light border rounded">Fez outro EJC</div>
                                     </div>
-                                    <div class="mb-1">
-                                        <label class="text-muted small fw-bold mb-0">EJC de origem</label>
-                                        <div v-if="!isEditingOutroFicha" class="py-1 px-2 bg-light border rounded">{{ jovemOutroFicha.outro_ejc_nome || 'Não informado' }}</div>
-                                        <select v-else class="form-select form-select-sm" v-model="jovemOutroFicha.outro_ejc_id">
-                                            <option value="">Selecione...</option>
-                                            <option v-for="oe in outrosEjcs" :key="`ficha-oe-${oe.id}`" :value="oe.id">{{ oe.nome }}</option>
-                                        </select>
-                                    </div>
-                                    <div class="mb-1">
-                                        <label class="text-muted small fw-bold mb-0">Nº EJC que fez</label>
+
+                                    <div class="lista-mestre-summary-item">
+                                        <label class="text-muted small mb-0">Nº EJC que fez</label>
                                         <div v-if="!isEditingOutroFicha" class="py-1 px-2 bg-light border rounded">{{ formatarNumeroOutroFicha(jovemOutroFicha.outro_ejc_numero) }}</div>
                                         <input v-else class="form-control form-control-sm" v-model.trim="jovemOutroFicha.outro_ejc_numero" placeholder="Número do EJC">
+                                    </div>
+
+                                    <div class="lista-mestre-summary-item">
+                                        <label class="text-muted small mb-0">Instagram</label>
+                                        <div v-if="!isEditingOutroFicha" class="py-1 px-2 bg-light border rounded">
+                                            <span v-if="jovemOutroFicha.instagram">@{{ jovemOutroFicha.instagram }}</span>
+                                            <span v-else>Não informado</span>
+                                        </div>
+                                        <div v-else class="input-group input-group-sm">
+                                            <span class="input-group-text">@</span>
+                                            <input type="text" class="form-control" v-model.trim="jovemOutroFicha.instagram" placeholder="usuario">
+                                        </div>
+                                    </div>
+
+                                    <div class="lista-mestre-summary-item lista-mestre-summary-item--wide">
+                                        <label class="text-muted small mb-0">EJC de origem</label>
+                                        <div v-if="!isEditingOutroFicha" class="py-1 px-2 bg-light border rounded">
+                                            <span v-if="jovemOutroFicha.outro_ejc_paroquia || jovemOutroFicha.outro_ejc_nome">
+                                                {{ jovemOutroFicha.outro_ejc_paroquia || '-' }}
+                                                <span v-if="jovemOutroFicha.outro_ejc_nome"> - {{ jovemOutroFicha.outro_ejc_nome }}</span>
+                                            </span>
+                                            <span v-else>Não informado</span>
+                                        </div>
+                                        <select v-else class="form-select form-select-sm" v-model="jovemOutroFicha.outro_ejc_id">
+                                            <option value="">Selecione...</option>
+                                            <option v-for="oe in outrosEjcs" :key="`ficha-oe-${oe.id}`" :value="oe.id">
+                                                {{ oe.paroquia || '-' }}{{ oe.nome ? ` - ${oe.nome}` : '' }}
+                                            </option>
+                                        </select>
                                     </div>
                                 </div>
                             </div>
 
                             <div class="pt-2">
-                                    <div class="ficha-subtabs mb-3">
-                                        <button type="button" class="ficha-subtab" :class="{ active: subAbaDadosOutro === 'cadastro' }" @click="subAbaDadosOutro = 'cadastro'">Cadastro</button>
-                                        <button type="button" class="ficha-subtab" :class="{ active: subAbaDadosOutro === 'familia' }" @click="subAbaDadosOutro = 'familia'; carregarFamiliaresOutroJovem(jovemOutroFicha.id)">Família</button>
-                                        <button type="button" class="ficha-subtab" :class="{ active: subAbaDadosOutro === 'saude' }" @click="subAbaDadosOutro = 'saude'">Saúde e Apoio</button>
-                                    </div>
+                                <div class="ficha-subtabs mb-3">
+                                    <button type="button" :class="['ficha-subtab', 'btn-edit-standard', 'btn-sm', { active: subAbaDadosOutro === 'cadastro' }]" @click="subAbaDadosOutro = 'cadastro'">Cadastro</button>
+                                    <button type="button" :class="['ficha-subtab', 'btn-edit-standard', 'btn-sm', { active: subAbaDadosOutro === 'participacao' }]" @click="subAbaDadosOutro = 'participacao'">Participação no EJC</button>
+                                    <button type="button" :class="['ficha-subtab', 'btn-edit-standard', 'btn-sm', { active: subAbaDadosOutro === 'familia' }]" @click="subAbaDadosOutro = 'familia'; carregarFamiliaresOutroJovem(jovemOutroFicha.id)">Família</button>
+                                    <button type="button" :class="['ficha-subtab', 'btn-edit-standard', 'btn-sm', { active: subAbaDadosOutro === 'saude' }]" @click="subAbaDadosOutro = 'saude'">Saúde e Apoio</button>
+                                </div>
 
                                 <div class="ficha-subpane">
                                     <div class="ficha-pane-title" v-if="subAbaDadosOutro === 'cadastro'">
                                         <h6>Cadastro do jovem</h6>
-                                        <p>Identificação, contato e endereço em um só lugar.</p>
+                                        <p>Identificação, contato e dados principais em um só lugar.</p>
+                                    </div>
+                                    <div class="ficha-pane-title" v-else-if="subAbaDadosOutro === 'participacao'">
+                                        <h6>Participação no EJC</h6>
+                                        <p>Música, moita e equipes em que este jovem serviu no EJC {{ nomeMeuEJC }}.</p>
                                     </div>
                                     <div class="ficha-pane-title" v-else-if="subAbaDadosOutro === 'familia'">
                                         <h6>Família</h6>
@@ -1207,7 +1587,7 @@
                                     </div>
                                     <div class="ficha-pane-title" v-else-if="subAbaDadosOutro === 'saude'">
                                         <h6>Saúde e Apoio</h6>
-                                        <p>Deficiência e restrição alimentar desse jovem.</p>
+                                        <p>Equipe médica, deficiência e restrição alimentar desse jovem.</p>
                                     </div>
 
                                     <div class="row g-1">
@@ -1254,10 +1634,105 @@
                                                 <div v-if="!isEditingOutroFicha" class="py-1 px-2 bg-light border rounded">{{ formatarDataFicha(jovemOutroFicha.data_nascimento) }}</div>
                                                 <input v-else type="text" class="form-control date-br" v-model="jovemOutroFicha.data_nascimento" placeholder="dd/mm/aaaa">
                                             </div>
-                                            <div class="col-md-4">
-                                                <label class="text-muted small mb-0">Instagram</label>
-                                                <div v-if="!isEditingOutroFicha" class="py-1 px-2 bg-light border rounded">{{ jovemOutroFicha.instagram || 'Não informado' }}</div>
-                                                <input v-else class="form-control" v-model.trim="jovemOutroFicha.instagram">
+                                        </template>
+
+                                        <template v-else-if="subAbaDadosOutro === 'participacao'">
+                                            <div class="col-12">
+                                                <label class="text-muted small mb-0">É músico?</label>
+                                                <div v-if="!isEditingOutroFicha" class="py-1 px-2 bg-light border rounded">
+                                                    {{ jovemOutroFicha.eh_musico ? 'Sim' : 'Não' }}
+                                                    <span v-if="jovemOutroFicha.eh_musico && normalizarInstrumentosOutro(jovemOutroFicha.instrumentos_musicais).length">
+                                                        - {{ normalizarInstrumentosOutro(jovemOutroFicha.instrumentos_musicais).join(', ') }}
+                                                    </span>
+                                                </div>
+                                                <div v-else>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" id="ehMusicoOutroFicha" v-model="jovemOutroFicha.eh_musico" @change="onMusicoToggleOutroFicha">
+                                                        <label class="form-check-label" for="ehMusicoOutroFicha">Sim, é músico</label>
+                                                    </div>
+                                                    <div v-if="jovemOutroFicha.eh_musico" class="mt-2 border rounded p-2 bg-light">
+                                                        <small class="text-muted d-block mb-1">Selecione os instrumentos (pode marcar mais de um):</small>
+                                                        <div class="d-flex flex-wrap gap-2">
+                                                            <div v-for="ins in instrumentosDisponiveis" :key="`outro-ins-${ins}`" class="form-check">
+                                                                <input class="form-check-input" type="checkbox" :id="`outro-ins-${ins}`" :value="ins" v-model="jovemOutroFicha.instrumentos_musicais">
+                                                                <label class="form-check-label small" :for="`outro-ins-${ins}`">{{ ins }}</label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-12">
+                                                <label class="text-muted small mb-0">Foi moita no EJC {{ nomeMeuEJC }}?</label>
+                                                <div v-if="!isEditingOutroFicha" class="py-1 px-2 bg-light border rounded">
+                                                    {{ jovemOutroFicha.ja_foi_moita_inconfidentes ? 'Sim' : 'Não' }}
+                                                    <span v-if="jovemOutroFicha.ja_foi_moita_inconfidentes && formatarEdicaoMoitaOutro(jovemOutroFicha.moita_ejc_id)">
+                                                        - {{ formatarEdicaoMoitaOutro(jovemOutroFicha.moita_ejc_id) }}
+                                                    </span>
+                                                </div>
+                                                <div v-else>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" id="moitaOutroFicha" v-model="jovemOutroFicha.ja_foi_moita_inconfidentes" :true-value="1" :false-value="0" @change="onMoitaToggleOutroFicha">
+                                                        <label class="form-check-label" for="moitaOutroFicha">Sim, foi moita no EJC {{ nomeMeuEJC }}</label>
+                                                    </div>
+                                                    <div v-if="jovemOutroFicha.ja_foi_moita_inconfidentes" class="mt-2">
+                                                        <label class="text-muted small mb-1">Em qual edição do EJC {{ nomeMeuEJC }}?</label>
+                                                        <select class="form-select form-select-sm" v-model="jovemOutroFicha.moita_ejc_id">
+                                                            <option value="">Selecione...</option>
+                                                            <option v-for="ejc in ejcs" :key="`ejc-outro-moita-ficha-${ejc.id}`" :value="ejc.id">{{ formatarEjcOption(ejc) }}</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="col-12">
+                                                <label class="section-label-corporate"><i class="fas fa-briefcase"></i> Equipes de Trabalho (EJC {{ nomeMeuEJC }})</label>
+                                                <div class="history-panel">
+                                                    <div v-if="!historicoEquipesOutroJovem || !historicoEquipesOutroJovem.length" class="text-muted small">Nenhuma equipe registrada.</div>
+                                                    <ul v-else class="history-list">
+                                                        <li v-for="(h, idx) in historicoEquipesOutroJovem" :key="`hist-outro-${h.id || idx}`" class="history-item">
+                                                            <div class="history-entry-main">
+                                                                <span class="history-entry-icon"><i class="fas fa-people-group"></i></span>
+                                                                <div class="history-entry-content">
+                                                                    <span class="history-entry-title">{{ h.nome_equipe || h.equipe || 'Equipe não informada' }}</span>
+                                                                    <span class="history-entry-subtitle">{{ formatarHistoricoEquipeOutro(h) }}</span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="history-entry-meta">
+                                                                <span class="badge-role">{{ h.papel || 'Membro' }}</span>
+                                                                <span v-if="h.subfuncao" class="badge-subrole">{{ h.subfuncao }}</span>
+                                                            </div>
+                                                            <button v-if="isEditingOutroFicha && podeRemoverEquipeHistoricoOutro(h)" type="button" class="btn-icon-delete" @click="removerEquipeHistoricoOutro(h.id)" title="Remover equipe" aria-label="Remover equipe">
+                                                                <i class="fa-solid fa-trash icon-accent"></i>
+                                                            </button>
+                                                        </li>
+                                                    </ul>
+
+                                                    <div v-if="isEditingOutroFicha" class="history-add-row">
+                                                        <small class="text-muted d-block mb-1">Adicionar Equipe:</small>
+                                                        <div class="history-add-grid">
+                                                            <select v-model="novaEquipeHistoricoOutro.ejc_id" class="form-select form-select-sm">
+                                                                <option value="">EJC...</option>
+                                                                <option v-for="ejc in ejcs" :key="`ejc-outro-hist-${ejc.id}`" :value="ejc.id">{{ formatarEjcOption(ejc) }}</option>
+                                                            </select>
+                                                            <select v-model="novaEquipeHistoricoOutro.equipe_id" class="form-select form-select-sm" @change="onEquipeHistoricoOutroChange">
+                                                                <option value="">Equipe...</option>
+                                                                <option v-for="eq in todasEquipesOutro" :key="`equipe-outro-hist-${eq.id}`" :value="eq.id">{{ eq.nome }}</option>
+                                                            </select>
+                                                            <select v-model="novaEquipeHistoricoOutro.papel" class="form-select form-select-sm" @change="onPapelHistoricoOutroChange">
+                                                                <option v-for="papel in papeisEquipeOutro" :key="`papel-outro-hist-${papel.id || papel.nome}`" :value="papel.nome">{{ papel.nome }}</option>
+                                                            </select>
+                                                            <select v-model="novaEquipeHistoricoOutro.subfuncao" class="form-select form-select-sm" :disabled="!novaEquipeHistoricoOutro.equipe_id">
+                                                                <option value="">Subfunção...</option>
+                                                                <option v-for="funcao in subfuncoesHistoricoOutroDisponiveis" :key="`subfuncao-outro-hist-${funcao.id || funcao.nome}`" :value="funcao.nome">{{ funcao.nome }}</option>
+                                                            </select>
+                                                            <button type="button" class="btn btn-success btn-sm" @click="adicionarEquipeHistoricoOutro"
+                                                                :disabled="!novaEquipeHistoricoOutro.equipe_id || !novaEquipeHistoricoOutro.ejc_id">
+                                                                <i class="fa-solid fa-plus icon-accent"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </template>
 
@@ -1285,7 +1760,9 @@
                                                                 </div>
                                                                 <div v-if="rel.telefone" class="small text-muted">{{ rel.telefone }}</div>
                                                             </div>
-                                                            <button v-if="isEditingOutroFicha" type="button" class="btn btn-outline-danger btn-sm" @click="removerRelacaoFamiliarOutroJovem(rel.id)">Remover</button>
+                                                            <button v-if="isEditingOutroFicha" type="button" class="btn-icon-delete" @click="removerRelacaoFamiliarOutroJovem(rel.id)" title="Remover parentesco" aria-label="Remover parentesco">
+                                                                <i class="fa-solid fa-trash icon-accent"></i>
+                                                            </button>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1332,6 +1809,16 @@
                                         </template>
 
                                         <template v-else-if="subAbaDadosOutro === 'saude'">
+                                            <div class="col-md-12">
+                                                <label class="text-muted small mb-0">Faz parte da equipe médica?</label>
+                                                <div v-if="!isEditingOutroFicha" class="py-1 px-2 bg-light border rounded">{{ jovemOutroFicha.equipe_saude ? 'Sim' : 'Não' }}</div>
+                                                <div v-else>
+                                                    <div class="form-check">
+                                                        <input class="form-check-input" type="checkbox" id="equipeSaudeOutroFicha" v-model="jovemOutroFicha.equipe_saude">
+                                                        <label class="form-check-label" for="equipeSaudeOutroFicha">Sim, faz parte da equipe médica</label>
+                                                    </div>
+                                                </div>
+                                            </div>
                                             <div class="col-md-4">
                                                 <label class="text-muted small mb-0">Pessoa com Deficiência(PcD)?</label>
                                                 <div v-if="!isEditingOutroFicha" class="py-1 px-2 bg-light border rounded">{{ jovemOutroFicha.deficiencia ? (jovemOutroFicha.qual_deficiencia || 'Sim') : 'Não' }}</div>
@@ -1363,45 +1850,44 @@
                             </div>
                         </div>
 
-                        <div v-show="abaFichaOutro === 'observacoes'" class="ficha-card">
-                            <div class="ficha-pane-title">
-                                <h6>Observações</h6>
-                                <p>Informações importantes registradas para este jovem.</p>
-                            </div>
-                            <div class="mb-3">
-                                <label class="text-muted small mb-1">Observação geral</label>
-                                <div class="ficha-field-value align-items-start">{{ jovemOutroFicha.observacoes_extras || 'Nenhuma observação geral cadastrada.' }}</div>
-                            </div>
-                            <div class="mb-3">
-                                <label class="text-muted small mb-1">Nova observação</label>
-                                <textarea class="form-control" rows="3" v-model.trim="novaObservacaoOutroJovem" placeholder="Escreva uma observação"></textarea>
-                            </div>
-                            <div class="mb-3">
-                                <button type="button" class="btn btn-success btn-sm" @click="adicionarObservacaoOutroJovem">Salvar observação</button>
-                            </div>
-                            <div v-if="loadingObservacoesOutro" class="text-muted">Carregando observações...</div>
-                            <div v-else-if="!observacoesOutroJovem.length" class="text-muted">Nenhuma observação registrada.</div>
-                            <div v-else class="ficha-list">
-                                <div class="ficha-list-item" v-for="obs in observacoesOutroJovem" :key="`obs-outro-${obs.id}`">
-                                    <div class="fw-semibold">{{ obs.texto }}</div>
-                                    <div class="small text-muted">{{ formatarDataHora(obs.created_at) }}</div>
-                                </div>
-                            </div>
-                        </div>
+                        <div v-show="abaFichaOutro === 'observacoes'">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <h6 class="m-0 mb-3">Histórico de Observações e Informações Especiais</h6>
+                                    <div class="list-group mb-3">
+                                        <div v-if="loadingObservacoesOutro" class="text-center p-3 text-muted bg-light border rounded">
+                                            Carregando observações...
+                                        </div>
+                                        <template v-else>
+                                            <div v-if="jovemOutroFicha.observacoes_extras" class="list-group-item">
+                                                <div class="d-flex justify-content-between align-items-start mb-1">
+                                                    <small class="text-muted"><i class="far fa-note-sticky"></i> Observação principal</small>
+                                                </div>
+                                                <p class="mb-0" style="white-space: pre-wrap;">{{ jovemOutroFicha.observacoes_extras }}</p>
+                                            </div>
+                                            <div v-for="obs in observacoesOutroJovem" :key="`obs-outro-${obs.id}`" class="list-group-item">
+                                                <div class="d-flex justify-content-between align-items-start mb-1">
+                                                    <small class="text-muted"><i class="far fa-clock"></i> {{ formatarDataHora(obs.created_at) }}</small>
+                                                </div>
+                                                <p class="mb-0" style="white-space: pre-wrap;">{{ obs.texto }}</p>
+                                            </div>
+                                            <div v-if="!jovemOutroFicha.observacoes_extras && !observacoesOutroJovem.length" class="text-center p-3 text-muted bg-light border rounded">
+                                                Nenhuma observação registrada neste perfil.
+                                            </div>
+                                        </template>
+                                    </div>
 
-                        <div v-show="abaFichaOutro === 'presencas'" class="ficha-card">
-                            <div class="ficha-pane-title">
-                                <h6>Presença</h6>
-                                <p>Eventos em que este jovem teve presença registrada.</p>
-                            </div>
-                            <div v-if="loadingPresencas" class="text-muted">Carregando presenças...</div>
-                            <div v-else-if="!presencasOutro.length" class="text-muted">Nenhuma presença registrada.</div>
-                            <div v-else class="ficha-list">
-                                <div class="ficha-list-item" v-for="pres in presencasOutro" :key="`pres-ficha-jovem-${pres.id}`">
-                                    <div class="fw-semibold">{{ pres.evento_titulo || 'Evento' }}</div>
-                                    <div class="small text-muted">
-                                        {{ formatarDataPresenca(pres.evento_data) }}
-                                        <span v-if="pres.registrado_em"> • {{ formatarDataHora(pres.registrado_em) }}</span>
+                                    <div class="card bg-light border-0">
+                                        <div class="card-body">
+                                            <h6 class="card-title">Adicionar Nova Observação</h6>
+                                            <label class="form-label small text-muted">A observação ficará salva como uma anotação de histórico na linha do tempo.</label>
+                                            <textarea class="form-control mb-2" rows="3" v-model.trim="novaObservacaoOutroJovem" placeholder="Digite aqui a informação especial..."></textarea>
+                                            <div class="text-end">
+                                                <button class="btn btn-success btn-sm" @click="adicionarObservacaoOutroJovem" :disabled="!jovemOutroFicha.id || !novaObservacaoOutroJovem.trim()">
+                                                    <i class="fa-solid fa-plus icon-accent"></i> Adicionar ao Histórico
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -1457,18 +1943,27 @@
                                         <span class="novo-jovem-panel-icon"><i class="fa-solid fa-people-roof"></i></span>
                                         <div>
                                             <strong>Dados básicos do casal</strong>
-                                            <span class="d-block">Cadastre primeiro tio e tia. Histórico, família e demais ajustes podem ser complementados depois na ficha completa.</span>
+                                            <span class="d-block">Cadastre primeiro tio e tia. Participação, família e demais ajustes podem ser complementados depois na ficha completa.</span>
                                         </div>
                                     </div>
                                     <div class="row g-3">
-                                        <div class="col-lg-12">
+                                        <div class="col-lg-6">
                                             <label class="text-muted small">Paróquia de origem</label>
-                                            <select class="form-select" v-model="formCasal.outro_ejc_id">
+                                            <select class="form-select"
+                                                v-model.number="formCasal.outro_ejc_id"
+                                                @change="sincronizarOutroEjcCasalSelecionado">
                                                 <option :value="null">Selecione...</option>
-                                                <option v-for="o in outrosEjcs" :key="`novo-outro-ejc-${o.id}`" :value="o.id">
+                                                <option v-for="o in outrosEjcs" :key="`casal-novo-outro-${o.id}`" :value="Number(o.id)">
                                                     {{ o.paroquia }}{{ o.nome ? ` - ${o.nome}` : '' }}
                                                 </option>
                                             </select>
+                                        </div>
+                                        <div class="col-lg-6">
+                                            <label class="text-muted small">Qual ECC fez</label>
+                                            <input class="form-control"
+                                                v-model.trim="formCasal.outro_ejc_nome_manual"
+                                                maxlength="160"
+                                                placeholder="Ex: 1º ECC">
                                         </div>
                                         <div class="col-12">
                                             <div class="row g-3">
@@ -1526,7 +2021,7 @@
                                         </div>
                                     </div>
                                     <div class="novo-casal-help">
-                                        Depois de salvar, a ficha completa fica disponível com histórico, família, observações e presenças.
+                                        Depois de salvar, a ficha completa fica disponível com participação no EJC, família e observações.
                                     </div>
                                 </div>
                             </div>
@@ -1535,8 +2030,8 @@
                         <div class="d-flex justify-content-between border-bottom mb-3">
                             <ul class="nav nav-tabs border-bottom-0 mb-0">
                                 <li class="nav-item"><button class="nav-link" :class="{active: abaCasal==='dados'}" @click="abaCasal='dados'; subAbaCasalDados='cadastro'"><i class="fa-solid fa-user icon-accent"></i> Dados Pessoais</button></li>
+                                <li class="nav-item"><button class="nav-link" :class="{active: abaCasal==='observacoes'}" @click="abaCasal='observacoes'; carregarObservacoesCasalExtras()"><i class="fa-solid fa-note-sticky icon-accent"></i> Observações</button></li>
                                 <li class="nav-item"><button class="nav-link" :class="{active: abaCasal==='jovens'}" @click="abaCasal='jovens'; carregarJovensCasal()"><i class="fa-solid fa-people-roof icon-accent"></i> Jovens</button></li>
-                                <li class="nav-item"><button class="nav-link" :class="{active: abaCasal==='presencas'}" @click="abaCasal='presencas'; carregarPresencasCasal()"><i class="fa-solid fa-square-check icon-accent"></i> Presença</button></li>
                             </ul>
                             <div class="pb-1 align-self-end" v-if="formCasal.id && abaCasal === 'dados'">
                                 <button v-if="!isEditingCasal" type="button" class="btn btn-edit-standard btn-sm" @click="iniciarEdicaoCasal">Editar</button>
@@ -1552,7 +2047,10 @@
                                                 <img :src="formCasal.foto_url || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(((formCasal.nome_tio || 'Tio') + ' e ' + (formCasal.nome_tia || 'Tia')).trim()) + '&background=e9ecef&color=6c757d&size=160')"
                                                     alt="Foto do casal"
                                                     class="rounded border shadow-sm object-fit-cover tios-profile-photo"
-                                                    :class="{ 'ficha-avatar-trigger': !isEditingCasal }">
+                                                    :class="{ 'ficha-avatar-trigger': !isEditingCasal }"
+                                                    :data-bs-toggle="!isEditingCasal ? 'modal' : null"
+                                                    :data-bs-target="!isEditingCasal ? '#modalVerFotoCasal' : null"
+                                                    :title="!isEditingCasal ? 'Ver foto ampliada' : ''">
                                                 <label v-if="isEditingCasal"
                                                     class="position-absolute bottom-0 end-0 rounded-circle d-flex justify-content-center align-items-center shadow cursor-pointer"
                                                     style="width: 32px; height: 32px; cursor: pointer; transform: translate(15%, 15%); background: #d9a650; border: 1px solid #d9a650;"
@@ -1594,10 +2092,10 @@
                                 </div>
                                 <div class="col-md-9">
                                     <div class="ficha-subtabs">
-                                        <button type="button" class="ficha-subtab" :class="{ active: subAbaCasalDados === 'cadastro' }" @click="subAbaCasalDados = 'cadastro'">Cadastro</button>
-                                        <button type="button" class="ficha-subtab" :class="{ active: subAbaCasalDados === 'participacao' }" @click="subAbaCasalDados = 'participacao'">Participação no EJC</button>
-                                        <button type="button" class="ficha-subtab" :class="{ active: subAbaCasalDados === 'familia' }" @click="subAbaCasalDados = 'familia'; carregarFamiliaresCasal()">Família</button>
-                                        <button type="button" class="ficha-subtab" :class="{ active: subAbaCasalDados === 'saude' }" @click="subAbaCasalDados = 'saude'">Saúde e Apoio</button>
+                                        <button type="button" :class="['ficha-subtab', 'btn-edit-standard', 'btn-sm', { active: subAbaCasalDados === 'cadastro' }]" @click="subAbaCasalDados = 'cadastro'">Cadastro</button>
+                                        <button type="button" :class="['ficha-subtab', 'btn-edit-standard', 'btn-sm', { active: subAbaCasalDados === 'participacao' }]" @click="subAbaCasalDados = 'participacao'">Participação no EJC</button>
+                                        <button type="button" :class="['ficha-subtab', 'btn-edit-standard', 'btn-sm', { active: subAbaCasalDados === 'familia' }]" @click="subAbaCasalDados = 'familia'; carregarFamiliaresCasal()">Família</button>
+                                        <button type="button" :class="['ficha-subtab', 'btn-edit-standard', 'btn-sm', { active: subAbaCasalDados === 'saude' }]" @click="subAbaCasalDados = 'saude'">Saúde e Apoio</button>
                                     </div>
                                     <fieldset :disabled="!isEditingCasal" class="border-0 p-0 m-0">
                                         <div class="ficha-subpane" v-show="subAbaCasalDados === 'cadastro'">
@@ -1616,10 +2114,14 @@
                                                 <div class="col-md-3"><label class="form-label">Telefone</label><input class="form-control" v-model.trim="formCasal.telefone_tia" maxlength="30"></div>
                                                 <div class="col-md-3"><label class="form-label">Nascimento</label><input type="text" class="form-control date-br" v-model="formCasal.data_nascimento_tia" placeholder="dd/mm/aaaa"></div>
                                                 <div class="col-md-6">
-                                                    <label class="form-label">Qual EJC fez</label>
-                                                    <select class="form-select" v-model="formCasal.outro_ejc_id">
+                                                    <label class="form-label">Qual ECC fez</label>
+                                                    <input class="form-control" v-model.trim="formCasal.outro_ejc_nome_manual" maxlength="160" placeholder="Ex: 1º ECC">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">Paróquia de origem</label>
+                                                    <select class="form-select" v-model.number="formCasal.outro_ejc_id" @change="sincronizarOutroEjcCasalSelecionado">
                                                         <option :value="null">Selecione...</option>
-                                                        <option v-for="o in outrosEjcs" :key="`outro-ejc-${o.id}`" :value="o.id">
+                                                        <option v-for="o in outrosEjcs" :key="`casal-edit-cad-outro-${o.id}`" :value="Number(o.id)">
                                                             {{ o.paroquia }}{{ o.nome ? ` - ${o.nome}` : '' }}
                                                         </option>
                                                     </select>
@@ -1641,13 +2143,17 @@
                                             </div>
                                             <div class="row g-3">
                                                 <div class="col-md-6">
-                                                    <label class="form-label">Paróquia</label>
-                                                    <select class="form-select" v-model="formCasal.outro_ejc_id">
+                                                    <label class="form-label">Paróquia de origem</label>
+                                                    <select class="form-select" v-model.number="formCasal.outro_ejc_id" @change="sincronizarOutroEjcCasalSelecionado">
                                                         <option :value="null">Selecione...</option>
-                                                        <option v-for="o in outrosEjcs" :key="`outro-ejc-part-${o.id}`" :value="o.id">
+                                                        <option v-for="o in outrosEjcs" :key="`casal-edit-part-outro-${o.id}`" :value="Number(o.id)">
                                                             {{ o.paroquia }}{{ o.nome ? ` - ${o.nome}` : '' }}
                                                         </option>
                                                     </select>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="form-label">ECC de origem</label>
+                                                    <input class="form-control" v-model.trim="formCasal.outro_ejc_nome_manual" maxlength="160" placeholder="Ex: 1º ECC">
                                                 </div>
                                                 <div class="col-12">
                                                     <label class="section-label-corporate"><i class="fas fa-briefcase"></i> Equipes de Trabalho (EJC {{ nomeMeuEJC }})</label>
@@ -1666,7 +2172,7 @@
                                                                     <span class="badge-role">Tios</span>
                                                                     <span class="badge-role">{{ obterNomeEquipeServico(item.srv) }}</span>
                                                                 </div>
-                                                                <button v-if="isEditingCasal" class="btn btn-icon-delete" @click="removerServicoCasal(item.idx)" title="Remover equipe"><i class="fa-solid fa-trash icon-accent"></i></button>
+                                                                <button v-if="isEditingCasal" type="button" class="btn-icon-delete" @click="removerServicoCasal(item.idx)" title="Remover equipe" aria-label="Remover equipe"><i class="fa-solid fa-trash icon-accent"></i></button>
                                                             </li>
                                                         </ul>
                                                         <div class="history-add-row" v-if="isEditingCasal">
@@ -1704,7 +2210,9 @@
                                                                     <div class="small text-muted">{{ rel.relation_label || '-' }} <span v-if="rel.descricao">• {{ rel.descricao }}</span></div>
                                                                     <div v-if="rel.telefone" class="small text-muted">{{ rel.telefone }}</div>
                                                                 </div>
-                                                                <button v-if="formCasal.id" type="button" class="btn btn-outline-danger btn-sm" @click="removerRelacaoFamiliarCasal(rel.id)">Remover</button>
+                                                                <button v-if="formCasal.id" type="button" class="btn-icon-delete" @click="removerRelacaoFamiliarCasal(rel.id)" title="Remover parentesco" aria-label="Remover parentesco">
+                                                                    <i class="fa-solid fa-trash icon-accent"></i>
+                                                                </button>
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1819,6 +2327,42 @@
                             </div>
                         </div>
 
+                        <div v-else-if="abaCasal==='observacoes'">
+                            <div class="row g-3">
+                                <div class="col-12">
+                                    <h6 class="m-0 mb-3">Histórico de Observações e Informações Especiais</h6>
+                                    <div class="list-group mb-3">
+                                        <div class="list-group-item" v-if="formCasal.observacoes">
+                                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                                <small class="text-muted"><i class="far fa-note-sticky"></i> Observação principal</small>
+                                            </div>
+                                            <p class="mb-0" style="white-space: pre-wrap;">{{ formCasal.observacoes }}</p>
+                                        </div>
+                                        <div v-for="obs in observacoesExtrasCasal" :key="`obs-tio-${obs.id}`" class="list-group-item">
+                                            <div class="d-flex justify-content-between align-items-start mb-1">
+                                                <small class="text-muted"><i class="far fa-clock"></i> {{ formatarDataHora(obs.created_at) }}</small>
+                                            </div>
+                                            <p class="mb-0" style="white-space: pre-wrap;">{{ obs.observacao }}</p>
+                                        </div>
+                                        <div v-if="!formCasal.observacoes && !observacoesExtrasCasal.length" class="text-center p-3 text-muted bg-light border rounded">
+                                            Nenhuma observação registrada neste perfil.
+                                        </div>
+                                    </div>
+                                    <div class="card bg-light border-0">
+                                        <div class="card-body">
+                                            <h6 class="card-title">Adicionar Nova Observação</h6>
+                                            <label class="form-label small text-muted">A observação ficará salva como uma anotação de histórico na linha do tempo.</label>
+                                            <textarea class="form-control mb-2" rows="3" v-model.trim="novaObservacaoCasal" placeholder="Digite aqui a informação especial..."></textarea>
+                                            <div class="text-end">
+                                                <button class="btn btn-success btn-sm" @click="adicionarObservacaoCasalExtra" :disabled="!formCasal.id || !novaObservacaoCasal.trim()"><i class="fa-solid fa-plus icon-accent"></i> Adicionar ao Histórico</button>
+                                            </div>
+                                            <div class="small text-muted mt-2" v-if="!formCasal.id">Salve o casal antes de adicionar observações extras.</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div v-else-if="abaCasal==='jovens'">
                             <div v-if="!formCasal.id" class="text-muted">Salve o casal para vincular jovens.</div>
                             <div v-else>
@@ -1844,26 +2388,9 @@
                                                     {{ j.telefone || '-' }} • {{ j.circulo || '-' }} • {{ formatarIdade(j.data_nascimento) }}
                                                 </div>
                                             </div>
-                                            <button class="btn btn-sm btn-outline-danger" @click="removerJovemCasal(j)">Remover</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div v-else>
-                            <div class="row g-3">
-                                <div class="col-12">
-                                    <h6 class="m-0 mb-3">Eventos com Presença Registrada</h6>
-                                    <div v-if="loadingPresencasCasal" class="text-muted">Carregando presenças...</div>
-                                    <div v-else class="list-group">
-                                        <div class="list-group-item" v-for="pres in presencasCasal" :key="`pres-casal-${pres.id}`">
-                                            <div class="fw-semibold">{{ pres.evento_titulo || 'Evento sem título' }}</div>
-                                            <small class="text-muted d-block">Data do evento: {{ pres.evento_data ? formatarDataPresenca(pres.evento_data) : 'Não informada' }}</small>
-                                            <small class="text-muted">Registrado em: {{ pres.registrado_em ? formatarDataHora(pres.registrado_em) : 'Não informado' }}</small>
-                                        </div>
-                                        <div v-if="!presencasCasal.length" class="text-center p-3 text-muted bg-light border rounded">
-                                            Nenhuma presença registrada.
+                                            <button type="button" class="btn-icon-delete" @click="removerJovemCasal(j)" title="Remover jovem" aria-label="Remover jovem">
+                                                <i class="fa-solid fa-trash icon-accent"></i>
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -1872,9 +2399,45 @@
                         </template>
                     </div>
                     <div class="modal-footer bg-light border-top">
+                        <button
+                            v-if="isEditingCasal && formCasal.id"
+                            class="btn btn-danger me-auto"
+                            @click="excluirCasal(formCasal)">
+                            <i class="fa-solid fa-trash icon-accent"></i> Deletar Casal
+                        </button>
                         <button v-if="isEditingCasal" class="btn btn-soft-secondary" @click="cancelarEdicaoCasal">Cancelar</button>
                         <button v-else class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
                         <button v-if="isEditingCasal" class="btn btn-success" @click="salvarCasal"><i class="fa-solid fa-floppy-disk icon-accent"></i> {{ formCasal.id ? 'Salvar Alterações' : 'Criar Casal' }}</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="modalVerFotoOutroJovem" tabindex="-1" aria-hidden="true" style="z-index: 1060;">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content bg-transparent border-0 shadow-none">
+                    <div class="modal-header border-0 position-absolute w-100 d-flex justify-content-end p-2" style="z-index: 1061;">
+                        <button type="button" class="btn-close btn-close-white" data-bs-toggle="modal" data-bs-target="#modalEditarOutroJovem" style="background-color: rgba(0,0,0,0.5); border-radius: 50%; opacity: 1; padding: 0.5rem; margin: 10px;"></button>
+                    </div>
+                    <div class="modal-body p-0 text-center">
+                        <img :src="jovemOutroFicha.foto_url || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(jovemOutroFicha.nome_completo || 'J') + '&background=e9ecef&color=6c757d&size=800')"
+                            class="img-fluid rounded shadow"
+                            style="max-height: 80vh; max-width: 100%; object-fit: contain; background-color: #f8f9fa;">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="modalVerFotoCasal" tabindex="-1" aria-hidden="true" style="z-index: 1060;">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content bg-transparent border-0 shadow-none">
+                    <div class="modal-header border-0 position-absolute w-100 d-flex justify-content-end p-2" style="z-index: 1061;">
+                        <button type="button" class="btn-close btn-close-white" data-bs-toggle="modal" data-bs-target="#modalCasal" style="background-color: rgba(0,0,0,0.5); border-radius: 50%; opacity: 1; padding: 0.5rem; margin: 10px;"></button>
+                    </div>
+                    <div class="modal-body p-0 text-center">
+                        <img :src="formCasal.foto_url || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(((formCasal.nome_tio || 'Tio') + ' e ' + (formCasal.nome_tia || 'Tia')).trim()) + '&background=e9ecef&color=6c757d&size=800')"
+                            class="img-fluid rounded shadow"
+                            style="max-height: 80vh; max-width: 100%; object-fit: contain; background-color: #f8f9fa;">
                     </div>
                 </div>
             </div>
@@ -1926,6 +2489,14 @@
                     filtroNome: '',
                     filtroTelefone: '',
                     filtroEjcOrigem: '',
+                    filtroMusico: '',
+                    filtroTermosUso: '',
+                    filtroIdadeMin: '',
+                    filtroIdadeMax: '',
+                    filtroSexo: '',
+                    filtroMoita: '',
+                    filtroPcd: '',
+                    filtroRestricaoAlimentar: '',
                     modalNovoInstance: null,
                     modalEditarInstance: null,
                     modalPresencasInstance: null,
@@ -1955,6 +2526,7 @@
                     ],
                     jovemOutroFicha: {
                         id: null,
+                        foto_url: '',
                         nome_completo: '',
                         apelido: '',
                         telefone: '',
@@ -1969,11 +2541,15 @@
                         restricao_alimentar: false,
                         detalhes_restricao: '',
                         eh_musico: false,
+                        ja_foi_moita_inconfidentes: 0,
+                        moita_ejc_id: '',
+                        equipe_saude: false,
                         instrumentos_musicais: [],
                         nao_serve_ejc: false,
                         motivo_nao_serve_ejc: '',
                         outro_ejc_id: '',
                         outro_ejc_nome: '',
+                        outro_ejc_paroquia: '',
                         outro_ejc_numero: '',
                         observacoes_extras: '',
                         termos_aceitos_em: null
@@ -1988,6 +2564,7 @@
                     },
                     editandoOutroEjc: false,
                     salvandoOutroEjc: false,
+                    abaModalOutroEjc: 'informacoes',
                     formOutroEjc: {
                         id: null,
                         nome: '',
@@ -2002,7 +2579,6 @@
                     novaEquipeHistoricoOutro: { equipe_id: '', equipe_nome: '', ejc_id: '', papel: 'Membro', subfuncao: '' },
                     ejcs: [],
                     outrosEjcs: [],
-                    funcoesMoita: [],
                     instrumentosDisponiveis: ['Voz', 'Violao', 'Guitarra', 'Baixo', 'Teclado', 'Bateria', 'Percussao', 'Flauta', 'Saxofone', 'Violino', 'Cajon', 'Ukulele'],
                     opcoesRestricaoAlimentar: ['Alergia a amendoim', 'Alergia a castanhas', 'Alergia a frutos do mar', 'APLV (Alergia à proteína do leite de vaca)', 'Intolerante à lactose', 'Intolerante a glúten (Celíaco)', 'Não come carne vermelha', 'Não come carne de porco', 'Vegetariano', 'Vegano', 'Outras'],
                     cores: ['Rosa', 'Azul', 'Vermelho', 'Verde', 'Amarelo', 'Marrom'],
@@ -2027,8 +2603,7 @@
                         detalhes_restricao: '',
                         eh_musico: false,
                         ja_foi_moita_inconfidentes: 0,
-                        moita_ejc_id: '',
-                        moita_funcao: ''
+                        moita_ejc_id: ''
                     },
                     edit: {},
                     colunasVisiveisJovens: {
@@ -2036,7 +2611,12 @@
                         Telefone: true,
                         EjcOrigem: true,
                         Musico: true,
-                        TermosUso: true
+                        TermosUso: true,
+                        Idade: true,
+                        Sexo: true,
+                        Moita: true,
+                        Pcd: true,
+                        RestricaoAlimentar: true
                     },
                     colunasVisiveisTios: {
                         Casal: true,
@@ -2075,6 +2655,8 @@
                     abaCasal: 'dados',
                     subAbaCasalDados: 'cadastro',
                     isEditingCasal: false,
+                    comissoesCasal: [],
+                    loadingComissoesCasal: false,
                     formCasalBackup: null,
                     formCasal: {
                         id: null,
@@ -2087,6 +2669,8 @@
                         data_nascimento_tia: '',
                         origem_tipo: 'OUTRO_EJC',
                         outro_ejc_id: null,
+                        outro_ejc_nome_manual: '',
+                        outro_ejc_paroquia_manual: '',
                         ecc_id: null,
                         equipe_ids: [],
                         servicos: [],
@@ -2128,9 +2712,14 @@
                     }
                 },
                 placeholderPesquisaRapida() {
-                    if (this.aba === 'membros') return 'Pesquisar por nome, telefone, EJC, círculo ou termos';
+                    if (this.aba === 'membros') return 'Pesquisar por nome, telefone, EJC, idade, sexo, moita ou termos';
                     if (this.aba === 'tios') return 'Pesquisar por casal, telefones ou EJC de origem';
                     return 'Pesquisar por nome, paróquia, bairro ou observação';
+                },
+                tituloBotaoNovoAtual() {
+                    if (this.aba === 'membros') return 'Novo membro';
+                    if (this.aba === 'tios') return 'Novo tio';
+                    return 'Novo EJC';
                 },
                 mostrarFiltrosAbaAtual() {
                     return !!(this.mostrarFiltrosAvancados && this.mostrarFiltrosAvancados[this.aba]);
@@ -2156,15 +2745,30 @@
                     const tel = this.normalizarTextoBusca(this.filtroTelefone);
                     const telDigitos = this.apenasDigitos(this.filtroTelefone);
                     const origem = this.normalizarTextoBusca(this.filtroEjcOrigem);
+                    const sexo = this.normalizarTextoBusca(this.filtroSexo);
+                    const idadeMin = Number(this.filtroIdadeMin);
+                    const idadeMax = Number(this.filtroIdadeMax);
+                    const usarIdadeMin = Number.isFinite(idadeMin) && this.filtroIdadeMin !== '' && this.filtroIdadeMin !== null;
+                    const usarIdadeMax = Number.isFinite(idadeMax) && this.filtroIdadeMax !== '' && this.filtroIdadeMax !== null;
                     return this.itens.filter((i) => {
                         const txtNome = this.normalizarTextoBusca(i && i.nome_completo);
                         const txtTel = this.normalizarTextoBusca(i && i.telefone);
                         const txtOrigem = this.normalizarTextoBusca(this.formatarOrigem(i));
                         const txtTelDigitos = this.apenasDigitos(i && i.telefone);
+                        const txtSexo = this.normalizarSexoFiltro(i && i.sexo);
+                        const idade = this.calcularIdadeFicha(i && i.data_nascimento);
                         return this.registroAtendePesquisaRapidaMembroOutroEjc(i, termos)
                             && (!nome || txtNome.includes(nome))
                             && (!tel || txtTel.includes(tel) || (telDigitos && txtTelDigitos.includes(telDigitos)))
-                            && (!origem || txtOrigem.includes(origem));
+                            && (!origem || txtOrigem.includes(origem))
+                            && (!sexo || txtSexo === sexo)
+                            && this.filtroBooleanoAtende(this.filtroMusico, i && i.eh_musico)
+                            && this.filtroBooleanoAtende(this.filtroTermosUso, i && i.termos_aceitos_em)
+                            && this.filtroBooleanoAtende(this.filtroMoita, i && i.ja_foi_moita_inconfidentes)
+                            && this.filtroBooleanoAtende(this.filtroPcd, i && i.deficiencia)
+                            && this.filtroBooleanoAtende(this.filtroRestricaoAlimentar, i && i.restricao_alimentar)
+                            && (!usarIdadeMin || (idade !== null && idade >= idadeMin))
+                            && (!usarIdadeMax || (idade !== null && idade <= idadeMax));
                     });
                 },
                 casaisOutros() {
@@ -2188,11 +2792,6 @@
                     });
                 },
                 totalAbaAtual() {
-                    if (this.aba === 'membros') return this.itens.length;
-                    if (this.aba === 'tios') return this.casaisOutros.length;
-                    return this.outrosEjcs.length;
-                },
-                totalFiltradoAbaAtual() {
                     if (this.aba === 'membros') return this.itensFiltrados.length;
                     if (this.aba === 'tios') return this.casaisOutrosFiltrados.length;
                     return this.outrosEjcsFiltrados.length;
@@ -2222,8 +2821,35 @@
                 outroEjcLabelAtualCasal() {
                     const outroId = Number(this.formCasal && this.formCasal.outro_ejc_id);
                     const outro = (this.outrosEjcs || []).find((item) => Number(item.id) === outroId);
-                    if (!outro) return 'Não informado';
-                    return `${outro.paroquia || '-'}${outro.nome ? ` - ${outro.nome}` : ''}`;
+                    if (outro) {
+                        return `${outro.paroquia || '-'}${outro.nome ? ` - ${outro.nome}` : ''}`;
+                    }
+                    const paroquiaManual = String(this.formCasal && this.formCasal.outro_ejc_paroquia_manual || '').trim();
+                    const eccManual = String(this.formCasal && this.formCasal.outro_ejc_nome_manual || '').trim();
+                    if (paroquiaManual || eccManual) {
+                        return [paroquiaManual, eccManual].filter(Boolean).join(' - ') || 'Não informado';
+                    }
+                    return 'Não informado';
+                },
+                jovensVinculadosOutroEjcAtual() {
+                    const alvo = Number(this.formOutroEjc && this.formOutroEjc.id);
+                    if (!alvo) return [];
+                    return (this.itens || [])
+                        .filter((item) => Number(item && item.outro_ejc_id) === alvo)
+                        .slice()
+                        .sort((a, b) => String(a && a.nome_completo || '').localeCompare(String(b && b.nome_completo || ''), 'pt-BR', { sensitivity: 'base' }));
+                },
+                tiosVinculadosOutroEjcAtual() {
+                    const alvo = Number(this.formOutroEjc && this.formOutroEjc.id);
+                    if (!alvo) return [];
+                    return this.casaisOutros
+                        .filter((item) => Number(item && item.outro_ejc_id) === alvo)
+                        .slice()
+                        .sort((a, b) => {
+                            const nomeA = `${a && a.nome_tio || ''} ${a && a.nome_tia || ''}`.trim();
+                            const nomeB = `${b && b.nome_tio || ''} ${b && b.nome_tia || ''}`.trim();
+                            return nomeA.localeCompare(nomeB, 'pt-BR', { sensitivity: 'base' });
+                        });
                 }
             },
             methods: {
@@ -2232,6 +2858,17 @@
                     if (base === 'membros' || base === 'membro' || base === 'jovens' || base === 'jovem') return 'membros';
                     if (base === 'tios' || base === 'tio') return 'tios';
                     return 'outros';
+                },
+                abrirNovoRegistroAbaAtual() {
+                    if (this.aba === 'tios') {
+                        this.abrirNovoCasalOutroEjc();
+                        return;
+                    }
+                    if (this.aba === 'membros') {
+                        this.abrirModalNovo();
+                        return;
+                    }
+                    this.abrirModalNovoOutroEjc();
                 },
                 definirAba(novaAba, replaceHistory = true) {
                     const abaNormalizada = this.normalizarAba(novaAba);
@@ -2250,6 +2887,14 @@
                         this.filtroNome = '';
                         this.filtroTelefone = '';
                         this.filtroEjcOrigem = '';
+                        this.filtroMusico = '';
+                        this.filtroTermosUso = '';
+                        this.filtroIdadeMin = '';
+                        this.filtroIdadeMax = '';
+                        this.filtroSexo = '';
+                        this.filtroMoita = '';
+                        this.filtroPcd = '';
+                        this.filtroRestricaoAlimentar = '';
                         return;
                     }
                     if (this.aba === 'tios') {
@@ -2298,6 +2943,7 @@
                     return termos.every((termo) => texto.includes(termo));
                 },
                 montarTextoPesquisaMembroOutroEjc(item) {
+                    const idade = this.calcularIdadeFicha(item && item.data_nascimento);
                     const telefoneDigitos = this.apenasDigitos(item && item.telefone);
                     const partes = [
                         item && item.nome_completo,
@@ -2309,10 +2955,15 @@
                         item && item.circulo,
                         item && item.estado_civil,
                         item && item.sexo,
+                        idade !== null ? `${idade}` : null,
+                        idade !== null ? `${idade} anos` : null,
                         item && item.outro_ejc_numero,
                         this.formatarOrigem(item),
                         item && item.eh_musico ? 'musico sim' : 'musico nao',
-                        item && item.termos_aceitos_em ? 'termos aceitos' : 'termos nao aceitos'
+                        item && item.termos_aceitos_em ? 'termos aceitos' : 'termos nao aceitos',
+                        item && item.ja_foi_moita_inconfidentes ? 'moita sim' : 'moita nao',
+                        item && item.deficiencia ? 'pcd sim deficiencia sim' : 'pcd nao deficiencia nao',
+                        item && item.restricao_alimentar ? 'restricao alimentar sim' : 'restricao alimentar nao'
                     ];
                     return this.normalizarTextoBusca(partes.filter(Boolean).join(' '));
                 },
@@ -2349,6 +3000,29 @@
                     const alvo = Number(outroEjcId);
                     return this.casaisOutros.filter((item) => Number(item && item.outro_ejc_id) === alvo).length;
                 },
+                filtroBooleanoAtende(valorFiltro, valorRegistro) {
+                    if (!valorFiltro) return true;
+                    if (valorFiltro === 'sim') return !!valorRegistro;
+                    if (valorFiltro === 'nao') return !valorRegistro;
+                    return true;
+                },
+                formatarIdadeLista(dataIso) {
+                    const idade = this.calcularIdadeFicha(dataIso);
+                    return idade === null ? '-' : `${idade} anos`;
+                },
+                formatarSexoLista(sexo) {
+                    const normalizado = this.normalizarSexoFiltro(sexo);
+                    if (!normalizado) return '-';
+                    if (normalizado === 'masculino') return 'Masculino';
+                    if (normalizado === 'feminino') return 'Feminino';
+                    return sexo;
+                },
+                normalizarSexoFiltro(sexo) {
+                    const normalizado = this.normalizarTextoBusca(sexo);
+                    if (normalizado === 'm' || normalizado === 'masc') return 'masculino';
+                    if (normalizado === 'f' || normalizado === 'fem') return 'feminino';
+                    return normalizado;
+                },
                 async carregarTudo() {
                     await Promise.all([
                         this.carregarNomeMeuEJC(),
@@ -2380,6 +3054,7 @@
                 },
                 resetFormOutroEjc() {
                     this.editandoOutroEjc = false;
+                    this.abaModalOutroEjc = 'informacoes';
                     this.formOutroEjc = {
                         id: null,
                         nome: '',
@@ -2398,6 +3073,7 @@
                 },
                 editarOutroEjc(item) {
                     this.editandoOutroEjc = true;
+                    this.abaModalOutroEjc = 'informacoes';
                     this.formOutroEjc = {
                         id: item && item.id ? item.id : null,
                         nome: item && item.nome ? item.nome : '',
@@ -2536,7 +3212,9 @@
                 async carregarCasais() {
                     this.loadingCasais = true;
                     try {
-                        const res = await fetch('/api/tios/casais?tipo=OUTRO_EJC');
+                        const res = await fetch(`/api/tios/casais?tipo=OUTRO_EJC&_ts=${Date.now()}`, {
+                            cache: 'no-store'
+                        });
                         const data = await res.json().catch(() => ([]));
                         this.casais = res.ok && Array.isArray(data) ? data : [];
                     } catch (err) {
@@ -2561,6 +3239,11 @@
                         EjcOrigem: 'EJC de origem',
                         Musico: 'Músico',
                         TermosUso: 'Termos de uso',
+                        Idade: 'Idade',
+                        Sexo: 'Sexo',
+                        Moita: 'Moita',
+                        Pcd: 'PcD',
+                        RestricaoAlimentar: 'Restrição alimentar',
                         Casal: 'Casal',
                         Telefones: 'Telefones'
                     };
@@ -2603,6 +3286,8 @@
                     if (Number.isInteger(numeroBruto) && numeroBruto > 0) {
                         return `${this.numeroParaRomano(numeroBruto)} EJC ${this.nomeMeuEJC || srv.ejc_paroquia || ''}`.trim();
                     }
+                    const edicaoTexto = String(srv.display_ejc || srv.edicao_ejc || '').trim();
+                    if (edicaoTexto) return edicaoTexto;
                     const ejcId = Number(srv.ejc_id || 0);
                     const ejc = (this.ejcs || []).find((e) => Number(e.id) === ejcId);
                     if (ejc && ejc.numero) {
@@ -2648,6 +3333,26 @@
                     const romano = this.numeroParaRomano(numero);
                     return romano ? `${romano} ${this.jovemOutroFicha?.outro_ejc_nome ? `(${this.jovemOutroFicha.outro_ejc_nome})` : ''}`.trim() : 'Não informado';
                 },
+                formatarEdicaoMoitaOutro(ejcId) {
+                    const ejc = (this.ejcs || []).find((registro) => String(registro && registro.id) === String(ejcId));
+                    return ejc ? this.formatarEjcOption(ejc) : '';
+                },
+                formatarHistoricoEquipeOutro(item) {
+                    if (!item) return 'Edição não informada';
+                    const numeroBruto = Number(item.display_ejc || item.ejc_numero || 0);
+                    if (Number.isInteger(numeroBruto) && numeroBruto > 0) {
+                        return `${this.numeroParaRomano(numeroBruto)} EJC ${this.nomeMeuEJC || item.paroquia_ejc || item.ejc_paroquia || ''}`.trim();
+                    }
+                    const edicaoTexto = String(item.display_ejc || item.edicao_ejc || '').trim();
+                    if (edicaoTexto) return edicaoTexto;
+                    if (item.edicao_ejc) return String(item.edicao_ejc);
+                    const ejcId = Number(item.ejc_id || 0);
+                    const ejc = (this.ejcs || []).find((registro) => Number(registro.id) === ejcId);
+                    if (ejc && ejc.numero) {
+                        return `${this.numeroParaRomano(ejc.numero)} EJC ${this.nomeMeuEJC || ejc.paroquia || ''}`.trim();
+                    }
+                    return 'Edição não informada';
+                },
                 normalizarInstrumentosOutro(valor) {
                     if (!valor) return [];
                     if (Array.isArray(valor)) return valor.filter(Boolean);
@@ -2663,6 +3368,16 @@
                 onMusicoToggleOutroFicha() {
                     if (!this.jovemOutroFicha.eh_musico) this.jovemOutroFicha.instrumentos_musicais = [];
                 },
+                onMoitaToggleNovoOutroJovem() {
+                    if (!this.novo.ja_foi_moita_inconfidentes) {
+                        this.novo.moita_ejc_id = '';
+                    }
+                },
+                onMoitaToggleOutroFicha() {
+                    if (!this.jovemOutroFicha.ja_foi_moita_inconfidentes) {
+                        this.jovemOutroFicha.moita_ejc_id = '';
+                    }
+                },
                 normalizarCamposSaudeCasal() {
                     if (!this.formCasal.deficiencia_tio) this.formCasal.qual_deficiencia_tio = '';
                     if (!this.formCasal.restricao_alimentar_tio) this.formCasal.detalhes_restricao_tio = '';
@@ -2676,6 +3391,73 @@
                         return JSON.parse(JSON.stringify(payload || {}));
                     } catch (_) {
                         return { ...(payload || {}) };
+                    }
+                },
+                async resolverOutroEjcCasalId() {
+                    const outroEjcId = Number(this.formCasal && this.formCasal.outro_ejc_id || 0);
+                    if (outroEjcId > 0) {
+                        const outroSelecionado = (this.outrosEjcs || []).find((item) => Number(item && item.id) === outroEjcId);
+                        if (outroSelecionado) {
+                            return {
+                                id: Number(outroSelecionado.id),
+                                nome: String(outroSelecionado.nome || '').trim(),
+                                paroquia: String(outroSelecionado.paroquia || '').trim()
+                            };
+                        }
+                    }
+
+                    const nome = String(this.formCasal && this.formCasal.outro_ejc_nome_manual || '').trim();
+                    const paroquia = String(this.formCasal && this.formCasal.outro_ejc_paroquia_manual || '').trim();
+
+                    if (!nome || !paroquia) {
+                        return { error: 'Selecione a paróquia de origem e informe qual ECC o casal fez.' };
+                    }
+
+                    const nomeNorm = this.normalizarTextoBusca(nome);
+                    const paroquiaNorm = this.normalizarTextoBusca(paroquia);
+                    const encontrado = (this.outrosEjcs || []).find((item) =>
+                        this.normalizarTextoBusca(item && item.nome) === nomeNorm
+                        && this.normalizarTextoBusca(item && item.paroquia) === paroquiaNorm
+                    );
+
+                    if (encontrado && encontrado.id) {
+                        return { id: Number(encontrado.id), nome: encontrado.nome || nome, paroquia: encontrado.paroquia || paroquia };
+                    }
+
+                    try {
+                        const res = await fetch('/api/outros-ejcs', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                nome,
+                                paroquia,
+                                bairro: '',
+                                observacoes: null
+                            })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok || !data.id) {
+                            return { error: data.error || 'Não foi possível salvar a paróquia/ECC de origem.' };
+                        }
+                        await this.carregarOutrosEjcs();
+                        return { id: Number(data.id), nome, paroquia };
+                    } catch (err) {
+                        console.error('Erro ao resolver outro EJC do casal:', err);
+                        return { error: 'Não foi possível salvar a paróquia/ECC de origem.' };
+                    }
+                },
+                sincronizarOutroEjcCasalSelecionado() {
+                    const outroEjcId = Number(this.formCasal && this.formCasal.outro_ejc_id || 0);
+                    const outroSelecionado = (this.outrosEjcs || []).find((item) => Number(item && item.id) === outroEjcId);
+                    if (!outroSelecionado) {
+                        this.formCasal.outro_ejc_id = null;
+                        this.formCasal.outro_ejc_paroquia_manual = '';
+                        return;
+                    }
+                    this.formCasal.outro_ejc_id = Number(outroSelecionado.id);
+                    this.formCasal.outro_ejc_paroquia_manual = String(outroSelecionado.paroquia || '').trim();
+                    if (!String(this.formCasal.outro_ejc_nome_manual || '').trim()) {
+                        this.formCasal.outro_ejc_nome_manual = String(outroSelecionado.nome || '').trim();
                     }
                 },
                 iniciarEdicaoCasal() {
@@ -2697,6 +3479,90 @@
                     const diff = Date.now() - dt.getTime();
                     const idade = Math.floor(diff / (365.25 * 24 * 60 * 60 * 1000));
                     return Number.isFinite(idade) ? `${idade} anos` : '-';
+                },
+                async carregarComissoesCasal() {
+                    this.abaCasal = 'historico';
+                    if (!this.formCasal || !this.formCasal.id) {
+                        this.comissoesCasal = [];
+                        return;
+                    }
+                    this.loadingComissoesCasal = true;
+                    try {
+                        const res = await fetch(`/api/tios/casais/${this.formCasal.id}/comissoes`);
+                        const data = await res.json().catch(() => ([]));
+                        this.comissoesCasal = res.ok && Array.isArray(data) ? data.filter(Boolean) : [];
+                        if (!this.comissoesCasal.length) {
+                            const resCoord = await fetch('/api/coordenadores');
+                            const dataCoord = await resCoord.json().catch(() => ([]));
+                            const coordenacoes = resCoord.ok && Array.isArray(dataCoord) ? dataCoord : [];
+                            this.comissoesCasal = coordenacoes
+                                .filter((coord) => Array.isArray(coord.membros) && coord.membros.some((m) => String(m.membro_tipo || '').toUpperCase() === 'TIO' && Number(m.tio_casal_id) === Number(this.formCasal.id)))
+                                .map((coord) => ({
+                                    id: `coord-tio-${coord.id}-${this.formCasal.id}`,
+                                    tipo: 'COORDENACAO',
+                                    coordenacao_nome: coord.nome || '',
+                                    coordenacao_pasta_nome: coord.pasta_nome || coord.nome || '',
+                                    coordenacao_pasta_caminho: coord.pasta_nome || coord.nome || '',
+                                    coordenacao_periodo: coord.periodo || ''
+                                }));
+                        }
+                    } catch (err) {
+                        console.error('Erro ao carregar comissões do casal:', err);
+                        this.comissoesCasal = [];
+                    } finally {
+                        this.loadingComissoesCasal = false;
+                    }
+                },
+                formatarTipoComissaoCasal(tipo) {
+                    const mapa = {
+                        GARCOM_EQUIPE: '<i class="fa-solid fa-utensils icon-accent me-1"></i>Equipe de Garçom',
+                        COORDENACAO: '<i class="fa-solid fa-compass icon-accent me-1"></i>Coordenação',
+                        DIRIGENTE: '<i class="fa-solid fa-bullseye icon-accent me-1"></i>Dirigente',
+                        GARCOM_OUTRO: '<i class="fa-solid fa-utensils icon-accent me-1"></i>Garçom em outro EJC'
+                    };
+                    return mapa[tipo] || tipo || 'Comissão';
+                },
+                async carregarObservacoesCasalExtras() {
+                    if (!this.formCasal || !this.formCasal.id) {
+                        this.observacoesExtrasCasal = [];
+                        return;
+                    }
+                    try {
+                        const res = await fetch(`/api/tios/casais/${this.formCasal.id}/observacoes`);
+                        const data = await res.json().catch(() => ([]));
+                        this.observacoesExtrasCasal = res.ok && Array.isArray(data) ? data : [];
+                    } catch (err) {
+                        console.error('Erro ao carregar observações extras do casal:', err);
+                        this.observacoesExtrasCasal = [];
+                    }
+                },
+                async adicionarObservacaoCasalExtra() {
+                    if (!this.formCasal || !this.formCasal.id) {
+                        alert('Salve o casal antes de adicionar observações.');
+                        return;
+                    }
+                    const observacao = String(this.novaObservacaoCasal || '').trim();
+                    if (!observacao) {
+                        alert('Informe uma observação.');
+                        return;
+                    }
+                    try {
+                        const res = await fetch(`/api/tios/casais/${this.formCasal.id}/observacoes`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ observacao })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao salvar observação.');
+                            return;
+                        }
+                        this.novaObservacaoCasal = '';
+                        await this.carregarObservacoesCasalExtras();
+                    } catch (err) {
+                        console.error('Erro ao salvar observação extra:', err);
+                        alert('Erro ao salvar observação.');
+                    }
                 },
                 async carregarFamiliaresCasal() {
                     if (!this.formCasal || !this.formCasal.id) {
@@ -2963,8 +3829,7 @@
                         detalhes_restricao: '',
                         eh_musico: false,
                         ja_foi_moita_inconfidentes: 0,
-                        moita_ejc_id: '',
-                        moita_funcao: ''
+                        moita_ejc_id: ''
                     };
                 },
                 formatarDataInput(data) {
@@ -3019,6 +3884,7 @@
                         this.historicoEquipesOutroJovem = Array.isArray(item.historico_equipes) ? item.historico_equipes : [];
                         this.jovemOutroFicha = {
                             id: data.id || item.jovem_id,
+                            foto_url: data.foto_url || '',
                             nome_completo: data.nome_completo || '',
                             apelido: data.apelido || '',
                             telefone: data.telefone || '',
@@ -3033,17 +3899,21 @@
                             restricao_alimentar: !!data.restricao_alimentar,
                             detalhes_restricao: data.detalhes_restricao || '',
                             eh_musico: !!data.eh_musico,
+                            ja_foi_moita_inconfidentes: data.ja_foi_moita_inconfidentes ? 1 : 0,
+                            moita_ejc_id: data.moita_ejc_id || '',
+                            equipe_saude: !!data.equipe_saude,
                             instrumentos_musicais: this.normalizarInstrumentosOutro(data.instrumentos_musicais),
                             nao_serve_ejc: !!data.nao_serve_ejc,
                             motivo_nao_serve_ejc: data.motivo_nao_serve_ejc || '',
                             outro_ejc_id: data.outro_ejc_id || '',
                             outro_ejc_nome: data.outro_ejc_nome || '',
+                            outro_ejc_paroquia: data.outro_ejc_paroquia || '',
                             outro_ejc_numero: data.outro_ejc_numero || '',
                             observacoes_extras: data.observacoes_extras || '',
                             termos_aceitos_em: data.termos_aceitos_em || null
                         };
                         this.jovemOutroFichaOriginal = JSON.parse(JSON.stringify(this.jovemOutroFicha));
-                        await Promise.all([this.carregarObservacoesOutro(), this.carregarPresencasOutro(), this.carregarFamiliaresOutroJovem(this.jovemOutroFicha.id), this.carregarPapeisEquipeOutro(), this.carregarHistoricoEquipesOutroJovem(this.jovemOutroFicha.id)]);
+                        await Promise.all([this.carregarObservacoesOutro(), this.carregarFamiliaresOutroJovem(this.jovemOutroFicha.id), this.carregarPapeisEquipeOutro(), this.carregarHistoricoEquipesOutroJovem(this.jovemOutroFicha.id)]);
                         if (!this.modalEditarInstance) {
                             this.modalEditarInstance = new bootstrap.Modal(document.getElementById('modalEditarOutroJovem'));
                         }
@@ -3098,8 +3968,7 @@
                                 detalhes_restricao: data.detalhes_restricao || '',
                                 eh_musico: !!data.eh_musico,
                                 ja_foi_moita_inconfidentes: data.ja_foi_moita_inconfidentes ? 1 : 0,
-                                moita_ejc_id: data.moita_ejc_id || '',
-                                moita_funcao: data.moita_funcao || ''
+                                moita_ejc_id: data.moita_ejc_id || ''
                             };
                         } catch (err) {
                             console.error(err);
@@ -3116,6 +3985,10 @@
                     if (!this.jovemOutroFicha.id) return;
                     if (!this.jovemOutroFicha.nome_completo || !this.jovemOutroFicha.telefone || !this.jovemOutroFicha.outro_ejc_id) {
                         alert('Preencha nome, telefone e o EJC de origem.');
+                        return;
+                    }
+                    if (this.jovemOutroFicha.ja_foi_moita_inconfidentes && !this.jovemOutroFicha.moita_ejc_id) {
+                        alert(`Selecione em qual edição do EJC ${this.nomeMeuEJC} esse jovem foi moita.`);
                         return;
                     }
                     const payload = {
@@ -3136,7 +4009,11 @@
                         restricao_alimentar: this.jovemOutroFicha.restricao_alimentar ? 1 : 0,
                         detalhes_restricao: this.jovemOutroFicha.detalhes_restricao || null,
                         eh_musico: this.jovemOutroFicha.eh_musico ? 1 : 0,
+                        equipe_saude: this.jovemOutroFicha.equipe_saude ? 1 : 0,
                         instrumentos_musicais: this.jovemOutroFicha.eh_musico ? this.normalizarInstrumentosOutro(this.jovemOutroFicha.instrumentos_musicais) : [],
+                        ja_foi_moita_inconfidentes: this.jovemOutroFicha.ja_foi_moita_inconfidentes ? 1 : 0,
+                        moita_ejc_id: this.jovemOutroFicha.ja_foi_moita_inconfidentes ? (this.jovemOutroFicha.moita_ejc_id || null) : null,
+                        moita_funcao: null,
                         nao_serve_ejc: this.jovemOutroFicha.nao_serve_ejc ? 1 : 0,
                         motivo_nao_serve_ejc: this.jovemOutroFicha.nao_serve_ejc ? (this.jovemOutroFicha.motivo_nao_serve_ejc || null) : null,
                         observacoes_extras: this.jovemOutroFicha.observacoes_extras || null
@@ -3154,6 +4031,7 @@
                         }
                         const outro = (this.outrosEjcs || []).find((oe) => String(oe.id) === String(this.jovemOutroFicha.outro_ejc_id) || Number(oe.id) === Number(this.jovemOutroFicha.outro_ejc_id));
                         this.jovemOutroFicha.outro_ejc_nome = outro?.nome || this.jovemOutroFicha.outro_ejc_nome;
+                        this.jovemOutroFicha.outro_ejc_paroquia = outro?.paroquia || this.jovemOutroFicha.outro_ejc_paroquia;
                         this.jovemOutroFichaOriginal = JSON.parse(JSON.stringify(this.jovemOutroFicha));
                         this.isEditingOutroFicha = false;
                         await this.carregarJovensOutroEjc();
@@ -3207,16 +4085,29 @@
                         alert('Erro ao adicionar equipe ao histórico.');
                     }
                 },
+                podeRemoverEquipeHistoricoOutro(item) {
+                    const id = String(item && item.id || '').trim();
+                    return !!id && !id.startsWith('montagem-atual-');
+                },
                 async removerEquipeHistoricoOutro(id) {
-                    if (!(await window.showFloatingConfirm('Remover este item do histórico?'))) return;
+                    const confirmar = window.showFloatingConfirm
+                        ? await window.showFloatingConfirm('Remover este item do histórico?')
+                        : window.confirm('Remover este item do histórico?');
+                    if (!confirmar) return;
                     try {
-                        const res = await fetch(`/api/lista-mestre/historico/${id}`, { method: 'DELETE' });
-                        if (!res.ok) throw new Error('Erro ao remover');
+                        const idTexto = String(id || '').trim();
+                        const montagemMatch = idTexto.match(/^montagem-(\d+)$/);
+                        const endpoint = montagemMatch
+                            ? `/api/montar-encontro/membro/${montagemMatch[1]}`
+                            : `/api/lista-mestre/historico/${encodeURIComponent(idTexto)}`;
+                        const res = await fetch(endpoint, { method: 'DELETE' });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) throw new Error(data.error || 'Erro ao remover');
                         await this.carregarHistoricoEquipesOutroJovem(this.jovemOutroFicha.id);
                         await this.carregarJovensOutroEjc();
                     } catch (err) {
                         console.error(err);
-                        alert('Erro ao remover do histórico.');
+                        alert(err && err.message ? err.message : 'Erro ao remover do histórico.');
                     }
                 },
                 async carregarFamiliaresOutroJovem(jovemId) {
@@ -3351,6 +4242,38 @@
                         alert('Erro ao salvar observação.');
                     }
                 },
+                async uploadFotoOutroJovem(event) {
+                    const file = event && event.target && event.target.files ? event.target.files[0] : null;
+                    if (!file || !this.jovemOutroFicha || !this.jovemOutroFicha.id) {
+                        if (event && event.target) event.target.value = '';
+                        return;
+                    }
+
+                    const formData = new FormData();
+                    formData.append('foto', file);
+
+                    try {
+                        const res = await fetch(`/api/lista-mestre/${this.jovemOutroFicha.id}/foto`, {
+                            method: 'POST',
+                            body: formData
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao enviar foto.');
+                            return;
+                        }
+
+                        this.jovemOutroFicha.foto_url = data.foto_url || '';
+                        this.jovemOutroFichaOriginal = JSON.parse(JSON.stringify(this.jovemOutroFicha));
+                        const idx = (this.itens || []).findIndex((registro) => Number(registro.jovem_id) === Number(this.jovemOutroFicha.id));
+                        if (idx >= 0) this.itens[idx].foto_url = data.foto_url || '';
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao enviar foto.');
+                    } finally {
+                        if (event && event.target) event.target.value = '';
+                    }
+                },
                 async carregarPresencasOutro() {
                     if (!this.jovemOutroFicha.id) return;
                     this.loadingPresencas = true;
@@ -3370,8 +4293,8 @@
                         alert('Preencha nome, telefone e a paróquia/EJC de origem.');
                         return;
                     }
-                    if (this.novo.ja_foi_moita_inconfidentes && (!this.novo.moita_ejc_id || !String(this.novo.moita_funcao || '').trim())) {
-                        alert('Informe o EJC e a função de moita.');
+                    if (this.novo.ja_foi_moita_inconfidentes && !this.novo.moita_ejc_id) {
+                        alert(`Selecione em qual edição do EJC ${this.nomeMeuEJC} esse jovem foi moita.`);
                         return;
                     }
                     const payload = {
@@ -3398,7 +4321,7 @@
                         instrumentos_musicais: [],
                         ja_foi_moita_inconfidentes: this.novo.ja_foi_moita_inconfidentes ? 1 : 0,
                         moita_ejc_id: this.novo.ja_foi_moita_inconfidentes ? (this.novo.moita_ejc_id || null) : null,
-                        moita_funcao: this.novo.ja_foi_moita_inconfidentes ? (this.novo.moita_funcao || null) : null
+                        moita_funcao: null
                     };
                     try {
                         const emEdicao = this.editandoJovemOutro && this.novo.id;
@@ -3460,7 +4383,8 @@
                     if (!this.modalPresencasInstance) this.modalPresencasInstance = new bootstrap.Modal(document.getElementById('modalPresencasOutro'));
                     this.modalPresencasInstance.show();
                 },
-                abrirNovoCasalOutroEjc() {
+                async abrirNovoCasalOutroEjc() {
+                    await this.carregarOutrosEjcs();
                     this.formCasal = {
                         id: null,
                         foto_url: '',
@@ -3472,6 +4396,8 @@
                         data_nascimento_tia: '',
                         origem_tipo: 'OUTRO_EJC',
                         outro_ejc_id: null,
+                        outro_ejc_nome_manual: '',
+                        outro_ejc_paroquia_manual: '',
                         ecc_id: null,
                         equipe_ids: [],
                         servicos: [],
@@ -3492,6 +4418,9 @@
                     this.abaCasal = 'dados';
                     this.subAbaCasalDados = 'cadastro';
                     this.isEditingCasal = true;
+                    this.comissoesCasal = [];
+                    this.observacoesExtrasCasal = [];
+                    this.novaObservacaoCasal = '';
                     this.formCasalBackup = null;
                     this.jovensCasal = [];
                     this.searchJovemQuery = '';
@@ -3501,43 +4430,60 @@
                     this.buscaFamiliaCasal = '';
                     this.resultadosBuscaFamiliaCasal = [];
                     this.presencasCasal = [];
+                    this.sincronizarOutroEjcCasalSelecionado();
                     if (!this.modalCasal) this.modalCasal = new bootstrap.Modal(document.getElementById('modalCasal'));
                     this.modalCasal.show();
                 },
                 async abrirEditarCasal(item) {
+                    await this.carregarOutrosEjcs();
+                    let baseItem = item;
+                    if (item && item.id) {
+                        try {
+                            await this.carregarCasais();
+                            const atualizado = (this.casais || []).find((registro) => Number(registro && registro.id) === Number(item.id));
+                            if (atualizado) baseItem = atualizado;
+                        } catch (err) {
+                            console.error('Erro ao atualizar dados do casal antes de abrir a ficha:', err);
+                        }
+                    }
                     this.formCasal = {
-                        id: item.id,
-                        foto_url: item.foto_url || '',
-                        nome_tio: item.nome_tio || '',
-                        telefone_tio: item.telefone_tio || '',
-                        data_nascimento_tio: item.data_nascimento_tio || '',
-                        nome_tia: item.nome_tia || '',
-                        telefone_tia: item.telefone_tia || '',
-                        data_nascimento_tia: item.data_nascimento_tia || '',
+                        id: baseItem.id,
+                        foto_url: baseItem.foto_url || '',
+                        nome_tio: baseItem.nome_tio || '',
+                        telefone_tio: baseItem.telefone_tio || '',
+                        data_nascimento_tio: baseItem.data_nascimento_tio || '',
+                        nome_tia: baseItem.nome_tia || '',
+                        telefone_tia: baseItem.telefone_tia || '',
+                        data_nascimento_tia: baseItem.data_nascimento_tia || '',
                         origem_tipo: 'OUTRO_EJC',
-                        outro_ejc_id: item.outro_ejc_id || null,
+                        outro_ejc_id: baseItem.outro_ejc_id || null,
+                        outro_ejc_nome_manual: baseItem.outro_ejc_nome || '',
+                        outro_ejc_paroquia_manual: baseItem.outro_ejc_paroquia || '',
                         ecc_id: null,
-                        equipe_ids: Array.isArray(item.equipe_ids) ? item.equipe_ids.slice() : [],
-                        servicos: Array.isArray(item.servicos) && item.servicos.length
-                            ? item.servicos.map((s) => ({ equipe_id: s.equipe_id || null, ejc_id: s.ejc_id || null, equipe_nome: s.equipe_nome || '' }))
+                        equipe_ids: Array.isArray(baseItem.equipe_ids) ? baseItem.equipe_ids.slice() : [],
+                        servicos: Array.isArray(baseItem.servicos) && baseItem.servicos.length
+                            ? baseItem.servicos.map((s) => ({ equipe_id: s.equipe_id || null, ejc_id: s.ejc_id || null, equipe_nome: s.equipe_nome || '' }))
                             : [],
-                        restricao_alimentar: !!item.restricao_alimentar,
-                        deficiencia: !!item.deficiencia,
-                        restricao_alimentar_tio: !!item.restricao_alimentar_tio,
-                        detalhes_restricao_tio: item.detalhes_restricao_tio || '',
-                        deficiencia_tio: !!item.deficiencia_tio,
-                        qual_deficiencia_tio: item.qual_deficiencia_tio || '',
-                        restricao_alimentar_tia: !!item.restricao_alimentar_tia,
-                        detalhes_restricao_tia: item.detalhes_restricao_tia || '',
-                        deficiencia_tia: !!item.deficiencia_tia,
-                        qual_deficiencia_tia: item.qual_deficiencia_tia || '',
-                        observacoes: item.observacoes || '',
-                        termos_aceitos_em: item.termos_aceitos_em || null
+                        restricao_alimentar: !!baseItem.restricao_alimentar,
+                        deficiencia: !!baseItem.deficiencia,
+                        restricao_alimentar_tio: !!baseItem.restricao_alimentar_tio,
+                        detalhes_restricao_tio: baseItem.detalhes_restricao_tio || '',
+                        deficiencia_tio: !!baseItem.deficiencia_tio,
+                        qual_deficiencia_tio: baseItem.qual_deficiencia_tio || '',
+                        restricao_alimentar_tia: !!baseItem.restricao_alimentar_tia,
+                        detalhes_restricao_tia: baseItem.detalhes_restricao_tia || '',
+                        deficiencia_tia: !!baseItem.deficiencia_tia,
+                        qual_deficiencia_tia: baseItem.qual_deficiencia_tia || '',
+                        observacoes: baseItem.observacoes || '',
+                        termos_aceitos_em: baseItem.termos_aceitos_em || null
                     };
                     this.novoServicoCasal = { equipe_id: null, ejc_id: null };
                     this.abaCasal = 'dados';
                     this.subAbaCasalDados = 'cadastro';
                     this.isEditingCasal = false;
+                    this.comissoesCasal = [];
+                    this.observacoesExtrasCasal = [];
+                    this.novaObservacaoCasal = '';
                     this.formCasalBackup = this.clonarFormCasal(this.formCasal);
                     this.jovensCasal = [];
                     this.searchJovemQuery = '';
@@ -3546,6 +4492,7 @@
                     this.buscaFamiliaCasal = '';
                     this.resultadosBuscaFamiliaCasal = [];
                     this.presencasCasal = [];
+                    this.sincronizarOutroEjcCasalSelecionado();
                     await this.carregarFamiliaresCasal();
                     if (!this.modalCasal) this.modalCasal = new bootstrap.Modal(document.getElementById('modalCasal'));
                     this.modalCasal.show();
@@ -3567,10 +4514,14 @@
                         alert('Preencha nome e telefone do tio e da tia.');
                         return;
                     }
-                    if (!this.formCasal.outro_ejc_id) {
-                        alert('Selecione qual EJC o casal fez.');
+                    const outroEjcResolvido = await this.resolverOutroEjcCasalId();
+                    if (!outroEjcResolvido || !outroEjcResolvido.id) {
+                        alert((outroEjcResolvido && outroEjcResolvido.error) || 'Informe o ECC e a paróquia de origem.');
                         return;
                     }
+                    this.formCasal.outro_ejc_id = outroEjcResolvido.id;
+                    this.formCasal.outro_ejc_nome_manual = outroEjcResolvido.nome || this.formCasal.outro_ejc_nome_manual;
+                    this.formCasal.outro_ejc_paroquia_manual = outroEjcResolvido.paroquia || this.formCasal.outro_ejc_paroquia_manual;
                     this.normalizarCamposSaudeCasal();
                     const servicosValidos = (this.formCasal.servicos || [])
                         .map((s) => ({

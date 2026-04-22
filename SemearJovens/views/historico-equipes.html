@@ -579,18 +579,19 @@
                                         <tr>
                                             <th class="text-start ps-3">Nome</th>
                                             <th>Círculo</th>
-                                            <th>Função de Moita</th>
+                                            <th>Moita</th>
                                             <th>Telefone</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <tr v-for="enc in encontristas" :key="enc.id">
-                                            <td class="text-start ps-3 fw-medium">
-                                                {{ enc.nome_completo }}
-                                                <span v-if="enc.foi_moita" class="badge bg-success ms-2">Moita</span>
-                                            </td>
+                                            <td class="text-start ps-3 fw-medium">{{ enc.nome_completo }}</td>
                                             <td><span class="badge bg-secondary">{{ enc.circulo || '-' }}</span></td>
-                                            <td>{{ enc.moita_funcao || '-' }}</td>
+                                            <td>
+                                                <span class="badge" :class="enc.foi_moita ? 'bg-success' : 'bg-light text-dark'">
+                                                    {{ enc.foi_moita ? 'Sim' : '-' }}
+                                                </span>
+                                            </td>
                                             <td>{{ enc.telefone || '-' }}</td>
                                         </tr>
                                     </tbody>
@@ -751,7 +752,7 @@
                                 <thead class="table-light">
                                     <tr>
                                         <th>Nome completo</th>
-                                        <th>Qual EJC</th>
+                                        <th>Origem</th>
                                         <th>Telefone</th>
                                     </tr>
                                 </thead>
@@ -1740,13 +1741,15 @@
                     },
                     formatarOrigemEquipe(jovem) {
                         if (String(jovem?.papel || '').toUpperCase() === 'TIOS') {
-                            if (jovem?.ecc_numero) {
-                                return `${jovem.ecc_numero} ${jovem?.ecc_tipo || 'ECC'}`.trim();
+                            const ehOutroTio = String(jovem?.origem_ejc_tipo || 'EJC').toUpperCase() === 'OUTRO_EJC'
+                                || !!jovem?.outro_ejc_id
+                                || !!jovem?.outro_ejc_nome
+                                || !!jovem?.outro_ejc_paroquia;
+                            if (ehOutroTio) {
+                                const paroquia = String(jovem?.outro_ejc_paroquia || jovem?.outro_ejc_nome || '').trim();
+                                return `ECC${paroquia ? ' ' + paroquia : ''}`.trim();
                             }
-                            if (jovem?.outro_ejc_nome) {
-                                return jovem.outro_ejc_nome;
-                            }
-                            return this.nomeMeuEJC;
+                            return `ECC ${this.nomeMeuEJC || ''}`.trim();
                         }
                         const ehOutro = String(jovem?.origem_ejc_tipo || '').toUpperCase() === 'OUTRO_EJC'
                             || !!jovem?.outro_ejc_id
@@ -1754,12 +1757,14 @@
                             || !!jovem?.outro_ejc_paroquia
                             || !!jovem?.outro_ejc_numero;
                         if (ehOutro) {
-                            const numeroOutro = jovem?.outro_ejc_numero ? this.numeroParaRomano(jovem.outro_ejc_numero) : '';
-                            if (numeroOutro && jovem?.outro_ejc_nome) return `${numeroOutro} (${jovem.outro_ejc_nome})`;
-                            return jovem?.outro_ejc_nome || numeroOutro || 'Outro EJC';
+                            const nomeOutroEjc = String(jovem?.outro_ejc_nome || jovem?.outro_ejc_paroquia || '').trim();
+                            return `EJC${nomeOutroEjc ? ' ' + nomeOutroEjc : ''}`.trim();
                         }
-                        const numeroProprio = jovem?.numero_ejc_fez ? `${this.numeroParaRomano(jovem.numero_ejc_fez)}º EJC` : '';
-                        return [numeroProprio, this.nomeMeuEJC].filter(Boolean).join(' ') || this.nomeMeuEJC;
+                        const numeroProprio = jovem?.numero_ejc_fez ? this.numeroParaRomano(jovem.numero_ejc_fez) : '';
+                        if (numeroProprio) {
+                            return `${numeroProprio} EJC ${this.nomeMeuEJC || ''}`.trim();
+                        }
+                        return `EJC ${this.nomeMeuEJC || ''}`.trim();
                     },
                     async carregarNomeMeuEJC() {
                         try {

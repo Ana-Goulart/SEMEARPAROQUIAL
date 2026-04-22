@@ -88,12 +88,13 @@
                                 <th>Data</th>
                                 <th>Tipo</th>
                                 <th>Descrição</th>
+                                <th>Lançado por</th>
                                 <th class="text-end">Valor</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-if="!movimentacoes.length">
-                                <td colspan="4" class="text-center text-muted py-4">Nenhuma movimentação registrada.</td>
+                                <td colspan="5" class="text-center text-muted py-4">Nenhuma movimentação registrada.</td>
                             </tr>
                             <tr v-for="mov in movimentacoes" :key="mov.id">
                                 <td>{{ formatarDataHora(mov.created_at) }}</td>
@@ -103,6 +104,7 @@
                                     </span>
                                 </td>
                                 <td>{{ mov.descricao }}</td>
+                                <td>{{ mov.usuario_nome || 'Não identificado' }}</td>
                                 <td class="text-end fw-semibold" :class="mov.tipo === 'ENTRADA' ? 'text-success' : 'text-danger'">
                                     {{ mov.tipo === 'ENTRADA' ? '+' : '-' }} {{ formatarMoeda(mov.valor) }}
                                 </td>

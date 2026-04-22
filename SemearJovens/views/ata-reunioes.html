@@ -43,6 +43,19 @@
             line-height: 1.3;
         }
 
+        .ata-title {
+            font-weight: 700;
+            color: #2f2417;
+        }
+
+        .ata-meta {
+            margin-top: 0.35rem;
+            font-size: 0.82rem;
+            color: #7a6a4d;
+            text-align: center;
+            line-height: 1.25;
+        }
+
         .breadcrumb-item {
             cursor: pointer;
         }
@@ -174,7 +187,8 @@
                     <div class="ata-item h-100 d-flex flex-column align-items-center position-relative" @click="abrirModalVisualizar(ata)">
                         <span class="delete-btn" @click.stop="removerAta(ata.id)" title="Apagar Ata"><i class="fa-solid fa-trash icon-accent"></i></span>
                         <span class="item-icon"><i class="fa-solid fa-note-sticky icon-accent"></i></span>
-                        <span class="item-name">{{ tituloAta(ata) }}</span>
+                        <span class="item-name ata-title">{{ tituloAta(ata) }}</span>
+                        <span class="ata-meta">{{ subtituloAta(ata) }}</span>
                     </div>
                 </div>
             </div>
@@ -236,13 +250,20 @@
 
         <div class="modal fade" id="modalNovaAta" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-xl modal-dialog-scrollable">
-                <div class="modal-content border-0 shadow">
+                    <div class="modal-content border-0 shadow">
                     <div class="modal-header bg-primary text-white">
-                        <h5 class="modal-title"><i class="fa-solid fa-plus icon-accent"></i> Nova Ata de Reunião</h5>
+                        <h5 class="modal-title">
+                            <i class="fa-solid" :class="ataEditandoId ? 'fa-pen-to-square' : 'fa-plus'"></i>
+                            {{ ataEditandoId ? 'Editar Ata de Reunião' : 'Nova Ata de Reunião' }}
+                        </h5>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
                         <div class="row g-3">
+                            <div class="col-12">
+                                <label class="form-label">Título da ata</label>
+                                <input type="text" class="form-control" v-model.trim="formAta.titulo" placeholder="Ex: Reunião da Secretaria">
+                            </div>
                             <div class="col-md-6">
                                 <label class="form-label">Horário</label>
                                 <input type="time" class="form-control" v-model="formAta.horario">
@@ -352,7 +373,9 @@
                     </div>
                     <div class="modal-footer">
                         <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button class="btn btn-primary" @click="salvarAta" :disabled="salvando">{{ salvando ? 'Salvando...' : 'Salvar Ata' }}</button>
+                        <button class="btn btn-primary" @click="salvarAta" :disabled="salvando">
+                            {{ salvando ? 'Salvando...' : (ataEditandoId ? 'Salvar Alterações' : 'Salvar Ata') }}
+                        </button>
                     </div>
                 </div>
             </div>
@@ -362,10 +385,11 @@
             <div class="modal-dialog modal-xl modal-dialog-scrollable">
                 <div class="modal-content border-0 shadow" v-if="ataVisualizando">
                     <div class="modal-header bg-info text-white">
-                        <h5 class="modal-title">Ata - {{ formatarData(ataVisualizando.data_reuniao) }} {{ formatarHorario(ataVisualizando.horario) }}</h5>
+                        <h5 class="modal-title">{{ tituloAta(ataVisualizando) }}</h5>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
+                        <div class="mb-3 text-muted">{{ subtituloAta(ataVisualizando) }}</div>
                         <h6><i class="fa-solid fa-users icon-accent"></i> Presentes</h6>
                         <div v-if="!ataVisualizando.presencas.length" class="text-muted">Sem presença registrada.</div>
                         <ul v-else>
@@ -401,6 +425,9 @@
                         <p class="mb-0">{{ ataVisualizando.observacoes_gerais || 'Sem observações.' }}</p>
                     </div>
                     <div class="modal-footer">
+                        <button class="btn btn-primary" @click="abrirModalEditarAta(ataVisualizando)">
+                            <i class="fa-solid fa-pen-to-square icon-accent"></i> Editar Ata
+                        </button>
                         <button class="btn btn-outline-danger" @click="baixarAtaPdf(ataVisualizando)"><i class="fa-solid fa-file-lines icon-accent"></i> Baixar PDF</button>
                         <button class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
                     </div>
@@ -436,7 +463,9 @@
                     modalNovaAta: null,
                     modalVisualizarAta: null,
                     ataVisualizando: null,
+                    ataEditandoId: null,
                     formAta: {
+                        titulo: '',
                         horario: '',
                         presencas: [],
                         pautas: [{ titulo: '', decisoes: '', tarefas: [] }],
@@ -472,8 +501,20 @@
                     const txt = String(horario).substring(0, 5);
                     return txt ? `às ${txt}` : '';
                 },
+                tituloFallbackPauta(ata) {
+                    const pautas = Array.isArray(ata && ata.pautas) ? ata.pautas : [];
+                    const primeiraPauta = pautas
+                        .slice()
+                        .sort((a, b) => Number(a && a.ordem || 0) - Number(b && b.ordem || 0))[0];
+                    return String(primeiraPauta && primeiraPauta.titulo || '').trim();
+                },
                 tituloAta(ata) {
-                    return `${this.formatarData(ata.data_reuniao)} ${this.formatarHorario(ata.horario)}`.trim();
+                    const titulo = String(ata && ata.titulo || '').trim();
+                    const tituloPauta = this.tituloFallbackPauta(ata);
+                    return titulo || tituloPauta || `${this.formatarData(ata && ata.data_reuniao)} ${this.formatarHorario(ata && ata.horario)}`.trim();
+                },
+                subtituloAta(ata) {
+                    return `${this.formatarData(ata && ata.data_reuniao)} ${this.formatarHorario(ata && ata.horario)}`.trim();
                 },
                 resumoBusca(texto) {
                     if (!texto) return 'Ata com ocorrência do termo pesquisado.';
@@ -655,7 +696,9 @@
                     }
                 },
                 resetFormAta() {
+                    this.ataEditandoId = null;
                     this.formAta = {
+                        titulo: '',
                         horario: '',
                         presencas: [],
                         pautas: [{ titulo: '', decisoes: '', tarefas: [] }],
@@ -670,6 +713,49 @@
                     this.resetFormAta();
                     if (!this.modalNovaAta) this.modalNovaAta = new bootstrap.Modal(document.getElementById('modalNovaAta'));
                     this.modalNovaAta.show();
+                },
+                async abrirModalEditarAta(ata) {
+                    const ataId = Number(ata && ata.id);
+                    if (!ataId) return;
+                    try {
+                        const res = await fetch(`/api/ata-reunioes/atas/${ataId}`);
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Não foi possível carregar a ata para edição.');
+                            return;
+                        }
+
+                        this.ataEditandoId = data.id;
+                        this.formAta = {
+                            titulo: String(data.titulo || '').trim(),
+                            horario: data.horario ? String(data.horario).substring(0, 5) : '',
+                            presencas: Array.isArray(data.presencas) ? data.presencas.map(p => Number(p.usuario_id)).filter(Boolean) : [],
+                            pautas: Array.isArray(data.pautas) && data.pautas.length
+                                ? data.pautas.map(p => ({
+                                    titulo: p.titulo || '',
+                                    decisoes: p.decisoes || '',
+                                    tarefas: Array.isArray(p.tarefas)
+                                        ? p.tarefas.map(t => ({
+                                            descricao: t.descricao || '',
+                                            responsavel_tipo: t.responsavel_tipo || (t.responsavel_funcao_id ? 'FUNCAO' : 'USUARIO'),
+                                            responsavel_usuario_id: t.responsavel_usuario_id || null,
+                                            responsavel_funcao_id: t.responsavel_funcao_id || null,
+                                            prazo: t.prazo ? String(t.prazo).substring(0, 10).split('-').reverse().join('/') : null,
+                                            status: t.status || 'PENDENTE'
+                                        }))
+                                        : []
+                                }))
+                                : [{ titulo: '', decisoes: '', tarefas: [] }],
+                            observacoes_gerais: data.observacoes_gerais || ''
+                        };
+
+                        if (this.modalVisualizarAta) this.modalVisualizarAta.hide();
+                        if (!this.modalNovaAta) this.modalNovaAta = new bootstrap.Modal(document.getElementById('modalNovaAta'));
+                        this.modalNovaAta.show();
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao preparar a edição da ata.');
+                    }
                 },
                 abrirModalVisualizar(ata) {
                     this.ataVisualizando = ata;
@@ -722,6 +808,7 @@
                     this.salvando = true;
                     try {
                         const payload = {
+                            titulo: this.formAta.titulo || null,
                             horario: this.formAta.horario || null,
                             pasta_id: this.currentFolderId,
                             presencas: this.formAta.presencas,
@@ -741,8 +828,13 @@
                             observacoes_gerais: this.formAta.observacoes_gerais
                         };
 
-                        const res = await fetch('/api/ata-reunioes/atas', {
-                            method: 'POST',
+                        const url = this.ataEditandoId
+                            ? `/api/ata-reunioes/atas/${this.ataEditandoId}`
+                            : '/api/ata-reunioes/atas';
+                        const method = this.ataEditandoId ? 'PUT' : 'POST';
+
+                        const res = await fetch(url, {
+                            method,
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(payload)
                         });
@@ -751,8 +843,14 @@
                             alert(data.error || 'Erro ao salvar ata.');
                             return;
                         }
+                        const ataSalvaId = data.id || this.ataEditandoId;
+                        const reabrirVisualizacao = !!(this.ataEditandoId && this.modalVisualizarAta && this.ataVisualizando && Number(this.ataVisualizando.id) === Number(ataSalvaId));
                         if (this.modalNovaAta) this.modalNovaAta.hide();
+                        this.resetFormAta();
                         await this.carregarConteudo();
+                        if (reabrirVisualizacao) {
+                            await this.abrirAtaPorId(ataSalvaId);
+                        }
                     } catch (err) {
                         console.error(err);
                         alert('Erro ao salvar ata.');

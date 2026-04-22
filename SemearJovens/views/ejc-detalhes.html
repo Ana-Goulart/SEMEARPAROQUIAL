@@ -359,7 +359,6 @@
                                                 <th class="text-start">Nome</th>
                                                 <th>Círculo</th>
                                                 <th v-if="!detalhe.isMontagem">Moita</th>
-                                                <th v-if="!detalhe.isMontagem">Função de Moita</th>
                                                 <th>Telefone</th>
                                             </tr>
                                         </thead>
@@ -369,10 +368,9 @@
                                                 <td>{{ enc.circulo || '-' }}</td>
                                                 <td v-if="!detalhe.isMontagem">
                                                     <span class="badge" :class="enc.foi_moita ? 'bg-success' : 'bg-light text-dark'">
-                                                        {{ enc.foi_moita ? 'Foi Moita' : '-' }}
+                                                        {{ enc.foi_moita ? 'Sim' : '-' }}
                                                     </span>
                                                 </td>
-                                                <td v-if="!detalhe.isMontagem">{{ enc.moita_funcao || '-' }}</td>
                                                 <td>{{ enc.telefone || '-' }}</td>
                                             </tr>
                                         </tbody>
@@ -410,7 +408,7 @@
                                 <thead class="table-light">
                                     <tr>
                                         <th>Nome completo</th>
-                                        <th>Qual EJC</th>
+                                        <th>Origem</th>
                                         <th>Telefone</th>
                                     </tr>
                                 </thead>
@@ -914,13 +912,15 @@
                 },
                 formatarOrigemEquipe(jovem) {
                     if (String(jovem && jovem.papel || '').toUpperCase() === 'TIOS') {
-                        if (jovem && jovem.ecc_numero) {
-                            return `${jovem.ecc_numero} ${jovem && jovem.ecc_tipo || 'ECC'}`.trim();
+                        const ehOutroTio = String(jovem && jovem.origem_ejc_tipo || '').toUpperCase() === 'OUTRO_EJC'
+                            || !!(jovem && jovem.outro_ejc_id)
+                            || !!(jovem && jovem.outro_ejc_nome)
+                            || !!(jovem && jovem.outro_ejc_paroquia);
+                        if (ehOutroTio) {
+                            const nomeParoquia = (jovem && jovem.outro_ejc_paroquia) || (jovem && jovem.outro_ejc_nome);
+                            return nomeParoquia ? `ECC ${nomeParoquia}` : 'ECC';
                         }
-                        if (jovem && jovem.outro_ejc_nome) {
-                            return jovem.outro_ejc_nome;
-                        }
-                        return this.nomeMeuEJC;
+                        return this.nomeMeuEJC ? `ECC ${this.nomeMeuEJC}` : 'ECC';
                     }
                     const ehOutro = String(jovem && jovem.origem_ejc_tipo || '').toUpperCase() === 'OUTRO_EJC'
                         || !!(jovem && jovem.outro_ejc_id)
@@ -928,12 +928,17 @@
                         || !!(jovem && jovem.outro_ejc_paroquia)
                         || !!(jovem && jovem.outro_ejc_numero);
                     if (ehOutro) {
-                        const numeroOutro = jovem && jovem.outro_ejc_numero ? this.numeroParaRomano(jovem.outro_ejc_numero) : '';
-                        if (numeroOutro && jovem && jovem.outro_ejc_nome) return `${numeroOutro} (${jovem.outro_ejc_nome})`;
-                        return (jovem && jovem.outro_ejc_nome) || numeroOutro || 'Outro EJC';
+                        const nomeOrigem = (jovem && jovem.outro_ejc_nome) || (jovem && jovem.outro_ejc_paroquia);
+                        return nomeOrigem ? `EJC ${nomeOrigem}` : 'EJC';
                     }
-                    const numeroProprio = jovem && jovem.numero_ejc_fez ? `${this.numeroParaRomano(jovem.numero_ejc_fez)}º EJC` : '';
-                    return [numeroProprio, this.nomeMeuEJC].filter(Boolean).join(' ') || this.nomeMeuEJC;
+                    const numeroProprio = jovem && jovem.numero_ejc_fez ? this.numeroParaRomano(jovem.numero_ejc_fez) : '';
+                    if (numeroProprio && this.nomeMeuEJC) {
+                        return `${numeroProprio} EJC ${this.nomeMeuEJC}`;
+                    }
+                    if (this.nomeMeuEJC) {
+                        return `EJC ${this.nomeMeuEJC}`;
+                    }
+                    return 'EJC';
                 },
                 formatarData(d) {
                     if (!d) return '--/--/----';

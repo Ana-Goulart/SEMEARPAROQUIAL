@@ -147,11 +147,13 @@ router.get('/:id', async (req, res) => {
 router.get('/:id/encontristas', async (req, res) => {
     try {
         const tenantId = getTenantId(req);
+        const ejcId = Number(req.params.id);
         await ensureEjcEncontristasHistoricoTable();
 
         const [historicoRows] = await pool.query(`
             SELECT
-                id,
+                CONCAT('hist-', id) AS id,
+                jovem_id,
                 COALESCE(nome_completo_snapshot, '-') AS nome_completo,
                 COALESCE(circulo_snapshot, '-') AS circulo,
                 COALESCE(telefone_snapshot, '-') AS telefone,
@@ -161,10 +163,7 @@ router.get('/:id/encontristas', async (req, res) => {
             WHERE tenant_id = ?
               AND ejc_id = ?
             ORDER BY nome_completo_snapshot ASC, id ASC
-        `, [tenantId, req.params.id]);
-        if (historicoRows.length) {
-            return res.json(historicoRows);
-        }
+        `, [tenantId, ejcId]);
 
         const comOrigem = await hasColumn('jovens', 'origem_ejc_tipo');
         const comFoiMoita = await hasColumn('jovens', 'ja_foi_moita_inconfidentes');
@@ -179,8 +178,77 @@ router.get('/:id/encontristas', async (req, res) => {
             ? "CASE WHEN (j.origem_ejc_tipo = 'OUTRO_EJC' AND j.ja_foi_moita_inconfidentes = 1 AND j.moita_ejc_id = ?) THEN j.moita_funcao ELSE NULL END AS moita_funcao"
             : "NULL AS moita_funcao";
 
+        if (historicoRows.length) {
+            if (!usarRegraMoita) {
+                return res.json(historicoRows);
+            }
+
+            const [moitasOutroRows] = await pool.query(
+                `SELECT
+                    CONCAT('jovem-', j.id) AS id,
+                    j.id AS jovem_id,
+                    j.nome_completo,
+                    j.circulo,
+                    j.telefone,
+                    1 AS foi_moita,
+                    j.moita_funcao AS moita_funcao
+                 FROM jovens j
+                 WHERE j.tenant_id = ?
+                   AND j.origem_ejc_tipo = 'OUTRO_EJC'
+                   AND j.ja_foi_moita_inconfidentes = 1
+                   AND j.moita_ejc_id = ?
+                 ORDER BY j.nome_completo ASC`,
+                [tenantId, ejcId]
+            );
+
+            const chaveEncontrista = (item) => {
+                const jovemId = Number(item && item.jovem_id || 0);
+                if (jovemId > 0) return `jovem:${jovemId}`;
+                const nome = String(item && item.nome_completo || '').trim().toUpperCase();
+                const telefone = String(item && item.telefone || '').replace(/\D/g, '');
+                return `texto:${nome}|${telefone}`;
+            };
+
+            const encontrados = [];
+            const indicePorChave = new Map();
+
+            historicoRows.forEach((item) => {
+                const registro = {
+                    ...item,
+                    foi_moita: !!item.foi_moita,
+                    moita_funcao: item.moita_funcao || null
+                };
+                indicePorChave.set(chaveEncontrista(registro), encontrados.length);
+                encontrados.push(registro);
+            });
+
+            moitasOutroRows.forEach((item) => {
+                const chave = chaveEncontrista(item);
+                const idx = indicePorChave.get(chave);
+                if (idx === undefined) {
+                    encontrados.push({
+                        ...item,
+                        foi_moita: true,
+                        moita_funcao: item.moita_funcao || null
+                    });
+                    indicePorChave.set(chave, encontrados.length - 1);
+                    return;
+                }
+
+                encontrados[idx] = {
+                    ...encontrados[idx],
+                    jovem_id: encontrados[idx].jovem_id || item.jovem_id || null,
+                    foi_moita: !!(encontrados[idx].foi_moita || item.foi_moita),
+                    moita_funcao: encontrados[idx].moita_funcao || item.moita_funcao || null
+                };
+            });
+
+            encontrados.sort((a, b) => String(a.nome_completo || '').localeCompare(String(b.nome_completo || ''), 'pt-BR'));
+            return res.json(encontrados);
+        }
+
         const sql = usarRegraMoita
-            ? `SELECT DISTINCT j.id, j.nome_completo, j.circulo, j.telefone,
+            ? `SELECT DISTINCT CONCAT('jovem-', j.id) AS id, j.id AS jovem_id, j.nome_completo, j.circulo, j.telefone,
                       ${selectFoiMoita},
                       ${selectMoitaFuncao}
                FROM jovens j
@@ -188,7 +256,7 @@ router.get('/:id/encontristas', async (req, res) => {
                  AND (j.numero_ejc_fez = ?
                   OR (j.origem_ejc_tipo = 'OUTRO_EJC' AND j.ja_foi_moita_inconfidentes = 1 AND j.moita_ejc_id = ?))
                ORDER BY nome_completo ASC`
-            : `SELECT j.id, j.nome_completo, j.circulo, j.telefone,
+            : `SELECT CONCAT('jovem-', j.id) AS id, j.id AS jovem_id, j.nome_completo, j.circulo, j.telefone,
                       ${selectFoiMoita},
                       ${selectMoitaFuncao}
                FROM jovens j
@@ -196,8 +264,8 @@ router.get('/:id/encontristas', async (req, res) => {
                  AND j.numero_ejc_fez = ?
                ORDER BY nome_completo ASC`;
         const params = usarRegraMoita
-            ? [req.params.id, req.params.id, tenantId, req.params.id, req.params.id]
-            : [tenantId, req.params.id];
+            ? [ejcId, ejcId, tenantId, ejcId, ejcId]
+            : [tenantId, ejcId];
         const [rows] = await pool.query(sql, params);
         res.json(rows);
     } catch (err) {

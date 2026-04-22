@@ -293,8 +293,8 @@
                         <p class="hero-subtitle">Uma visão mais limpa da operação do encontro, com os atalhos mais usados e o resumo da edição atual logo na entrada.</p>
                         <div class="hero-tags">
                             <div class="hero-tag"><i class="fa-solid fa-seedling icon-accent"></i> {{ nomeMeuEJC || 'Meu EJC' }}</div>
-                            <div class="hero-tag"><i class="fa-solid fa-chart-column icon-accent"></i> {{ resumo.jovens ?? 0 }} jovens cadastrados</div>
-                            <div class="hero-tag"><i class="fa-solid fa-users icon-accent"></i> {{ resumo.equipes ?? 0 }} equipes ativas</div>
+                            <div class="hero-tag"><i class="fa-solid fa-chart-column icon-accent"></i> {{ resumo.jovens ?? 0 }} jovens na Lista Mestre</div>
+                            <div class="hero-tag"><i class="fa-solid fa-book-open-reader icon-accent"></i> {{ edicaoTitulo }}</div>
                         </div>
                     </article>
 
@@ -534,49 +534,45 @@
                                 key: 'jovens',
                                 label: 'Lista Mestre',
                                 valor: this.resumo.jovens ?? 0,
+                                sub: 'Total de jovens ativos na Lista Mestre',
                                 icone: '<i class="fa-solid fa-user icon-accent"></i>',
                                 link: '/gestaodoencontro/listamestre'
                             },
                             {
-                                key: 'tios',
-                                label: 'Tios',
-                                valor: this.resumo.tios ?? 0,
-                                icone: '<i class="fa-solid fa-heart icon-accent"></i>',
-                                link: '/gestaodoencontro/tios'
+                                key: 'sexo',
+                                label: 'Homens e mulheres',
+                                valor: `${this.resumo.jovens_homens ?? 0} / ${this.resumo.jovens_mulheres ?? 0}`,
+                                sub: 'Homens / Mulheres da Lista Mestre',
+                                icone: '<i class="fa-solid fa-venus-mars icon-accent"></i>',
+                                link: '/gestaodoencontro/listamestre'
                             },
                             {
-                                key: 'equipes',
-                                label: 'Equipes',
-                                valor: this.resumo.equipes ?? 0,
-                                icone: '<i class="fa-solid fa-puzzle-piece icon-accent"></i>',
-                                link: '/gestaodoencontro/equipes'
+                                key: 'circulos',
+                                label: 'Cores de círculo',
+                                valor: this.resumo.circulos ?? 0,
+                                sub: 'Círculos ativos cadastrados',
+                                icone: '<i class="fa-solid fa-palette icon-accent"></i>',
+                                link: '/configuracoes/circulos'
                             },
                             {
-                                key: 'edicao',
-                                label: 'Edição atual',
+                                key: 'coordenacoes',
+                                label: 'Coordenações',
+                                valor: this.resumo.coordenacoes ?? 0,
+                                sub: 'Pastas cadastradas em Coordenações',
+                                icone: '<i class="fa-solid fa-compass-drafting icon-accent"></i>',
+                                link: '/configuracoes/coordenacoes'
+                            },
+                            {
+                                key: 'ultima-edicao',
+                                label: 'Última edição',
                                 valor: this.resumo.edicao_atual && this.resumo.edicao_atual.numero
                                     ? `${this.resumo.edicao_atual.numero}º`
                                     : '0',
                                 sub: this.resumo.edicao_atual && this.resumo.edicao_atual.origem === 'MONTAGEM'
-                                    ? 'Em montagem'
+                                    ? 'Última edição em montagem'
                                     : 'Última edição cadastrada',
-                                icone: '<i class="fa-solid fa-tag icon-accent"></i>',
+                                icone: '<i class="fa-solid fa-book-open-reader icon-accent"></i>',
                                 link: this.edicaoLink
-                            },
-                            {
-                                key: 'espaco',
-                                label: 'Espaço usado',
-                                valor: this.formatarBytes(this.totalEstimado),
-                                sub: `Limite por EJC: ${this.limiteGb} GB`,
-                                icone: '<i class="fa-solid fa-floppy-disk icon-accent"></i>',
-                                link: '/administrativo/uso-sistema'
-                            },
-                            {
-                                key: 'visitantes',
-                                label: 'Visitantes',
-                                valor: this.resumo.visitantes ?? 0,
-                                icone: '<i class="fa-solid fa-hand icon-accent"></i>',
-                                link: '/gestaodoencontro/visitantes'
                             }
                         ];
                     },

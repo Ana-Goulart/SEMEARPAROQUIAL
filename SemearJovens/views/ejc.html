@@ -245,7 +245,6 @@
                                             <th class="text-start ps-3">Nome</th>
                                             <th>Círculo</th>
                                             <th>Moita</th>
-                                            <th>Função de Moita</th>
                                             <th>Telefone</th>
                                         </tr>
                                     </thead>
@@ -255,10 +254,9 @@
                                             <td><span class="badge bg-secondary">{{ enc.circulo || '-' }}</span></td>
                                             <td>
                                                 <span class="badge" :class="enc.foi_moita ? 'bg-success' : 'bg-light text-dark'">
-                                                    {{ enc.foi_moita ? 'Foi Moita' : '-' }}
+                                                    {{ enc.foi_moita ? 'Sim' : '-' }}
                                                 </span>
                                             </td>
-                                            <td>{{ enc.moita_funcao || '-' }}</td>
                                             <td>{{ enc.telefone || '-' }}</td>
                                         </tr>
                                     </tbody>

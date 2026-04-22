@@ -153,8 +153,29 @@
             font-weight: 700;
         }
 
-        #modalFuncoesPadrao .paper-tag button {
-            color: #c8615a;
+        #modalFuncoesPadrao .paper-tag-remove {
+            appearance: none;
+            border: 0;
+            background: transparent;
+            color: #8b7355;
+            width: 1.2rem;
+            height: 1.2rem;
+            margin-left: 0.28rem;
+            padding: 0;
+            border-radius: 999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            line-height: 1;
+            cursor: pointer;
+            transition: background-color 0.18s ease, color 0.18s ease;
+        }
+
+        #modalFuncoesPadrao .paper-tag-remove:hover,
+        #modalFuncoesPadrao .paper-tag-remove:focus {
+            background: rgba(139, 115, 85, 0.12);
+            color: #6e5430;
+            outline: none;
         }
 
         #modalFuncoesPadrao .team-role-list {
@@ -172,6 +193,17 @@
         }
 
         #modalFuncoesPadrao .btn-icon-delete {
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+        }
+
+        #modalEquipe .btn-icon-delete,
+        #modalFuncoesPadrao .btn-icon-delete {
+            flex: 0 0 auto;
+        }
+
+        #modalEquipe .btn-icon-delete {
             width: 34px;
             height: 34px;
             border-radius: 10px;
@@ -226,10 +258,6 @@
                     </div>
                     <div class="equipe-nome">{{ equipe.nome }}</div>
                     <div class="equipe-descricao">{{ equipe.descricao || 'Sem descrição' }}</div>
-                    <div class="mt-2 small text-muted">
-                        Limite homens: {{ equipe.limite_homens ?? '-' }} • mulheres: {{ equipe.limite_mulheres ?? '-' }}
-                        • casais de tios: {{ equipe.limite_casais_tios ?? '-' }}
-                    </div>
                 </div>
             </div>
         </main>
@@ -259,21 +287,6 @@
                                         <label class="form-label small mb-1">Descrição Breve</label>
                                         <input type="text" v-model="formulario.descricao" class="form-control"
                                             placeholder="Ex: Prepara as refeições gerais">
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label small mb-1">Limite de Homens</label>
-                                        <input type="number" min="0" step="1" v-model="formulario.limite_homens" class="form-control"
-                                            placeholder="Ex: 15">
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label small mb-1">Limite de Mulheres</label>
-                                        <input type="number" min="0" step="1" v-model="formulario.limite_mulheres" class="form-control"
-                                            placeholder="Ex: 14">
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label small mb-1">Limite de Casais de Tios</label>
-                                        <input type="number" min="0" step="1" v-model="formulario.limite_casais_tios" class="form-control"
-                                            placeholder="Ex: 2">
                                     </div>
                                     <div class="col-md-12">
                                         <label class="form-label small mb-1">Ícone da Equipe</label>
@@ -336,9 +349,14 @@
                                         <div class="team-role-meta">
                                             <span class="badge-role">{{ funcao.papel_base || 'Membro' }}</span>
                                             <span v-if="funcao.is_padrao" class="badge-subrole">Padrão</span>
-                                            <button class="btn btn-sm btn-outline-danger py-0 px-2"
-                                                @click="removerFuncao(funcao.id)" title="Deletar Função"><i
-                                                    class="fas fa-trash-alt"></i></button>
+                                            <button type="button"
+                                                class="btn-icon-delete"
+                                                data-ui-skip-standardize
+                                                @click="removerFuncao(funcao.id)"
+                                                title="Remover função"
+                                                aria-label="Remover função">
+                                                <i class="fas fa-trash-alt"></i>
+                                            </button>
                                         </div>
                                     </li>
                                 </ul>
@@ -385,8 +403,11 @@
                                     <span v-for="p in papeisDisponiveis" :key="`papel-tag-${p.id}`"
                                         class="paper-tag d-inline-flex align-items-center">
                                         {{ p.nome }}
-                                        <button class="btn btn-link btn-sm p-0 ms-1 text-danger text-decoration-none"
-                                            title="Excluir papel" @click="removerPapel(p.id)">×</button>
+                                        <button type="button"
+                                            class="paper-tag-remove"
+                                            title="Remover papel"
+                                            aria-label="Remover papel"
+                                            @click="removerPapel(p.id)">×</button>
                                     </span>
                                 </div>
                             </div>
@@ -420,9 +441,14 @@
                                 </div>
                                 <div class="team-role-meta">
                                     <span class="badge-role">{{ fp.papel_base || 'Membro' }}</span>
-                                    <button class="btn btn-icon-delete"
-                                        @click="removerFuncaoPadrao(fp.id)" title="Remover Função Padrão"><i
-                                            class="fas fa-trash-alt"></i></button>
+                                    <button type="button"
+                                        class="btn-icon-delete"
+                                        data-ui-skip-standardize
+                                        @click="removerFuncaoPadrao(fp.id)"
+                                        title="Remover função padrão"
+                                        aria-label="Remover função padrão">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
                                 </div>
                             </li>
                         </ul>
@@ -493,10 +519,7 @@
                         descricao: '',
                         icone_classe: 'fa-solid fa-users',
                         cor_icone: '#2563eb',
-                        membros_outro_ejc: 0,
-                        limite_homens: '',
-                        limite_mulheres: '',
-                        limite_casais_tios: ''
+                        membros_outro_ejc: 0
                     },
 
                     funcoes: [],
@@ -757,10 +780,7 @@
                         descricao: '',
                         icone_classe: 'fa-solid fa-users',
                         cor_icone: '#2563eb',
-                        membros_outro_ejc: 0,
-                        limite_homens: '',
-                        limite_mulheres: '',
-                        limite_casais_tios: ''
+                        membros_outro_ejc: 0
                     };
                     this.funcoes = [];
                     this.novaFuncao = '';
@@ -777,10 +797,7 @@
                         descricao: equipe.descricao,
                         icone_classe: equipe.icone_classe || 'fa-solid fa-users',
                         cor_icone: equipe.cor_icone || '#2563eb',
-                        membros_outro_ejc: equipe.membros_outro_ejc ? 1 : 0,
-                        limite_homens: equipe.limite_homens ?? '',
-                        limite_mulheres: equipe.limite_mulheres ?? '',
-                        limite_casais_tios: equipe.limite_casais_tios ?? ''
+                        membros_outro_ejc: equipe.membros_outro_ejc ? 1 : 0
                     };
                     this.novaFuncao = '';
                     this.novaFuncaoPapel = this.papeisDisponiveis.length ? this.papeisDisponiveis[0].nome : 'Membro';
@@ -828,12 +845,13 @@
                 },
 
                 async deletarEquipe(id) {
-                    if (!(await window.showFloatingConfirm("Atenção! Deletar esta equipe também DELETARÁ todas as funções internas cadastradas nela. Deseja prosseguir de forma definitiva?"))) return;
+                    if (!(await window.showFloatingConfirm("Essa equipe sairá do menu de equipes, mas continuará preservada nas edições que já estiverem vinculadas. Deseja continuar?"))) return;
 
                     try {
                         const res = await fetch(`/api/equipes/${id}`, { method: 'DELETE' });
                         if (!res.ok) {
-                            alert("Erro ao excluir."); return;
+                            const err = await res.json().catch(() => ({}));
+                            alert(err.error || "Erro ao excluir."); return;
                         }
                         this.modalInstancia.hide();
                         this.buscarEquipes();

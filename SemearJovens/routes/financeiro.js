@@ -5,6 +5,17 @@ const { getTenantId, ensureTenantIsolation } = require('../lib/tenantIsolation')
 
 let tabelaFinanceiroGarantida = false;
 
+async function hasColumn(tableName, columnName) {
+    const [rows] = await pool.query(`
+        SELECT COUNT(*) AS cnt
+        FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = ?
+          AND COLUMN_NAME = ?
+    `, [tableName, columnName]);
+    return !!(rows && rows[0] && rows[0].cnt > 0);
+}
+
 async function garantirTabelaFinanceiro() {
     if (tabelaFinanceiroGarantida) return;
     await ensureTenantIsolation();
@@ -15,10 +26,18 @@ async function garantirTabelaFinanceiro() {
             tipo ENUM('ENTRADA', 'SAIDA') NOT NULL,
             valor DECIMAL(12,2) NOT NULL,
             descricao VARCHAR(255) NOT NULL,
+            usuario_id INT NULL,
+            usuario_nome VARCHAR(255) NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             KEY idx_financeiro_movimentacoes_tenant (tenant_id)
         )
     `);
+    if (!(await hasColumn('financeiro_movimentacoes', 'usuario_id'))) {
+        await pool.query('ALTER TABLE financeiro_movimentacoes ADD COLUMN usuario_id INT NULL AFTER descricao');
+    }
+    if (!(await hasColumn('financeiro_movimentacoes', 'usuario_nome'))) {
+        await pool.query('ALTER TABLE financeiro_movimentacoes ADD COLUMN usuario_nome VARCHAR(255) NULL AFTER usuario_id');
+    }
     tabelaFinanceiroGarantida = true;
 }
 
@@ -54,7 +73,7 @@ router.get('/movimentacoes', async (req, res) => {
     try {
         await garantirTabelaFinanceiro();
         const [rows] = await pool.query(`
-            SELECT id, tipo, valor, descricao, created_at
+            SELECT id, tipo, valor, descricao, usuario_id, usuario_nome, created_at
             FROM financeiro_movimentacoes
             WHERE tenant_id = ?
             ORDER BY created_at DESC, id DESC
@@ -71,6 +90,10 @@ router.post('/movimentacoes', async (req, res) => {
     const tipo = String(req.body.tipo || '').trim().toUpperCase();
     const descricao = String(req.body.descricao || '').trim();
     const valor = Number(req.body.valor);
+    const usuarioId = req.user && req.user.id ? Number(req.user.id) : null;
+    const usuarioNome = String(
+        (req.user && (req.user.nome_completo || req.user.username)) || ''
+    ).trim() || null;
 
     if (!['ENTRADA', 'SAIDA'].includes(tipo)) {
         return res.status(400).json({ error: "Tipo inválido. Use 'ENTRADA' ou 'SAIDA'." });
@@ -95,8 +118,8 @@ router.post('/movimentacoes', async (req, res) => {
 
         const valorNormalizado = Number(valor.toFixed(2));
         const [result] = await connection.query(
-            'INSERT INTO financeiro_movimentacoes (tenant_id, tipo, valor, descricao) VALUES (?, ?, ?, ?)',
-            [tenantId, tipo, valorNormalizado, descricao]
+            'INSERT INTO financeiro_movimentacoes (tenant_id, tipo, valor, descricao, usuario_id, usuario_nome) VALUES (?, ?, ?, ?, ?, ?)',
+            [tenantId, tipo, valorNormalizado, descricao, usuarioId, usuarioNome]
         );
 
         await connection.commit();

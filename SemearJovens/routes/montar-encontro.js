@@ -56,30 +56,13 @@ async function hasColumn(tableName, columnName) {
     return exists;
 }
 
-async function ensureEquipeSexoLimitsColumns() {
-    const [hasLimiteHomens, hasLimiteMulheres] = await Promise.all([
-        hasColumn('equipes', 'limite_homens'),
-        hasColumn('equipes', 'limite_mulheres')
-    ]);
-    if (!hasLimiteHomens) {
-        try {
-            await pool.query('ALTER TABLE equipes ADD COLUMN limite_homens INT NULL DEFAULT NULL');
-        } catch (_) { }
-        hasColumnCache.delete('equipes.limite_homens');
-    }
-    if (!hasLimiteMulheres) {
-        try {
-            await pool.query('ALTER TABLE equipes ADD COLUMN limite_mulheres INT NULL DEFAULT NULL');
-        } catch (_) { }
-        hasColumnCache.delete('equipes.limite_mulheres');
-    }
-    const hasLimiteCasaisTios = await hasColumn('equipes', 'limite_casais_tios');
-    if (!hasLimiteCasaisTios) {
-        try {
-            await pool.query('ALTER TABLE equipes ADD COLUMN limite_casais_tios INT NULL DEFAULT NULL');
-        } catch (_) { }
-        hasColumnCache.delete('equipes.limite_casais_tios');
-    }
+async function ensureEquipeAtivaColumn() {
+    const existe = await hasColumn('equipes', 'ativa');
+    if (existe) return;
+    try {
+        await pool.query('ALTER TABLE equipes ADD COLUMN ativa TINYINT(1) NOT NULL DEFAULT 1');
+    } catch (_) { }
+    hasColumnCache.delete('equipes.ativa');
 }
 
 function normalizarSexo(valor) {
@@ -87,41 +70,6 @@ function normalizarSexo(valor) {
     if (sexo === 'masculino') return 'masculino';
     if (sexo === 'feminino') return 'feminino';
     return '';
-}
-
-function contarSexosDoGrupo(grupo) {
-    const totais = { total: 0, homens: 0, mulheres: 0 };
-    for (const membro of (grupo || [])) {
-        const item = membro && membro.item ? membro.item : {};
-        const ehCasalTios = !!(item && item.eh_casal_tios);
-        if (ehCasalTios) {
-            totais.total += 2;
-            totais.homens += 1;
-            totais.mulheres += 1;
-            continue;
-        }
-        totais.total += 1;
-        const sexo = normalizarSexo(item ? item.sexo : null);
-        if (sexo === 'masculino') totais.homens += 1;
-        if (sexo === 'feminino') totais.mulheres += 1;
-    }
-    return totais;
-}
-
-function normalizarLimiteEquipe(valor) {
-    if (valor === null || valor === undefined || valor === '') return null;
-    const numero = Number(valor);
-    return Number.isFinite(numero) ? numero : null;
-}
-
-function equipeComportaGrupo(equipe, ocupacaoAtual, grupoTotais) {
-    const atual = ocupacaoAtual || { total: 0, homens: 0, mulheres: 0 };
-    const grupo = grupoTotais || { total: 0, homens: 0, mulheres: 0 };
-    const limiteHomens = normalizarLimiteEquipe(equipe && equipe.limite_homens);
-    const limiteMulheres = normalizarLimiteEquipe(equipe && equipe.limite_mulheres);
-    if (Number.isFinite(limiteHomens) && limiteHomens >= 0 && (atual.homens + grupo.homens) > limiteHomens) return false;
-    if (Number.isFinite(limiteMulheres) && limiteMulheres >= 0 && (atual.mulheres + grupo.mulheres) > limiteMulheres) return false;
-    return true;
 }
 
 async function ensureNaoServeEjcColumns() {
@@ -183,11 +131,213 @@ function normalizarTelefoneDigits(valor) {
     return String(valor || '').replace(/\D/g, '');
 }
 
+function normalizarTextoSql(expression) {
+    return `UPPER(TRIM(COALESCE(${expression}, '')))`;
+}
+
+function normalizarTelefoneSql(expression) {
+    return `REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TRIM(COALESCE(${expression}, '')), ' ', ''), '(', ''), ')', ''), '-', ''), '+', ''), '/', '')`;
+}
+
 function montarTelefoneCasal(telefoneTio, telefoneTia) {
     const itens = [telefoneTio, telefoneTia]
         .map((telefone) => String(telefone || '').trim())
         .filter(Boolean);
     return itens.length ? Array.from(new Set(itens)).join(' / ') : null;
+}
+
+function montarJoinCasalTiosSql(casalAlias = 'tc', membroAlias = 'mm') {
+    const nomeCasal = normalizarTextoSql(`CONCAT(COALESCE(${casalAlias}.nome_tio, ''), ' E ', COALESCE(${casalAlias}.nome_tia, ''))`);
+    const nomeMembro = normalizarTextoSql(`${membroAlias}.nome_externo`);
+    const primeiroNomeTio = normalizarTextoSql(`SUBSTRING_INDEX(COALESCE(${casalAlias}.nome_tio, ''), ' ', 1)`);
+    const primeiroNomeTia = normalizarTextoSql(`SUBSTRING_INDEX(COALESCE(${casalAlias}.nome_tia, ''), ' ', 1)`);
+    const telefoneMembro = normalizarTelefoneSql(`${membroAlias}.telefone_externo`);
+    const telefoneTio = normalizarTelefoneSql(`${casalAlias}.telefone_tio`);
+    const telefoneTia = normalizarTelefoneSql(`${casalAlias}.telefone_tia`);
+
+    return `${casalAlias}.tenant_id = ${membroAlias}.tenant_id
+          AND (
+                ${casalAlias}.id = ${membroAlias}.tio_casal_id
+                OR (
+                    ${membroAlias}.tio_casal_id IS NULL
+                    AND (
+                        ${nomeCasal} = ${nomeMembro}
+                        OR (
+                            ${nomeMembro} <> ''
+                            AND ${telefoneMembro} <> ''
+                            AND ${primeiroNomeTio} <> ''
+                            AND ${primeiroNomeTia} <> ''
+                            AND INSTR(${nomeMembro}, ${primeiroNomeTio}) > 0
+                            AND INSTR(${nomeMembro}, ${primeiroNomeTia}) > 0
+                            AND (
+                                (${telefoneTio} <> '' AND INSTR(${telefoneMembro}, ${telefoneTio}) > 0)
+                                OR (${telefoneTia} <> '' AND INSTR(${telefoneMembro}, ${telefoneTia}) > 0)
+                            )
+                        )
+                    )
+                )
+          )`;
+}
+
+async function sincronizarServicosTiosDaMontagem({ tenantId, montagemId }) {
+    const montagemIdNum = Number(montagemId);
+    if (!tenantId || !montagemIdNum) return;
+    await garantirEstruturaMontagemMembrosExtra();
+
+    const [temCasais, temServicos] = await Promise.all([
+        hasTable('tios_casais'),
+        hasTable('tios_casal_servicos')
+    ]);
+    if (!temCasais || !temServicos) return;
+
+    const temEquipesCasal = await hasTable('tios_casal_equipes');
+    const [temNomeTioSnapshot, temTelefoneTioSnapshot, temNomeTiaSnapshot, temTelefoneTiaSnapshot] = await Promise.all([
+        hasColumn('tios_casal_servicos', 'nome_tio_snapshot'),
+        hasColumn('tios_casal_servicos', 'telefone_tio_snapshot'),
+        hasColumn('tios_casal_servicos', 'nome_tia_snapshot'),
+        hasColumn('tios_casal_servicos', 'telefone_tia_snapshot')
+    ]);
+
+    const [atuaisRows] = await pool.query(
+        `SELECT DISTINCT
+            tc.id AS casal_id,
+            mm.equipe_id,
+            tc.nome_tio,
+            tc.telefone_tio,
+            tc.nome_tia,
+            tc.telefone_tia
+         FROM montagem_membros mm
+         JOIN tios_casais tc
+           ON ${montarJoinCasalTiosSql('tc', 'mm')}
+         WHERE mm.tenant_id = ?
+           AND mm.montagem_id = ?
+           AND mm.jovem_id IS NULL
+           AND mm.equipe_id IS NOT NULL
+           AND (mm.status_ligacao IS NULL OR mm.status_ligacao <> 'RECUSOU')`,
+        [tenantId, montagemIdNum]
+    );
+
+    const desejados = new Map();
+    for (const row of (atuaisRows || [])) {
+        const casalId = Number(row.casal_id);
+        const equipeId = Number(row.equipe_id);
+        if (!casalId || !equipeId) continue;
+        const chave = `${casalId}:${equipeId}`;
+        if (desejados.has(chave)) continue;
+        desejados.set(chave, {
+            casalId,
+            equipeId,
+            nomeTio: row.nome_tio || null,
+            telefoneTio: row.telefone_tio || null,
+            nomeTia: row.nome_tia || null,
+            telefoneTia: row.telefone_tia || null
+        });
+    }
+
+    const [existentesRows] = await pool.query(
+        `SELECT id, casal_id, equipe_id
+         FROM tios_casal_servicos
+         WHERE tenant_id = ?
+           AND ejc_id = ?`,
+        [tenantId, montagemIdNum]
+    );
+
+    const existentesPorChave = new Map();
+    for (const row of (existentesRows || [])) {
+        const chave = `${Number(row.casal_id)}:${Number(row.equipe_id)}`;
+        if (!existentesPorChave.has(chave)) {
+            existentesPorChave.set(chave, row);
+            continue;
+        }
+        await pool.query('DELETE FROM tios_casal_servicos WHERE id = ? AND tenant_id = ?', [row.id, tenantId]);
+    }
+
+    for (const [chave, row] of existentesPorChave.entries()) {
+        const desejado = desejados.get(chave);
+        if (!desejado) {
+            await pool.query('DELETE FROM tios_casal_servicos WHERE id = ? AND tenant_id = ?', [row.id, tenantId]);
+            continue;
+        }
+
+        const updates = [];
+        const params = [];
+        if (temNomeTioSnapshot) {
+            updates.push('nome_tio_snapshot = ?');
+            params.push(desejado.nomeTio);
+        }
+        if (temTelefoneTioSnapshot) {
+            updates.push('telefone_tio_snapshot = ?');
+            params.push(desejado.telefoneTio);
+        }
+        if (temNomeTiaSnapshot) {
+            updates.push('nome_tia_snapshot = ?');
+            params.push(desejado.nomeTia);
+        }
+        if (temTelefoneTiaSnapshot) {
+            updates.push('telefone_tia_snapshot = ?');
+            params.push(desejado.telefoneTia);
+        }
+        if (updates.length) {
+            params.push(row.id, tenantId);
+            await pool.query(
+                `UPDATE tios_casal_servicos
+                 SET ${updates.join(', ')}
+                 WHERE id = ?
+                   AND tenant_id = ?`,
+                params
+            );
+        }
+        desejados.delete(chave);
+    }
+
+    for (const item of desejados.values()) {
+        if (temNomeTioSnapshot && temTelefoneTioSnapshot && temNomeTiaSnapshot && temTelefoneTiaSnapshot) {
+            await pool.query(
+                `INSERT IGNORE INTO tios_casal_servicos
+                    (tenant_id, casal_id, equipe_id, ejc_id, nome_tio_snapshot, telefone_tio_snapshot, nome_tia_snapshot, telefone_tia_snapshot)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+                [tenantId, item.casalId, item.equipeId, montagemIdNum, item.nomeTio, item.telefoneTio, item.nomeTia, item.telefoneTia]
+            );
+            continue;
+        }
+        await pool.query(
+            `INSERT IGNORE INTO tios_casal_servicos
+                (tenant_id, casal_id, equipe_id, ejc_id)
+             VALUES (?, ?, ?, ?)`,
+            [tenantId, item.casalId, item.equipeId, montagemIdNum]
+        );
+    }
+
+    if (!temEquipesCasal) return;
+
+    const casalIdsTocados = Array.from(new Set([
+        ...(existentesRows || []).map((row) => Number(row.casal_id)).filter(Boolean),
+        ...Array.from(desejados.values()).map((item) => Number(item.casalId)).filter(Boolean),
+        ...(atuaisRows || []).map((row) => Number(row.casal_id)).filter(Boolean)
+    ]));
+    if (!casalIdsTocados.length) return;
+
+    await pool.query(
+        `DELETE FROM tios_casal_equipes
+         WHERE tenant_id = ?
+           AND casal_id IN (${casalIdsTocados.map(() => '?').join(',')})`,
+        [tenantId, ...casalIdsTocados]
+    );
+
+    const [equipesRows] = await pool.query(
+        `SELECT DISTINCT casal_id, equipe_id
+         FROM tios_casal_servicos
+         WHERE tenant_id = ?
+           AND casal_id IN (${casalIdsTocados.map(() => '?').join(',')})`,
+        [tenantId, ...casalIdsTocados]
+    );
+    if ((equipesRows || []).length) {
+        await pool.query(
+            `INSERT IGNORE INTO tios_casal_equipes (tenant_id, casal_id, equipe_id)
+             VALUES ?`,
+            [(equipesRows || []).map((row) => [tenantId, Number(row.casal_id), Number(row.equipe_id)])]
+        );
+    }
 }
 
 function normalizarTextoCasal(valor) {
@@ -366,6 +516,13 @@ function montarEtiquetaEdicao(numeroEjc) {
 
 function normalizarDestinoSelecao(valor) {
     return String(valor || '').trim().toLowerCase() === 'reserva' ? 'reserva' : 'titular';
+}
+
+function normalizarOrdemReservaSelecao(valor, destino) {
+    if (normalizarDestinoSelecao(destino) !== 'reserva') return null;
+    const numero = Number(valor);
+    if (!Number.isInteger(numero) || numero < 1) return null;
+    return numero;
 }
 
 function normalizarDataISO(valor) {
@@ -585,6 +742,59 @@ function normalizarListaIds(valor) {
         .filter((id) => Number.isInteger(id) && id > 0)));
 }
 
+async function obterProximaOrdemReserva(executor, { tenantId, montagemId, equipeId }) {
+    const [[row]] = await executor.query(
+        `SELECT COALESCE(MAX(ordem_reserva), 0) + 1 AS proxima_ordem
+         FROM montagem_membros
+         WHERE tenant_id = ?
+           AND montagem_id = ?
+           AND equipe_id = ?
+           AND eh_substituicao = 1`,
+        [tenantId, montagemId, equipeId]
+    );
+    const proxima = Number(row && row.proxima_ordem);
+    return Number.isInteger(proxima) && proxima > 0 ? proxima : 1;
+}
+
+async function normalizarOrdensReservaDaEquipe(executor, { tenantId, montagemId, equipeId }) {
+    const [rows] = await executor.query(
+        `SELECT id, ordem_reserva
+         FROM montagem_membros
+         WHERE tenant_id = ?
+           AND montagem_id = ?
+           AND equipe_id = ?
+           AND eh_substituicao = 1
+         ORDER BY
+           CASE WHEN ordem_reserva IS NULL OR ordem_reserva < 1 THEN 1 ELSE 0 END ASC,
+           ordem_reserva ASC,
+           id ASC`,
+        [tenantId, montagemId, equipeId]
+    );
+
+    let atualizou = false;
+    for (let i = 0; i < (rows || []).length; i++) {
+        const item = rows[i];
+        const ordemEsperada = i + 1;
+        if (Number(item && item.ordem_reserva) === ordemEsperada) continue;
+        await executor.query(
+            'UPDATE montagem_membros SET ordem_reserva = ? WHERE id = ? AND tenant_id = ?',
+            [ordemEsperada, item.id, tenantId]
+        );
+        atualizou = true;
+    }
+    return atualizou;
+}
+
+function obterFiltroEquipesDistribuicao(body) {
+    const dados = body && typeof body === 'object' ? body : {};
+    const temEquipesSelecionadas = Object.prototype.hasOwnProperty.call(dados, 'equipes_selecionadas');
+    return {
+        temEquipesSelecionadas,
+        equipesSelecionadas: normalizarListaIds(dados.equipes_selecionadas),
+        equipesExcluidas: normalizarListaIds(dados.excluir_equipes)
+    };
+}
+
 function obterDiaSemanaDaDataIso(dataIso) {
     const texto = String(dataIso || '').trim();
     if (!texto) return null;
@@ -596,12 +806,14 @@ function obterDiaSemanaDaDataIso(dataIso) {
 async function sincronizarEquipesDoEjc({ tenantId, ejcId, equipeIdsSelecionadas }) {
     const ids = normalizarListaIds(equipeIdsSelecionadas);
     if (!Number.isInteger(Number(ejcId)) || Number(ejcId) <= 0 || !ids.length) return;
+    await ensureEquipeAtivaColumn();
 
     const [equipesValidas] = await pool.query(
         `SELECT id
          FROM equipes
          WHERE tenant_id = ?
-           AND id IN (?)`,
+           AND id IN (?)
+           AND COALESCE(ativa, 1) = 1`,
         [tenantId, ids]
     );
     const idsValidos = Array.from(new Set((equipesValidas || [])
@@ -610,10 +822,15 @@ async function sincronizarEquipesDoEjc({ tenantId, ejcId, equipeIdsSelecionadas 
     if (!idsValidos.length) return;
 
     await pool.query(
-        `DELETE FROM equipes_ejc
-         WHERE tenant_id = ?
-           AND ejc_id = ?
-           AND equipe_id NOT IN (?)`,
+        `DELETE ee
+         FROM equipes_ejc ee
+         JOIN equipes eq
+           ON eq.id = ee.equipe_id
+          AND eq.tenant_id = ee.tenant_id
+         WHERE ee.tenant_id = ?
+           AND ee.ejc_id = ?
+           AND COALESCE(eq.ativa, 1) = 1
+           AND ee.equipe_id NOT IN (?)`,
         [tenantId, ejcId, idsValidos]
     );
     await pool.query(
@@ -1050,11 +1267,14 @@ async function hasMontagemDiaSemanaReunioesColumn() {
 }
 
 async function garantirEstruturaMontagemMembrosExtra() {
+    await runAlterIgnoreDuplicate("ALTER TABLE montagem_membros ADD COLUMN tio_casal_id INT NULL AFTER jovem_id");
+    await runAlterIgnoreDuplicate("ALTER TABLE montagem_membros ADD KEY idx_montagem_membros_tio_casal (tio_casal_id)");
     await runAlterIgnoreDuplicate("ALTER TABLE montagem_membros ADD COLUMN status_ligacao ENUM('ACEITOU','RECUSOU','LIGAR_MAIS_TARDE','TELEFONE_INCORRETO') NULL AFTER jovem_id");
     await runAlterIgnoreDuplicate("ALTER TABLE montagem_membros ADD COLUMN motivo_recusa TEXT NULL AFTER status_ligacao");
     await runAlterIgnoreDuplicate("ALTER TABLE montagem_membros ADD COLUMN eh_substituicao TINYINT(1) NOT NULL DEFAULT 0 AFTER motivo_recusa");
+    await runAlterIgnoreDuplicate("ALTER TABLE montagem_membros ADD COLUMN ordem_reserva INT NULL AFTER eh_substituicao");
     await runAlterIgnoreDuplicate("ALTER TABLE montagem_membros ADD COLUMN nome_externo VARCHAR(180) NULL AFTER eh_substituicao");
-    await runAlterIgnoreDuplicate("ALTER TABLE montagem_membros ADD COLUMN telefone_externo VARCHAR(30) NULL AFTER nome_externo");
+    await runAlterIgnoreDuplicate("ALTER TABLE montagem_membros ADD COLUMN telefone_externo VARCHAR(80) NULL AFTER nome_externo");
     try {
         await pool.query("ALTER TABLE montagem_membros MODIFY jovem_id INT NULL");
     } catch (err) {
@@ -1066,6 +1286,24 @@ async function garantirEstruturaMontagemMembrosExtra() {
     }
     try {
         await pool.query("ALTER TABLE montagem_membros MODIFY status_ligacao ENUM('ACEITOU','RECUSOU','LIGAR_MAIS_TARDE','TELEFONE_INCORRETO') NULL");
+    } catch (err) {
+        if (!err || err.code !== 'ER_DUP_FIELDNAME') {
+            if (err.code !== 'ER_PARSE_ERROR' && err.code !== 'ER_BAD_FIELD_ERROR') {
+                throw err;
+            }
+        }
+    }
+    try {
+        await pool.query("ALTER TABLE montagem_membros MODIFY telefone_externo VARCHAR(80) NULL");
+    } catch (err) {
+        if (!err || err.code !== 'ER_DUP_FIELDNAME') {
+            if (err.code !== 'ER_PARSE_ERROR' && err.code !== 'ER_BAD_FIELD_ERROR') {
+                throw err;
+            }
+        }
+    }
+    try {
+        await pool.query("ALTER TABLE montagem_membros MODIFY ordem_reserva INT NULL");
     } catch (err) {
         if (!err || err.code !== 'ER_DUP_FIELDNAME') {
             if (err.code !== 'ER_PARSE_ERROR' && err.code !== 'ER_BAD_FIELD_ERROR') {
@@ -1090,6 +1328,7 @@ async function garantirEstruturaMontagemJovensServir() {
             jovem_id INT NOT NULL,
             pode_servir TINYINT(1) NOT NULL DEFAULT 1,
             destino ENUM('titular', 'reserva') NOT NULL DEFAULT 'titular',
+            ordem_reserva INT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             UNIQUE KEY uniq_montagem_jovem_servir (montagem_id, jovem_id),
@@ -1098,6 +1337,7 @@ async function garantirEstruturaMontagemJovensServir() {
         )
     `);
     await runAlterIgnoreDuplicate("ALTER TABLE montagem_jovens_servir ADD COLUMN destino ENUM('titular', 'reserva') NOT NULL DEFAULT 'titular' AFTER pode_servir");
+    await runAlterIgnoreDuplicate("ALTER TABLE montagem_jovens_servir ADD COLUMN ordem_reserva INT NULL AFTER destino");
 }
 
 async function garantirEstruturaMontagemTiosServir() {
@@ -1108,6 +1348,7 @@ async function garantirEstruturaMontagemTiosServir() {
             casal_id INT NOT NULL,
             pode_servir TINYINT(1) NOT NULL DEFAULT 1,
             destino ENUM('titular', 'reserva') NOT NULL DEFAULT 'titular',
+            ordem_reserva INT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             UNIQUE KEY uniq_montagem_tio_servir (montagem_id, casal_id),
@@ -1116,6 +1357,7 @@ async function garantirEstruturaMontagemTiosServir() {
         )
     `);
     await runAlterIgnoreDuplicate("ALTER TABLE montagem_tios_servir ADD COLUMN destino ENUM('titular', 'reserva') NOT NULL DEFAULT 'titular' AFTER pode_servir");
+    await runAlterIgnoreDuplicate("ALTER TABLE montagem_tios_servir ADD COLUMN ordem_reserva INT NULL AFTER destino");
 }
 
 async function garantirEstruturaMontagemOutroEjcServir() {
@@ -1129,6 +1371,7 @@ async function garantirEstruturaMontagemOutroEjcServir() {
             outro_ejc_id INT NULL,
             pode_servir TINYINT(1) NOT NULL DEFAULT 1,
             destino ENUM('titular', 'reserva') NOT NULL DEFAULT 'titular',
+            ordem_reserva INT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             UNIQUE KEY uniq_montagem_outro_servir (montagem_id, jovem_id, nome_externo, telefone_externo),
@@ -1137,6 +1380,7 @@ async function garantirEstruturaMontagemOutroEjcServir() {
         )
     `);
     await runAlterIgnoreDuplicate("ALTER TABLE montagem_outro_ejc_servir ADD COLUMN destino ENUM('titular', 'reserva') NOT NULL DEFAULT 'titular' AFTER pode_servir");
+    await runAlterIgnoreDuplicate("ALTER TABLE montagem_outro_ejc_servir ADD COLUMN ordem_reserva INT NULL AFTER destino");
 }
 
 // Listar montagens de encontros
@@ -1144,7 +1388,6 @@ router.get('/', async (req, res) => {
     try {
         const tenantId = getTenantId(req);
         await garantirEstruturaMontagemMembrosExtra();
-        await ensureEquipeSexoLimitsColumns();
         await garantirEstruturaMontagemDatas();
         const comDataInicio = await hasMontagemDataInicioColumn();
         const comDataFim = await hasMontagemDataFimColumn();
@@ -1952,7 +2195,6 @@ router.get('/:id/estrutura', async (req, res) => {
     try {
         const tenantId = getTenantId(req);
         await garantirEstruturaMontagemMembrosExtra();
-        await ensureEquipeSexoLimitsColumns();
         const equipeIdsPermitidas = await obterEquipeIdsDaMontagem({ tenantId, montagemId });
         const comPapelBase = await hasPapelBaseColumn();
         const papelBaseSelect = comPapelBase
@@ -1966,7 +2208,6 @@ router.get('/:id/estrutura', async (req, res) => {
         }
         const [equipesFuncoes] = await pool.query(`
             SELECT eq.id as equipe_id, eq.nome as equipe_nome, COALESCE(eq.membros_outro_ejc, 0) AS membros_outro_ejc,
-                   eq.limite_homens, eq.limite_mulheres,
                    ef.id as funcao_id, ef.nome as funcao_nome, ${papelBaseSelect} as papel_base
             FROM equipes eq
             LEFT JOIN equipes_funcoes ef ON eq.id = ef.equipe_id
@@ -1982,8 +2223,7 @@ router.get('/:id/estrutura', async (req, res) => {
             FROM montagem_membros mm
             LEFT JOIN jovens j ON mm.jovem_id = j.id
             LEFT JOIN tios_casais tc
-              ON tc.tenant_id = mm.tenant_id
-             AND TRIM(CONCAT(COALESCE(tc.nome_tio, ''), ' e ', COALESCE(tc.nome_tia, ''))) = TRIM(COALESCE(mm.nome_externo, ''))
+              ON ${montarJoinCasalTiosSql('tc', 'mm')}
             WHERE mm.montagem_id = ?
               AND mm.tenant_id = ?
               AND (mm.status_ligacao IS NULL OR mm.status_ligacao <> 'RECUSOU')
@@ -1996,8 +2236,6 @@ router.get('/:id/estrutura', async (req, res) => {
                     id: row.equipe_id,
                     nome: row.equipe_nome,
                     membros_outro_ejc: row.membros_outro_ejc ? 1 : 0,
-                    limite_homens: row.limite_homens === null ? null : Number(row.limite_homens),
-                    limite_mulheres: row.limite_mulheres === null ? null : Number(row.limite_mulheres),
                     funcoes: []
                 };
             }
@@ -2035,8 +2273,7 @@ router.get('/:id/info', async (req, res) => {
 
         const joinsTios = temTabelaTios
             ? `LEFT JOIN tios_casais tc
-                  ON tc.tenant_id = mm.tenant_id
-                 AND TRIM(CONCAT(COALESCE(tc.nome_tio, ''), ' e ', COALESCE(tc.nome_tia, ''))) = TRIM(COALESCE(mm.nome_externo, ''))`
+                  ON ${montarJoinCasalTiosSql('tc', 'mm')}`
             : '';
         const selectTios = temTabelaTios
             ? `, COALESCE(tc.restricao_alimentar, 0) AS tio_restricao_alimentar,
@@ -2330,7 +2567,8 @@ router.get('/:id/jovens-sem-equipe', async (req, res) => {
                 ${hasConjugeNome ? 'j.conjuge_nome' : 'NULL AS conjuge_nome'},
                 ${hasConjugeOutroEjcId ? 'j.conjuge_outro_ejc_id' : 'NULL AS conjuge_outro_ejc_id'},
                 COALESCE(mjs.pode_servir, 0) AS pode_servir,
-                COALESCE(mjs.destino, 'titular') AS destino
+                COALESCE(mjs.destino, 'titular') AS destino,
+                mjs.ordem_reserva
             FROM jovens j
             LEFT JOIN ejc e_id
               ON e_id.id = j.numero_ejc_fez
@@ -2382,14 +2620,15 @@ router.post('/:id/jovens-servir/selecionar', async (req, res) => {
                 .map((item) => ({
                     jovemId: Number(item && item.id),
                     podeServir: item && item.selecionado ? 1 : 0,
-                    destino: normalizarDestinoSelecao(item && item.destino)
+                    destino: normalizarDestinoSelecao(item && item.destino),
+                    ordemReserva: normalizarOrdemReservaSelecao(item && item.ordem_reserva, item && item.destino)
                 }))
                 .filter((item) => Number.isInteger(item.jovemId) && item.jovemId > 0);
             if (values.length) {
                 await pool.query(
-                    `INSERT INTO montagem_jovens_servir (montagem_id, jovem_id, pode_servir, destino)
+                    `INSERT INTO montagem_jovens_servir (montagem_id, jovem_id, pode_servir, destino, ordem_reserva)
                      VALUES ?`,
-                    [values.map((item) => [montagemId, item.jovemId, item.podeServir, item.destino])]
+                    [values.map((item) => [montagemId, item.jovemId, item.podeServir, item.destino, item.ordemReserva])]
                 );
             }
         } else {
@@ -2417,9 +2656,9 @@ router.post('/:id/jovens-servir/selecionar', async (req, res) => {
             for (const jovemId of selecionados) {
                 // eslint-disable-next-line no-await-in-loop
                 await pool.query(
-                    `INSERT INTO montagem_jovens_servir (montagem_id, jovem_id, pode_servir, destino)
-                     VALUES (?, ?, 1, 'titular')
-                     ON DUPLICATE KEY UPDATE pode_servir = 1, destino = 'titular'`,
+                    `INSERT INTO montagem_jovens_servir (montagem_id, jovem_id, pode_servir, destino, ordem_reserva)
+                     VALUES (?, ?, 1, 'titular', NULL)
+                     ON DUPLICATE KEY UPDATE pode_servir = 1, destino = 'titular', ordem_reserva = NULL`,
                     [montagemId, jovemId]
                 );
             }
@@ -2438,16 +2677,12 @@ router.post('/:id/jovens-servir/distribuir', async (req, res) => {
     const connection = await pool.getConnection();
     try {
         const tenantId = getTenantId(req);
+        const filtroEquipes = obterFiltroEquipesDistribuicao(req.body);
         const equipeIdsPermitidas = await obterEquipeIdsDaMontagem({ tenantId, montagemId });
         const destino = normalizarDestinoSelecao(req.body && req.body.destino);
         const ehSubstituicao = destino === 'reserva' ? 1 : 0;
-        const excluidas = Array.isArray(req.body && req.body.excluir_equipes)
-            ? req.body.excluir_equipes.map((id) => Number(id)).filter((id) => Number.isFinite(id) && id > 0)
-            : [];
-        const excluirSet = new Set(excluidas);
         await garantirEstruturaMontagemJovensServir();
         await garantirEstruturaMontagemMembrosExtra();
-        await ensureEquipeSexoLimitsColumns();
         const hasJovens = await hasTable('jovens');
         const hasMontagemMembros = await hasTable('montagem_membros');
         const hasHistorico = await hasTable('historico_equipes');
@@ -2490,8 +2725,7 @@ router.post('/:id/jovens-servir/distribuir', async (req, res) => {
             FROM montagem_membros mm
             LEFT JOIN jovens j ON j.id = mm.jovem_id
             LEFT JOIN tios_casais tc
-              ON tc.tenant_id = mm.tenant_id
-             AND TRIM(CONCAT(COALESCE(tc.nome_tio, ''), ' e ', COALESCE(tc.nome_tia, ''))) = TRIM(COALESCE(mm.nome_externo, ''))
+              ON ${montarJoinCasalTiosSql('tc', 'mm')}
             WHERE mm.montagem_id = ?
               AND mm.tenant_id = ?
         `, [montagemId, tenantId]);
@@ -2521,7 +2755,6 @@ router.post('/:id/jovens-servir/distribuir', async (req, res) => {
         }
         const [equipesFuncoes] = await connection.query(`
             SELECT eq.id as equipe_id, eq.nome as equipe_nome, COALESCE(eq.membros_outro_ejc, 0) AS membros_outro_ejc,
-                   eq.limite_homens, eq.limite_mulheres,
                    ef.id as funcao_id, ef.nome as funcao_nome, ${papelBaseSelect} as papel_base
             FROM equipes eq
             LEFT JOIN equipes_funcoes ef ON eq.id = ef.equipe_id
@@ -2530,22 +2763,19 @@ router.post('/:id/jovens-servir/distribuir', async (req, res) => {
             ORDER BY eq.nome ASC, ef.nome ASC
         `, paramsEquipes);
 
-        const equipeMap = new Map();
+        const equipeMapBase = new Map();
         for (const row of (equipesFuncoes || [])) {
-            if (excluirSet.has(Number(row.equipe_id))) continue;
             if (row.membros_outro_ejc) continue;
-            if (!equipeMap.has(row.equipe_id)) {
-                equipeMap.set(row.equipe_id, {
+            if (!equipeMapBase.has(row.equipe_id)) {
+                equipeMapBase.set(row.equipe_id, {
                     id: row.equipe_id,
                     nome: row.equipe_nome || '',
-                    limite_homens: row.limite_homens === null ? null : Number(row.limite_homens),
-                    limite_mulheres: row.limite_mulheres === null ? null : Number(row.limite_mulheres),
                     funcao_id: null,
                     funcoes: []
                 });
             }
             if (row.funcao_id) {
-                equipeMap.get(row.equipe_id).funcoes.push({
+                equipeMapBase.get(row.equipe_id).funcoes.push({
                     id: row.funcao_id,
                     nome: row.funcao_nome || '',
                     papel_base: row.papel_base || 'Membro'
@@ -2553,7 +2783,7 @@ router.post('/:id/jovens-servir/distribuir', async (req, res) => {
             }
         }
 
-        const equipes = Array.from(equipeMap.values()).map((eq) => {
+        const equipesBase = Array.from(equipeMapBase.values()).map((eq) => {
             let funcaoId = null;
             if (eq.funcoes.length) {
                 const membro = eq.funcoes.find(f => String(f.papel_base || '').toLowerCase() === 'membro')
@@ -2564,7 +2794,26 @@ router.post('/:id/jovens-servir/distribuir', async (req, res) => {
             return { ...eq, funcao_id: funcaoId };
         }).filter(eq => !!eq.funcao_id);
 
+        if (filtroEquipes.temEquipesSelecionadas && !filtroEquipes.equipesSelecionadas.length) {
+            return res.status(400).json({ error: 'Selecione pelo menos uma equipe para receber a distribuição.' });
+        }
+
+        let equipes = equipesBase;
+        if (filtroEquipes.temEquipesSelecionadas) {
+            const selecionadasSet = new Set(filtroEquipes.equipesSelecionadas);
+            equipes = equipesBase.filter((eq) => selecionadasSet.has(Number(eq.id)));
+        } else if (filtroEquipes.equipesExcluidas.length) {
+            const excluirSet = new Set(filtroEquipes.equipesExcluidas);
+            equipes = equipesBase.filter((eq) => !excluirSet.has(Number(eq.id)));
+        }
+
         if (!equipes.length) {
+            if (filtroEquipes.temEquipesSelecionadas) {
+                return res.status(400).json({ error: 'Nenhuma equipe selecionada está disponível para receber a distribuição.' });
+            }
+            if (equipesBase.length && filtroEquipes.equipesExcluidas.length) {
+                return res.status(400).json({ error: 'Todas as equipes elegíveis foram excluídas da distribuição. Deixe pelo menos uma equipe desmarcada.' });
+            }
             return res.status(400).json({ error: 'Nenhuma equipe com função de membro encontrada.' });
         }
 
@@ -2720,12 +2969,10 @@ router.post('/:id/jovens-servir/distribuir', async (req, res) => {
                 }
             }
 
-            const totaisGrupo = contarSexosDoGrupo(grupo);
             const equipesFamiliaBloqueadas = equipesBloqueadasPorFamilia(grupo, mapaFamilia, alocadoEquipePorJovemId);
             if (equipesFamiliaBloqueadas.size) {
                 elegiveis = elegiveis.filter((eq) => !equipesFamiliaBloqueadas.has(Number(eq.id)));
             }
-            elegiveis = elegiveis.filter((eq) => equipeComportaGrupo(eq, assignedCount.get(eq.id), totaisGrupo));
             if (!elegiveis.length) {
                 grupo.forEach(({ tipo, item }) => {
                     sem_equipe.push(
@@ -2815,11 +3062,11 @@ router.post('/:id/jovens-servir/distribuir', async (req, res) => {
 router.post('/:id/tios-servir/distribuir', async (req, res) => {
     const montagemId = Number(req.params.id);
     if (!montagemId) return res.status(400).json({ error: 'ID inválido.' });
-    const excluirEquipes = Array.isArray(req.body && req.body.excluir_equipes) ? req.body.excluir_equipes : [];
-    const excluirSet = new Set(excluirEquipes.map((e) => Number(e)).filter(Boolean));
     try {
+        await garantirEstruturaMontagemMembrosExtra();
         await garantirEstruturaMontagemTiosServir();
         const tenantId = getTenantId(req);
+        const filtroEquipes = obterFiltroEquipesDistribuicao(req.body);
         const equipeIdsPermitidas = await obterEquipeIdsDaMontagem({ tenantId, montagemId });
         const destino = normalizarDestinoSelecao(req.body && req.body.destino);
         const ehSubstituicao = destino === 'reserva' ? 1 : 0;
@@ -2856,14 +3103,13 @@ router.post('/:id/tios-servir/distribuir', async (req, res) => {
             ORDER BY eq.nome ASC, ef.nome ASC
         `, paramsEquipes);
 
-        const equipeMap = new Map();
+        const equipeMapBase = new Map();
         for (const row of (equipesFuncoes || [])) {
-            if (excluirSet.has(Number(row.equipe_id))) continue;
-            if (!equipeMap.has(row.equipe_id)) {
-                equipeMap.set(row.equipe_id, { id: row.equipe_id, nome: row.equipe_nome || '', funcoes: [] });
+            if (!equipeMapBase.has(row.equipe_id)) {
+                equipeMapBase.set(row.equipe_id, { id: row.equipe_id, nome: row.equipe_nome || '', funcoes: [] });
             }
             if (row.funcao_id) {
-                equipeMap.get(row.equipe_id).funcoes.push({
+                equipeMapBase.get(row.equipe_id).funcoes.push({
                     id: row.funcao_id,
                     nome: row.funcao_nome || '',
                     papel_base: row.papel_base || 'Membro'
@@ -2871,7 +3117,7 @@ router.post('/:id/tios-servir/distribuir', async (req, res) => {
             }
         }
 
-        const equipes = Array.from(equipeMap.values()).map((eq) => {
+        const equipesBase = Array.from(equipeMapBase.values()).map((eq) => {
             let funcaoId = null;
             if (eq.funcoes.length) {
                 const funcaoTio = eq.funcoes.find(f => String(f.papel_base || '').toLowerCase() === 'tio')
@@ -2883,7 +3129,26 @@ router.post('/:id/tios-servir/distribuir', async (req, res) => {
             return { ...eq, funcao_id: funcaoId };
         }).filter(eq => !!eq.funcao_id);
 
+        if (filtroEquipes.temEquipesSelecionadas && !filtroEquipes.equipesSelecionadas.length) {
+            return res.status(400).json({ error: 'Selecione pelo menos uma equipe para receber a distribuição.' });
+        }
+
+        let equipes = equipesBase;
+        if (filtroEquipes.temEquipesSelecionadas) {
+            const selecionadasSet = new Set(filtroEquipes.equipesSelecionadas);
+            equipes = equipesBase.filter((eq) => selecionadasSet.has(Number(eq.id)));
+        } else if (filtroEquipes.equipesExcluidas.length) {
+            const excluirSet = new Set(filtroEquipes.equipesExcluidas);
+            equipes = equipesBase.filter((eq) => !excluirSet.has(Number(eq.id)));
+        }
+
         if (!equipes.length) {
+            if (filtroEquipes.temEquipesSelecionadas) {
+                return res.status(400).json({ error: 'Nenhuma equipe selecionada está disponível para receber a distribuição.' });
+            }
+            if (equipesBase.length && filtroEquipes.equipesExcluidas.length) {
+                return res.status(400).json({ error: 'Todas as equipes elegíveis foram excluídas da distribuição. Deixe pelo menos uma equipe desmarcada.' });
+            }
             return res.status(400).json({ error: 'Nenhuma equipe com função de tio encontrada.' });
         }
 
@@ -2908,8 +3173,17 @@ router.post('/:id/tios-servir/distribuir', async (req, res) => {
             if (!nomeCasal) continue;
 
             const [existente] = await pool.query(
-                `SELECT id FROM montagem_membros WHERE montagem_id = ? AND tenant_id = ? AND nome_externo = ? LIMIT 1`,
-                [montagemId, tenantId, nomeCasal]
+                `SELECT id
+                   FROM montagem_membros
+                  WHERE montagem_id = ?
+                    AND tenant_id = ?
+                    AND jovem_id IS NULL
+                    AND (
+                        tio_casal_id = ?
+                        OR (tio_casal_id IS NULL AND nome_externo = ?)
+                    )
+                  LIMIT 1`,
+                [montagemId, tenantId, casal.id, nomeCasal]
             );
             if (existente.length) {
                 jaAlocados.push(nomeCasal);
@@ -2923,12 +3197,15 @@ router.post('/:id/tios-servir/distribuir', async (req, res) => {
             if (!escolhido) continue;
 
             await pool.query(
-                `INSERT INTO montagem_membros (tenant_id, montagem_id, equipe_id, funcao_id, jovem_id, eh_substituicao, nome_externo, telefone_externo)
-                 VALUES (?, ?, ?, ?, NULL, ?, ?, ?)`,
-                [tenantId, montagemId, escolhido.id, escolhido.funcao_id, ehSubstituicao, nomeCasal, montarTelefoneCasal(casal.telefone_tio, casal.telefone_tia)]
+                `INSERT INTO montagem_membros
+                    (tenant_id, montagem_id, equipe_id, funcao_id, jovem_id, tio_casal_id, eh_substituicao, nome_externo, telefone_externo)
+                 VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?)`,
+                [tenantId, montagemId, escolhido.id, escolhido.funcao_id, casal.id, ehSubstituicao, nomeCasal, montarTelefoneCasal(casal.telefone_tio, casal.telefone_tia)]
             );
             distribuidos += 1;
         }
+
+        await sincronizarServicosTiosDaMontagem({ tenantId, montagemId });
 
         return res.json({ message: 'Distribuição concluída.', distribuidos, ja_alocados: jaAlocados });
     } catch (err) {
@@ -2940,12 +3217,11 @@ router.post('/:id/tios-servir/distribuir', async (req, res) => {
 router.post('/:id/outro-ejc-servir/distribuir', async (req, res) => {
     const montagemId = Number(req.params.id);
     if (!montagemId) return res.status(400).json({ error: 'ID inválido.' });
-    const excluirEquipes = Array.isArray(req.body && req.body.excluir_equipes) ? req.body.excluir_equipes : [];
-    const excluirSet = new Set(excluirEquipes.map((e) => Number(e)).filter(Boolean));
     try {
+        await garantirEstruturaMontagemMembrosExtra();
         await garantirEstruturaMontagemOutroEjcServir();
-        await ensureEquipeSexoLimitsColumns();
         const tenantId = getTenantId(req);
+        const filtroEquipes = obterFiltroEquipesDistribuicao(req.body);
         const equipeIdsPermitidas = await obterEquipeIdsDaMontagem({ tenantId, montagemId });
         const destino = normalizarDestinoSelecao(req.body && req.body.destino);
         const ehSubstituicao = destino === 'reserva' ? 1 : 0;
@@ -2977,7 +3253,6 @@ router.post('/:id/outro-ejc-servir/distribuir', async (req, res) => {
         }
         const [equipesFuncoes] = await pool.query(`
             SELECT eq.id as equipe_id, eq.nome as equipe_nome, COALESCE(eq.membros_outro_ejc, 0) AS membros_outro_ejc,
-                   eq.limite_homens, eq.limite_mulheres,
                    ef.id as funcao_id, ef.nome as funcao_nome, ${papelBaseSelect} as papel_base
             FROM equipes eq
             LEFT JOIN equipes_funcoes ef ON eq.id = ef.equipe_id
@@ -2985,28 +3260,25 @@ router.post('/:id/outro-ejc-servir/distribuir', async (req, res) => {
             WHERE ${filtrosEquipes.join(' AND ')}
             ORDER BY eq.nome ASC, ef.nome ASC
         `, paramsEquipes);
-        const equipeMap = new Map();
+        const equipeMapBase = new Map();
         for (const row of (equipesFuncoes || [])) {
-            if (excluirSet.has(Number(row.equipe_id))) continue;
-            if (!equipeMap.has(row.equipe_id)) {
-                equipeMap.set(row.equipe_id, {
+            if (!equipeMapBase.has(row.equipe_id)) {
+                equipeMapBase.set(row.equipe_id, {
                     id: row.equipe_id,
                     nome: row.equipe_nome || '',
                     membros_outro_ejc: Number(row.membros_outro_ejc || 0) === 1,
-                    limite_homens: row.limite_homens === null ? null : Number(row.limite_homens),
-                    limite_mulheres: row.limite_mulheres === null ? null : Number(row.limite_mulheres),
                     funcoes: []
                 });
             }
             if (row.funcao_id) {
-                equipeMap.get(row.equipe_id).funcoes.push({
+                equipeMapBase.get(row.equipe_id).funcoes.push({
                     id: row.funcao_id,
                     nome: row.funcao_nome || '',
                     papel_base: row.papel_base || 'Membro'
                 });
             }
         }
-        const equipesBase = Array.from(equipeMap.values()).map((eq) => {
+        const equipesBase = Array.from(equipeMapBase.values()).map((eq) => {
             let funcaoId = null;
             if (eq.funcoes.length) {
                 const membro = eq.funcoes.find(f => String(f.papel_base || '').toLowerCase() === 'membro')
@@ -3017,9 +3289,28 @@ router.post('/:id/outro-ejc-servir/distribuir', async (req, res) => {
             return { ...eq, funcao_id: funcaoId };
         }).filter(eq => !!eq.funcao_id);
         const equipesMarcadasOutro = equipesBase.filter(eq => eq.membros_outro_ejc);
-        const equipes = equipesMarcadasOutro.length ? equipesMarcadasOutro : equipesBase;
+        const equipesElegiveisBase = equipesMarcadasOutro.length ? equipesMarcadasOutro : equipesBase;
+
+        if (filtroEquipes.temEquipesSelecionadas && !filtroEquipes.equipesSelecionadas.length) {
+            return res.status(400).json({ error: 'Selecione pelo menos uma equipe para receber a distribuição.' });
+        }
+
+        let equipes = equipesElegiveisBase;
+        if (filtroEquipes.temEquipesSelecionadas) {
+            const selecionadasSet = new Set(filtroEquipes.equipesSelecionadas);
+            equipes = equipesElegiveisBase.filter((eq) => selecionadasSet.has(Number(eq.id)));
+        } else if (filtroEquipes.equipesExcluidas.length) {
+            const excluirSet = new Set(filtroEquipes.equipesExcluidas);
+            equipes = equipesElegiveisBase.filter((eq) => !excluirSet.has(Number(eq.id)));
+        }
 
         if (!equipes.length) {
+            if (filtroEquipes.temEquipesSelecionadas) {
+                return res.status(400).json({ error: 'Nenhuma equipe selecionada está disponível para receber a distribuição.' });
+            }
+            if (equipesElegiveisBase.length && filtroEquipes.equipesExcluidas.length) {
+                return res.status(400).json({ error: 'Todas as equipes elegíveis foram excluídas da distribuição. Deixe pelo menos uma equipe desmarcada.' });
+            }
             return res.status(400).json({ error: 'Nenhuma equipe com função disponível para distribuição.' });
         }
 
@@ -3043,8 +3334,7 @@ router.post('/:id/outro-ejc-servir/distribuir', async (req, res) => {
              FROM montagem_membros mm
              LEFT JOIN jovens j ON j.id = mm.jovem_id
              LEFT JOIN tios_casais tc
-               ON tc.tenant_id = mm.tenant_id
-              AND TRIM(CONCAT(COALESCE(tc.nome_tio, ''), ' e ', COALESCE(tc.nome_tia, ''))) = TRIM(COALESCE(mm.nome_externo, ''))
+               ON ${montarJoinCasalTiosSql('tc', 'mm')}
              WHERE mm.montagem_id = ? AND mm.tenant_id = ?`,
             [montagemId, tenantId]
         );
@@ -3167,12 +3457,10 @@ router.post('/:id/outro-ejc-servir/distribuir', async (req, res) => {
                 const semHistorico = disponiveis.filter(eq => !historicoGrupo.has(String(eq.nome || '').toLowerCase()));
                 if (semHistorico.length) disponiveis = semHistorico;
             }
-            const totaisGrupo = contarSexosDoGrupo(grupo);
             const equipesFamiliaBloqueadas = equipesBloqueadasPorFamilia(grupo, mapaFamilia, alocadoEquipePorJovemId);
             if (equipesFamiliaBloqueadas.size) {
                 disponiveis = disponiveis.filter((eq) => !equipesFamiliaBloqueadas.has(Number(eq.id)));
             }
-            disponiveis = disponiveis.filter((eq) => equipeComportaGrupo(eq, assignedCount.get(eq.id), totaisGrupo));
             if (!disponiveis.length) {
                 semEquipe.push(nome || `jovem ${jovemId}`);
                 continue;
@@ -3270,6 +3558,7 @@ router.get('/:id/tios-para-servir', async (req, res) => {
     const montagemId = Number(req.params.id);
     if (!montagemId) return res.status(400).json({ error: 'ID inválido.' });
     try {
+        await garantirEstruturaMontagemMembrosExtra();
         await garantirEstruturaMontagemTiosServir();
         const tenantId = getTenantId(req);
         const [rows] = await pool.query(`
@@ -3284,7 +3573,8 @@ router.get('/:id/tios-para-servir', async (req, res) => {
                 oe.nome AS outro_ejc_nome,
                 oe.paroquia AS outro_ejc_paroquia,
                 COALESCE(mts.pode_servir, 0) AS pode_servir,
-                COALESCE(mts.destino, 'titular') AS destino
+                COALESCE(mts.destino, 'titular') AS destino,
+                mts.ordem_reserva
             FROM tios_casais c
             LEFT JOIN outros_ejcs oe ON oe.id = c.outro_ejc_id AND oe.tenant_id = c.tenant_id
             LEFT JOIN montagem_tios_servir mts ON mts.casal_id = c.id AND mts.montagem_id = ?
@@ -3292,7 +3582,13 @@ router.get('/:id/tios-para-servir', async (req, res) => {
               ON mm.montagem_id = ?
              AND mm.tenant_id = c.tenant_id
              AND mm.jovem_id IS NULL
-             AND TRIM(COALESCE(mm.nome_externo, '')) = TRIM(CONCAT(COALESCE(c.nome_tio, ''), ' e ', COALESCE(c.nome_tia, '')))
+             AND (
+                 mm.tio_casal_id = c.id
+                 OR (
+                     mm.tio_casal_id IS NULL
+                     AND TRIM(COALESCE(mm.nome_externo, '')) = TRIM(CONCAT(COALESCE(c.nome_tio, ''), ' e ', COALESCE(c.nome_tia, '')))
+                 )
+             )
             WHERE c.tenant_id = ?
               AND mm.id IS NULL
             ORDER BY c.nome_tio ASC, c.nome_tia ASC
@@ -3385,14 +3681,15 @@ router.post('/:id/tios-para-servir/selecionar', async (req, res) => {
                 .map((item) => ({
                     casalId: Number(item && item.id),
                     podeServir: item && item.selecionado ? 1 : 0,
-                    destino: normalizarDestinoSelecao(item && item.destino)
+                    destino: normalizarDestinoSelecao(item && item.destino),
+                    ordemReserva: normalizarOrdemReservaSelecao(item && item.ordem_reserva, item && item.destino)
                 }))
                 .filter((item) => item.casalId > 0);
             if (values.length) {
                 await pool.query(
-                    `INSERT INTO montagem_tios_servir (montagem_id, casal_id, pode_servir, destino)
+                    `INSERT INTO montagem_tios_servir (montagem_id, casal_id, pode_servir, destino, ordem_reserva)
                      VALUES ?`,
-                    [values.map((item) => [montagemId, item.casalId, item.podeServir, item.destino])]
+                    [values.map((item) => [montagemId, item.casalId, item.podeServir, item.destino, item.ordemReserva])]
                 );
             }
         } else {
@@ -3400,11 +3697,11 @@ router.post('/:id/tios-para-servir/selecionar', async (req, res) => {
             const ids = selecionados.map((v) => Number(v)).filter((v) => v > 0);
             await pool.query('UPDATE montagem_tios_servir SET pode_servir = 0 WHERE montagem_id = ?', [montagemId]);
             if (ids.length) {
-                const values = ids.map((id) => [montagemId, id, 1, 'titular']);
+                const values = ids.map((id) => [montagemId, id, 1, 'titular', null]);
                 await pool.query(
-                    `INSERT INTO montagem_tios_servir (montagem_id, casal_id, pode_servir, destino)
+                    `INSERT INTO montagem_tios_servir (montagem_id, casal_id, pode_servir, destino, ordem_reserva)
                      VALUES ?
-                     ON DUPLICATE KEY UPDATE pode_servir = VALUES(pode_servir), destino = VALUES(destino)`,
+                     ON DUPLICATE KEY UPDATE pode_servir = VALUES(pode_servir), destino = VALUES(destino), ordem_reserva = VALUES(ordem_reserva)`,
                     [values]
                 );
             }
@@ -3429,7 +3726,7 @@ router.get('/:id/outro-ejc-servir', async (req, res) => {
     try {
         await garantirEstruturaMontagemOutroEjcServir();
         const [rows] = await pool.query(
-            `SELECT id, jovem_id, nome_externo, telefone_externo, outro_ejc_id, pode_servir, COALESCE(destino, 'titular') AS destino
+            `SELECT id, jovem_id, nome_externo, telefone_externo, outro_ejc_id, pode_servir, COALESCE(destino, 'titular') AS destino, ordem_reserva
              FROM montagem_outro_ejc_servir
              WHERE montagem_id = ?`,
             [montagemId]
@@ -3457,11 +3754,12 @@ router.post('/:id/outro-ejc-servir/selecionar', async (req, res) => {
                 i.telefone ? String(i.telefone).trim() : null,
                 i.outro_ejc_id ? Number(i.outro_ejc_id) : null,
                 i.selecionado ? 1 : 0,
-                normalizarDestinoSelecao(i.destino)
+                normalizarDestinoSelecao(i.destino),
+                normalizarOrdemReservaSelecao(i.ordem_reserva, i.destino)
             ]);
             await pool.query(
                 `INSERT INTO montagem_outro_ejc_servir
-                 (montagem_id, jovem_id, nome_externo, telefone_externo, outro_ejc_id, pode_servir, destino)
+                 (montagem_id, jovem_id, nome_externo, telefone_externo, outro_ejc_id, pode_servir, destino, ordem_reserva)
                  VALUES ?`,
                 [values]
             );
@@ -3778,54 +4076,15 @@ router.post('/:id/membros', async (req, res) => {
         }
 
         const [[equipeInfo]] = await pool.query(
-            'SELECT id, nome, limite_homens, limite_mulheres FROM equipes WHERE id = ? AND tenant_id = ? LIMIT 1',
+            'SELECT id, nome FROM equipes WHERE id = ? AND tenant_id = ? LIMIT 1',
             [equipe_id, tenantId]
         );
         const [[jovemInfo]] = await pool.query(
-            'SELECT id, sexo FROM jovens WHERE id = ? AND tenant_id = ? LIMIT 1',
+            'SELECT id FROM jovens WHERE id = ? AND tenant_id = ? LIMIT 1',
             [jovem_id, tenantId]
         );
         if (!equipeInfo || !jovemInfo) {
             return res.status(404).json({ error: 'Equipe ou jovem não encontrado.' });
-        }
-
-        const [[ocupacaoEquipe]] = await pool.query(
-            `SELECT
-                SUM(CASE WHEN tc.id IS NOT NULL AND mm.jovem_id IS NULL THEN 2 ELSE 1 END) AS total,
-                SUM(CASE
-                        WHEN tc.id IS NOT NULL AND mm.jovem_id IS NULL THEN 1
-                        WHEN LOWER(COALESCE(j.sexo, '')) = 'masculino' THEN 1
-                        ELSE 0
-                    END) AS homens,
-                SUM(CASE
-                        WHEN tc.id IS NOT NULL AND mm.jovem_id IS NULL THEN 1
-                        WHEN LOWER(COALESCE(j.sexo, '')) = 'feminino' THEN 1
-                        ELSE 0
-                    END) AS mulheres
-             FROM montagem_membros mm
-             LEFT JOIN jovens j ON j.id = mm.jovem_id
-             LEFT JOIN tios_casais tc
-               ON tc.tenant_id = mm.tenant_id
-              AND TRIM(CONCAT(COALESCE(tc.nome_tio, ''), ' e ', COALESCE(tc.nome_tia, ''))) = TRIM(COALESCE(mm.nome_externo, ''))
-             WHERE mm.montagem_id = ?
-               AND mm.equipe_id = ?
-               AND mm.tenant_id = ?`,
-            [montagemId, equipe_id, tenantId]
-        );
-        const grupoSexo = contarSexosDoGrupo([{ tipo: 'jovem', item: { sexo: jovemInfo.sexo } }]);
-        if (!equipeComportaGrupo(equipeInfo, {
-            total: Number(ocupacaoEquipe.total || 0),
-            homens: Number(ocupacaoEquipe.homens || 0),
-            mulheres: Number(ocupacaoEquipe.mulheres || 0)
-        }, grupoSexo)) {
-            const sexo = normalizarSexo(jovemInfo.sexo);
-            return res.status(409).json({
-                error: sexo === 'masculino'
-                    ? `A equipe ${equipeInfo.nome} atingiu o limite de homens.`
-                    : sexo === 'feminino'
-                        ? `A equipe ${equipeInfo.nome} atingiu o limite de mulheres.`
-                        : `A equipe ${equipeInfo.nome} atingiu o limite configurado para este sexo.`
-            });
         }
 
         const [jaExiste] = await pool.query(
@@ -3833,9 +4092,12 @@ router.post('/:id/membros', async (req, res) => {
             [montagemId, equipe_id, funcao_id, jovem_id, tenantId]
         );
         if (jaExiste.length > 0) {
+            const ordemReserva = ehSubstituicao
+                ? await obterProximaOrdemReserva(pool, { tenantId, montagemId, equipeId: equipe_id })
+                : null;
             await pool.query(
-                'UPDATE montagem_membros SET eh_substituicao = ? WHERE id = ? AND tenant_id = ?',
-                [ehSubstituicao, jaExiste[0].id, tenantId]
+                'UPDATE montagem_membros SET eh_substituicao = ?, ordem_reserva = ? WHERE id = ? AND tenant_id = ?',
+                [ehSubstituicao, ordemReserva, jaExiste[0].id, tenantId]
             );
             if (ehSubstituicao) {
                 await removerHistoricoDaAlocacao({
@@ -3858,9 +4120,12 @@ router.post('/:id/membros', async (req, res) => {
         }
 
         // 1. Inserir na tabela de montagem (o que já fazíamos)
+        const ordemReserva = ehSubstituicao
+            ? await obterProximaOrdemReserva(pool, { tenantId, montagemId, equipeId: equipe_id })
+            : null;
         const [result] = await pool.query(
-            'INSERT INTO montagem_membros (tenant_id, montagem_id, equipe_id, funcao_id, jovem_id, eh_substituicao) VALUES (?, ?, ?, ?, ?, ?)',
-            [tenantId, montagemId, equipe_id, funcao_id, jovem_id, ehSubstituicao]
+            'INSERT INTO montagem_membros (tenant_id, montagem_id, equipe_id, funcao_id, jovem_id, eh_substituicao, ordem_reserva) VALUES (?, ?, ?, ?, ?, ?, ?)',
+            [tenantId, montagemId, equipe_id, funcao_id, jovem_id, ehSubstituicao, ordemReserva]
         );
 
         if (!ehSubstituicao) {
@@ -3886,18 +4151,40 @@ router.post('/:id/membros-externos', async (req, res) => {
     const funcaoId = Number(req.body.funcao_id);
     const nome = String(req.body.nome_completo || '').trim();
     const telefone = String(req.body.telefone || '').trim() || null;
+    const tioCasalId = Number(req.body.tio_casal_id || 0) || null;
     const ehSubstituicao = req.body.eh_substituicao ? 1 : 0;
     if (!equipeId || !funcaoId || !nome) return res.status(400).json({ error: 'Dados obrigatórios: equipe, função e nome.' });
 
     try {
         const tenantId = getTenantId(req);
         await garantirEstruturaMontagemMembrosExtra();
+        let nomeFinal = nome;
+        let telefoneFinal = telefone;
+        if (tioCasalId) {
+            const [casalRows] = await pool.query(
+                `SELECT nome_tio, nome_tia, telefone_tio, telefone_tia
+                 FROM tios_casais
+                 WHERE id = ? AND tenant_id = ?
+                 LIMIT 1`,
+                [tioCasalId, tenantId]
+            );
+            if (!casalRows.length) {
+                return res.status(404).json({ error: 'Casal de tios não encontrado.' });
+            }
+            const casal = casalRows[0] || {};
+            nomeFinal = [casal.nome_tio, casal.nome_tia].filter(Boolean).join(' e ').trim() || nomeFinal;
+            telefoneFinal = montarTelefoneCasal(casal.telefone_tio, casal.telefone_tia) || telefoneFinal;
+        }
+        const ordemReserva = ehSubstituicao
+            ? await obterProximaOrdemReserva(pool, { tenantId, montagemId, equipeId })
+            : null;
         const [result] = await pool.query(
             `INSERT INTO montagem_membros
-                (tenant_id, montagem_id, equipe_id, funcao_id, jovem_id, eh_substituicao, nome_externo, telefone_externo)
-             VALUES (?, ?, ?, ?, NULL, ?, ?, ?)`,
-            [tenantId, montagemId, equipeId, funcaoId, ehSubstituicao, nome, telefone]
+                (tenant_id, montagem_id, equipe_id, funcao_id, jovem_id, tio_casal_id, eh_substituicao, ordem_reserva, nome_externo, telefone_externo)
+             VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, ?)`,
+            [tenantId, montagemId, equipeId, funcaoId, tioCasalId, ehSubstituicao, ordemReserva, nomeFinal, telefoneFinal]
         );
+        await sincronizarServicosTiosDaMontagem({ tenantId, montagemId });
         return res.json({ id: result.insertId, message: 'Membro externo adicionado.' });
     } catch (err) {
         console.error('Erro ao adicionar membro externo:', err);
@@ -3921,14 +4208,18 @@ router.post('/:id/equipes/:equipeId/importar-externos', async (req, res) => {
             const funcaoId = Number(item.funcao_id);
             const ehSubstituicao = item.eh_substituicao ? 1 : 0;
             if (!nome || !funcaoId) continue;
+            const ordemReserva = ehSubstituicao
+                ? await obterProximaOrdemReserva(pool, { tenantId, montagemId, equipeId })
+                : null;
             await pool.query(
                 `INSERT INTO montagem_membros
-                    (tenant_id, montagem_id, equipe_id, funcao_id, jovem_id, eh_substituicao, nome_externo, telefone_externo)
-                 VALUES (?, ?, ?, ?, NULL, ?, ?, ?)`,
-                [tenantId, montagemId, equipeId, funcaoId, ehSubstituicao, nome, telefone]
+                    (tenant_id, montagem_id, equipe_id, funcao_id, jovem_id, eh_substituicao, ordem_reserva, nome_externo, telefone_externo)
+                 VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?)`,
+                [tenantId, montagemId, equipeId, funcaoId, ehSubstituicao, ordemReserva, nome, telefone]
             );
             inseridos++;
         }
+        await sincronizarServicosTiosDaMontagem({ tenantId, montagemId });
         return res.json({ message: 'Importação concluída.', inseridos });
     } catch (err) {
         console.error('Erro ao importar membros externos:', err);
@@ -3944,9 +4235,10 @@ router.get('/:id/equipes/:equipeId/detalhes', async (req, res) => {
     try {
         const tenantId = getTenantId(req);
         await garantirEstruturaMontagemMembrosExtra();
+        await normalizarOrdensReservaDaEquipe(pool, { tenantId, montagemId, equipeId });
         const [rows] = await pool.query(`
             SELECT mm.id AS membro_id, mm.equipe_id, mm.funcao_id, mm.jovem_id,
-                   mm.status_ligacao, mm.motivo_recusa, mm.eh_substituicao,
+                   mm.status_ligacao, mm.motivo_recusa, mm.eh_substituicao, mm.ordem_reserva,
                    mm.nome_externo, mm.telefone_externo,
                    ef.nome AS funcao_nome, COALESCE(ef.papel_base, 'Membro') AS papel_base,
                    j.nome_completo AS jovem_nome, j.telefone AS jovem_telefone,
@@ -3955,19 +4247,85 @@ router.get('/:id/equipes/:equipeId/detalhes', async (req, res) => {
             JOIN equipes_funcoes ef ON ef.id = mm.funcao_id
             LEFT JOIN jovens j ON j.id = mm.jovem_id
             LEFT JOIN tios_casais tc
-              ON tc.tenant_id = mm.tenant_id
-             AND TRIM(CONCAT(COALESCE(tc.nome_tio, ''), ' e ', COALESCE(tc.nome_tia, ''))) = TRIM(COALESCE(mm.nome_externo, ''))
+              ON ${montarJoinCasalTiosSql('tc', 'mm')}
             WHERE mm.montagem_id = ? AND mm.equipe_id = ? AND mm.tenant_id = ?
               AND (mm.status_ligacao IS NULL OR mm.status_ligacao <> 'RECUSOU')
-            ORDER BY COALESCE(j.nome_completo, mm.nome_externo) ASC
+            ORDER BY
+              mm.eh_substituicao ASC,
+              CASE WHEN mm.eh_substituicao = 1 THEN COALESCE(mm.ordem_reserva, 999999) ELSE 0 END ASC,
+              COALESCE(j.nome_completo, mm.nome_externo) ASC
         `, [montagemId, equipeId, tenantId]);
 
-        const titular = rows.filter(r => !r.eh_substituicao);
-        const substituicoes = rows.filter(r => r.eh_substituicao === 1);
+        const titular = rows
+            .filter(r => !r.eh_substituicao)
+            .sort((a, b) => String(a.jovem_nome || a.nome_externo || '').localeCompare(String(b.jovem_nome || b.nome_externo || ''), 'pt-BR'));
+        const substituicoes = rows
+            .filter(r => r.eh_substituicao === 1)
+            .sort((a, b) => {
+                const ordemA = Number(a.ordem_reserva || 0);
+                const ordemB = Number(b.ordem_reserva || 0);
+                if (ordemA !== ordemB) return ordemA - ordemB;
+                return String(a.jovem_nome || a.nome_externo || '').localeCompare(String(b.jovem_nome || b.nome_externo || ''), 'pt-BR');
+            });
         return res.json({ titular, substituicoes });
     } catch (err) {
         console.error('Erro ao buscar detalhes da equipe na montagem:', err);
         return res.status(500).json({ error: 'Erro ao buscar detalhes da equipe.' });
+    }
+});
+
+router.patch('/:id/equipes/:equipeId/reservas/ordem', async (req, res) => {
+    const montagemId = Number(req.params.id);
+    const equipeId = Number(req.params.equipeId);
+    const membroIds = normalizarListaIds(req.body && req.body.membro_ids);
+    if (!montagemId || !equipeId || !membroIds.length) {
+        return res.status(400).json({ error: 'Informe a equipe e a nova ordem das reservas.' });
+    }
+
+    const connection = await pool.getConnection();
+    try {
+        const tenantId = getTenantId(req);
+        await garantirEstruturaMontagemMembrosExtra();
+        await connection.beginTransaction();
+        await normalizarOrdensReservaDaEquipe(connection, { tenantId, montagemId, equipeId });
+
+        const [rows] = await connection.query(
+            `SELECT id
+             FROM montagem_membros
+             WHERE tenant_id = ?
+               AND montagem_id = ?
+               AND equipe_id = ?
+               AND eh_substituicao = 1
+             ORDER BY COALESCE(ordem_reserva, 999999) ASC, id ASC`,
+            [tenantId, montagemId, equipeId]
+        );
+        const idsExistentes = (rows || []).map((item) => Number(item.id)).filter(Boolean);
+        if (idsExistentes.length !== membroIds.length) {
+            await connection.rollback();
+            return res.status(400).json({ error: 'A nova ordem não corresponde à quantidade atual de reservas.' });
+        }
+
+        const idsExistentesSet = new Set(idsExistentes);
+        if (membroIds.some((id) => !idsExistentesSet.has(id))) {
+            await connection.rollback();
+            return res.status(400).json({ error: 'A nova ordem contém reservas inválidas para esta equipe.' });
+        }
+
+        for (let i = 0; i < membroIds.length; i++) {
+            await connection.query(
+                'UPDATE montagem_membros SET ordem_reserva = ? WHERE id = ? AND tenant_id = ?',
+                [i + 1, membroIds[i], tenantId]
+            );
+        }
+
+        await connection.commit();
+        return res.json({ message: 'Ordem das reservas atualizada.' });
+    } catch (err) {
+        try { await connection.rollback(); } catch (_) { }
+        console.error('Erro ao reordenar reservas:', err);
+        return res.status(500).json({ error: 'Erro ao reordenar reservas.' });
+    } finally {
+        connection.release();
     }
 });
 
@@ -4037,10 +4395,43 @@ router.patch('/membro/:membroId/ligacao', async (req, res) => {
             }
         }
 
+        if (membro.montagem_id) {
+            await sincronizarServicosTiosDaMontagem({ tenantId, montagemId: membro.montagem_id });
+        }
+
         return res.json({ message: 'Status de ligação atualizado.' });
     } catch (err) {
         console.error('Erro ao atualizar status de ligação:', err);
         return res.status(500).json({ error: 'Erro ao atualizar status de ligação.' });
+    }
+});
+
+router.patch('/membro/:membroId/observacao', async (req, res) => {
+    const membroId = Number(req.params.membroId);
+    if (!membroId) return res.status(400).json({ error: 'Membro inválido.' });
+    const motivoRecusa = String(req.body.motivo_recusa || '').trim() || null;
+
+    try {
+        const tenantId = getTenantId(req);
+        await garantirEstruturaMontagemMembrosExtra();
+        const [[membro]] = await pool.query(
+            'SELECT id, status_ligacao FROM montagem_membros WHERE id = ? AND tenant_id = ? LIMIT 1',
+            [membroId, tenantId]
+        );
+        if (!membro) return res.status(404).json({ error: 'Membro não encontrado.' });
+        if (String(membro.status_ligacao || '').toUpperCase() === 'RECUSOU' && !motivoRecusa) {
+            return res.status(400).json({ error: 'Informe o motivo da recusa.' });
+        }
+
+        await pool.query(
+            'UPDATE montagem_membros SET motivo_recusa = ? WHERE id = ? AND tenant_id = ?',
+            [motivoRecusa, membroId, tenantId]
+        );
+
+        return res.json({ message: 'Observação atualizada com sucesso.' });
+    } catch (err) {
+        console.error('Erro ao atualizar observação do membro:', err);
+        return res.status(500).json({ error: 'Erro ao atualizar observação.' });
     }
 });
 
@@ -4054,25 +4445,42 @@ router.get('/:id/ligacoes', async (req, res) => {
             SELECT mm.id AS membro_id, mm.equipe_id, e.nome AS equipe_nome,
                    mm.funcao_id, ef.nome AS funcao_nome,
                    mm.jovem_id, j.nome_completo AS jovem_nome, j.telefone AS jovem_telefone,
+                   j.sexo AS jovem_sexo,
                    j.data_nascimento AS jovem_data_nascimento,
                    CASE
                        WHEN j.data_nascimento IS NULL THEN NULL
                        ELSE TIMESTAMPDIFF(YEAR, j.data_nascimento, CURDATE())
                    END AS jovem_idade,
-                   COALESCE(j.origem_ejc_tipo, 'INCONFIDENTES') AS origem_ejc_tipo,
-                   j.outro_ejc_numero, j.outro_ejc_id,
-                   oe.nome AS outro_ejc_nome, oe.paroquia AS outro_ejc_paroquia,
+                   CASE
+                       WHEN mm.jovem_id IS NULL AND tc.id IS NOT NULL THEN CASE
+                           WHEN tc.outro_ejc_id IS NOT NULL THEN 'OUTRO_EJC'
+                           ELSE COALESCE(tc.origem_tipo, 'EJC')
+                       END
+                       ELSE COALESCE(j.origem_ejc_tipo, 'INCONFIDENTES')
+                   END AS origem_ejc_tipo,
+                   j.numero_ejc_fez,
+                   COALESCE(e_id.numero, e_num.numero) AS ejc_numero_fez,
+                   j.outro_ejc_numero,
+                   COALESCE(j.outro_ejc_id, tc.outro_ejc_id) AS outro_ejc_id,
+                   COALESCE(oe_j.nome, oe_tio.nome) AS outro_ejc_nome,
+                   COALESCE(oe_j.paroquia, oe_tio.paroquia) AS outro_ejc_paroquia,
                    mm.status_ligacao, mm.motivo_recusa, mm.eh_substituicao,
                    mm.nome_externo, mm.telefone_externo,
-                   tc.telefone_tio, tc.telefone_tia
+                   tc.id AS tio_casal_id, tc.nome_tio, tc.nome_tia, tc.telefone_tio, tc.telefone_tia
             FROM montagem_membros mm
             JOIN equipes e ON e.id = mm.equipe_id
             JOIN equipes_funcoes ef ON ef.id = mm.funcao_id
             LEFT JOIN jovens j ON j.id = mm.jovem_id
-            LEFT JOIN outros_ejcs oe ON oe.id = j.outro_ejc_id
+            LEFT JOIN ejc e_id
+              ON e_id.id = j.numero_ejc_fez
+             AND e_id.tenant_id = j.tenant_id
+            LEFT JOIN ejc e_num
+              ON e_num.numero = j.numero_ejc_fez
+             AND e_num.tenant_id = j.tenant_id
             LEFT JOIN tios_casais tc
-              ON tc.tenant_id = mm.tenant_id
-             AND TRIM(CONCAT(COALESCE(tc.nome_tio, ''), ' e ', COALESCE(tc.nome_tia, ''))) = TRIM(COALESCE(mm.nome_externo, ''))
+              ON ${montarJoinCasalTiosSql('tc', 'mm')}
+            LEFT JOIN outros_ejcs oe_j ON oe_j.id = j.outro_ejc_id
+            LEFT JOIN outros_ejcs oe_tio ON oe_tio.id = tc.outro_ejc_id
             WHERE mm.montagem_id = ?
               AND mm.tenant_id = ?
               AND mm.eh_substituicao = 0
@@ -4091,15 +4499,21 @@ router.get('/:id/ligacoes', async (req, res) => {
                 jovem_id: row.jovem_id,
                 jovem_nome: row.jovem_nome,
                 jovem_telefone: row.jovem_telefone,
+                jovem_sexo: row.jovem_sexo,
                 jovem_data_nascimento: row.jovem_data_nascimento,
                 jovem_idade: row.jovem_idade,
                 origem_ejc_tipo: row.origem_ejc_tipo,
+                numero_ejc_fez: row.numero_ejc_fez,
+                ejc_numero_fez: row.ejc_numero_fez,
                 outro_ejc_numero: row.outro_ejc_numero,
                 outro_ejc_id: row.outro_ejc_id,
                 outro_ejc_nome: row.outro_ejc_nome,
                 outro_ejc_paroquia: row.outro_ejc_paroquia,
                 nome_externo: row.nome_externo,
                 telefone_externo: row.telefone_externo,
+                tio_casal_id: row.tio_casal_id,
+                nome_tio: row.nome_tio,
+                nome_tia: row.nome_tia,
                 telefone_tio: row.telefone_tio,
                 telefone_tia: row.telefone_tia,
                 status_ligacao: row.status_ligacao,
@@ -4264,9 +4678,13 @@ async function finalizarEncontroHandler(req, res) {
         );
         const equipeIdsConfiguradas = normalizarListaIds((equipesConfiguradasRows || []).map((row) => row && row.equipe_id));
         if (!equipeIdsConfiguradas.length) {
+            await ensureEquipeAtivaColumn();
             await connection.query(
                 `INSERT IGNORE INTO equipes_ejc (tenant_id, ejc_id, equipe_id)
-                 SELECT ?, ?, id FROM equipes WHERE tenant_id = ?`,
+                 SELECT ?, ?, id
+                 FROM equipes
+                 WHERE tenant_id = ?
+                   AND COALESCE(ativa, 1) = 1`,
                 [tenantId, ejcId, tenantId]
             );
         }
@@ -4640,9 +5058,14 @@ router.patch('/membro/:membroId/mover-titular', async (req, res) => {
                 });
             }
             if (conflito && forcar) {
+                const ordemReservaConflito = await obterProximaOrdemReserva(pool, {
+                    tenantId,
+                    montagemId: membro.montagem_id,
+                    equipeId: conflito.equipe_id
+                });
                 await pool.query(
-                    'UPDATE montagem_membros SET eh_substituicao = 1 WHERE id = ? AND tenant_id = ?',
-                    [conflito.id, tenantId]
+                    'UPDATE montagem_membros SET eh_substituicao = 1, ordem_reserva = ? WHERE id = ? AND tenant_id = ?',
+                    [ordemReservaConflito, conflito.id, tenantId]
                 );
                 if (membro.montagem_id && membro.jovem_id && conflito) {
                     await removerHistoricoDaAlocacao({
@@ -4656,8 +5079,15 @@ router.patch('/membro/:membroId/mover-titular', async (req, res) => {
             }
         }
 
-        const [r] = await pool.query('UPDATE montagem_membros SET eh_substituicao = 0 WHERE id = ? AND tenant_id = ?', [membroId, tenantId]);
+        const [r] = await pool.query('UPDATE montagem_membros SET eh_substituicao = 0, ordem_reserva = NULL WHERE id = ? AND tenant_id = ?', [membroId, tenantId]);
         if (!r.affectedRows) return res.status(404).json({ error: 'Membro não encontrado.' });
+        if (membro.montagem_id && membro.equipe_id) {
+            await normalizarOrdensReservaDaEquipe(pool, {
+                tenantId,
+                montagemId: membro.montagem_id,
+                equipeId: membro.equipe_id
+            });
+        }
         if (membro.montagem_id && membro.equipe_id && membro.funcao_id && membro.jovem_id) {
             await sincronizarHistoricoDaAlocacao({
                 montagemId: membro.montagem_id,
@@ -4716,6 +5146,16 @@ router.patch('/membro/:membroId/remover-recusa', async (req, res) => {
         }
 
         await pool.query('DELETE FROM montagem_membros WHERE id = ? AND tenant_id = ?', [membroId, tenantId]);
+        if (membro.montagem_id) {
+            await sincronizarServicosTiosDaMontagem({ tenantId, montagemId: membro.montagem_id });
+        }
+        if (membro.montagem_id && membro.equipe_id) {
+            await normalizarOrdensReservaDaEquipe(pool, {
+                tenantId,
+                montagemId: membro.montagem_id,
+                equipeId: membro.equipe_id
+            });
+        }
 
         if (membro.jovem_id && membro.numero_ejc) {
             const likeTexto = `Jovem recusou servir no ${membro.numero_ejc}º encontro de montagem.%`;
@@ -4744,8 +5184,7 @@ router.get('/:id/exportar-equipes-excel', async (req, res) => {
         const temTabelaTios = await hasTable('tios_casais');
         const tioJoin = temTabelaTios
             ? `LEFT JOIN tios_casais tc
-                 ON tc.tenant_id = mm.tenant_id
-                AND TRIM(CONCAT(COALESCE(tc.nome_tio, ''), ' e ', COALESCE(tc.nome_tia, ''))) = TRIM(COALESCE(mm.nome_externo, ''))`
+                 ON ${montarJoinCasalTiosSql('tc', 'mm')}`
             : '';
         const [rows] = await pool.query(`
             SELECT
@@ -4757,16 +5196,32 @@ router.get('/:id/exportar-equipes-excel', async (req, res) => {
                     WHEN j.data_nascimento IS NULL THEN NULL
                     ELSE TIMESTAMPDIFF(YEAR, j.data_nascimento, CURDATE())
                 END AS idade,
-                COALESCE(j.origem_ejc_tipo, 'INCONFIDENTES') AS origem_ejc_tipo,
+                CASE
+                    WHEN mm.jovem_id IS NULL AND tc.id IS NOT NULL THEN CASE
+                        WHEN tc.outro_ejc_id IS NOT NULL THEN 'OUTRO_EJC'
+                        ELSE COALESCE(tc.origem_tipo, 'EJC')
+                    END
+                    ELSE COALESCE(j.origem_ejc_tipo, 'INCONFIDENTES')
+                END AS origem_ejc_tipo,
                 j.numero_ejc_fez,
+                COALESCE(e_id.numero, e_num.numero) AS ejc_numero_fez,
                 j.outro_ejc_numero,
-                oe.nome AS outro_ejc_nome,
-                oe.paroquia AS outro_ejc_paroquia
+                COALESCE(j.outro_ejc_id, tc.outro_ejc_id) AS outro_ejc_id,
+                COALESCE(oe_j.nome, oe_tio.nome) AS outro_ejc_nome,
+                COALESCE(oe_j.paroquia, oe_tio.paroquia) AS outro_ejc_paroquia,
+                tc.id AS tio_casal_id
             FROM montagem_membros mm
             JOIN equipes e ON e.id = mm.equipe_id
             LEFT JOIN jovens j ON j.id = mm.jovem_id
-            LEFT JOIN outros_ejcs oe ON oe.id = j.outro_ejc_id
+            LEFT JOIN ejc e_id
+              ON e_id.id = j.numero_ejc_fez
+             AND e_id.tenant_id = j.tenant_id
+            LEFT JOIN ejc e_num
+              ON e_num.numero = j.numero_ejc_fez
+             AND e_num.tenant_id = j.tenant_id
             ${tioJoin}
+            LEFT JOIN outros_ejcs oe_j ON oe_j.id = j.outro_ejc_id
+            LEFT JOIN outros_ejcs oe_tio ON oe_tio.id = tc.outro_ejc_id
             WHERE mm.montagem_id = ?
               AND mm.tenant_id = ?
               AND COALESCE(j.nome_completo, mm.nome_externo) IS NOT NULL
@@ -4784,7 +5239,7 @@ router.delete('/membro/:membroId', async (req, res) => {
     try {
         const tenantId = getTenantId(req);
         const [[dadosMembro]] = await pool.query(`
-            SELECT mm.id, mm.jovem_id, mm.equipe_id, mm.funcao_id, m.numero_ejc, e.nome AS equipe_nome,
+            SELECT mm.id, mm.montagem_id, mm.jovem_id, mm.equipe_id, mm.funcao_id, m.numero_ejc, e.nome AS equipe_nome,
                    ef.nome AS funcao_nome, COALESCE(ef.papel_base, 'Membro') AS papel_base
             FROM montagem_membros mm
             JOIN montagens m ON m.id = mm.montagem_id
@@ -4799,6 +5254,16 @@ router.delete('/membro/:membroId', async (req, res) => {
         }
 
         await pool.query('DELETE FROM montagem_membros WHERE id = ? AND tenant_id = ?', [req.params.membroId, tenantId]);
+        if (dadosMembro.montagem_id) {
+            await sincronizarServicosTiosDaMontagem({ tenantId, montagemId: dadosMembro.montagem_id });
+        }
+        if (dadosMembro.montagem_id && dadosMembro.equipe_id) {
+            await normalizarOrdensReservaDaEquipe(pool, {
+                tenantId,
+                montagemId: dadosMembro.montagem_id,
+                equipeId: dadosMembro.equipe_id
+            });
+        }
 
         const comSubfuncao = await hasSubfuncaoColumn();
         const edicaoMontagem = montarEtiquetaEdicao(dadosMembro.numero_ejc);

@@ -100,7 +100,10 @@ router.get('/:equipeId/jovens/:ejcId', async (req, res) => {
                 NULL AS numero_ejc_fez,
                 e.numero AS ecc_numero,
                 e.tipo AS ecc_tipo,
-                COALESCE(c.origem_tipo, 'EJC') AS origem_ejc_tipo,
+                CASE
+                    WHEN c.outro_ejc_id IS NOT NULL THEN 'OUTRO_EJC'
+                    ELSE COALESCE(c.origem_tipo, 'EJC')
+                END AS origem_ejc_tipo,
                 NULL AS outro_ejc_numero,
                 c.outro_ejc_id AS outro_ejc_id,
                 oe.nome AS outro_ejc_nome,
@@ -140,7 +143,10 @@ router.get('/:equipeId/jovens/:ejcId', async (req, res) => {
                 NULL AS numero_ejc_fez,
                 e.numero AS ecc_numero,
                 e.tipo AS ecc_tipo,
-                COALESCE(c.origem_tipo, 'EJC') AS origem_ejc_tipo,
+                CASE
+                    WHEN c.outro_ejc_id IS NOT NULL THEN 'OUTRO_EJC'
+                    ELSE COALESCE(c.origem_tipo, 'EJC')
+                END AS origem_ejc_tipo,
                 NULL AS outro_ejc_numero,
                 c.outro_ejc_id AS outro_ejc_id,
                 oe.nome AS outro_ejc_nome,
