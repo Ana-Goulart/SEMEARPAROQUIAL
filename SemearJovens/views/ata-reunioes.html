@@ -96,12 +96,12 @@
 <body>
     <div id="app">
         <main class="container-fluid">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <div>
-                    <h3><i class="fa-solid fa-note-sticky icon-accent"></i> Ata Reuniões</h3>
+            <div class="d-flex flex-wrap justify-content-end align-items-center gap-3 mb-4">
+                <div class="me-auto">
+                    <h3 class="mb-1"><i class="fa-solid fa-note-sticky icon-accent"></i> Ata Reuniões</h3>
                     <p class="text-muted mb-0">Estruture por ano e mês, igual aos anexos.</p>
                 </div>
-                <div class="d-flex gap-2">
+                <div class="d-flex flex-wrap justify-content-end gap-2">
                     <button class="btn btn-primary" @click="criarPasta" :disabled="!podeCriarPasta"><i class="fa-solid fa-plus icon-accent"></i> Nova Pasta</button>
                     <button class="btn btn-success" @click="abrirModalNovaAta" :disabled="!estaNoMes"><i class="fa-solid fa-plus icon-accent"></i> Nova Ata</button>
                 </div>

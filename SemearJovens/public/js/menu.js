@@ -173,16 +173,15 @@ const menuTemplate = `
                                 <small>Alternar aparência do sistema</small>
                             </span>
                         </button>
-                        <a href="/configuracoes/meuejc" class="dropdown-item topbar-settings-item" title="Info">
-                            <span class="topbar-settings-icon"><i class="fas fa-sliders"></i></span>
+                        <div class="dropdown-item topbar-settings-item" title="Verão do Sistema 1.0.0">
+                            <span class="topbar-settings-icon"><i class="fas fa-circle-info"></i></span>
                             <span>
-                                <strong>Info</strong>
-                                <small>Dados do encontro</small>
+                                <strong>Verão do Sistema 1.0.0</strong>
+                                <small>Informação atual da versão do sistema</small>
                             </span>
-                        </a>
+                        </div>
                     </div>
                 </div>
-                <button type="button" class="topbar-icon-btn" title="Avisos"><i class="fa-solid fa-bell"></i></button>
                 <div class="topbar-user-pill" id="page-header-user-dropdown" title="Usuário logado">
                     <span class="topbar-user-avatar">SP</span>
                     <span class="user-name-text">Admin</span>

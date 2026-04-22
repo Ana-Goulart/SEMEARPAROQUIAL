@@ -7,6 +7,13 @@
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
+        :root {
+            --brand-gold-strong: #8a5b16;
+            --brand-gold: #b98a35;
+            --brand-gold-soft: #f1cf72;
+            --brand-cream: #fbf5e9;
+        }
+
         body {
             min-height: 100vh;
             display: flex;
@@ -77,6 +84,35 @@
             color: #8a6a36;
             margin: 0;
         }
+
+        .btn-brand-login {
+            border: 0;
+            color: #fff;
+            font-weight: 600;
+            background: linear-gradient(135deg, var(--brand-gold-soft) 0%, var(--brand-gold) 52%, var(--brand-gold-strong) 100%);
+            box-shadow: 0 12px 24px rgba(138, 91, 22, 0.18);
+            transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+        }
+
+        .btn-brand-login:hover,
+        .btn-brand-login:focus,
+        .btn-brand-login:active {
+            color: #fff;
+            background: linear-gradient(135deg, #f4d983 0%, #c99638 52%, #8a5b16 100%);
+            box-shadow: 0 14px 28px rgba(138, 91, 22, 0.22);
+            transform: translateY(-1px);
+        }
+
+        .btn-brand-login:focus-visible {
+            box-shadow: 0 0 0 0.25rem rgba(185, 138, 53, 0.25), 0 14px 28px rgba(138, 91, 22, 0.22);
+        }
+
+        .btn-brand-login:disabled {
+            color: rgba(255, 255, 255, 0.82);
+            background: linear-gradient(135deg, #d9bf85 0%, #c5a461 100%);
+            box-shadow: none;
+            transform: none;
+        }
     </style>
 </head>
 <body>
@@ -101,7 +137,7 @@
                         <input class="form-control" type="password" v-model="senha" required autocomplete="current-password">
                     </div>
                     <div class="d-grid">
-                        <button class="btn btn-primary" :disabled="loadingSenha">{{ loadingSenha ? 'Entrando...' : 'Entrar com usuário e senha' }}</button>
+                        <button class="btn btn-brand-login" :disabled="loadingSenha">{{ loadingSenha ? 'Entrando...' : 'Entrar com usuário e senha' }}</button>
                     </div>
                 </form>
             </div>

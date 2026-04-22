@@ -17,6 +17,45 @@
             background-color: #f8f9fa;
         }
 
+        .badge-group {
+            border-radius: 999px;
+            padding: 0.42rem 0.72rem;
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.01em;
+            border: 1px solid transparent;
+        }
+
+        .badge-group-tios {
+            background: #f5ead5;
+            color: #8a5b16;
+            border-color: #e4c996;
+        }
+
+        .badge-group-jovens {
+            background: #efe3bf;
+            color: #7a5720;
+            border-color: #dcc07c;
+        }
+
+        .badge-group-diretor {
+            background: #e8dcc1;
+            color: #6f4e1e;
+            border-color: #ceb07b;
+        }
+
+        .badge-group-padre {
+            background: #d9c49a;
+            color: #4d3411;
+            border-color: #b88f49;
+        }
+
+        .badge-group-default {
+            background: #f4eee2;
+            color: #725326;
+            border-color: #d7bf95;
+        }
+
         [v-cloak] {
             display: none;
         }
@@ -34,8 +73,8 @@
         <!-- O menu.js irá injetar o <nav id="sidebar"> aqui dentro, como primeiro filho -->
 
         <main id="content" class="w-100 p-4" v-cloak>
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h3><i class="fa-solid fa-users icon-accent"></i> Gerenciar Usuários</h3>
+            <div class="d-flex flex-wrap justify-content-end align-items-center gap-3 mb-4">
+                <h3 class="me-auto mb-0"><i class="fa-solid fa-users icon-accent"></i> Gerenciar Usuários</h3>
                 <button class="btn btn-primary" @click="abrirModal()">
                     <i class="fa-solid fa-plus icon-accent"></i> Novo Usuário
                 </button>
@@ -59,14 +98,12 @@
                                 <th>Nome Completo</th>
                                 <th>Usuário</th>
                                 <th>Grupo</th>
-                                <th>Entrada</th>
-                                <th>Saída</th>
                                 <th class="text-end">Ações</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr v-if="usuarios.length === 0">
-                                <td colspan="6" class="text-center py-4 text-muted">Nenhum usuário cadastrado.</td>
+                                <td colspan="4" class="text-center py-4 text-muted">Nenhum usuário cadastrado.</td>
                             </tr>
                             <tr v-for="user in usuarios" :key="user.id">
                                 <td>{{ user.nome_completo }}</td>
@@ -77,10 +114,8 @@
                                     </span>
                                 </td>
                                 <td>
-                                    <span class="badge" :class="getBadgeClass(user.grupo)">{{ user.grupo }}</span>
+                                    <span class="badge badge-group" :class="getBadgeClass(user.grupo)">{{ user.grupo }}</span>
                                 </td>
-                                <td>{{ formatDate(user.data_entrada) }}</td>
-                                <td>{{ formatDate(user.data_saida) }}</td>
                                 <td class="text-end">
                                     <button class="btn btn-edit-standard btn-sm me-1"
                                         :disabled="isReadOnlyUser(user)"
@@ -107,9 +142,6 @@
                         </div>
                         <div class="modal-body">
                             <form @submit.prevent="salvarUsuario">
-                                <div v-if="!isEditing" class="alert alert-warning py-2">
-                                    Se informar <strong>Data Saída</strong>, o usuário será removido automaticamente no dia seguinte e não poderá mais acessar o sistema.
-                                </div>
                                 <div class="mb-3">
                                     <label class="form-label">Tipo de cadastro *</label>
                                     <select class="form-select" v-model="tipoCadastro" :disabled="isEditing">
@@ -187,16 +219,6 @@
                                         <option value="Padre">Padre</option>
                                     </select>
                                 </div>
-                                <div class="row">
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Data Entrada</label>
-                                        <input type="text" class="form-control date-br" v-model="form.data_entrada" placeholder="dd/mm/aaaa">
-                                    </div>
-                                    <div class="col-md-6 mb-3">
-                                        <label class="form-label">Data Saída</label>
-                                        <input type="text" class="form-control date-br" v-model="form.data_saida" placeholder="dd/mm/aaaa">
-                                    </div>
-                                </div>
                                 <div class="mb-3">
                                     <label class="form-label">Funções da Dirigência</label>
                                     <div class="text-muted small mb-2">Vincule este usuário às funções já criadas.</div>
@@ -262,8 +284,6 @@
                             username: '',
                             senha: '',
                             grupo: '',
-                            data_entrada: '',
-                            data_saida: '',
                             jovem_id: null,
                             funcoes_dirigencia_ids: []
                         },
@@ -336,8 +356,6 @@
                             username: '',
                             senha: '',
                             grupo: '',
-                            data_entrada: '',
-                            data_saida: '',
                             jovem_id: null,
                             funcoes_dirigencia_ids: []
                         };
@@ -358,8 +376,6 @@
                         this.form = {
                             ...user,
                             senha: '',
-                            data_entrada: user.data_entrada ? user.data_entrada.split('T')[0] : '',
-                            data_saida: user.data_saida ? user.data_saida.split('T')[0] : '',
                             jovem_id: user.jovem_id || null,
                             funcoes_dirigencia_ids: Array.isArray(user.funcoes_dirigencia_ids) ? [...user.funcoes_dirigencia_ids] : []
                         };
@@ -538,16 +554,12 @@
                     },
                     getBadgeClass(grupo) {
                         switch (grupo) {
-                            case 'Tios': return 'text-bg-warning';
-                            case 'Jovens': return 'text-bg-info';
-                            case 'Diretor Espiritual': return 'text-bg-primary';
-                            case 'Padre': return 'text-bg-dark';
-                            default: return 'text-bg-secondary';
+                            case 'Tios': return 'badge-group-tios';
+                            case 'Jovens': return 'badge-group-jovens';
+                            case 'Diretor Espiritual': return 'badge-group-diretor';
+                            case 'Padre': return 'badge-group-padre';
+                            default: return 'badge-group-default';
                         }
-                    },
-                    formatDate(dateString) {
-                        if (!dateString) return '-';
-                        return new Date(dateString).toLocaleDateString('pt-BR');
                     }
                 },
                 watch: {
