@@ -1,6 +1,6 @@
 const express = require('express');
 const { pool } = require('../database');
-const { ensureStructure, hashPassword } = require('../lib/setup');
+const { ensureStructure, hashPassword, verifyPassword, looksLikeBcryptHash } = require('../lib/setup');
 const { setAdminSessionCookie, clearAdminSessionCookie } = require('../lib/authSession');
 
 const router = express.Router();
@@ -55,7 +55,11 @@ router.post('/login', async (req, res) => {
         if (!rows.length) return res.status(401).json({ error: 'Credenciais inválidas.' });
         const admin = rows[0];
         if (!admin.ativo || !admin.tenant_ativo) return res.status(403).json({ error: 'Conta desabilitada.' });
-        if (admin.senha_hash !== hashPassword(senha)) return res.status(401).json({ error: 'Credenciais inválidas.' });
+        if (!await verifyPassword(senha, admin.senha_hash)) return res.status(401).json({ error: 'Credenciais inválidas.' });
+        if (!looksLikeBcryptHash(admin.senha_hash)) {
+            const newHash = await hashPassword(senha);
+            await pool.query('UPDATE tenant_admin_users SET senha_hash = ? WHERE id = ? AND tenant_id = ?', [newHash, admin.id, admin.tenant_id]);
+        }
 
         setAdminSessionCookie(res, admin.id, admin.tenant_id);
         return res.json({

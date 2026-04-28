@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { pool, corePool } = require('../database');
 const crypto = require('crypto');
+const bcrypt = require('bcrypt');
 const { purgeExpiredUsers } = require('../lib/usuariosExpiracao');
 const { getTenantId } = require('../lib/tenantIsolation');
 
@@ -142,9 +143,14 @@ async function findExistingCentralUserByEmail(connection, email) {
     return rows[0];
 }
 
-// Helper para hash de senha (simples SHA-256)
-function hashPassword(password) {
-    return crypto.createHash('sha256').update(password).digest('hex');
+const BCRYPT_ROUNDS = Number(process.env.BCRYPT_ROUNDS || 12);
+
+function hashLegacyPassword(password) {
+    return crypto.createHash('sha256').update(String(password || '')).digest('hex');
+}
+
+async function hashPassword(password) {
+    return bcrypt.hash(String(password || ''), BCRYPT_ROUNDS);
 }
 
 async function upsertLegacyUser(connection, { tenantId, username, nomeCompleto, senha, grupo, jovemId }) {
@@ -164,7 +170,7 @@ async function upsertLegacyUser(connection, { tenantId, username, nomeCompleto, 
             `UPDATE db_semeajovens.usuarios
              SET nome_completo = ?, senha = ?, grupo = ?, jovem_id = ?
              WHERE id = ?`,
-            [nome, hashPassword(senha), grupoFinal, jovemIdFinal, rows[0].id]
+            [nome, await hashPassword(senha), grupoFinal, jovemIdFinal, rows[0].id]
         );
         return Number(rows[0].id);
     }
@@ -173,7 +179,7 @@ async function upsertLegacyUser(connection, { tenantId, username, nomeCompleto, 
         `INSERT INTO db_semeajovens.usuarios
          (tenant_id, username, nome_completo, senha, grupo, jovem_id)
          VALUES (?, ?, ?, ?, ?, ?)`,
-        [tenantId, login, nome, hashPassword(senha), grupoFinal, jovemIdFinal]
+        [tenantId, login, nome, await hashPassword(senha), grupoFinal, jovemIdFinal]
     );
     return Number(insertResult.insertId);
 }
@@ -187,6 +193,7 @@ router.get('/', async (req, res) => {
         const [rows] = await corePool.query(`
             SELECT
                 u.id,
+                u.legacy_user_id,
                 u.nome AS nome_completo,
                 u.email AS username,
                 NULL AS data_entrada,
@@ -308,7 +315,7 @@ router.post('/', async (req, res) => {
         const tenantId = getTenantId(req);
         await connection.beginTransaction();
 
-        const hashedPassword = hashPassword(senha);
+        const hashedPassword = await hashPassword(senha);
         const loginEmail = String(username).trim().toLowerCase();
         const nome = String(nome_completo).trim();
         const legacyUserId = await upsertLegacyUser(connection, {
@@ -472,7 +479,7 @@ router.put('/:id', async (req, res) => {
 
         if (senha) {
             query += ', password_hash_legacy = ?';
-            params.push(hashPassword(senha));
+            params.push(await hashPassword(senha));
         }
 
         query += ' WHERE id = ?';
@@ -496,7 +503,7 @@ router.put('/:id', async (req, res) => {
                     `UPDATE db_semeajovens.usuarios
                      SET username = ?, nome_completo = ?, senha = ?, grupo = ?
                      WHERE id = ? AND tenant_id = ?`,
-                    [loginEmail, nome, hashPassword(senha), grupoFinal, legacyUserId, tenantId]
+                    [loginEmail, nome, await hashPassword(senha), grupoFinal, legacyUserId, tenantId]
                 );
             } else {
                 await connection.query(

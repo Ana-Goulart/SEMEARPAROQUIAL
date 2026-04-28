@@ -2,6 +2,22 @@ const express = require('express');
 const crypto = require('crypto');
 const { pool } = require('../database');
 const { normalizeUpperText } = require('../lib/personNameFormatting');
+const {
+    decryptJovemRecord,
+    encryptJovemEmail,
+    encryptJovemPhone,
+    encryptJovemSensitiveText,
+    ensureJovensSensitiveColumns,
+    jovemEmailHash,
+    jovemPhoneHash
+} = require('../lib/jovensSensitiveData');
+const {
+    decryptTiosCasal,
+    encryptTioPhone,
+    encryptTioSensitiveText,
+    ensureTiosSensitiveColumns,
+    tioPhoneHash
+} = require('../lib/tiosSensitiveData');
 
 const router = express.Router();
 const TOKEN_TTL_MS = 15 * 60 * 1000;
@@ -127,6 +143,8 @@ async function ensureEstrutura() {
             // eslint-disable-next-line no-await-in-loop
             await ensureColumn('tios_casais', columnName, sql);
         }
+        await ensureJovensSensitiveColumns(pool);
+        await ensureTiosSensitiveColumns(pool);
 
         estruturaOk = true;
     })();
@@ -252,7 +270,7 @@ router.post('/validar-jovem', async (req, res) => {
             return res.status(404).json({ error: 'Cadastro não encontrado nessa paróquia.' });
         }
 
-        const jovem = rows[0];
+        const jovem = decryptJovemRecord(rows[0]);
         if (normalizePhoneDigits(jovem.telefone) !== normalizePhoneDigits(telefone) || normalizeDate(jovem.data_nascimento) !== dataNascimento) {
             return res.status(400).json({ error: 'Telefone ou data de nascimento não conferem com o cadastro.' });
         }
@@ -321,8 +339,10 @@ router.post('/atualizar-jovem', async (req, res) => {
 
         const campos = [
             'telefone = ?',
+            'telefone_hash = ?',
             'apelido = ?',
             'email = ?',
+            'email_hash = ?',
             'instagram = ?',
             'estado_civil = ?',
             'sexo = ?',
@@ -335,17 +355,19 @@ router.post('/atualizar-jovem', async (req, res) => {
             'termos_aceitos_email = ?'
         ];
         const params = [
-            telefone,
+            encryptJovemPhone(telefone),
+            jovemPhoneHash(telefone),
             apelido,
-            email,
+            encryptJovemEmail(email),
+            jovemEmailHash(email),
             instagram,
             estadoCivil,
             sexo,
             circulo,
             deficiencia ? 1 : 0,
-            qualDeficiencia,
+            encryptJovemSensitiveText(qualDeficiencia, 'qual-deficiencia'),
             restricaoAlimentar ? 1 : 0,
-            detalhesRestricao,
+            encryptJovemSensitiveText(detalhesRestricao, 'detalhes-restricao'),
             email
         ];
         if (await hasColumn('jovens', 'eh_musico')) {
@@ -354,13 +376,15 @@ router.post('/atualizar-jovem', async (req, res) => {
         }
         params.push(payload.cadastro_id, payload.tenant_id);
 
+        const updateData = {};
+        for (let idx = 0; idx < campos.length; idx += 1) {
+            const [coluna] = String(campos[idx]).split('=').map((item) => item.trim());
+            if (!coluna) continue;
+            updateData[coluna] = params[idx];
+        }
         const [result] = await pool.query(
-            `UPDATE jovens
-             SET ${campos.join(', ')}
-             WHERE id = ?
-               AND tenant_id = ?
-               AND origem_ejc_tipo = 'OUTRO_EJC'`,
-            params
+            'UPDATE jovens SET ? WHERE id = ? AND tenant_id = ? AND origem_ejc_tipo = \'OUTRO_EJC\'',
+            [updateData, payload.cadastro_id, payload.tenant_id]
         );
 
         if (!result.affectedRows) {
@@ -406,7 +430,7 @@ router.post('/validar-tio', async (req, res) => {
             return res.status(404).json({ error: 'Cadastro não encontrado nessa paróquia.' });
         }
 
-        const casal = rows[0];
+        const casal = decryptTiosCasal(rows[0]);
         const okTio = normalizePhoneDigits(casal.telefone_tio) === normalizePhoneDigits(telefoneTio) && normalizeDate(casal.data_nascimento_tio) === dataTio;
         const okTia = normalizePhoneDigits(casal.telefone_tia) === normalizePhoneDigits(telefoneTia) && normalizeDate(casal.data_nascimento_tia) === dataTia;
         if (!okTio || !okTia) {
@@ -487,6 +511,8 @@ router.post('/atualizar-tio', async (req, res) => {
             UPDATE tios_casais
                SET telefone_tio = ?,
                    telefone_tia = ?,
+                   telefone_tio_hash = ?,
+                   telefone_tia_hash = ?,
                    restricao_alimentar = ?,
                    deficiencia = ?,
                    restricao_alimentar_tio = ?,
@@ -503,18 +529,20 @@ router.post('/atualizar-tio', async (req, res) => {
                AND tenant_id = ?
                AND origem_tipo = 'OUTRO_EJC'
         `, [
-            telefoneTio,
-            telefoneTia,
+            encryptTioPhone(telefoneTio),
+            encryptTioPhone(telefoneTia),
+            tioPhoneHash(telefoneTio),
+            tioPhoneHash(telefoneTia),
             (restricaoAlimentarTio || restricaoAlimentarTia) ? 1 : 0,
             (deficienciaTio || deficienciaTia) ? 1 : 0,
             restricaoAlimentarTio ? 1 : 0,
-            detalhesRestricaoTio,
+            encryptTioSensitiveText(detalhesRestricaoTio, 'detalhes-restricao-tio'),
             deficienciaTio ? 1 : 0,
-            qualDeficienciaTio,
+            encryptTioSensitiveText(qualDeficienciaTio, 'qual-deficiencia-tio'),
             restricaoAlimentarTia ? 1 : 0,
-            detalhesRestricaoTia,
+            encryptTioSensitiveText(detalhesRestricaoTia, 'detalhes-restricao-tia'),
             deficienciaTia ? 1 : 0,
-            qualDeficienciaTia,
+            encryptTioSensitiveText(qualDeficienciaTia, 'qual-deficiencia-tia'),
             payload.cadastro_id,
             payload.tenant_id
         ]);

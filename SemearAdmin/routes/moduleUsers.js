@@ -58,8 +58,8 @@ async function keepSingleEjcUser(connection, tenantId) {
     if (removeIds.length) {
         await connection.query(
             `DELETE FROM tenant_module_users
-             WHERE tenant_id = ? AND module_code = 'semear-jovens' AND id IN (${removeIds.map(() => '?').join(',')})`,
-            [tenantId, ...removeIds]
+             WHERE tenant_id = ? AND module_code = 'semear-jovens' AND id IN (?)`,
+            [tenantId, removeIds]
         );
     }
     return keepId;
@@ -75,21 +75,19 @@ async function syncLocalSemearJovensUser(connection, { tenantId, nomeCompleto, e
         [tenantId]
     );
     if (rows.length) {
-        let query = 'UPDATE usuarios SET username = ?, nome_completo = ?, grupo = ?';
-        const params = [username, String(nomeCompleto || '').trim(), grupoSeguro];
-        if (senha) {
-            query += ', senha = ?';
-            params.push(hashPassword(senha));
-        }
-        query += ' WHERE id = ?';
-        params.push(rows[0].id);
-        await connection.query(query, params);
+        const updateData = {
+            username,
+            nome_completo: String(nomeCompleto || '').trim(),
+            grupo: grupoSeguro
+        };
+        if (senha) updateData.senha = await hashPassword(senha);
+        await connection.query('UPDATE usuarios SET ? WHERE id = ?', [updateData, rows[0].id]);
         return;
     }
 
     await connection.query(
         'INSERT INTO usuarios (tenant_id, username, nome_completo, senha, grupo) VALUES (?, ?, ?, ?, ?)',
-        [tenantId, username, String(nomeCompleto || '').trim(), hashPassword(senha || ''), grupoSeguro]
+        [tenantId, username, String(nomeCompleto || '').trim(), await hashPassword(senha || ''), grupoSeguro]
     );
 }
 
@@ -105,19 +103,21 @@ router.get('/', requireAdmin, async (req, res) => {
         const moduleCode = normalizeModuleCode(req.query.module_code);
         await keepSingleEjcUser(pool, tenantId);
 
-        let query = `
-            SELECT id, tenant_id, module_code, nome_completo, email, grupo, ativo, created_at, updated_at
-            FROM tenant_module_users
-            WHERE tenant_id = ? AND ativo = 1
-        `;
-        const params = [tenantId];
-        if (moduleCode) {
-            query += ' AND module_code = ?';
-            params.push(moduleCode);
-        }
-        query += ' ORDER BY module_code ASC, nome_completo ASC';
-
-        const [rows] = await pool.query(query, params);
+        const [rows] = moduleCode
+            ? await pool.query(
+                `SELECT id, tenant_id, module_code, nome_completo, email, grupo, ativo, created_at, updated_at
+                 FROM tenant_module_users
+                 WHERE tenant_id = ? AND ativo = 1 AND module_code = ?
+                 ORDER BY module_code ASC, nome_completo ASC`,
+                [tenantId, moduleCode]
+            )
+            : await pool.query(
+                `SELECT id, tenant_id, module_code, nome_completo, email, grupo, ativo, created_at, updated_at
+                 FROM tenant_module_users
+                 WHERE tenant_id = ? AND ativo = 1
+                 ORDER BY module_code ASC, nome_completo ASC`,
+                [tenantId]
+            );
         return res.json(rows);
     } catch (err) {
         console.error('Erro ao listar usuários por módulo:', err);
@@ -172,14 +172,14 @@ router.post('/', requireAdmin, async (req, res) => {
                 `UPDATE tenant_module_users
                  SET nome_completo = ?, email = ?, senha_hash = ?, grupo = ?, ativo = 1
                  WHERE id = ? AND tenant_id = ?`,
-                [nomeCompleto, email, hashPassword(senha), grupo, existingUser.id, tenantId]
+                [nomeCompleto, email, await hashPassword(senha), grupo, existingUser.id, tenantId]
             );
         } else {
             await connection.query(
                 `INSERT INTO tenant_module_users
                  (tenant_id, module_code, nome_completo, email, senha_hash, grupo, ativo)
                  VALUES (?, ?, ?, ?, ?, ?, 1)`,
-                [tenantId, moduleCode, nomeCompleto, email, hashPassword(senha), grupo]
+                [tenantId, moduleCode, nomeCompleto, email, await hashPassword(senha), grupo]
             );
         }
         await keepSingleEjcUser(connection, tenantId);

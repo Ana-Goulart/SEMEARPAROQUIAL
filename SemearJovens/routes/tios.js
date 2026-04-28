@@ -4,6 +4,18 @@ const { getTenantId } = require('../lib/tenantIsolation');
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
+const {
+    ensureJovensSensitiveColumns,
+    jovemPhoneHash,
+    normalizePhoneDigits
+} = require('../lib/jovensSensitiveData');
+const {
+    decryptTiosCasal,
+    encryptTioPhone,
+    encryptTioSensitiveText,
+    ensureTiosSensitiveColumns,
+    tioPhoneHash
+} = require('../lib/tiosSensitiveData');
 
 const router = express.Router();
 const uploadDirAbs = path.join(__dirname, '..', 'public', 'uploads', 'fotos_tios');
@@ -156,9 +168,9 @@ async function sincronizarServicosCasalComMontagem({
                 ${comPapelBase ? "COALESCE(papel_base, 'Membro')" : "'Membro'"} AS papel_base
              FROM equipes_funcoes
              WHERE tenant_id = ?
-               AND equipe_id IN (${equipeIds.map(() => '?').join(',')})
+               AND equipe_id IN (?)
              ORDER BY equipe_id ASC, nome ASC`,
-            [tenantId, ...equipeIds]
+            [tenantId, equipeIds]
         );
 
         const agrupadas = new Map();
@@ -200,8 +212,8 @@ async function sincronizarServicosCasalComMontagem({
             paramsExistentes.push(casalId);
         }
         if (nomesBusca.length) {
-            filtrosIdentificacao.push(`(mm.tio_casal_id IS NULL AND TRIM(COALESCE(mm.nome_externo, '')) IN (${nomesBusca.map(() => '?').join(',')}))`);
-            paramsExistentes.push(...nomesBusca);
+            filtrosIdentificacao.push("(mm.tio_casal_id IS NULL AND TRIM(COALESCE(mm.nome_externo, '')) IN (?))");
+            paramsExistentes.push(nomesBusca);
         }
         const [rows] = await pool.query(
             `SELECT
@@ -242,19 +254,14 @@ async function sincronizarServicosCasalComMontagem({
             await pool.query('DELETE FROM montagem_membros WHERE id = ? AND tenant_id = ?', [row.id, tenantId]);
             continue;
         }
-        const sets = ['nome_externo = ?', 'telefone_externo = ?'];
-        const paramsAtualizacao = [nomeCasalAtual || null, telefoneCasalAtual];
-        if (comTioCasalIdMontagem) {
-            sets.push('tio_casal_id = ?');
-            paramsAtualizacao.push(casalId);
-        }
-        paramsAtualizacao.push(row.id, tenantId);
+        const updateData = {
+            nome_externo: nomeCasalAtual || null,
+            telefone_externo: telefoneCasalAtual
+        };
+        if (comTioCasalIdMontagem) updateData.tio_casal_id = casalId;
         await pool.query(
-            `UPDATE montagem_membros
-             SET ${sets.join(', ')}
-             WHERE id = ?
-               AND tenant_id = ?`,
-            paramsAtualizacao
+            'UPDATE montagem_membros SET ? WHERE id = ? AND tenant_id = ?',
+            [updateData, row.id, tenantId]
         );
         desejados.delete(chave);
     }
@@ -438,6 +445,8 @@ async function ensureStructure() {
                    deficiencia_tio = CASE WHEN deficiencia = 1 THEN 1 ELSE deficiencia_tio END,
                    deficiencia_tia = CASE WHEN deficiencia = 1 THEN 1 ELSE deficiencia_tia END
         `);
+        await ensureTiosSensitiveColumns(pool);
+        await ensureJovensSensitiveColumns(pool);
 
         await pool.query(`
             CREATE TABLE IF NOT EXISTS tios_casal_equipes (
@@ -560,10 +569,6 @@ function parseBool(v) {
     return txt === '1' || txt === 'true' || txt === 'sim' || txt === 'yes';
 }
 
-function normalizePhoneDigits(value) {
-    return String(value || '').replace(/\D/g, '');
-}
-
 function normalizedPhoneExpr(fieldName) {
     return NORMALIZED_PHONE_SQL.replace('%FIELD%', fieldName);
 }
@@ -586,6 +591,7 @@ async function validarDuplicidadeTelefoneCasal({
     excludeCasalId = null,
     connection = pool
 }) {
+    await ensureTiosSensitiveColumns(pool);
     const telefoneTioNormalizado = normalizePhoneDigits(telefoneTio);
     const telefoneTiaNormalizado = normalizePhoneDigits(telefoneTia);
 
@@ -604,14 +610,19 @@ async function validarDuplicidadeTelefoneCasal({
     for (const item of telefonesParaValidar) {
         if (!item.valor) continue;
 
-        const params = [tenantId, item.valor, item.valor];
+        const itemHash = tioPhoneHash(item.valor);
+        const params = [tenantId, itemHash || '', itemHash || '', item.valor, item.valor];
         let sql = `
             SELECT id, nome_tio, nome_tia
             FROM tios_casais
             WHERE tenant_id = ?
               AND (
+                    telefone_tio_hash = ?
+                 OR telefone_tia_hash = ?
+                 OR (
                     ${normalizedPhoneExpr('telefone_tio')} = ?
                  OR ${normalizedPhoneExpr('telefone_tia')} = ?
+                 )
               )
         `;
 
@@ -635,27 +646,35 @@ async function validarDuplicidadeTelefoneCasal({
 }
 
 async function buscarJovemPorNomeTelefone({ tenantId, nome, telefone }) {
+    await ensureJovensSensitiveColumns(pool);
     const nomeTxt = String(nome || '').trim();
     const telefoneDigits = normalizePhoneDigits(telefone);
+    const telefoneHash = jovemPhoneHash(telefone);
     if (!nomeTxt) return null;
 
-    let sql = `
-        SELECT id
-        FROM jovens
-        WHERE tenant_id = ?
-          AND LOWER(TRIM(nome_completo)) = LOWER(TRIM(?))
-    `;
-    const params = [tenantId, nomeTxt];
-
-    if (telefoneDigits) {
-        sql += `
-          AND REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TRIM(COALESCE(telefone, '')), ' ', ''), '(', ''), ')', ''), '-', ''), '+', '') = ?
-        `;
-        params.push(telefoneDigits);
-    }
-
-    sql += ' ORDER BY id DESC LIMIT 1';
-    const [rows] = await pool.query(sql, params);
+    const [rows] = telefoneDigits
+        ? await pool.query(
+            `SELECT id
+             FROM jovens
+             WHERE tenant_id = ?
+               AND LOWER(TRIM(nome_completo)) = LOWER(TRIM(?))
+               AND (
+                    telefone_hash = ?
+                 OR REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TRIM(COALESCE(telefone, '')), ' ', ''), '(', ''), ')', ''), '-', ''), '+', '') = ?
+               )
+             ORDER BY id DESC
+             LIMIT 1`,
+            [tenantId, nomeTxt, telefoneHash || '', telefoneDigits]
+        )
+        : await pool.query(
+            `SELECT id
+             FROM jovens
+             WHERE tenant_id = ?
+               AND LOWER(TRIM(nome_completo)) = LOWER(TRIM(?))
+             ORDER BY id DESC
+             LIMIT 1`,
+            [tenantId, nomeTxt]
+        );
     return rows && rows[0] ? Number(rows[0].id) : null;
 }
 
@@ -673,8 +692,8 @@ async function sincronizarCasalComListaMestre({ tenantId, casalId, nomeTio, tele
          SET lista_mestre_ativo = 0,
              circulo = NULL
          WHERE tenant_id = ?
-           AND id IN (${ids.map(() => '?').join(',')})`,
-        [tenantId, ...ids]
+           AND id IN (?)`,
+        [tenantId, ids]
     );
 
     for (const jovemId of ids) {
@@ -1120,9 +1139,9 @@ router.get('/casais', async (req, res) => {
                  JOIN equipes eq ON eq.id = cs.equipe_id AND eq.tenant_id = cs.tenant_id
                  LEFT JOIN ejc e ON e.id = cs.ejc_id AND e.tenant_id = cs.tenant_id
                  LEFT JOIN montagens m ON m.id = cs.ejc_id AND m.tenant_id = cs.tenant_id
-                 WHERE cs.tenant_id = ? AND cs.casal_id IN (${casalIds.map(() => '?').join(',')})
+                 WHERE cs.tenant_id = ? AND cs.casal_id IN (?)
                  ORDER BY eq.nome ASC, e.numero DESC`,
-                [tenantId, ...casalIds]
+                [tenantId, casalIds]
             );
             servicosRows = rows || [];
         }
@@ -1139,7 +1158,7 @@ router.get('/casais', async (req, res) => {
         }
 
         const payload = (casais || []).map((c) => ({
-            ...c,
+            ...decryptTiosCasal(c),
             servicos: byCasal.get(c.id) || [],
             equipes: Array.from(
                 new Map((byCasal.get(c.id) || []).map((s) => [s.equipe_id, { id: s.equipe_id, nome: s.equipe_nome }])).values()
@@ -1206,8 +1225,8 @@ router.post('/casais', async (req, res) => {
 
         if (equipeIds.length) {
             const [validEquipes] = await pool.query(
-                `SELECT id FROM equipes WHERE tenant_id = ? AND id IN (${equipeIds.map(() => '?').join(',')})`,
-                [tenantId, ...equipeIds]
+                'SELECT id FROM equipes WHERE tenant_id = ? AND id IN (?)',
+                [tenantId, equipeIds]
             );
             if ((validEquipes || []).length !== equipeIds.length) {
                 return res.status(400).json({ error: 'Uma ou mais equipes informadas são inválidas.' });
@@ -1216,8 +1235,8 @@ router.post('/casais', async (req, res) => {
 
         if (ejcIds.length) {
             const [validEjcs] = await pool.query(
-                `SELECT id FROM ejc WHERE tenant_id = ? AND id IN (${ejcIds.map(() => '?').join(',')})`,
-                [tenantId, ...ejcIds]
+                'SELECT id FROM ejc WHERE tenant_id = ? AND id IN (?)',
+                [tenantId, ejcIds]
             );
             if ((validEjcs || []).length !== ejcIds.length) {
                 return res.status(400).json({ error: 'Uma ou mais edições do EJC informadas são inválidas.' });
@@ -1227,16 +1246,18 @@ router.post('/casais', async (req, res) => {
         const [result] = await pool.query(
             `INSERT INTO tios_casais
                 (tenant_id, ecc_id, origem_tipo, outro_ejc_id, nome_tio, telefone_tio, data_nascimento_tio, nome_tia, telefone_tia, data_nascimento_tia,
+                 telefone_tio_hash, telefone_tia_hash,
                  restricao_alimentar, deficiencia,
                  restricao_alimentar_tio, detalhes_restricao_tio, deficiencia_tio, qual_deficiencia_tio,
                  restricao_alimentar_tia, detalhes_restricao_tia, deficiencia_tia, qual_deficiencia_tia, observacoes)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 tenantId, origemTipo === 'EJC' ? eccId : null, origemTipo, origemTipo === 'OUTRO_EJC' ? outroEjcId : null,
-                nomeTio, telefoneTio, dataNascimentoTio, nomeTia, telefoneTia, dataNascimentoTia,
+                nomeTio, encryptTioPhone(telefoneTio), dataNascimentoTio, nomeTia, encryptTioPhone(telefoneTia), dataNascimentoTia,
+                tioPhoneHash(telefoneTio), tioPhoneHash(telefoneTia),
                 restricaoAlimentar ? 1 : 0, deficiencia ? 1 : 0,
-                restricaoAlimentarTio ? 1 : 0, detalhesRestricaoTio, deficienciaTio ? 1 : 0, qualDeficienciaTio,
-                restricaoAlimentarTia ? 1 : 0, detalhesRestricaoTia, deficienciaTia ? 1 : 0, qualDeficienciaTia, observacoes
+                restricaoAlimentarTio ? 1 : 0, encryptTioSensitiveText(detalhesRestricaoTio, 'detalhes-restricao-tio'), deficienciaTio ? 1 : 0, encryptTioSensitiveText(qualDeficienciaTio, 'qual-deficiencia-tio'),
+                restricaoAlimentarTia ? 1 : 0, encryptTioSensitiveText(detalhesRestricaoTia, 'detalhes-restricao-tia'), deficienciaTia ? 1 : 0, encryptTioSensitiveText(qualDeficienciaTia, 'qual-deficiencia-tia'), observacoes
             ]
         );
         const casalId = result.insertId;
@@ -1297,7 +1318,7 @@ router.put('/casais/:id', async (req, res) => {
             [casalId, tenantId]
         );
         if (!casalAtualRows.length) return res.status(404).json({ error: 'Casal não encontrado.' });
-        const casalAtual = casalAtualRows[0] || {};
+        const casalAtual = decryptTiosCasal(casalAtualRows[0] || {});
         const nomeCasalAnterior = montarNomeCasal(casalAtual.nome_tio, casalAtual.nome_tia);
 
         const nomeTio = normalizeUpperText(req.body.nome_tio);
@@ -1350,8 +1371,8 @@ router.put('/casais/:id', async (req, res) => {
 
         if (equipeIds.length) {
             const [validEquipes] = await pool.query(
-                `SELECT id FROM equipes WHERE tenant_id = ? AND id IN (${equipeIds.map(() => '?').join(',')})`,
-                [tenantId, ...equipeIds]
+                'SELECT id FROM equipes WHERE tenant_id = ? AND id IN (?)',
+                [tenantId, equipeIds]
             );
             if ((validEquipes || []).length !== equipeIds.length) {
                 return res.status(400).json({ error: 'Uma ou mais equipes informadas são inválidas.' });
@@ -1360,8 +1381,8 @@ router.put('/casais/:id', async (req, res) => {
 
         if (ejcIds.length) {
             const [validEjcs] = await pool.query(
-                `SELECT id FROM ejc WHERE tenant_id = ? AND id IN (${ejcIds.map(() => '?').join(',')})`,
-                [tenantId, ...ejcIds]
+                'SELECT id FROM ejc WHERE tenant_id = ? AND id IN (?)',
+                [tenantId, ejcIds]
             );
             if ((validEjcs || []).length !== ejcIds.length) {
                 return res.status(400).json({ error: 'Uma ou mais edições do EJC informadas são inválidas.' });
@@ -1371,7 +1392,7 @@ router.put('/casais/:id', async (req, res) => {
         const [result] = await pool.query(
             `UPDATE tios_casais
              SET ecc_id = ?, origem_tipo = ?, outro_ejc_id = ?, nome_tio = ?, telefone_tio = ?, data_nascimento_tio = ?,
-                 nome_tia = ?, telefone_tia = ?, data_nascimento_tia = ?,
+                 nome_tia = ?, telefone_tia = ?, data_nascimento_tia = ?, telefone_tio_hash = ?, telefone_tia_hash = ?,
                  restricao_alimentar = ?, deficiencia = ?,
                  restricao_alimentar_tio = ?, detalhes_restricao_tio = ?, deficiencia_tio = ?, qual_deficiencia_tio = ?,
                  restricao_alimentar_tia = ?, detalhes_restricao_tia = ?, deficiencia_tia = ?, qual_deficiencia_tia = ?,
@@ -1379,10 +1400,11 @@ router.put('/casais/:id', async (req, res) => {
              WHERE id = ? AND tenant_id = ?`,
             [
                 origemTipo === 'EJC' ? eccId : null, origemTipo, origemTipo === 'OUTRO_EJC' ? outroEjcId : null,
-                nomeTio, telefoneTio, dataNascimentoTio, nomeTia, telefoneTia, dataNascimentoTia,
+                nomeTio, encryptTioPhone(telefoneTio), dataNascimentoTio, nomeTia, encryptTioPhone(telefoneTia), dataNascimentoTia,
+                tioPhoneHash(telefoneTio), tioPhoneHash(telefoneTia),
                 restricaoAlimentar ? 1 : 0, deficiencia ? 1 : 0,
-                restricaoAlimentarTio ? 1 : 0, detalhesRestricaoTio, deficienciaTio ? 1 : 0, qualDeficienciaTio,
-                restricaoAlimentarTia ? 1 : 0, detalhesRestricaoTia, deficienciaTia ? 1 : 0, qualDeficienciaTia,
+                restricaoAlimentarTio ? 1 : 0, encryptTioSensitiveText(detalhesRestricaoTio, 'detalhes-restricao-tio'), deficienciaTio ? 1 : 0, encryptTioSensitiveText(qualDeficienciaTio, 'qual-deficiencia-tio'),
+                restricaoAlimentarTia ? 1 : 0, encryptTioSensitiveText(detalhesRestricaoTia, 'detalhes-restricao-tia'), deficienciaTia ? 1 : 0, encryptTioSensitiveText(qualDeficienciaTia, 'qual-deficiencia-tia'),
                 observacoes, casalId, tenantId
             ]
         );
@@ -1457,6 +1479,7 @@ router.delete('/casais/:id', async (req, res) => {
             [casalId, tenantId]
         );
         if (!rows.length) return res.status(404).json({ error: 'Casal não encontrado.' });
+        const casal = decryptTiosCasal(rows[0]);
 
         await pool.query(
             `INSERT INTO tios_casal_servicos_historico
@@ -1474,10 +1497,10 @@ router.delete('/casais/:id', async (req, res) => {
              WHERE ts.casal_id = ?
                AND ts.tenant_id = ?`,
             [
-                rows[0].nome_tio || null,
-                rows[0].telefone_tio || null,
-                rows[0].nome_tia || null,
-                rows[0].telefone_tia || null,
+                casal.nome_tio || null,
+                casal.telefone_tio || null,
+                casal.nome_tia || null,
+                casal.telefone_tia || null,
                 casalId,
                 tenantId
             ]
@@ -1488,11 +1511,11 @@ router.delete('/casais/:id', async (req, res) => {
         await sincronizarServicosCasalComMontagem({
             tenantId,
             casalId,
-            nomeTio: rows[0].nome_tio,
-            telefoneTio: rows[0].telefone_tio,
-            nomeTia: rows[0].nome_tia,
-            telefoneTia: rows[0].telefone_tia,
-            aliasesNomes: [montarNomeCasal(rows[0].nome_tio, rows[0].nome_tia)]
+            nomeTio: casal.nome_tio,
+            telefoneTio: casal.telefone_tio,
+            nomeTia: casal.nome_tia,
+            telefoneTia: casal.telefone_tia,
+            aliasesNomes: [montarNomeCasal(casal.nome_tio, casal.nome_tia)]
         });
         const [result] = await pool.query('DELETE FROM tios_casais WHERE id = ? AND tenant_id = ?', [casalId, tenantId]);
         if (rows.length > 0 && rows[0].foto_url) {

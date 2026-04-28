@@ -1,6 +1,6 @@
 const express = require('express');
 const { pool } = require('../database');
-const { ensureTenantStructure, hashPassword } = require('../lib/tenantSetup');
+const { ensureTenantStructure, hashPassword, verifyPassword, looksLikeBcryptHash } = require('../lib/tenantSetup');
 const { setAdminSessionCookie, clearAdminSessionCookie } = require('../lib/adminSession');
 
 const router = express.Router();
@@ -260,7 +260,7 @@ async function upsertTenantAdminUser(connection, { tenantId, username, nomeCompl
             nome_completo = VALUES(nome_completo),
             senha_hash = VALUES(senha_hash),
             ativo = VALUES(ativo)`,
-        [tenantId, safeUsername, safeName, hashPassword(safePassword), ativo ? 1 : 0]
+        [tenantId, safeUsername, safeName, await hashPassword(safePassword), ativo ? 1 : 0]
     );
 }
 
@@ -278,7 +278,7 @@ async function syncLocalSemearJovensUser(connection, { tenantId, nomeCompleto, e
         const params = [String(nomeCompleto || '').trim(), grupoSeguro];
         if (senha) {
             query += ', senha = ?';
-            params.push(hashPassword(senha));
+            params.push(await hashPassword(senha));
         }
         query += ' WHERE id = ?';
         params.push(rows[0].id);
@@ -288,7 +288,7 @@ async function syncLocalSemearJovensUser(connection, { tenantId, nomeCompleto, e
 
     await connection.query(
         'INSERT INTO usuarios (tenant_id, username, nome_completo, senha, grupo) VALUES (?, ?, ?, ?, ?)',
-        [tenantId, username, String(nomeCompleto || '').trim(), hashPassword(senha || ''), grupoSeguro]
+        [tenantId, username, String(nomeCompleto || '').trim(), await hashPassword(senha || ''), grupoSeguro]
     );
 }
 
@@ -465,7 +465,7 @@ router.post('/admin-users', requireAdmin, async (req, res) => {
 
         const [result] = await pool.query(
             'INSERT INTO admin_usuarios (username, nome_completo, senha, ativo) VALUES (?, ?, ?, 1)',
-            [username, nomeCompleto, hashPassword(senha)]
+            [username, nomeCompleto, await hashPassword(senha)]
         );
         return res.status(201).json({ id: result.insertId, message: 'Usuário do sistema criado com sucesso.' });
     } catch (err) {
@@ -498,7 +498,7 @@ router.put('/admin-users/:id', requireAdmin, async (req, res) => {
         const params = [username, nomeCompleto, ativo];
         if (senha) {
             query += ', senha = ?';
-            params.push(hashPassword(senha));
+            params.push(await hashPassword(senha));
         }
         query += ' WHERE id = ?';
         params.push(adminUserId);
@@ -620,7 +620,10 @@ router.post('/login', async (req, res) => {
             [username]
         );
         if (!rows.length || !rows[0].ativo) return res.status(401).json({ error: 'Credenciais inválidas.' });
-        if (rows[0].senha !== hashPassword(senha)) return res.status(401).json({ error: 'Credenciais inválidas.' });
+        if (!await verifyPassword(senha, rows[0].senha)) return res.status(401).json({ error: 'Credenciais inválidas.' });
+        if (!looksLikeBcryptHash(rows[0].senha)) {
+            await pool.query('UPDATE admin_usuarios SET senha = ? WHERE id = ?', [await hashPassword(senha), rows[0].id]);
+        }
 
         setAdminSessionCookie(res, rows[0].id);
         return res.json({
@@ -1080,7 +1083,7 @@ router.post('/tenants', requireAdmin, async (req, res) => {
         if (username && senha) {
             await connection.query(
                 'INSERT INTO usuarios (tenant_id, username, nome_completo, senha, grupo) VALUES (?, ?, ?, ?, ?)',
-                [tenantId, username, nomeAdmin, hashPassword(senha), GRUPO_ADMIN_LOCAL]
+                [tenantId, username, nomeAdmin, await hashPassword(senha), GRUPO_ADMIN_LOCAL]
             );
         }
 
@@ -1095,7 +1098,7 @@ router.post('/tenants', requireAdmin, async (req, res) => {
                     moduleUser.moduleCode,
                     moduleUser.nomeCompleto,
                     moduleUser.email,
-                    hashPassword(moduleUser.senha),
+                    await hashPassword(moduleUser.senha),
                     moduleUser.grupo
                 ]
             );
@@ -1198,7 +1201,7 @@ router.post('/tenants/:id/module-users', requireAdmin, async (req, res) => {
                  senha_hash = VALUES(senha_hash),
                  grupo = VALUES(grupo),
                  ativo = 1`,
-            [tenantId, moduleCode, nomeCompleto, email, hashPassword(senha), grupo]
+            [tenantId, moduleCode, nomeCompleto, email, await hashPassword(senha), grupo]
         );
 
         if (moduleCode === 'semear-jovens') {

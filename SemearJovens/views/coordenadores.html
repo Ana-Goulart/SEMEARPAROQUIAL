@@ -130,6 +130,37 @@
         .busca-item:hover {
             background: #f8f9fa;
         }
+
+        :root[data-theme="dark"] .folder-item,
+        :root[data-theme="dark"] .coord-card,
+        :root[data-theme="dark"] .busca-item {
+            background: linear-gradient(180deg, rgba(36, 29, 21, 0.98), rgba(29, 24, 18, 0.96));
+            border-color: rgba(210, 184, 136, 0.14);
+            color: #f2e7d1;
+        }
+
+        :root[data-theme="dark"] .folder-item:hover,
+        :root[data-theme="dark"] .coord-card:hover,
+        :root[data-theme="dark"] .busca-item:hover {
+            background: rgba(200, 161, 90, 0.08);
+            border-color: rgba(210, 184, 136, 0.2);
+        }
+
+        :root[data-theme="dark"] .delete-btn {
+            background: rgba(36, 29, 21, 0.92);
+            border-color: rgba(210, 184, 136, 0.14);
+            color: #f2e7d1;
+        }
+
+        :root[data-theme="dark"] .coord-header {
+            border-bottom-color: rgba(210, 184, 136, 0.14);
+        }
+
+        :root[data-theme="dark"] .coord-card-preview,
+        :root[data-theme="dark"] .coord-card-empty,
+        :root[data-theme="dark"] .small.text-muted {
+            color: #bca37a !important;
+        }
     </style>
 </head>
 

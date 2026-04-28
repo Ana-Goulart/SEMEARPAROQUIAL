@@ -453,6 +453,7 @@
         .lista-mestre-grid thead th {
             padding: 0.7rem 0.6rem !important;
             font-size: 0.95rem;
+            text-align: left !important;
         }
 
         .lista-mestre-grid tbody td {
@@ -460,16 +461,23 @@
             font-size: 0.94rem;
             line-height: 1.15;
             vertical-align: middle;
+            text-align: left !important;
+            background: #fff;
         }
 
         .lista-mestre-grid .sort-button {
             line-height: 1.08;
+            justify-content: flex-start;
         }
 
         .lista-mestre-grid .lista-mestre-mobile-name-wrap {
             min-height: 1.8rem;
             gap: 0.32rem;
             line-height: 1.12;
+        }
+
+        .lista-mestre-grid tbody tr.lista-mestre-row-striped td {
+            background: #fffdf9;
         }
 
         .lista-mestre-grid .nome-clicavel {
@@ -865,7 +873,7 @@
                             <option :value="false">Não</option>
                         </select>
                     </div>
-                    <div class="col-md-2"><label>É músico</label>
+                    <div class="col-md-2"><label>Habilidades Musicais</label>
                         <select v-model="filtros.ehMusico" class="form-select">
                             <option value="">Todos</option>
                             <option :value="true">Sim</option>
@@ -890,7 +898,7 @@
             </div>
 
             <div class="card shadow-sm border-0" ref="listaMestreCard">
-                <table class="table table-hover mb-0 text-center align-middle lista-mestre-grid table-no-mobile-expand" ref="listaMestreTabela">
+                <table class="table table-hover mb-0 align-middle lista-mestre-grid table-no-mobile-expand" ref="listaMestreTabela">
                     <thead class="table-light">
                         <tr>
                             <th class="lista-mestre-mobile-expand-col">
@@ -907,7 +915,7 @@
                             <th v-if="colunasVisiveis.NumEJC" class="lista-mestre-mobile-hidden"><button type="button" class="sort-button" @click="ordenarPor('numero_ejc')">Nº EJC <span class="sort-indicator">{{ iconeOrdenacao('numero_ejc') }}</span></button></th>
                             <th v-if="colunasVisiveis.Instagram" class="lista-mestre-mobile-hidden"><button type="button" class="sort-button" @click="ordenarPor('instagram')">Instagram <span class="sort-indicator">{{ iconeOrdenacao('instagram') }}</span></button></th>
                             <th v-if="colunasVisiveis.ServeNoEJC" class="lista-mestre-mobile-hidden"><button type="button" class="sort-button" @click="ordenarPor('serve_no_ejc')">Serve no EJC <span class="sort-indicator">{{ iconeOrdenacao('serve_no_ejc') }}</span></button></th>
-                            <th v-if="colunasVisiveis.Musico" class="lista-mestre-mobile-hidden"><button type="button" class="sort-button" @click="ordenarPor('eh_musico')">Músico <span class="sort-indicator">{{ iconeOrdenacao('eh_musico') }}</span></button></th>
+                            <th v-if="colunasVisiveis.Musico" class="lista-mestre-mobile-hidden"><button type="button" class="sort-button" @click="ordenarPor('eh_musico')">Habilidades Musicais <span class="sort-indicator">{{ iconeOrdenacao('eh_musico') }}</span></button></th>
                             <th v-if="colunasVisiveis.EstadoCivil" class="lista-mestre-mobile-hidden"><button type="button" class="sort-button" @click="ordenarPor('estado_civil')">Estado Civil <span class="sort-indicator">{{ iconeOrdenacao('estado_civil') }}</span></button></th>
                             <th v-if="colunasVisiveis.EquipeSaude" class="lista-mestre-mobile-hidden"><button type="button" class="sort-button" @click="ordenarPor('equipe_saude')">Equipe de saúde <span class="sort-indicator">{{ iconeOrdenacao('equipe_saude') }}</span></button></th>
                             <th v-if="colunasVisiveis.Deficiencia" class="lista-mestre-mobile-hidden"><button type="button" class="sort-button" @click="ordenarPor('deficiencia')">Deficiência <span class="sort-indicator">{{ iconeOrdenacao('deficiencia') }}</span></button></th>
@@ -921,8 +929,8 @@
                                 Nenhum jovem encontrado para os filtros atuais.
                             </td>
                         </tr>
-                        <template v-for="jovem in jovensPaginados" :key="jovem.id">
-                            <tr>
+                        <template v-for="(jovem, index) in jovensPaginados" :key="jovem.id">
+                            <tr :class="{ 'lista-mestre-row-striped': index % 2 === 1 }">
                                 <td class="lista-mestre-mobile-expand-col">
                                     <button type="button"
                                         class="lista-mestre-mobile-toggle"
@@ -1695,7 +1703,7 @@
                                     </div>
 
                                     <div class="col-md-12 mt-2" v-show="subAbaDados === 'participacao'">
-                                        <label class="text-muted small mb-0">É músico?</label>
+                                        <label class="text-muted small mb-0">Habilidades Musicais</label>
                                         <div v-if="!isEditing" class="py-1 px-2 bg-light border rounded">
                                             {{ jovemEditando.eh_musico ? 'Sim' : 'Não' }}
                                             <span v-if="jovemEditando.eh_musico && normalizarInstrumentos(jovemEditando.instrumentos_musicais).length">
@@ -1707,7 +1715,7 @@
                                                 <input class="form-check-input" type="checkbox"
                                                     v-model="jovemEditando.eh_musico" :true-value="1" :false-value="0"
                                                     id="checkMusicoEdicao" @change="onMusicoToggleEdicao">
-                                                <label class="form-check-label" for="checkMusicoEdicao">Sim, é músico</label>
+                                                <label class="form-check-label" for="checkMusicoEdicao">Possui habilidades musicais</label>
                                             </div>
                                             <div v-if="jovemEditando.eh_musico" class="mt-2 border rounded p-2 bg-light">
                                                 <small class="text-muted d-block mb-1">Selecione os instrumentos (pode marcar mais de um):</small>
@@ -2099,7 +2107,7 @@
                                             </select>
                                         </div>
                                         <div class="col-lg-4">
-                                            <label class="text-muted small">É músico?</label>
+                                            <label class="text-muted small">Habilidades Musicais</label>
                                             <select v-model="novoJovem.eh_musico" class="form-select" @change="onMusicoToggleNovo">
                                                 <option :value="false">Não</option>
                                                 <option :value="true">Sim</option>
@@ -3147,7 +3155,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                         EquipeSaude: 'Equipe de saúde',
                         Deficiencia: 'Deficiência',
                         RestricaoAlimentar: 'Possui restrição alimentar',
-                        Musico: 'É músico',
+                        Musico: 'Habilidades Musicais',
                         NumEJC: 'Número do EJC que fez',
                         Circulo: 'Círculo'
                     };
@@ -3268,7 +3276,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                     addDetalhe(this.colunasVisiveis.NumEJC, 'Nº EJC', this.getListaMestreNumeroEjc(jovem));
                     addDetalhe(this.colunasVisiveis.Instagram, 'Instagram', jovem.instagram);
                     addDetalhe(this.colunasVisiveis.ServeNoEJC, 'Serve no EJC', jovem.nao_serve_ejc ? 'Não' : 'Sim');
-                    addDetalhe(this.colunasVisiveis.Musico, 'Músico', jovem.eh_musico ? 'Sim' : 'Não');
+                    addDetalhe(this.colunasVisiveis.Musico, 'Habilidades Musicais', jovem.eh_musico ? 'Sim' : 'Não');
                     addDetalhe(this.colunasVisiveis.EstadoCivil, 'Estado civil', jovem.estado_civil);
                     addDetalhe(this.colunasVisiveis.EquipeSaude, 'Equipe de saúde', jovem.equipe_saude ? 'Sim' : 'Não');
                     addDetalhe(this.colunasVisiveis.Deficiencia, 'Deficiência', jovem.deficiencia ? 'Sim' : 'Não');
@@ -3901,7 +3909,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                                 : (j.numero_ejc_montagem || j.numero_ejc || '') },
                             { key: 'Instagram', label: 'Instagram', getter: (j) => j.instagram || '' },
                             { key: 'ServeNoEJC', label: 'Serve no EJC', getter: (j) => j.nao_serve_ejc ? 'Não' : 'Sim' },
-                            { key: 'Musico', label: 'Músico', getter: (j) => j.eh_musico ? 'Sim' : 'Não' },
+                            { key: 'Musico', label: 'Habilidades Musicais', getter: (j) => j.eh_musico ? 'Sim' : 'Não' },
                             { key: 'EstadoCivil', label: 'Estado civil', getter: (j) => j.estado_civil || '' },
                             { key: 'EquipeSaude', label: 'Equipe de saúde', getter: (j) => j.equipe_saude ? 'Sim' : 'Não' },
                             { key: 'Deficiencia', label: 'Deficiência', getter: (j) => j.deficiencia ? 'Sim' : 'Não' },
@@ -3929,7 +3937,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                         const headersDados = [
                             'Nome completo', 'Telefone', 'Apelido', 'E-mail', 'Termos aceitos em', 'Termos aceitos e-mail',
                             'Sexo', 'Data de nascimento', 'Idade', 'Estado civil', 'Data do casamento', 'Círculo',
-                            'Número do EJC', 'Instagram', 'Serve no EJC', 'É músico', 'Instrumentos musicais',
+                            'Número do EJC', 'Instagram', 'Serve no EJC', 'Habilidades Musicais', 'Instrumentos musicais',
                             'Equipe de saúde', 'Deficiência', 'Qual deficiência', 'Restrição alimentar',
                             'Detalhes da restrição', 'Endereço (rua)', 'Endereço (número)', 'Endereço (bairro)',
                             'Endereço (cidade)', 'Endereço (estado)', 'Endereço (CEP)', 'Cônjuge', 'Pastorais',

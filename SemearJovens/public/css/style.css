@@ -1051,3 +1051,124 @@ h1, h2, h3, h4, h5, h6, .brand-name {
         grid-template-columns: 1fr;
     }
 }
+
+/* ===== DARK MODE HARDENING ===== */
+:root[data-theme="dark"] .bg-white,
+:root[data-theme="dark"] .bg-light,
+:root[data-theme="dark"] .alert-light,
+:root[data-theme="dark"] .bg-success-subtle,
+:root[data-theme="dark"] .bg-secondary-subtle,
+:root[data-theme="dark"] .bg-danger-subtle,
+:root[data-theme="dark"] .bg-primary-subtle,
+:root[data-theme="dark"] .bg-info-subtle,
+:root[data-theme="dark"] .bg-warning-subtle,
+:root[data-theme="dark"] .breadcrumb.bg-white,
+:root[data-theme="dark"] .input-group-text.bg-white,
+:root[data-theme="dark"] .busca-resultados,
+:root[data-theme="dark"] .busca-resultados.bg-white,
+:root[data-theme="dark"] .border.rounded.bg-white,
+:root[data-theme="dark"] .p-2.bg-white,
+:root[data-theme="dark"] .p-3.bg-white,
+:root[data-theme="dark"] .rounded.bg-white,
+:root[data-theme="dark"] .table-ejc-detail-item,
+:root[data-theme="dark"] .modal-content .modal-body.bg-light,
+:root[data-theme="dark"] .list-group-item,
+:root[data-theme="dark"] .dropdown-menu,
+:root[data-theme="dark"] .accordion-item,
+:root[data-theme="dark"] .accordion-button,
+:root[data-theme="dark"] .accordion-button:not(.collapsed) {
+    background: linear-gradient(180deg, rgba(36, 29, 21, 0.98), rgba(29, 24, 18, 0.96)) !important;
+    background-color: #241d15 !important;
+    color: #f2e7d1 !important;
+    border-color: rgba(210, 184, 136, 0.14) !important;
+}
+
+:root[data-theme="dark"] .text-dark,
+:root[data-theme="dark"] .text-muted,
+:root[data-theme="dark"] .text-success,
+:root[data-theme="dark"] .text-danger,
+:root[data-theme="dark"] .text-secondary,
+:root[data-theme="dark"] .form-text,
+:root[data-theme="dark"] .breadcrumb-item,
+:root[data-theme="dark"] .breadcrumb-item.active,
+:root[data-theme="dark"] .input-group-text,
+:root[data-theme="dark"] .dropdown-item,
+:root[data-theme="dark"] .list-group-item {
+    color: #d8c5a5 !important;
+}
+
+:root[data-theme="dark"] .dropdown-item:hover,
+:root[data-theme="dark"] .dropdown-item:focus,
+:root[data-theme="dark"] .list-group-item-action:hover,
+:root[data-theme="dark"] .list-group-item-action:focus {
+    background: rgba(200, 161, 90, 0.12) !important;
+    color: #f2e7d1 !important;
+}
+
+:root[data-theme="dark"] .border,
+:root[data-theme="dark"] .table,
+:root[data-theme="dark"] .hr,
+:root[data-theme="dark"] hr {
+    border-color: rgba(210, 184, 136, 0.14) !important;
+}
+
+:root[data-theme="dark"] .accordion-button::after {
+    filter: invert(87%) sepia(17%) saturate(418%) hue-rotate(353deg) brightness(98%) contrast(92%);
+}
+
+:root[data-theme="dark"] .img-fluid.bg-white,
+:root[data-theme="dark"] img.bg-white {
+    background: #241d15 !important;
+}
+
+:root[data-theme="dark"] .ejc-card,
+:root[data-theme="dark"] .ejc-edition-card,
+:root[data-theme="dark"] .ejc-panel,
+:root[data-theme="dark"] .ejc-advanced-filters,
+:root[data-theme="dark"] .ejc-info-item,
+:root[data-theme="dark"] .ejc-info-item--compact,
+:root[data-theme="dark"] .ejc-info-item--metric,
+:root[data-theme="dark"] .ejc-team-row,
+:root[data-theme="dark"] .ejc-card-details,
+:root[data-theme="dark"] .ejc-detail-panel,
+:root[data-theme="dark"] .ejc-card-meta-item,
+:root[data-theme="dark"] .ejc-empty-state,
+:root[data-theme="dark"] .ejc-card-trigger {
+    background: linear-gradient(180deg, rgba(36, 29, 21, 0.98), rgba(29, 24, 18, 0.96)) !important;
+    background-color: #241d15 !important;
+    color: #f2e7d1 !important;
+    border-color: rgba(210, 184, 136, 0.14) !important;
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.28) !important;
+}
+
+:root[data-theme="dark"] .ejc-card-title,
+:root[data-theme="dark"] .ejc-panel-title,
+:root[data-theme="dark"] .ejc-team-title,
+:root[data-theme="dark"] .ejc-info-value,
+:root[data-theme="dark"] .ejc-card-meta-value {
+    color: #f2e7d1 !important;
+}
+
+:root[data-theme="dark"] .ejc-card-subtitle,
+:root[data-theme="dark"] .ejc-card-year-text,
+:root[data-theme="dark"] .ejc-info-label,
+:root[data-theme="dark"] .ejc-team-text,
+:root[data-theme="dark"] .ejc-toolbar-summary,
+:root[data-theme="dark"] .ejc-toolbar-search .form-label,
+:root[data-theme="dark"] .ejc-advanced-filters .form-label,
+:root[data-theme="dark"] .ejc-card-meta-label {
+    color: #bca37a !important;
+}
+
+:root[data-theme="dark"] .ejc-card-year,
+:root[data-theme="dark"] .ejc-card-kind,
+:root[data-theme="dark"] .ejc-card-chevron {
+    background: rgba(200, 161, 90, 0.12) !important;
+    color: #e7c98e !important;
+    border-color: rgba(210, 184, 136, 0.18) !important;
+}
+
+:root[data-theme="dark"] .ejc-card-kind.is-montagem {
+    background: rgba(79, 146, 181, 0.18) !important;
+    color: #9fcde4 !important;
+}

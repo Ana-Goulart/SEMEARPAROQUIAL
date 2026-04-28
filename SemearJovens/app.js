@@ -1,6 +1,8 @@
 const express = require('express');
+const helmet = require('helmet');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env'), override: true });
+const rateLimit = require('express-rate-limit');
 const app = express();
 const { attachUserFromSession, clearSessionCookie } = require('./lib/authSession');
 const { attachAdminFromSession } = require('./lib/adminSession');
@@ -51,6 +53,27 @@ const CORE_LOGIN_URL = String(process.env.CORE_LOGIN_URL || 'https://login.semea
 const SEMEAR_JOVENS_DASHBOARD_URL = String(process.env.SEMEAR_JOVENS_DASHBOARD_URL || 'https://ejc.semearparoquial.com.br:3003/dashboard').trim();
 const PARISH_ADMIN_URL = String(process.env.PARISH_ADMIN_URL || 'https://admin.semearparoquial.com.br:3001').trim().replace(/\/+$/, '');
 const ADMIN_HOSTNAME = String(process.env.ADMIN_HOSTNAME || 'admin.semearparoquial.com.br').trim().toLowerCase();
+const GLOBAL_RATE_LIMIT_WINDOW_MS = Number(process.env.GLOBAL_RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000);
+const GLOBAL_RATE_LIMIT_MAX = Number(process.env.GLOBAL_RATE_LIMIT_MAX || 300);
+
+app.set('trust proxy', 1);
+
+const globalLimiter = rateLimit({
+    windowMs: GLOBAL_RATE_LIMIT_WINDOW_MS,
+    limit: GLOBAL_RATE_LIMIT_MAX,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    skip: (req) => req.path === '/api/ping',
+    handler: (_req, res) => res.status(429).json({ error: 'Muitas requisições. Tente novamente em alguns minutos.' })
+});
+
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 5,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    handler: (_req, res) => res.status(429).json({ error: 'Muitas tentativas de login. Tente novamente em 15 minutos.' })
+});
 
 function buildCoreLoginRedirect() {
     const next = encodeURIComponent(SEMEAR_JOVENS_DASHBOARD_URL);
@@ -67,11 +90,13 @@ function isAdminHost(req) {
     return !!(host && host === ADMIN_HOSTNAME);
 }
 
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.json());
 app.use(personNameResponseMiddleware);
 app.use(attachUserFromSession);
 app.use(attachAdminFromSession);
 app.use(express.static(path.join(__dirname, 'public'))); // Serve arquivos estáticos
+app.use('/api', globalLimiter);
 app.get('/favicon.ico', (_req, res) => res.redirect('/assets/logo-oficial.png'));
 app.use((req, res, next) => {
     if (!isAdminHost(req)) return next();
@@ -258,6 +283,7 @@ app.get('/configuracoes/meuejc', requireLoginView, (req, res) => res.sendFile(pa
 app.get('/configuracoes/circulos', requireLoginView, (req, res) => res.sendFile(path.join(__dirname, 'views', 'circulos.html')));
 
 // --- API ROUTES ---
+app.use('/api/auth/login', loginLimiter);
 app.use('/api/auth', rotasAuth);
 app.use('/api/admin', (_req, res) => res.status(410).json({ error: 'APIs movidas para admin.semearparoquial.com.br:3001' }));
 app.use('/api/formularios/public', rotasFormulariosPublic);

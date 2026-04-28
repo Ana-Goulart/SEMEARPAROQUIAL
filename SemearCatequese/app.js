@@ -1,12 +1,27 @@
 const express = require('express');
+const helmet = require('helmet');
 const path = require('path');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config({ path: path.join(__dirname, '.env'), override: true });
 
 const rotasUsuarios = require('./routes/usuarios');
 
 const app = express();
 const PORT = Number(process.env.PORT || 3004);
+const GLOBAL_RATE_LIMIT_WINDOW_MS = Number(process.env.GLOBAL_RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000);
+const GLOBAL_RATE_LIMIT_MAX = Number(process.env.GLOBAL_RATE_LIMIT_MAX || 300);
 
+const globalLimiter = rateLimit({
+    windowMs: GLOBAL_RATE_LIMIT_WINDOW_MS,
+    limit: GLOBAL_RATE_LIMIT_MAX,
+    standardHeaders: 'draft-8',
+    legacyHeaders: false,
+    skip: (req) => req.path === '/api/ping',
+    handler: (_req, res) => res.status(429).json({ error: 'Muitas requisições. Tente novamente em alguns minutos.' })
+});
+
+app.use(helmet({ contentSecurityPolicy: false }));
+app.use(globalLimiter);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));

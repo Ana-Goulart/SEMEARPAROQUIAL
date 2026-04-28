@@ -2,6 +2,13 @@ const express = require('express');
 const crypto = require('crypto');
 const { pool } = require('../database');
 const { normalizeUpperText } = require('../lib/personNameFormatting');
+const {
+    decryptTiosCasal,
+    encryptTioPhone,
+    encryptTioSensitiveText,
+    ensureTiosSensitiveColumns,
+    tioPhoneHash
+} = require('../lib/tiosSensitiveData');
 
 const router = express.Router();
 const TOKEN_TTL_MS = 15 * 60 * 1000;
@@ -100,6 +107,7 @@ async function ensureEstrutura() {
                    deficiencia_tio = CASE WHEN deficiencia = 1 THEN 1 ELSE deficiencia_tio END,
                    deficiencia_tia = CASE WHEN deficiencia = 1 THEN 1 ELSE deficiencia_tia END
         `);
+        await ensureTiosSensitiveColumns(pool);
 
         estruturaOk = true;
     })();
@@ -196,11 +204,11 @@ router.post('/validar', async (req, res) => {
              WHERE ecc_id = ?
                AND LOWER(TRIM(nome_tio)) = LOWER(TRIM(?))
                AND LOWER(TRIM(nome_tia)) = LOWER(TRIM(?))
-               AND REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TRIM(COALESCE(telefone_tio, '')), ' ', ''), '(', ''), ')', ''), '-', ''), '+', '') = ?
-               AND REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TRIM(COALESCE(telefone_tia, '')), ' ', ''), '(', ''), ')', ''), '-', ''), '+', '') = ?
+               AND (telefone_tio_hash = ? OR REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TRIM(COALESCE(telefone_tio, '')), ' ', ''), '(', ''), ')', ''), '-', ''), '+', '') = ?)
+               AND (telefone_tia_hash = ? OR REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TRIM(COALESCE(telefone_tia, '')), ' ', ''), '(', ''), ')', ''), '-', ''), '+', '') = ?)
                AND DATE(data_nascimento_tio) = ?
                AND DATE(data_nascimento_tia) = ?`,
-            [eccId, nomeTio, nomeTia, telTioDigits, telTiaDigits, dataTio, dataTia]
+            [eccId, nomeTio, nomeTia, tioPhoneHash(telTioDigits), telTioDigits, tioPhoneHash(telTiaDigits), telTiaDigits, dataTio, dataTia]
         );
 
         if (!rows.length) {
@@ -216,22 +224,23 @@ router.post('/validar', async (req, res) => {
             ts: Date.now()
         });
 
+        const casal = decryptTiosCasal(rows[0]);
         return res.json({
             message: 'Cadastro confirmado. Agora você pode atualizar os dados.',
             token,
             casal: {
-                telefone_tio: rows[0].telefone_tio || '',
-                telefone_tia: rows[0].telefone_tia || '',
-                restricao_alimentar: !!rows[0].restricao_alimentar,
-                deficiencia: !!rows[0].deficiencia,
-                restricao_alimentar_tio: !!rows[0].restricao_alimentar_tio,
-                detalhes_restricao_tio: rows[0].detalhes_restricao_tio || '',
-                deficiencia_tio: !!rows[0].deficiencia_tio,
-                qual_deficiencia_tio: rows[0].qual_deficiencia_tio || '',
-                restricao_alimentar_tia: !!rows[0].restricao_alimentar_tia,
-                detalhes_restricao_tia: rows[0].detalhes_restricao_tia || '',
-                deficiencia_tia: !!rows[0].deficiencia_tia,
-                qual_deficiencia_tia: rows[0].qual_deficiencia_tia || ''
+                telefone_tio: casal.telefone_tio || '',
+                telefone_tia: casal.telefone_tia || '',
+                restricao_alimentar: !!casal.restricao_alimentar,
+                deficiencia: !!casal.deficiencia,
+                restricao_alimentar_tio: !!casal.restricao_alimentar_tio,
+                detalhes_restricao_tio: casal.detalhes_restricao_tio || '',
+                deficiencia_tio: !!casal.deficiencia_tio,
+                qual_deficiencia_tio: casal.qual_deficiencia_tio || '',
+                restricao_alimentar_tia: !!casal.restricao_alimentar_tia,
+                detalhes_restricao_tia: casal.detalhes_restricao_tia || '',
+                deficiencia_tia: !!casal.deficiencia_tia,
+                qual_deficiencia_tia: casal.qual_deficiencia_tia || ''
             }
         });
     } catch (err) {
@@ -271,14 +280,16 @@ router.post('/atualizar', async (req, res) => {
         const [result] = await pool.query(
             `UPDATE tios_casais
              SET telefone_tio = ?, telefone_tia = ?, restricao_alimentar = ?, deficiencia = ?,
+                 telefone_tio_hash = ?, telefone_tia_hash = ?,
                  restricao_alimentar_tio = ?, detalhes_restricao_tio = ?, deficiencia_tio = ?, qual_deficiencia_tio = ?,
                  restricao_alimentar_tia = ?, detalhes_restricao_tia = ?, deficiencia_tia = ?, qual_deficiencia_tia = ?,
                  observacoes = COALESCE(?, observacoes), termos_aceitos_em = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
              WHERE id = ? AND tenant_id = ?`,
             [
-                telefoneTio, telefoneTia, restricaoAlimentar ? 1 : 0, deficiencia ? 1 : 0,
-                restricaoAlimentarTio ? 1 : 0, detalhesRestricaoTio, deficienciaTio ? 1 : 0, qualDeficienciaTio,
-                restricaoAlimentarTia ? 1 : 0, detalhesRestricaoTia, deficienciaTia ? 1 : 0, qualDeficienciaTia,
+                encryptTioPhone(telefoneTio), encryptTioPhone(telefoneTia), restricaoAlimentar ? 1 : 0, deficiencia ? 1 : 0,
+                tioPhoneHash(telefoneTio), tioPhoneHash(telefoneTia),
+                restricaoAlimentarTio ? 1 : 0, encryptTioSensitiveText(detalhesRestricaoTio, 'detalhes-restricao-tio'), deficienciaTio ? 1 : 0, encryptTioSensitiveText(qualDeficienciaTio, 'qual-deficiencia-tio'),
+                restricaoAlimentarTia ? 1 : 0, encryptTioSensitiveText(detalhesRestricaoTia, 'detalhes-restricao-tia'), deficienciaTia ? 1 : 0, encryptTioSensitiveText(qualDeficienciaTia, 'qual-deficiencia-tia'),
                 observacoesAdicionais, payload.casal_id, payload.tenant_id
             ]
         );
@@ -334,29 +345,32 @@ router.post('/criar', async (req, res) => {
         const [result] = await pool.query(
             `INSERT INTO tios_casais
              (tenant_id, ecc_id, nome_tio, telefone_tio, data_nascimento_tio, nome_tia, telefone_tia, data_nascimento_tia,
+              telefone_tio_hash, telefone_tia_hash,
               restricao_alimentar, deficiencia,
               restricao_alimentar_tio, detalhes_restricao_tio, deficiencia_tio, qual_deficiencia_tio,
               restricao_alimentar_tia, detalhes_restricao_tia, deficiencia_tia, qual_deficiencia_tia, observacoes, termos_aceitos_em)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 tenantId,
                 eccId,
                 nomeTio,
-                telefoneTio,
+                encryptTioPhone(telefoneTio),
                 dataTio,
                 nomeTia,
-                telefoneTia,
+                encryptTioPhone(telefoneTia),
                 dataTia,
+                tioPhoneHash(telefoneTio),
+                tioPhoneHash(telefoneTia),
                 restricaoAlimentar ? 1 : 0,
                 deficiencia ? 1 : 0,
                 restricaoAlimentarTio ? 1 : 0,
-                detalhesRestricaoTio,
+                encryptTioSensitiveText(detalhesRestricaoTio, 'detalhes-restricao-tio'),
                 deficienciaTio ? 1 : 0,
-                qualDeficienciaTio,
+                encryptTioSensitiveText(qualDeficienciaTio, 'qual-deficiencia-tio'),
                 restricaoAlimentarTia ? 1 : 0,
-                detalhesRestricaoTia,
+                encryptTioSensitiveText(detalhesRestricaoTia, 'detalhes-restricao-tia'),
                 deficienciaTia ? 1 : 0,
-                qualDeficienciaTia,
+                encryptTioSensitiveText(qualDeficienciaTia, 'qual-deficiencia-tia'),
                 observacoes,
                 new Date()
             ]

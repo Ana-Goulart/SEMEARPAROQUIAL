@@ -81,26 +81,20 @@
                             <thead class="table-light">
                                 <tr>
                                     <th>Cor de Círculo</th>
-                                    <th style="width: 120px;">Status</th>
                                     <th style="width: 160px;">Ações</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr v-if="loading">
-                                    <td colspan="3" class="text-center text-muted">Carregando...</td>
+                                    <td colspan="2" class="text-center text-muted">Carregando...</td>
                                 </tr>
                                 <tr v-else-if="!circulos.length">
-                                    <td colspan="3" class="text-center text-muted">Nenhuma cor cadastrada.</td>
+                                    <td colspan="2" class="text-center text-muted">Nenhuma cor cadastrada.</td>
                                 </tr>
                                 <tr v-for="c in circulos" :key="c.id">
                                     <td>
                                         <span class="swatch" :style="{ backgroundColor: c.cor_hex || '#D9A650' }"></span>
                                         <span class="fw-medium">{{ c.nome }}</span>
-                                    </td>
-                                    <td>
-                                        <span class="badge" :class="c.ativo ? 'bg-success' : 'bg-secondary'">
-                                            {{ c.ativo ? 'Ativo' : 'Inativo' }}
-                                        </span>
                                     </td>
                                     <td>
                                         <button type="button" class="btn btn-edit-standard btn-sm me-1"

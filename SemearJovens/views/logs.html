@@ -85,6 +85,26 @@
             gap: 14px;
             margin: 18px 0;
         }
+
+        :root[data-theme="dark"] .logs-card,
+        :root[data-theme="dark"] .log-grid-wrap,
+        :root[data-theme="dark"] .log-grid-head {
+            background: linear-gradient(180deg, rgba(36, 29, 21, 0.98), rgba(29, 24, 18, 0.96));
+            border-color: rgba(210, 184, 136, 0.14);
+        }
+
+        :root[data-theme="dark"] .logs-title,
+        :root[data-theme="dark"] .log-cell-title,
+        :root[data-theme="dark"] .log-cell-value {
+            color: #f2e7d1;
+        }
+
+        :root[data-theme="dark"] .logs-kicker,
+        :root[data-theme="dark"] .logs-subtitle,
+        :root[data-theme="dark"] .log-grid-head,
+        :root[data-theme="dark"] .log-cell-subtitle {
+            color: #bca37a;
+        }
     </style>
 </head>
 <body>
@@ -153,6 +173,7 @@
         const { createApp } = Vue;
         document.addEventListener('DOMContentLoaded', () => {
             if (window.injetarMenu) window.injetarMenu('#app');
+            if (window.ativarMenu) window.ativarMenu('/administrativo/logs');
             createApp({
                 data() {
                     return { logs: [], filtros: { usuario: '', acao: '', data: '' }, loading: true, erro: '' };

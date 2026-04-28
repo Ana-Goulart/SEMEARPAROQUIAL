@@ -1,11 +1,30 @@
 const crypto = require('crypto');
+const bcrypt = require('bcrypt');
 const { pool } = require('../database');
 
 let ensured = false;
 let ensuring = null;
 
-function hashPassword(password) {
+const BCRYPT_ROUNDS = Number(process.env.BCRYPT_ROUNDS || 12);
+
+function hashLegacyPassword(password) {
     return crypto.createHash('sha256').update(String(password || '')).digest('hex');
+}
+
+function looksLikeBcryptHash(value) {
+    return /^\$2[aby]\$\d{2}\$/.test(String(value || ''));
+}
+
+async function hashPassword(password) {
+    return bcrypt.hash(String(password || ''), BCRYPT_ROUNDS);
+}
+
+async function verifyPassword(password, storedHash) {
+    const plain = String(password || '');
+    const saved = String(storedHash || '');
+    if (!saved) return false;
+    if (looksLikeBcryptHash(saved)) return bcrypt.compare(plain, saved);
+    return hashLegacyPassword(plain) === saved;
 }
 
 async function hasTable(tableName) {
@@ -114,5 +133,7 @@ async function ensureStructure() {
 
 module.exports = {
     ensureStructure,
-    hashPassword
+    hashPassword,
+    verifyPassword,
+    looksLikeBcryptHash
 };

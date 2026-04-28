@@ -1,5 +1,6 @@
 const express = require('express');
 const crypto = require('crypto');
+const bcrypt = require('bcrypt');
 const { pool } = require('../database');
 const { setSessionCookie, clearSessionCookie } = require('../lib/authSession');
 const { purgeExpiredUsers } = require('../lib/usuariosExpiracao');
@@ -7,8 +8,26 @@ const { ensureTenantStructure } = require('../lib/tenantSetup');
 
 const router = express.Router();
 
-function hashPassword(password) {
-    return crypto.createHash('sha256').update(password).digest('hex');
+const BCRYPT_ROUNDS = Number(process.env.BCRYPT_ROUNDS || 12);
+
+function hashLegacyPassword(password) {
+    return crypto.createHash('sha256').update(String(password || '')).digest('hex');
+}
+
+function looksLikeBcryptHash(value) {
+    return /^\$2[aby]\$\d{2}\$/.test(String(value || ''));
+}
+
+async function hashPassword(password) {
+    return bcrypt.hash(String(password || ''), BCRYPT_ROUNDS);
+}
+
+async function verifyPassword(password, storedHash) {
+    const plain = String(password || '');
+    const saved = String(storedHash || '');
+    if (!saved) return false;
+    if (looksLikeBcryptHash(saved)) return bcrypt.compare(plain, saved);
+    return hashLegacyPassword(plain) === saved;
 }
 
 router.get('/me', async (req, res) => {
@@ -89,8 +108,11 @@ router.post('/login', async (req, res) => {
         if (!rows.length) return res.status(401).json({ error: 'Credenciais inválidas.' });
 
         const user = rows[0];
-        const hash = hashPassword(senha);
-        if (hash !== user.senha) return res.status(401).json({ error: 'Credenciais inválidas.' });
+        if (!await verifyPassword(senha, user.senha)) return res.status(401).json({ error: 'Credenciais inválidas.' });
+        if (!looksLikeBcryptHash(user.senha)) {
+            const newHash = await hashPassword(senha);
+            await pool.query('UPDATE usuarios SET senha = ? WHERE id = ? AND tenant_id = ?', [newHash, user.id, user.tenant_id]);
+        }
 
         setSessionCookie(res, user.id);
         return res.json({

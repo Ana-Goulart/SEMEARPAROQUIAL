@@ -1,12 +1,31 @@
 const express = require('express');
 const crypto = require('crypto');
+const bcrypt = require('bcrypt');
 const { pool, corePool } = require('../database');
 const { setSessionCookie, clearSessionCookie } = require('../lib/authSession');
 
 const router = express.Router();
 
-function hashPassword(password) {
+const BCRYPT_ROUNDS = Number(process.env.BCRYPT_ROUNDS || 12);
+
+function hashLegacyPassword(password) {
     return crypto.createHash('sha256').update(String(password || '')).digest('hex');
+}
+
+function looksLikeBcryptHash(value) {
+    return /^\$2[aby]\$\d{2}\$/.test(String(value || ''));
+}
+
+async function hashPassword(password) {
+    return bcrypt.hash(String(password || ''), BCRYPT_ROUNDS);
+}
+
+async function verifyPassword(password, storedHash) {
+    const plain = String(password || '');
+    const saved = String(storedHash || '');
+    if (!saved) return false;
+    if (looksLikeBcryptHash(saved)) return bcrypt.compare(plain, saved);
+    return hashLegacyPassword(plain) === saved;
 }
 
 function resolveNextUrl(rawNext) {
@@ -47,9 +66,9 @@ function buildSystemRedirectUrl(row) {
     return `${withProtocol.replace(/\/+$/, '')}/dashboard`;
 }
 
-async function resolveCorePasswordAccess(username, passwordHash) {
+async function resolveCorePasswordAccess(username, password) {
     const login = String(username || '').trim().toLowerCase();
-    if (!login || !passwordHash) return null;
+    if (!login || !password) return null;
 
     const [rows] = await corePool.query(
         `SELECT
@@ -72,7 +91,19 @@ async function resolveCorePasswordAccess(username, passwordHash) {
         [login]
     );
 
-    const validRows = (rows || []).filter((row) => String(row.password_hash_legacy || '') === passwordHash);
+    const validRows = [];
+    const upgradedUserIds = new Set();
+    for (const row of (rows || [])) {
+        // eslint-disable-next-line no-await-in-loop
+        if (await verifyPassword(password, row.password_hash_legacy)) {
+            validRows.push(row);
+            if (!looksLikeBcryptHash(row.password_hash_legacy) && row.user_id && !upgradedUserIds.has(Number(row.user_id))) {
+                upgradedUserIds.add(Number(row.user_id));
+                // eslint-disable-next-line no-await-in-loop
+                await corePool.query('UPDATE users SET password_hash_legacy = ? WHERE id = ?', [await hashPassword(password), row.user_id]);
+            }
+        }
+    }
     if (!validRows.length) return null;
 
     const uniqueSystems = new Map();
@@ -177,11 +208,15 @@ router.post('/login', async (req, res) => {
         if (!rows.length) return res.status(401).json({ error: 'Credenciais inválidas.' });
 
         const user = rows[0];
-        const hash = hashPassword(senha);
-        if (hash !== user.senha) return res.status(401).json({ error: 'Credenciais inválidas.' });
+        if (!await verifyPassword(senha, user.senha)) return res.status(401).json({ error: 'Credenciais inválidas.' });
+        if (!looksLikeBcryptHash(user.senha)) {
+            const newHash = await hashPassword(senha);
+            await pool.query('UPDATE usuarios SET senha = ? WHERE id = ? AND tenant_id = ?', [newHash, user.id, user.tenant_id]);
+            user.senha = newHash;
+        }
 
         try {
-            const coreResult = await resolveCorePasswordAccess(username, hash);
+            const coreResult = await resolveCorePasswordAccess(username, senha);
             if (coreResult && coreResult.multiSystem) {
                 return res.status(409).json({
                     error: 'Este usuário possui acesso a mais de um módulo. Informe o link direto do sistema desejado.'

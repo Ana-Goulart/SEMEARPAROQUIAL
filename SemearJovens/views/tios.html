@@ -601,6 +601,7 @@
         .lista-mestre-grid thead th {
             padding: 0.7rem 0.6rem !important;
             font-size: 0.95rem;
+            text-align: left !important;
         }
 
         .lista-mestre-grid tbody td {
@@ -608,6 +609,12 @@
             font-size: 0.94rem;
             line-height: 1.15;
             vertical-align: middle;
+            text-align: left !important;
+            background: #fff;
+        }
+
+        .lista-mestre-grid tbody tr.lista-mestre-row-striped td {
+            background: #fffdf9;
         }
 
         .lista-mestre-grid .btn.btn-edit-standard.btn-sm {
@@ -798,10 +805,14 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="c in casaisPaginados" :key="c.id">
+                            <tr v-for="(c, index) in casaisPaginados" :key="c.id" :class="{ 'lista-mestre-row-striped': index % 2 === 1 }">
                                 <td v-if="colunasVisiveisCasais.Casal">
-                                    <div class="fw-semibold">{{ c.nome_tio }}</div>
-                                    <div class="fw-semibold">{{ c.nome_tia }}</div>
+                                    <div>
+                                        <strong class="nome-clicavel" @click="abrirEditarCasal(c)">{{ c.nome_tio }}</strong>
+                                    </div>
+                                    <div>
+                                        <strong class="nome-clicavel" @click="abrirEditarCasal(c)">{{ c.nome_tia }}</strong>
+                                    </div>
                                 </td>
                                 <td v-if="colunasVisiveisCasais.Telefones">
                                     <div>{{ c.telefone_tio || '-' }}</div>
@@ -897,7 +908,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="e in eccsPaginados" :key="e.id">
+                            <tr v-for="(e, index) in eccsPaginados" :key="e.id" :class="{ 'lista-mestre-row-striped': index % 2 === 1 }">
                                 <td class="fw-semibold">{{ e.numero }}</td>
                                 <td>{{ e.tipo || 'ECC' }}</td>
                                 <td>{{ e.descricao || '-' }}</td>

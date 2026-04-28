@@ -950,9 +950,18 @@ router.post('/atualizar', async (req, res) => {
         }
 
         params.push(jovem.id, jovem.tenant_id);
+        const updateData = {};
+        for (const campo of campos) {
+            const [coluna] = String(campo).split('=').map((item) => item.trim());
+            if (!coluna) continue;
+            if (coluna === 'termos_aceitos_em') continue;
+            updateData[coluna] = params.shift();
+        }
+        const jovemIdParam = params.shift();
+        const tenantIdParam = params.shift();
         await pool.query(
-            `UPDATE jovens SET ${campos.join(', ')} WHERE id = ? AND tenant_id = ?`,
-            params
+            'UPDATE jovens SET ?, termos_aceitos_em = CURRENT_TIMESTAMP WHERE id = ? AND tenant_id = ?',
+            [updateData, jovemIdParam, tenantIdParam]
         );
 
         if (pastoraisIds.length || Array.isArray(req.body.pastorais)) {
@@ -960,8 +969,8 @@ router.post('/atualizar', async (req, res) => {
             await ensurePastoraisTables();
             if (pastoraisIds.length) {
                 const [validas] = await pool.query(
-                    `SELECT id FROM pastorais WHERE tenant_id = ? AND id IN (${pastoraisIds.map(() => '?').join(',')})`,
-                    [jovem.tenant_id, ...pastoraisIds]
+                    'SELECT id FROM pastorais WHERE tenant_id = ? AND id IN (?)',
+                    [jovem.tenant_id, pastoraisIds]
                 );
                 const validSet = new Set((validas || []).map((v) => Number(v.id)));
                 const invalidas = pastoraisIds.filter((v) => !validSet.has(v));
@@ -1225,8 +1234,8 @@ router.post('/criar-cadastro', async (req, res) => {
 
         if (pastoraisIds.length) {
             const [validRows] = await pool.query(
-                `SELECT id FROM pastorais WHERE tenant_id = ? AND id IN (${pastoraisIds.map(() => '?').join(',')})`,
-                [tenantId, ...pastoraisIds]
+                'SELECT id FROM pastorais WHERE tenant_id = ? AND id IN (?)',
+                [tenantId, pastoraisIds]
             );
             const validIds = (validRows || []).map((row) => Number(row.id)).filter(Boolean);
             if (validIds.length) {

@@ -7,6 +7,11 @@ const path = require('path');
 const { getTenantId } = require('../lib/tenantIsolation');
 const { ensurePastoraisTables } = require('../lib/pastorais');
 const {
+    blindIndex,
+    decryptValue,
+    encryptValue
+} = require('../lib/fieldEncryption');
+const {
     ensureHistoricoEquipesSnapshots,
     ensureHistoricoEquipesYoungFkPreserved,
     ensureEjcEncontristasHistoricoTable,
@@ -40,6 +45,8 @@ let hasEnderecoColumnsCache = null;
 let hasListaMestreAtivoColumnCache = null;
 let hasNaoServeEjcColumnsCache = null;
 let hasEquipeSaudeColumnCache = null;
+let hasListaMestreSensitiveColumnsCache = null;
+let ensureSensitiveColumnsPromise = null;
 let ensureCadastroOrigemPromise = null;
 let ensureTiosTablesPromise = null;
 let ensureTiosVinculosPromise = null;
@@ -366,6 +373,125 @@ function normalizeUpperText(value) {
     return text ? text.toLocaleUpperCase('pt-BR') : null;
 }
 
+function encryptListaMestrePhone(value) {
+    const normalized = normalizeTrimmedText(value);
+    return normalized ? encryptValue(normalized, 'lista-mestre:telefone') : null;
+}
+
+function decryptListaMestrePhone(value) {
+    return normalizeTrimmedText(decryptValue(value, 'lista-mestre:telefone'));
+}
+
+function phoneBlindIndex(value) {
+    const normalized = normalizePhoneDigits(value);
+    return normalized ? blindIndex(normalized, 'lista-mestre:telefone') : null;
+}
+
+function encryptListaMestreEmail(value) {
+    const normalized = normalizeTrimmedText(value);
+    return normalized ? encryptValue(normalized, 'lista-mestre:email') : null;
+}
+
+function decryptListaMestreEmail(value) {
+    return normalizeTrimmedText(decryptValue(value, 'lista-mestre:email'));
+}
+
+function emailBlindIndex(value) {
+    const normalized = normalizeEmailValue(value);
+    return normalized ? blindIndex(normalized, 'lista-mestre:email') : null;
+}
+
+function encryptListaMestreSensitiveText(value, purpose) {
+    const normalized = normalizeTrimmedText(value);
+    return normalized ? encryptValue(normalized, `lista-mestre:${purpose}`) : null;
+}
+
+function decryptListaMestreSensitiveText(value, purpose) {
+    return normalizeTrimmedText(decryptValue(value, `lista-mestre:${purpose}`));
+}
+
+function decryptListaMestreRecord(record) {
+    if (!record || typeof record !== 'object') return record;
+    const item = { ...record };
+    if (Object.prototype.hasOwnProperty.call(item, 'telefone')) {
+        item.telefone = decryptListaMestrePhone(item.telefone);
+    }
+    if (Object.prototype.hasOwnProperty.call(item, 'email')) {
+        item.email = decryptListaMestreEmail(item.email);
+    }
+    if (Object.prototype.hasOwnProperty.call(item, 'conjuge_telefone')) {
+        item.conjuge_telefone = decryptListaMestrePhone(item.conjuge_telefone);
+    }
+    if (Object.prototype.hasOwnProperty.call(item, 'qual_deficiencia')) {
+        item.qual_deficiencia = decryptListaMestreSensitiveText(item.qual_deficiencia, 'qual-deficiencia');
+    }
+    if (Object.prototype.hasOwnProperty.call(item, 'detalhes_restricao')) {
+        item.detalhes_restricao = decryptListaMestreSensitiveText(item.detalhes_restricao, 'detalhes-restricao');
+    }
+    return item;
+}
+
+async function ensureListaMestreSensitiveColumns() {
+    if (hasListaMestreSensitiveColumnsCache) return true;
+    if (ensureSensitiveColumnsPromise) return ensureSensitiveColumnsPromise;
+    ensureSensitiveColumnsPromise = (async () => {
+        await ensureEmailColumn();
+        const alterStatements = [
+            'ALTER TABLE jovens MODIFY COLUMN telefone TEXT NULL',
+            'ALTER TABLE jovens MODIFY COLUMN email TEXT NULL',
+            'ALTER TABLE jovens MODIFY COLUMN qual_deficiencia TEXT NULL',
+            'ALTER TABLE jovens MODIFY COLUMN detalhes_restricao TEXT NULL'
+        ];
+        const hasConjugeTelefone = await hasColumn('jovens', 'conjuge_telefone');
+        if (hasConjugeTelefone) {
+            alterStatements.push('ALTER TABLE jovens MODIFY COLUMN conjuge_telefone TEXT NULL');
+        }
+        for (const sql of alterStatements) {
+            try {
+                await pool.query(sql);
+            } catch (_) { }
+        }
+        try {
+            await pool.query('ALTER TABLE jovens ADD COLUMN telefone_hash CHAR(64) NULL AFTER telefone');
+        } catch (err) {
+            if (!err || err.code !== 'ER_DUP_FIELDNAME') throw err;
+        }
+        try {
+            await pool.query('ALTER TABLE jovens ADD COLUMN email_hash CHAR(64) NULL AFTER email');
+        } catch (err) {
+            if (!err || err.code !== 'ER_DUP_FIELDNAME') throw err;
+        }
+        try {
+            await pool.query('ALTER TABLE jovens ADD COLUMN conjuge_telefone_hash CHAR(64) NULL AFTER conjuge_telefone');
+        } catch (err) {
+            if (!err || err.code !== 'ER_DUP_FIELDNAME') throw err;
+        }
+        try {
+            await pool.query('ALTER TABLE jovens ADD KEY idx_jovens_tenant_telefone_hash (tenant_id, telefone_hash)');
+        } catch (err) {
+            if (!err || err.code !== 'ER_DUP_KEYNAME') throw err;
+        }
+        try {
+            await pool.query('ALTER TABLE jovens ADD KEY idx_jovens_tenant_email_hash (tenant_id, email_hash)');
+        } catch (err) {
+            if (!err || err.code !== 'ER_DUP_KEYNAME') throw err;
+        }
+        try {
+            await pool.query('ALTER TABLE jovens ADD KEY idx_jovens_tenant_conjuge_telefone_hash (tenant_id, conjuge_telefone_hash)');
+        } catch (err) {
+            if (!err || err.code !== 'ER_DUP_KEYNAME') throw err;
+        }
+        hasListaMestreSensitiveColumnsCache = true;
+        return true;
+    })();
+
+    try {
+        await ensureSensitiveColumnsPromise;
+    } finally {
+        ensureSensitiveColumnsPromise = null;
+    }
+}
+
 async function validarDuplicidadeJovemListaMestre({
     tenantId,
     telefone,
@@ -374,17 +500,23 @@ async function validarDuplicidadeJovemListaMestre({
     excludeId = null,
     connection = pool
 }) {
+    await ensureListaMestreSensitiveColumns();
     const normalizedPhone = normalizePhoneDigits(telefone);
     const normalizedEmail = normalizeEmailValue(email);
     const normalizedInstagram = normalizeInstagramValue(instagram);
+    const phoneHash = phoneBlindIndex(telefone);
+    const emailHash = emailBlindIndex(email);
 
     if (normalizedPhone) {
-        const params = [tenantId, normalizedPhone];
+        const params = [tenantId, phoneHash || '', normalizedPhone];
         let sql = `
             SELECT id, nome_completo, telefone
             FROM jovens
             WHERE tenant_id = ?
-              AND ${normalizedPhoneExpr('telefone')} = ?
+              AND (
+                    telefone_hash = ?
+                 OR ${normalizedPhoneExpr('telefone')} = ?
+              )
         `;
         if (excludeId) {
             sql += ' AND id <> ?';
@@ -401,12 +533,15 @@ async function validarDuplicidadeJovemListaMestre({
     }
 
     if (normalizedEmail) {
-        const params = [tenantId, normalizedEmail];
+        const params = [tenantId, emailHash || '', normalizedEmail];
         let sql = `
             SELECT id, nome_completo, email
             FROM jovens
             WHERE tenant_id = ?
-              AND LOWER(TRIM(COALESCE(email, ''))) = ?
+              AND (
+                    email_hash = ?
+                 OR LOWER(TRIM(COALESCE(email, ''))) = ?
+              )
         `;
         if (excludeId) {
             sql += ' AND id <> ?';
@@ -516,35 +651,34 @@ async function vincularPresencasOutroEjcSemCadastro({
 
     if (!nomes.length || !telefones.length) return;
 
-    const filtros = [
-        'tenant_id = ?',
-        'COALESCE(jovem_id, 0) = 0',
-        `LOWER(TRIM(COALESCE(nome_completo, ''))) IN (${nomes.map(() => '?').join(', ')})`,
-        `REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TRIM(COALESCE(telefone, '')), ' ', ''), '(', ''), ')', ''), '-', ''), '+', '') IN (${telefones.map(() => '?').join(', ')})`
-    ];
-    const params = [tenantId, ...nomes, ...telefones];
+    const updateData = {
+        jovem_id: jovemId,
+        nome_completo: String(nomeAtual || '').trim() || null,
+        telefone: String(telefoneAtual || '').trim() || null
+    };
+    if (hasOutroEjcId) updateData.outro_ejc_id = Number(outroEjcIdAtual) || null;
+
+    let sql = `
+        UPDATE formularios_presencas
+        SET ?
+        WHERE tenant_id = ?
+          AND COALESCE(jovem_id, 0) = 0
+          AND LOWER(TRIM(COALESCE(nome_completo, ''))) IN (?)
+          AND REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TRIM(COALESCE(telefone, '')), ' ', ''), '(', ''), ')', ''), '-', ''), '+', '') IN (?)
+    `;
+    const queryParams = [updateData, tenantId, nomes, telefones];
 
     if (hasOutroEjcId && outrosEjcs.length) {
-        filtros.push(`(COALESCE(outro_ejc_id, 0) IN (${outrosEjcs.map(() => '?').join(', ')}) OR outro_ejc_id IS NULL)`);
-        params.push(...outrosEjcs);
+        sql += ' AND (COALESCE(outro_ejc_id, 0) IN (?) OR outro_ejc_id IS NULL)';
+        queryParams.push(outrosEjcs);
     }
     if (hasOrigemJaFez) {
-        filtros.push(`(origem_ja_fez = 'OUTRO_EJC' OR ${hasOutroEjcId ? 'outro_ejc_id IS NOT NULL' : '1 = 1'})`);
+        sql += hasOutroEjcId
+            ? " AND (origem_ja_fez = 'OUTRO_EJC' OR outro_ejc_id IS NOT NULL)"
+            : " AND origem_ja_fez = 'OUTRO_EJC'";
     }
 
-    const sets = ['jovem_id = ?', 'nome_completo = ?', 'telefone = ?'];
-    const updateParams = [jovemId, String(nomeAtual || '').trim() || null, String(telefoneAtual || '').trim() || null];
-    if (hasOutroEjcId) {
-        sets.push('outro_ejc_id = ?');
-        updateParams.push(Number(outroEjcIdAtual) || null);
-    }
-
-    await pool.query(
-        `UPDATE formularios_presencas
-         SET ${sets.join(', ')}
-         WHERE ${filtros.join(' AND ')}`,
-        [...updateParams, ...params]
-    );
+    await pool.query(sql, queryParams);
 }
 
 async function ensureTiosTables() {
@@ -631,6 +765,35 @@ async function ensureTiosVinculos() {
     } finally {
         ensureTiosVinculosPromise = null;
     }
+}
+
+async function listarChavesTiosPorNomeTelefone(tenantId) {
+    if (!await hasTable('tios_casais')) return new Set();
+    const [rows] = await pool.query(
+        `SELECT nome_tio, telefone_tio, nome_tia, telefone_tia
+         FROM tios_casais
+         WHERE tenant_id = ?`,
+        [tenantId]
+    );
+    const keys = new Set();
+    for (const row of rows || []) {
+        const tioNome = String(row.nome_tio || '').trim().toLowerCase();
+        const tiaNome = String(row.nome_tia || '').trim().toLowerCase();
+        const tioTelefone = normalizePhoneDigits(row.telefone_tio);
+        const tiaTelefone = normalizePhoneDigits(row.telefone_tia);
+        if (tioNome && tioTelefone) keys.add(`tio:${tioNome}|${tioTelefone}`);
+        if (tiaNome && tiaTelefone) keys.add(`tia:${tiaNome}|${tiaTelefone}`);
+    }
+    return keys;
+}
+
+function filtrarJovensQueNaoSaoTios(items, tiosKeys) {
+    return (items || []).filter((item) => {
+        const nome = String(item && item.nome_completo || '').trim().toLowerCase();
+        const telefone = normalizePhoneDigits(item && item.telefone);
+        if (!nome || !telefone) return true;
+        return !tiosKeys.has(`tio:${nome}|${telefone}`) && !tiosKeys.has(`tia:${nome}|${telefone}`);
+    });
 }
 
 function isTipoEccValido(tipo) {
@@ -930,6 +1093,7 @@ router.get('/', async (req, res) => {
         await ensureCadastroOrigemColumns();
         await ensureConjugeEccColumns();
         await ensureEmailColumn();
+        await ensureListaMestreSensitiveColumns();
         await ensureApelidoColumn();
         await ensureListaMestreAtivoColumn();
         await ensureEnderecoColumns();
@@ -980,7 +1144,9 @@ router.get('/', async (req, res) => {
               )
             ORDER BY j.nome_completo ASC
         `, [tenantId]);
-        res.json(rows);
+        const tiosKeys = await listarChavesTiosPorNomeTelefone(tenantId);
+        const items = (rows || []).map((row) => decryptListaMestreRecord(row));
+        res.json(filtrarJovensQueNaoSaoTios(items, tiosKeys));
     } catch (err) {
         console.error("Erro detalhado no banco:", err);
         res.status(500).json({ error: "Erro interno ao acessar o banco" });
@@ -994,6 +1160,7 @@ router.get('/search', async (req, res) => {
     if (!q) return res.json([]);
     try {
         const tenantId = getTenantId(req);
+        await ensureListaMestreSensitiveColumns();
         const like = `%${q}%`;
         const jovemTelefoneNormalizado = normalizedPhoneExpr('jovens.telefone');
         const tioTelefoneNormalizado = normalizedPhoneExpr('tc2.telefone_tio');
@@ -1022,7 +1189,9 @@ router.get('/search', async (req, res) => {
             ORDER BY nome_completo
             LIMIT 20
         `, [like, tenantId]);
-        res.json(rows);
+        const tiosKeys = await listarChavesTiosPorNomeTelefone(tenantId);
+        const items = (rows || []).map((row) => decryptListaMestreRecord(row));
+        res.json(filtrarJovensQueNaoSaoTios(items, tiosKeys).slice(0, 20));
     } catch (err) {
         console.error('Erro na busca de jovens:', err);
         res.status(500).json({ error: 'Erro no servidor' });
@@ -1033,6 +1202,7 @@ router.get('/search', async (req, res) => {
 router.get('/moita/registros', async (req, res) => {
     try {
         const tenantId = getTenantId(req);
+        await ensureListaMestreSensitiveColumns();
         const comParoquiaCol = await hasColumn('jovens_comissoes', 'paroquia');
         const comFuncaoCol = await hasColumn('jovens_comissoes', 'funcao_garcom');
         const selectParoquia = comParoquiaCol
@@ -1061,7 +1231,7 @@ router.get('/moita/registros', async (req, res) => {
               AND jc.tenant_id = ?
             ORDER BY jc.id DESC
         `, [tenantId]);
-        res.json(rows);
+        res.json((rows || []).map((row) => decryptListaMestreRecord(row)));
     } catch (err) {
         console.error("Erro ao listar registros de moita:", err);
         res.status(500).json({ error: "Erro ao listar registros de moita" });
@@ -1172,6 +1342,7 @@ router.get('/jovens-outro-ejc', async (req, res) => {
         const removidosDaListaMestre = [];
         await ensureCadastroOrigemColumns();
         await ensureConjugeEccColumns();
+        await ensureListaMestreSensitiveColumns();
         const comEhMusico = await hasEhMusicoColumn();
         const hasOutrosEjcs = await hasTable('outros_ejcs');
         const hasPresencas = await hasTable('formularios_presencas');
@@ -1253,7 +1424,7 @@ router.get('/jovens-outro-ejc', async (req, res) => {
               AND j.tenant_id = ?
             ORDER BY j.nome_completo ASC
         `, [tenantId]);
-        baseRows.forEach((r) => upsert({ ...r, fonte: 'Lista Mestre', detalhe: 'Cadastrado como jovem de outro EJC' }));
+        baseRows.forEach((r) => upsert({ ...decryptListaMestreRecord(r), fonte: 'Lista Mestre', detalhe: 'Cadastrado como jovem de outro EJC' }));
 
         if (hasComissoes) {
             const [comRows] = await pool.query(`
@@ -1283,7 +1454,7 @@ router.get('/jovens-outro-ejc', async (req, res) => {
                 const tipo = String(r.tipo || '').toUpperCase();
                 const fonte = tipo.includes('MOITA') ? 'Moita' : (tipo.includes('GARCOM') ? 'Garçons' : 'Comissões');
                 const detalhe = [r.tipo, r.ejc_numero ? `${r.ejc_numero}º EJC` : null, r.funcao_garcom || null].filter(Boolean).join(' - ');
-                upsert({ ...r, fonte, detalhe: detalhe || 'Registro em comissão' });
+                upsert({ ...decryptListaMestreRecord(r), fonte, detalhe: detalhe || 'Registro em comissão' });
             });
         }
 
@@ -1311,7 +1482,7 @@ router.get('/jovens-outro-ejc', async (req, res) => {
             `, [tenantId]);
             histRows.forEach((r) => {
                 const detalhe = [r.equipe || null, r.papel || null, r.subfuncao || null].filter(Boolean).join(' - ');
-                upsert({ ...r, fonte: 'Equipes', detalhe: detalhe || 'Serviu em equipe' });
+                upsert({ ...decryptListaMestreRecord(r), fonte: 'Equipes', detalhe: detalhe || 'Serviu em equipe' });
                 const key = keyOf(r.jovem_id, r.nome_completo, r.telefone);
                 if (!mapa.has(key)) return;
                 const atual = mapa.get(key);
@@ -1363,7 +1534,10 @@ router.get('/jovens-outro-ejc', async (req, res) => {
                    OR (fp.jovem_id IS NULL AND (fp.origem_ja_fez = 'OUTRO_EJC' OR fp.outro_ejc_id IS NOT NULL))
                   )
             `, [tenantId]);
-            presRows.forEach((r) => upsert({ ...r, fonte: 'Eventos/Formulários', detalhe: r.titulo ? `Presença em: ${r.titulo}` : 'Presença em evento' }));
+            presRows.forEach((r) => {
+                const registro = decryptListaMestreRecord(r);
+                upsert({ ...registro, fonte: 'Eventos/Formulários', detalhe: registro.titulo ? `Presença em: ${registro.titulo}` : 'Presença em evento' });
+            });
         }
 
         const itens = Array.from(mapa.values())
@@ -1466,6 +1640,7 @@ router.get('/:id', async (req, res) => {
         await ensureCadastroOrigemColumns();
         await ensureConjugeEccColumns();
         await ensureEmailColumn();
+        await ensureListaMestreSensitiveColumns();
         await ensureApelidoColumn();
         await ensureEnderecoColumns();
         await ensureEquipeSaudeColumn();
@@ -1489,7 +1664,7 @@ router.get('/:id', async (req, res) => {
               AND j.tenant_id = ?
         `, [req.params.id, tenantId]);
         if (rows.length === 0) return res.status(404).json({ error: 'Jovem não encontrado' });
-        res.json(rows[0]);
+        res.json(decryptListaMestreRecord(rows[0]));
     } catch (err) {
         console.error('Erro ao buscar jovem:', err);
         res.status(500).json({ error: 'Erro no servidor' });
@@ -1516,6 +1691,7 @@ router.post('/', async (req, res) => {
         await ensureCadastroOrigemColumns();
         await ensureConjugeEccColumns();
         await ensureEmailColumn();
+        await ensureListaMestreSensitiveColumns();
         await ensureApelidoColumn();
         await ensureEnderecoColumns();
         await ensureEquipeSaudeColumn();
@@ -1530,6 +1706,9 @@ router.post('/', async (req, res) => {
         const nomeCompletoNormalizado = normalizeUpperText(nome_completo);
         const apelidoNormalizado = normalizeUpperText(apelido);
         const telefoneNormalizado = normalizeTrimmedText(telefone);
+        const emailNormalizado = normalizeTrimmedText(email);
+        const qualDeficienciaNormalizada = normalizeTrimmedText(qual_deficiencia);
+        const detalhesRestricaoNormalizados = normalizeTrimmedText(detalhes_restricao);
         const enderecoRuaNormalizado = normalizeUpperText(endereco_rua);
         const enderecoBairroNormalizado = normalizeUpperText(endereco_bairro);
         const enderecoCidadeNormalizado = normalizeUpperText(endereco_cidade);
@@ -1557,7 +1736,7 @@ router.post('/', async (req, res) => {
         const duplicidade = await validarDuplicidadeJovemListaMestre({
             tenantId,
             telefone: telefoneNormalizado,
-            email,
+            email: emailNormalizado,
             instagram
         });
         if (duplicidade) {
@@ -1569,7 +1748,9 @@ router.post('/', async (req, res) => {
             'nome_completo',
             'apelido',
             'telefone',
+            'telefone_hash',
             'email',
+            'email_hash',
             'data_nascimento',
             'numero_ejc_fez',
             'montagem_ejc_id',
@@ -1600,8 +1781,10 @@ router.post('/', async (req, res) => {
             tenantId,
             nomeCompletoNormalizado,
             apelidoNormalizado,
-            telefoneNormalizado,
-            email || null,
+            encryptListaMestrePhone(telefoneNormalizado),
+            phoneBlindIndex(telefoneNormalizado),
+            encryptListaMestreEmail(emailNormalizado),
+            emailBlindIndex(emailNormalizado),
             normalizeDate(data_nascimento),
             numeroEjcInconfidentes,
             montagemEjcId,
@@ -1614,9 +1797,9 @@ router.post('/', async (req, res) => {
             normalizeDate(data_casamento),
             circulo || null,
             deficiencia ? 1 : 0,
-            qual_deficiencia || null,
+            encryptListaMestreSensitiveText(qualDeficienciaNormalizada, 'qual-deficiencia'),
             restricao_alimentar ? 1 : 0,
-            detalhes_restricao || null,
+            encryptListaMestreSensitiveText(detalhesRestricaoNormalizados, 'detalhes-restricao'),
             equipe_saude ? 1 : 0,
             enderecoRuaNormalizado,
             endereco_numero ? String(endereco_numero).trim() : null,
@@ -1691,13 +1874,14 @@ router.put('/:id', async (req, res) => {
         await ensureCadastroOrigemColumns();
         await ensureConjugeEccColumns();
         await ensureEmailColumn();
+        await ensureListaMestreSensitiveColumns();
         await ensureApelidoColumn();
         await ensureEnderecoColumns();
         await ensureEquipeSaudeColumn();
         await ensureNaoServeEjcColumns();
         const [rows] = await pool.query('SELECT * FROM jovens WHERE id = ? AND tenant_id = ?', [id, tenantId]);
         if (rows.length === 0) return res.status(404).json({ error: 'Jovem não encontrado' });
-        const atual = rows[0];
+        const atual = decryptListaMestreRecord(rows[0]);
 
         function actualValueOrNull(v) { return v === undefined ? null : v; }
 
@@ -1776,11 +1960,15 @@ router.put('/:id', async (req, res) => {
         merged.nome_completo = normalizeUpperText(merged.nome_completo);
         merged.apelido = normalizeUpperText(merged.apelido);
         merged.telefone = normalizeTrimmedText(merged.telefone);
+        merged.email = normalizeTrimmedText(merged.email);
+        merged.qual_deficiencia = normalizeTrimmedText(merged.qual_deficiencia);
+        merged.detalhes_restricao = normalizeTrimmedText(merged.detalhes_restricao);
         merged.endereco_rua = normalizeUpperText(merged.endereco_rua);
         merged.endereco_bairro = normalizeUpperText(merged.endereco_bairro);
         merged.endereco_cidade = normalizeUpperText(merged.endereco_cidade);
         merged.endereco_estado = normalizeUpperText(merged.endereco_estado);
         merged.conjuge_nome = normalizeUpperText(merged.conjuge_nome);
+        merged.conjuge_telefone = normalizeTrimmedText(merged.conjuge_telefone);
 
         if (!merged.nome_completo || !merged.telefone) {
             return res.status(400).json({ error: 'Nome completo e telefone são obrigatórios' });
@@ -1795,9 +1983,19 @@ router.put('/:id', async (req, res) => {
             try {
                 const likeName = merged.conjuge_nome.trim();
                 const phone = merged.conjuge_telefone || '';
+                const phoneHash = phoneBlindIndex(phone);
                 const [found] = await pool.query(
-                    `SELECT id FROM jovens WHERE tenant_id = ? AND (nome_completo = ? OR telefone = ?) LIMIT 1`,
-                    [tenantId, likeName, phone]
+                    `SELECT id
+                     FROM jovens
+                     WHERE tenant_id = ?
+                       AND (
+                            nome_completo = ?
+                         OR conjuge_telefone_hash = ?
+                         OR telefone_hash = ?
+                         OR telefone = ?
+                       )
+                     LIMIT 1`,
+                    [tenantId, likeName, phoneHash || '', phoneHash || '', phone]
                 );
                 if (found && found.length) resolvedConjugeId = found[0].id;
                 merged.conjuge_id = resolvedConjugeId;
@@ -1828,44 +2026,54 @@ router.put('/:id', async (req, res) => {
         const hasInstrumentosMusicais = await hasInstrumentosMusicaisColumn();
         const hasSexo = await hasSexoColumn();
 
-        let updateFields = `nome_completo=?, apelido=?, telefone=?, email=?, data_nascimento=?, numero_ejc_fez=?, montagem_ejc_id=?, origem_ejc_tipo=?, outro_ejc_id=?, outro_ejc_numero=?, transferencia_outro_ejc=?, instagram=?, estado_civil=?, data_casamento=?, circulo=?, deficiencia=?, qual_deficiencia=?, restricao_alimentar=?, detalhes_restricao=?, endereco_rua=?, endereco_numero=?, endereco_bairro=?, endereco_cidade=?, endereco_estado=?, endereco_cep=?, conjuge_id=?, conjuge_nome=?, conjuge_telefone=?, conjuge_ejc_id=?, conjuge_outro_ejc_id=?, observacoes_extras=?, nao_serve_ejc=?, motivo_nao_serve_ejc=?, ja_foi_moita_inconfidentes=?, moita_ejc_id=?, moita_funcao=?`;
-        const params = [
-            merged.nome_completo, merged.apelido || null, merged.telefone, merged.email || null, merged.data_nascimento, merged.numero_ejc_fez, merged.montagem_ejc_id || null, merged.origem_ejc_tipo, merged.outro_ejc_id || null, merged.outro_ejc_numero || null, merged.transferencia_outro_ejc ? 1 : 0,
-            merged.instagram, merged.estado_civil, merged.data_casamento, merged.circulo, merged.deficiencia, merged.qual_deficiencia, merged.restricao_alimentar, merged.detalhes_restricao,
-            merged.endereco_rua || null, merged.endereco_numero || null, merged.endereco_bairro || null, merged.endereco_cidade || null, merged.endereco_estado || null, merged.endereco_cep || null,
-            merged.conjuge_id || null, merged.conjuge_nome || null, merged.conjuge_telefone || null, merged.conjuge_ejc_id || null, merged.conjuge_outro_ejc_id || null, merged.observacoes_extras || null,
-            merged.nao_serve_ejc ? 1 : 0, merged.motivo_nao_serve_ejc || null,
-            merged.ja_foi_moita_inconfidentes ? 1 : 0, merged.moita_ejc_id || null, merged.moita_funcao || null
-        ];
-        if (hasSexo) {
-            updateFields += ', sexo=?';
-            params.push((merged.sexo === 'Feminino' || merged.sexo === 'Masculino') ? merged.sexo : null);
-        }
-        if (hasConjugeParoquia) {
-            updateFields += ', conjuge_paroquia=?';
-            params.push(merged.conjuge_paroquia || null);
-        }
-        if (hasConjugeEccTipo) {
-            updateFields += ', conjuge_ecc_tipo=?';
-            params.push(merged.conjuge_ecc_tipo || null);
-        }
-        if (hasConjugeEccNumero) {
-            updateFields += ', conjuge_ecc_numero=?';
-            params.push(merged.conjuge_ecc_numero || null);
-        }
-        if (hasEhMusico) {
-            updateFields += ', eh_musico=?';
-            params.push(merged.eh_musico ? 1 : 0);
-        }
-        if (await hasEquipeSaudeColumn()) {
-            updateFields += ', equipe_saude=?';
-            params.push(merged.equipe_saude ? 1 : 0);
-        }
-        if (hasInstrumentosMusicais) {
-            updateFields += ', instrumentos_musicais=?';
-            params.push(serializarInstrumentos(merged.instrumentos_musicais, merged.eh_musico));
-        }
-        params.push(id, tenantId);
+        const updateData = {
+            nome_completo: merged.nome_completo,
+            apelido: merged.apelido || null,
+            telefone: encryptListaMestrePhone(merged.telefone),
+            telefone_hash: phoneBlindIndex(merged.telefone),
+            email: encryptListaMestreEmail(merged.email),
+            email_hash: emailBlindIndex(merged.email),
+            data_nascimento: merged.data_nascimento,
+            numero_ejc_fez: merged.numero_ejc_fez,
+            montagem_ejc_id: merged.montagem_ejc_id || null,
+            origem_ejc_tipo: merged.origem_ejc_tipo,
+            outro_ejc_id: merged.outro_ejc_id || null,
+            outro_ejc_numero: merged.outro_ejc_numero || null,
+            transferencia_outro_ejc: merged.transferencia_outro_ejc ? 1 : 0,
+            instagram: merged.instagram,
+            estado_civil: merged.estado_civil,
+            data_casamento: merged.data_casamento,
+            circulo: merged.circulo,
+            deficiencia: merged.deficiencia,
+            qual_deficiencia: encryptListaMestreSensitiveText(merged.qual_deficiencia, 'qual-deficiencia'),
+            restricao_alimentar: merged.restricao_alimentar,
+            detalhes_restricao: encryptListaMestreSensitiveText(merged.detalhes_restricao, 'detalhes-restricao'),
+            endereco_rua: merged.endereco_rua || null,
+            endereco_numero: merged.endereco_numero || null,
+            endereco_bairro: merged.endereco_bairro || null,
+            endereco_cidade: merged.endereco_cidade || null,
+            endereco_estado: merged.endereco_estado || null,
+            endereco_cep: merged.endereco_cep || null,
+            conjuge_id: merged.conjuge_id || null,
+            conjuge_nome: merged.conjuge_nome || null,
+            conjuge_telefone: encryptListaMestrePhone(merged.conjuge_telefone),
+            conjuge_telefone_hash: phoneBlindIndex(merged.conjuge_telefone),
+            conjuge_ejc_id: merged.conjuge_ejc_id || null,
+            conjuge_outro_ejc_id: merged.conjuge_outro_ejc_id || null,
+            observacoes_extras: merged.observacoes_extras || null,
+            nao_serve_ejc: merged.nao_serve_ejc ? 1 : 0,
+            motivo_nao_serve_ejc: merged.motivo_nao_serve_ejc || null,
+            ja_foi_moita_inconfidentes: merged.ja_foi_moita_inconfidentes ? 1 : 0,
+            moita_ejc_id: merged.moita_ejc_id || null,
+            moita_funcao: merged.moita_funcao || null
+        };
+        if (hasSexo) updateData.sexo = (merged.sexo === 'Feminino' || merged.sexo === 'Masculino') ? merged.sexo : null;
+        if (hasConjugeParoquia) updateData.conjuge_paroquia = merged.conjuge_paroquia || null;
+        if (hasConjugeEccTipo) updateData.conjuge_ecc_tipo = merged.conjuge_ecc_tipo || null;
+        if (hasConjugeEccNumero) updateData.conjuge_ecc_numero = merged.conjuge_ecc_numero || null;
+        if (hasEhMusico) updateData.eh_musico = merged.eh_musico ? 1 : 0;
+        if (await hasEquipeSaudeColumn()) updateData.equipe_saude = merged.equipe_saude ? 1 : 0;
+        if (hasInstrumentosMusicais) updateData.instrumentos_musicais = serializarInstrumentos(merged.instrumentos_musicais, merged.eh_musico);
 
         const novoCasalId = merged.tio_casal_id ? Number(merged.tio_casal_id) : null;
         if (req.body.tio_casal_id !== undefined) {
@@ -1881,7 +2089,7 @@ router.put('/:id', async (req, res) => {
             }
         }
 
-        await pool.query(`UPDATE jovens SET ${updateFields} WHERE id=? AND tenant_id = ?`, params);
+        await pool.query('UPDATE jovens SET ? WHERE id = ? AND tenant_id = ?', [updateData, id, tenantId]);
 
         await vincularPresencasOutroEjcSemCadastro({
             tenantId,
@@ -1930,14 +2138,29 @@ router.put('/:id', async (req, res) => {
                     clearFields += ", estado_civil='Solteiro', data_casamento=NULL";
                 }
             }
-            await pool.query(`UPDATE jovens SET ${clearFields} WHERE id = ? AND tenant_id = ?`, [previousConjugeId, tenantId]);
+            const clearPreviousData = {
+                conjuge_id: null,
+                conjuge_nome: null,
+                conjuge_telefone: null,
+                conjuge_telefone_hash: null,
+                conjuge_ejc_id: null,
+                conjuge_outro_ejc_id: null
+            };
+            if (hasConjugeParoquia) clearPreviousData.conjuge_paroquia = null;
+            if (hasConjugeEccTipo) clearPreviousData.conjuge_ecc_tipo = null;
+            if (hasConjugeEccNumero) clearPreviousData.conjuge_ecc_numero = null;
+            if (clearFields.includes("estado_civil='Solteiro'")) {
+                clearPreviousData.estado_civil = 'Solteiro';
+                clearPreviousData.data_casamento = null;
+            }
+            await pool.query('UPDATE jovens SET ? WHERE id = ? AND tenant_id = ?', [clearPreviousData, previousConjugeId, tenantId]);
         }
 
         if (newConjugeId) {
             try {
                 const [sp] = await pool.query('SELECT * FROM jovens WHERE id = ? AND tenant_id = ?', [newConjugeId, tenantId]);
                 if (sp && sp.length) {
-                    const parceiro = sp[0];
+                    const parceiro = decryptListaMestreRecord(sp[0]);
                     const parceiroEstado = parceiro.estado_civil;
                     const parceiroDataCasamento = parceiro.data_casamento;
                     const shouldAtualizarEstadoParceiro = parceiroEstado === 'Solteiro';
@@ -1945,31 +2168,19 @@ router.put('/:id', async (req, res) => {
                     const finalEstado = shouldAtualizarEstadoParceiro ? estadoRelacaoAtual : parceiroEstado;
                     const finalDataCasamento = merged.data_casamento || parceiroDataCasamento || null;
 
-                    const partnerFields = [];
-                    const partnerParams = [];
-                    partnerFields.push('conjuge_id=?', 'conjuge_nome=?', 'conjuge_telefone=?', 'conjuge_ejc_id=?', 'conjuge_outro_ejc_id=?', 'estado_civil=?', 'data_casamento=?');
-                    partnerParams.push(
-                        id,
-                        merged.nome_completo || atual.nome_completo,
-                        merged.telefone || actualValueOrNull(atual.telefone),
-                        null,
-                        null,
-                        finalEstado,
-                        finalDataCasamento
-                    );
-                    if (hasConjugeEccTipo) {
-                        partnerFields.push('conjuge_ecc_tipo=?');
-                        partnerParams.push(merged.conjuge_ecc_tipo || null);
-                    }
-                    if (hasConjugeEccNumero) {
-                        partnerFields.push('conjuge_ecc_numero=?');
-                        partnerParams.push(merged.conjuge_ecc_numero || null);
-                    }
-                    partnerParams.push(newConjugeId, tenantId);
-                    await pool.query(
-                        `UPDATE jovens SET ${partnerFields.join(', ')} WHERE id=? AND tenant_id = ?`,
-                        partnerParams
-                    );
+                    const partnerData = {
+                        conjuge_id: id,
+                        conjuge_nome: merged.nome_completo || atual.nome_completo,
+                        conjuge_telefone: encryptListaMestrePhone(merged.telefone || actualValueOrNull(atual.telefone)),
+                        conjuge_telefone_hash: phoneBlindIndex(merged.telefone || actualValueOrNull(atual.telefone)),
+                        conjuge_ejc_id: null,
+                        conjuge_outro_ejc_id: null,
+                        estado_civil: finalEstado,
+                        data_casamento: finalDataCasamento
+                    };
+                    if (hasConjugeEccTipo) partnerData.conjuge_ecc_tipo = merged.conjuge_ecc_tipo || null;
+                    if (hasConjugeEccNumero) partnerData.conjuge_ecc_numero = merged.conjuge_ecc_numero || null;
+                    await pool.query('UPDATE jovens SET ? WHERE id = ? AND tenant_id = ?', [partnerData, newConjugeId, tenantId]);
 
                     const deveMoverCasalParaTios = req.body && (
                         req.body.mover_casal_para_tios === true
@@ -2024,21 +2235,33 @@ router.put('/:id', async (req, res) => {
             const linkedId = atual.conjuge_id || merged.conjuge_id || null;
             try {
                 if (linkedId) {
-                let clearPartnerFields = "conjuge_id=NULL, conjuge_nome=NULL, conjuge_telefone=NULL, conjuge_ejc_id=NULL, conjuge_outro_ejc_id=NULL";
-                if (hasConjugeParoquia) clearPartnerFields += ', conjuge_paroquia=NULL';
-                if (hasConjugeEccTipo) clearPartnerFields += ', conjuge_ecc_tipo=NULL';
-                if (hasConjugeEccNumero) clearPartnerFields += ', conjuge_ecc_numero=NULL';
-                    clearPartnerFields += ", estado_civil='Solteiro', data_casamento=NULL";
-                    await pool.query(
-                        `UPDATE jovens SET ${clearPartnerFields} WHERE id = ? AND tenant_id = ?`,
-                        [linkedId, tenantId]
-                    );
+                    const clearPartnerData = {
+                        conjuge_id: null,
+                        conjuge_nome: null,
+                        conjuge_telefone: null,
+                        conjuge_telefone_hash: null,
+                        conjuge_ejc_id: null,
+                        conjuge_outro_ejc_id: null,
+                        estado_civil: 'Solteiro',
+                        data_casamento: null
+                    };
+                    if (hasConjugeParoquia) clearPartnerData.conjuge_paroquia = null;
+                    if (hasConjugeEccTipo) clearPartnerData.conjuge_ecc_tipo = null;
+                    if (hasConjugeEccNumero) clearPartnerData.conjuge_ecc_numero = null;
+                    await pool.query('UPDATE jovens SET ? WHERE id = ? AND tenant_id = ?', [clearPartnerData, linkedId, tenantId]);
                 }
-                let clearSelfFields = 'conjuge_id=NULL, conjuge_nome=NULL, conjuge_telefone=NULL, conjuge_ejc_id=NULL, conjuge_outro_ejc_id=NULL';
-                if (hasConjugeParoquia) clearSelfFields += ', conjuge_paroquia=NULL';
-                if (hasConjugeEccTipo) clearSelfFields += ', conjuge_ecc_tipo=NULL';
-                if (hasConjugeEccNumero) clearSelfFields += ', conjuge_ecc_numero=NULL';
-                await pool.query(`UPDATE jovens SET ${clearSelfFields} WHERE id = ? AND tenant_id = ?`, [id, tenantId]);
+                const clearSelfData = {
+                    conjuge_id: null,
+                    conjuge_nome: null,
+                    conjuge_telefone: null,
+                    conjuge_telefone_hash: null,
+                    conjuge_ejc_id: null,
+                    conjuge_outro_ejc_id: null
+                };
+                if (hasConjugeParoquia) clearSelfData.conjuge_paroquia = null;
+                if (hasConjugeEccTipo) clearSelfData.conjuge_ecc_tipo = null;
+                if (hasConjugeEccNumero) clearSelfData.conjuge_ecc_numero = null;
+                await pool.query('UPDATE jovens SET ? WHERE id = ? AND tenant_id = ?', [clearSelfData, id, tenantId]);
             } catch (e) {
                 console.error('Erro ao desfazer vínculos de cônjuge:', e);
             }
@@ -2172,6 +2395,7 @@ router.post('/importacao', async (req, res) => {
     try {
         const tenantId = getTenantId(req);
         await ensureEmailColumn();
+        await ensureListaMestreSensitiveColumns();
         await ensureApelidoColumn();
         await ensureEnderecoColumns();
         await ensureEquipeSaudeColumn();
@@ -2361,10 +2585,25 @@ router.post('/importacao', async (req, res) => {
                 nomeJovem = j.nome_completo || nomeJovem;
                 await normalizarJovemImportacao(j);
                 let jovemId = null;
+                const telefoneHash = phoneBlindIndex(j.telefone);
+                const emailHash = emailBlindIndex(j.email);
 
                 const [exists] = await connection.query(
-                    'SELECT id FROM jovens WHERE tenant_id = ? AND (nome_completo = ? OR (telefone = ? AND telefone IS NOT NULL AND telefone != "")) LIMIT 1',
-                    [tenantId, j.nome_completo, j.telefone]
+                    `SELECT id
+                     FROM jovens
+                     WHERE tenant_id = ?
+                       AND (
+                            nome_completo = ?
+                         OR (
+                                ? IS NOT NULL
+                            AND (
+                                    telefone_hash = ?
+                                 OR (telefone = ? AND telefone IS NOT NULL AND telefone != '')
+                                )
+                            )
+                       )
+                     LIMIT 1`,
+                    [tenantId, j.nome_completo, telefoneHash, telefoneHash || '', j.telefone]
                 );
 
                 const duplicidade = await validarDuplicidadeJovemListaMestre({
@@ -2384,8 +2623,10 @@ router.post('/importacao', async (req, res) => {
                     const updateSets = [
                         'nome_completo = COALESCE(?, nome_completo)',
                         'telefone = COALESCE(?, telefone)',
+                        'telefone_hash = COALESCE(?, telefone_hash)',
                         'apelido = COALESCE(?, apelido)',
                         'email = COALESCE(?, email)',
+                        'email_hash = COALESCE(?, email_hash)',
                         'data_nascimento = COALESCE(?, data_nascimento)',
                         'instagram = COALESCE(?, instagram)',
                         'estado_civil = COALESCE(?, estado_civil)',
@@ -2409,9 +2650,19 @@ router.post('/importacao', async (req, res) => {
                         'equipe_saude = COALESCE(?, equipe_saude)'
                     ];
                     const updateParams = [
-                        j.nome_completo, j.telefone, j.apelido, j.email, j.data_nascimento, j.instagram,
-                        j.estado_civil, j.data_casamento, j.circulo, j.deficiencia, j.qual_deficiencia,
-                        j.restricao_alimentar, j.detalhes_restricao, j.conjuge_nome, j.termos_aceitos_em,
+                        j.nome_completo,
+                        encryptListaMestrePhone(j.telefone),
+                        telefoneHash,
+                        j.apelido,
+                        encryptListaMestreEmail(j.email),
+                        emailHash,
+                        j.data_nascimento,
+                        j.instagram,
+                        j.estado_civil, j.data_casamento, j.circulo, j.deficiencia,
+                        encryptListaMestreSensitiveText(j.qual_deficiencia, 'qual-deficiencia'),
+                        j.restricao_alimentar,
+                        encryptListaMestreSensitiveText(j.detalhes_restricao, 'detalhes-restricao'),
+                        j.conjuge_nome, j.termos_aceitos_em,
                         j.termos_aceitos_email, j.endereco_rua, j.endereco_numero, j.endereco_bairro,
                         j.endereco_cidade, j.endereco_estado, j.endereco_cep, j.nao_serve_ejc, j.motivo_nao_serve_ejc, j.equipe_saude
                     ];
@@ -2435,13 +2686,18 @@ router.post('/importacao', async (req, res) => {
                         updateSets.push('instrumentos_musicais = COALESCE(?, instrumentos_musicais)');
                         updateParams.push(j.eh_musico === null || j.eh_musico === undefined ? null : (j.eh_musico ? JSON.stringify(j.instrumentos_musicais || []) : '[]'));
                     }
-                    const updateSql = `UPDATE jovens SET ${updateSets.join(', ')} WHERE id = ? AND tenant_id = ?`;
-                    updateParams.push(jovemId, tenantId);
-                    await connection.query(updateSql, updateParams);
+                    const updateData = {};
+                    updateSets.forEach((setExpr, idx) => {
+                        const coluna = String(setExpr).split('=')[0].trim();
+                        const valor = updateParams[idx];
+                        if (valor !== null && valor !== undefined) updateData[coluna] = valor;
+                    });
+                    await connection.query('UPDATE jovens SET ? WHERE id = ? AND tenant_id = ?', [updateData, jovemId, tenantId]);
                     atualizados++;
                 } else {
                     const insertFields = [
                         'tenant_id', 'nome_completo', 'telefone', 'apelido', 'email', 'data_nascimento',
+                        'telefone_hash', 'email_hash',
                         'numero_ejc_fez',
                         'deficiencia', 'qual_deficiencia', 'restricao_alimentar', 'detalhes_restricao',
                         'instagram', 'estado_civil', 'data_casamento', 'circulo',
@@ -2450,10 +2706,11 @@ router.post('/importacao', async (req, res) => {
                         'nao_serve_ejc', 'motivo_nao_serve_ejc', 'equipe_saude'
                     ];
                     const insertParams = [
-                        tenantId, j.nome_completo, j.telefone, j.apelido, j.email, j.data_nascimento,
+                        tenantId, j.nome_completo, encryptListaMestrePhone(j.telefone), j.apelido, encryptListaMestreEmail(j.email), j.data_nascimento,
+                        telefoneHash, emailHash,
                         j.numero_ejc_fez,
-                        j.deficiencia ? 1 : 0, j.qual_deficiencia, j.restricao_alimentar ? 1 : 0,
-                        j.detalhes_restricao, j.instagram, j.estado_civil, j.data_casamento, j.circulo,
+                        j.deficiencia ? 1 : 0, encryptListaMestreSensitiveText(j.qual_deficiencia, 'qual-deficiencia'), j.restricao_alimentar ? 1 : 0,
+                        encryptListaMestreSensitiveText(j.detalhes_restricao, 'detalhes-restricao'), j.instagram, j.estado_civil, j.data_casamento, j.circulo,
                         j.conjuge_nome, j.termos_aceitos_em, j.termos_aceitos_email,
                         j.endereco_rua, j.endereco_numero, j.endereco_bairro, j.endereco_cidade, j.endereco_estado,
                         j.endereco_cep, j.nao_serve_ejc ? 1 : 0, j.motivo_nao_serve_ejc, j.equipe_saude ? 1 : 0
@@ -2552,18 +2809,29 @@ router.get('/historico/:jovemId', async (req, res) => {
         await ensureHistoricoEquipesYoungFkPreserved();
         await backfillHistoricoEquipesSnapshots({ tenantId, jovemId });
         const comCreatedAt = await hasHistoricoCreatedAtColumn();
-        const orderBy = comCreatedAt ? 'he.created_at DESC' : 'he.id DESC';
-        const [rows] = await pool.query(`
-            SELECT 
-                he.*, 
-                COALESCE(e.numero, he.edicao_ejc) as display_ejc,
-                e.paroquia as paroquia_ejc
-            FROM historico_equipes he 
-            LEFT JOIN ejc e ON he.ejc_id = e.id AND e.tenant_id = he.tenant_id
-            WHERE he.jovem_id = ?
-              AND he.tenant_id = ?
-            ORDER BY ${orderBy}
-        `, [jovemId, tenantId]);
+        const [rows] = comCreatedAt
+            ? await pool.query(`
+                SELECT 
+                    he.*, 
+                    COALESCE(e.numero, he.edicao_ejc) as display_ejc,
+                    e.paroquia as paroquia_ejc
+                FROM historico_equipes he 
+                LEFT JOIN ejc e ON he.ejc_id = e.id AND e.tenant_id = he.tenant_id
+                WHERE he.jovem_id = ?
+                  AND he.tenant_id = ?
+                ORDER BY he.created_at DESC
+            `, [jovemId, tenantId])
+            : await pool.query(`
+                SELECT 
+                    he.*, 
+                    COALESCE(e.numero, he.edicao_ejc) as display_ejc,
+                    e.paroquia as paroquia_ejc
+                FROM historico_equipes he 
+                LEFT JOIN ejc e ON he.ejc_id = e.id AND e.tenant_id = he.tenant_id
+                WHERE he.jovem_id = ?
+                  AND he.tenant_id = ?
+                ORDER BY he.id DESC
+            `, [jovemId, tenantId]);
 
         const [montagensRows] = await pool.query(`
             SELECT id, numero_ejc, COALESCE(data_fim, data_encontro) AS data_limite
@@ -2716,7 +2984,7 @@ router.post('/historico', async (req, res) => {
         await ensureHistoricoEquipesSnapshots();
         await ensureHistoricoEquipesYoungFkPreserved();
         const comSubfuncao = await hasSubfuncaoColumn();
-        const [[jovem]] = await pool.query(`
+        const [[jovemRaw]] = await pool.query(`
             SELECT
                 j.nome_completo,
                 j.telefone,
@@ -2733,6 +3001,7 @@ router.post('/historico', async (req, res) => {
               AND j.tenant_id = ?
             LIMIT 1
         `, [jovem_id, tenantId]);
+        const jovem = jovemRaw ? decryptListaMestreRecord(jovemRaw) : null;
         const [result] = comSubfuncao
             ? await pool.query(
                 `INSERT INTO historico_equipes (
@@ -3083,8 +3352,8 @@ router.put('/:id/pastorais', async (req, res) => {
 
         if (ids.length) {
             const [valid] = await pool.query(
-                `SELECT id FROM pastorais WHERE tenant_id = ? AND id IN (${ids.map(() => '?').join(',')})`,
-                [tenantId, ...ids]
+                'SELECT id FROM pastorais WHERE tenant_id = ? AND id IN (?)',
+                [tenantId, ids]
             );
             const validSet = new Set((valid || []).map((v) => Number(v.id)));
             const invalid = ids.filter((v) => !validSet.has(v));

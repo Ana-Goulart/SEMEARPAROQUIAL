@@ -3,6 +3,8 @@
 :root {
   --bs-primary: #d9a650;
   --bs-primary-rgb: 217, 166, 80;
+  --bs-link-color: #7b5f2a;
+  --bs-link-color-rgb: 123, 95, 42;
   --vz-primary: #b88732;
   --vz-secondary: #7b5f2a;
   --vz-success: #588157;
@@ -37,6 +39,8 @@
 }
 
 :root[data-theme="dark"] {
+  --bs-link-color: #7b5f2a;
+  --bs-link-color-rgb: 123, 95, 42;
   --vz-primary: #c8a15a;
   --vz-secondary: #9f8450;
   --vz-success: #5f8d72;

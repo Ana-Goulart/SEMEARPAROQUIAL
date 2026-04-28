@@ -258,6 +258,59 @@
             text-align: center;
         }
 
+        :root[data-theme="dark"] .hero-card,
+        :root[data-theme="dark"] .panel-card,
+        :root[data-theme="dark"] .quick-card,
+        :root[data-theme="dark"] .metric-card {
+            border-color: rgba(210, 184, 136, 0.14);
+            background: linear-gradient(180deg, rgba(36, 29, 21, 0.98), rgba(29, 24, 18, 0.96));
+            box-shadow: 0 18px 36px rgba(0, 0, 0, 0.28);
+        }
+
+        :root[data-theme="dark"] .hero-card {
+            background:
+                linear-gradient(135deg, rgba(200, 161, 90, 0.16), rgba(36, 29, 21, 0.96)),
+                linear-gradient(180deg, rgba(36, 29, 21, 0.98), rgba(29, 24, 18, 0.96));
+        }
+
+        :root[data-theme="dark"] .hero-kicker,
+        :root[data-theme="dark"] .panel-label,
+        :root[data-theme="dark"] .metric-title,
+        :root[data-theme="dark"] .hero-subtitle,
+        :root[data-theme="dark"] .panel-subtitle,
+        :root[data-theme="dark"] .quick-card p,
+        :root[data-theme="dark"] .birthday-empty,
+        :root[data-theme="dark"] .birthday-pill {
+            color: #bca37a;
+        }
+
+        :root[data-theme="dark"] .hero-title,
+        :root[data-theme="dark"] .panel-title,
+        :root[data-theme="dark"] .section-title,
+        :root[data-theme="dark"] .metric-value,
+        :root[data-theme="dark"] .quick-card h5,
+        :root[data-theme="dark"] .metric-link {
+            color: #f2e7d1;
+        }
+
+        :root[data-theme="dark"] .hero-tag,
+        :root[data-theme="dark"] .quick-icon,
+        :root[data-theme="dark"] .birthday-pill {
+            background: rgba(200, 161, 90, 0.12);
+            border-color: rgba(210, 184, 136, 0.16);
+            color: #e7c98e;
+        }
+
+        :root[data-theme="dark"] .status-pill {
+            background: rgba(95, 141, 114, 0.18);
+            color: #c9e4d2;
+        }
+
+        :root[data-theme="dark"] .birthday-empty {
+            background: rgba(200, 161, 90, 0.08);
+            border-color: rgba(210, 184, 136, 0.16);
+        }
+
         @media (max-width: 1199.98px) {
             .hero-grid,
             .metrics-grid,
@@ -510,20 +563,15 @@
                     },
                     edicaoTitulo() {
                         if (this.resumo.edicao_atual && this.resumo.edicao_atual.numero) {
-                            return `${this.resumo.edicao_atual.numero}º EJC ${this.nomeMeuEJC || ''}`.trim();
+                            return `${this.numeroParaRomano(this.resumo.edicao_atual.numero) || this.resumo.edicao_atual.numero} EJC ${this.nomeMeuEJC || ''}`.trim();
                         }
                         return 'Nenhuma edição definida';
                     },
                     edicaoDescricao() {
-                        if (this.resumo.edicao_atual && this.resumo.edicao_atual.origem === 'MONTAGEM') {
-                            return 'A montagem atual está em andamento e pronta para ajustes.';
-                        }
                         return 'Use este atalho para revisar a edição mais recente do encontro.';
                     },
                     edicaoStatus() {
-                        return this.resumo.edicao_atual && this.resumo.edicao_atual.origem === 'MONTAGEM'
-                            ? 'Em montagem'
-                            : 'Última edição';
+                        return 'Última edição';
                     },
                     edicaoLink() {
                         return '/gestaodoencontro/ejc';
@@ -555,6 +603,14 @@
                                 link: '/configuracoes/circulos'
                             },
                             {
+                                key: 'tios',
+                                label: 'Tios',
+                                valor: this.resumo.tios ?? 0,
+                                sub: 'Total de tios cadastrados',
+                                icone: '<i class="fa-solid fa-people-roof icon-accent"></i>',
+                                link: '/tios'
+                            },
+                            {
                                 key: 'coordenacoes',
                                 label: 'Coordenações',
                                 valor: this.resumo.coordenacoes ?? 0,
@@ -566,11 +622,9 @@
                                 key: 'ultima-edicao',
                                 label: 'Última edição',
                                 valor: this.resumo.edicao_atual && this.resumo.edicao_atual.numero
-                                    ? `${this.resumo.edicao_atual.numero}º`
+                                    ? `${this.numeroParaRomano(this.resumo.edicao_atual.numero) || this.resumo.edicao_atual.numero}`
                                     : '0',
-                                sub: this.resumo.edicao_atual && this.resumo.edicao_atual.origem === 'MONTAGEM'
-                                    ? 'Última edição em montagem'
-                                    : 'Última edição cadastrada',
+                                sub: 'Última edição acessada',
                                 icone: '<i class="fa-solid fa-book-open-reader icon-accent"></i>',
                                 link: this.edicaoLink
                             }
@@ -606,6 +660,24 @@
                     }
                 },
                 methods: {
+                    numeroParaRomano(num) {
+                        const n = Number(num);
+                        if (!Number.isInteger(n) || n <= 0) return '';
+                        const map = [
+                            [1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'],
+                            [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'],
+                            [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']
+                        ];
+                        let value = n;
+                        let result = '';
+                        for (const [arabic, roman] of map) {
+                            while (value >= arabic) {
+                                result += roman;
+                                value -= arabic;
+                            }
+                        }
+                        return result;
+                    },
                     formatarData(value) {
                         if (!value) return '-';
                         const data = new Date(`${String(value).slice(0, 10)}T00:00:00`);

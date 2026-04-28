@@ -163,12 +163,19 @@ async function countTotalRows(tableName) {
 
 async function countRowsWhere(tableName, tenantId, whereSql, params = []) {
     const hasTenant = await hasColumn(tableName, 'tenant_id');
-    const baseParams = hasTenant ? [tenantId, ...params] : [...params];
-    const where = hasTenant ? `tenant_id = ?${whereSql ? ` AND ${whereSql}` : ''}` : (whereSql || '1=1');
-    const [rows] = await pool.query(
-        `SELECT COUNT(*) AS total FROM ${tableName} WHERE ${where}`,
-        baseParams
-    );
+    let rows;
+    if (hasTenant && whereSql) {
+        [rows] = await pool.query(
+            `SELECT COUNT(*) AS total FROM ${tableName} WHERE tenant_id = ? AND ${whereSql}`,
+            [tenantId, ...params]
+        );
+    } else if (hasTenant) {
+        [rows] = await pool.query(`SELECT COUNT(*) AS total FROM ${tableName} WHERE tenant_id = ?`, [tenantId]);
+    } else if (whereSql) {
+        [rows] = await pool.query(`SELECT COUNT(*) AS total FROM ${tableName} WHERE ${whereSql}`, params);
+    } else {
+        [rows] = await pool.query(`SELECT COUNT(*) AS total FROM ${tableName}`);
+    }
     return Number(rows && rows[0] ? rows[0].total : 0);
 }
 
@@ -179,14 +186,37 @@ async function buscarEdicaoAtual(tenantId) {
     if (hasMontagens) {
         const hasTenant = await hasColumn('montagens', 'tenant_id');
         const hasCreatedAt = await hasColumn('montagens', 'created_at');
-        const [rows] = await pool.query(
-            `SELECT numero_ejc, ${hasCreatedAt ? 'created_at' : 'NULL AS created_at'}
-             FROM montagens
-             ${hasTenant ? 'WHERE tenant_id = ?' : ''}
-             ORDER BY ${hasCreatedAt ? 'created_at DESC,' : ''} numero_ejc DESC
-             LIMIT 1`,
-            hasTenant ? [tenantId] : []
-        );
+        const [rows] = hasTenant && hasCreatedAt
+            ? await pool.query(
+                `SELECT numero_ejc, created_at
+                 FROM montagens
+                 WHERE tenant_id = ?
+                 ORDER BY numero_ejc DESC, created_at DESC
+                 LIMIT 1`,
+                [tenantId]
+            )
+            : hasTenant
+                ? await pool.query(
+                    `SELECT numero_ejc, NULL AS created_at
+                     FROM montagens
+                     WHERE tenant_id = ?
+                     ORDER BY numero_ejc DESC
+                     LIMIT 1`,
+                    [tenantId]
+                )
+                : hasCreatedAt
+                    ? await pool.query(
+                        `SELECT numero_ejc, created_at
+                         FROM montagens
+                         ORDER BY created_at DESC, numero_ejc DESC
+                         LIMIT 1`
+                    )
+                    : await pool.query(
+                        `SELECT numero_ejc, NULL AS created_at
+                         FROM montagens
+                         ORDER BY numero_ejc DESC
+                         LIMIT 1`
+                    );
         if (rows && rows[0] && rows[0].numero_ejc !== undefined && rows[0].numero_ejc !== null) {
             candidatas.push({
                 numero: Number(rows[0].numero_ejc),
@@ -200,14 +230,37 @@ async function buscarEdicaoAtual(tenantId) {
     if (hasEjc) {
         const hasTenant = await hasColumn('ejc', 'tenant_id');
         const hasCreatedAt = await hasColumn('ejc', 'created_at');
-        const [rows] = await pool.query(
-            `SELECT numero, ${hasCreatedAt ? 'created_at' : 'NULL AS created_at'}
-             FROM ejc
-             ${hasTenant ? 'WHERE tenant_id = ?' : ''}
-             ORDER BY ${hasCreatedAt ? 'created_at DESC,' : ''} numero DESC
-             LIMIT 1`,
-            hasTenant ? [tenantId] : []
-        );
+        const [rows] = hasTenant && hasCreatedAt
+            ? await pool.query(
+                `SELECT numero, created_at
+                 FROM ejc
+                 WHERE tenant_id = ?
+                 ORDER BY numero DESC, created_at DESC
+                 LIMIT 1`,
+                [tenantId]
+            )
+            : hasTenant
+                ? await pool.query(
+                    `SELECT numero, NULL AS created_at
+                     FROM ejc
+                     WHERE tenant_id = ?
+                     ORDER BY numero DESC
+                     LIMIT 1`,
+                    [tenantId]
+                )
+                : hasCreatedAt
+                    ? await pool.query(
+                        `SELECT numero, created_at
+                         FROM ejc
+                         ORDER BY created_at DESC, numero DESC
+                         LIMIT 1`
+                    )
+                    : await pool.query(
+                        `SELECT numero, NULL AS created_at
+                         FROM ejc
+                         ORDER BY numero DESC
+                         LIMIT 1`
+                    );
         if (rows && rows[0] && rows[0].numero !== undefined && rows[0].numero !== null) {
             candidatas.push({
                 numero: Number(rows[0].numero),
@@ -222,8 +275,9 @@ async function buscarEdicaoAtual(tenantId) {
     candidatas.sort((a, b) => {
         const dataA = a.created_at ? new Date(a.created_at).getTime() : 0;
         const dataB = b.created_at ? new Date(b.created_at).getTime() : 0;
-        if (dataA !== dataB) return dataB - dataA;
-        return Number(b.numero || 0) - Number(a.numero || 0);
+        const numeroDiff = Number(b.numero || 0) - Number(a.numero || 0);
+        if (numeroDiff !== 0) return numeroDiff;
+        return dataB - dataA;
     });
 
     return candidatas[0];
@@ -301,14 +355,16 @@ router.get('/', async (req, res) => {
                 : 0;
 
             const hasTenant = await hasColumn('jovens', 'tenant_id');
-            const whereSexo = [
-                hasTenant ? 'tenant_id = ?' : '',
-                hasOrigem ? "COALESCE(origem_ejc_tipo, 'INCONFIDENTES') <> 'OUTRO_EJC'" : '',
-                hasListaMestreAtivo ? 'COALESCE(lista_mestre_ativo, 1) = 1' : ''
-            ].filter(Boolean).join(' AND ');
-            const paramsSexo = hasTenant ? [tenantId] : [];
-            const [sexoRows] = await pool.query(
-                `SELECT
+            const filtrosSexo = [];
+            const paramsSexo = [];
+            if (hasTenant) {
+                filtrosSexo.push('tenant_id = ?');
+                paramsSexo.push(tenantId);
+            }
+            if (hasOrigem) filtrosSexo.push("COALESCE(origem_ejc_tipo, 'INCONFIDENTES') <> 'OUTRO_EJC'");
+            if (hasListaMestreAtivo) filtrosSexo.push('COALESCE(lista_mestre_ativo, 1) = 1');
+            const sqlSexo = `
+                SELECT
                     COALESCE(SUM(CASE
                         WHEN LOWER(TRIM(COALESCE(sexo, ''))) IN ('masculino', 'masc', 'm') THEN 1
                         ELSE 0
@@ -318,9 +374,9 @@ router.get('/', async (req, res) => {
                         ELSE 0
                     END), 0) AS mulheres
                  FROM jovens
-                 WHERE ${whereSexo || '1=1'}`,
-                paramsSexo
-            );
+                 ${filtrosSexo.length ? `WHERE ${filtrosSexo.join(' AND ')}` : ''}
+            `;
+            const [sexoRows] = await pool.query(sqlSexo, paramsSexo);
             resumo.jovens_homens = Number(sexoRows && sexoRows[0] ? sexoRows[0].homens : 0);
             resumo.jovens_mulheres = Number(sexoRows && sexoRows[0] ? sexoRows[0].mulheres : 0);
         } else {

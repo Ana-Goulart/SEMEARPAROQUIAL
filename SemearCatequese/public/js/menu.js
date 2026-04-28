@@ -40,6 +40,25 @@ const menuTemplate = `
 </div>
 `;
 
+const THEME_STORAGE_KEY = 'semearThemeMode';
+
+function aplicarTemaSistema(theme) {
+    const modo = String(theme || 'light').toLowerCase() === 'dark' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', modo);
+    document.body && document.body.setAttribute('data-theme', modo);
+    try {
+        localStorage.setItem(THEME_STORAGE_KEY, modo);
+    } catch (_) { }
+}
+
+function inicializarTemaSistema() {
+    let salvo = 'light';
+    try {
+        salvo = localStorage.getItem(THEME_STORAGE_KEY) || document.documentElement.getAttribute('data-theme') || 'light';
+    } catch (_) { }
+    aplicarTemaSistema(salvo);
+}
+
 function injetarMenu(rootSelector) {
     const root = document.querySelector(rootSelector);
     if (!root) return;
@@ -96,3 +115,8 @@ function ativarMenu(pathname) {
 
 window.injetarMenu = injetarMenu;
 window.ativarMenu = ativarMenu;
+window.aplicarTemaSistema = aplicarTemaSistema;
+
+document.addEventListener('DOMContentLoaded', () => {
+    inicializarTemaSistema();
+});

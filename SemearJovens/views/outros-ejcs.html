@@ -30,6 +30,74 @@
             align-items: center;
             margin-bottom: 30px;
         }
+
+        .sort-button {
+            width: 100%;
+            border: 0;
+            background: transparent;
+            padding: 0;
+            font-weight: 700;
+            color: inherit;
+            display: inline-flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 0.35rem;
+            line-height: 1.08;
+        }
+
+        .lista-mestre-grid.table > :not(caption) > * > * {
+            padding: 0.58rem 0.6rem !important;
+        }
+
+        .lista-mestre-grid thead th {
+            padding: 0.7rem 0.6rem !important;
+            font-size: 0.95rem;
+            text-align: left !important;
+        }
+
+        .lista-mestre-grid tbody td {
+            padding: 0.58rem 0.6rem !important;
+            font-size: 0.94rem;
+            line-height: 1.15;
+            vertical-align: middle;
+            text-align: left !important;
+            background: #fff;
+        }
+
+        .lista-mestre-grid tbody tr.lista-mestre-row-striped td {
+            background: #fffdf9;
+        }
+
+        .lista-mestre-mobile-name-wrap {
+            min-height: 1.8rem;
+            gap: 0.32rem;
+            line-height: 1.12;
+            display: flex;
+            align-items: center;
+        }
+
+        .nome-clicavel {
+            color: #b67f1d;
+            cursor: pointer;
+            font-weight: 700;
+            line-height: 1.12;
+            transition: color 0.18s ease;
+        }
+
+        .nome-clicavel:hover {
+            color: #8f6517;
+            text-decoration: underline;
+        }
+
+        .outros-ejcs-action-cell {
+            white-space: nowrap;
+        }
+
+        @media (max-width: 767.98px) {
+            .lista-mestre-grid.table > :not(caption) > * > * {
+                padding: 0.72rem 0.65rem !important;
+            }
+        }
     </style>
 </head>
 
@@ -77,19 +145,19 @@
                                 </div>
                             </div>
                             <div class="table-responsive">
-                                <table class="table table-bordered table-hover" id="dataTable" width="100%"
+                                <table class="table table-hover mb-0 align-middle lista-mestre-grid" id="dataTable" width="100%"
                                     cellspacing="0">
                                     <thead class="table-light">
                                         <tr>
-                                            <th>Nome do EJC</th>
-                                            <th>Paróquia</th>
-                                            <th>Bairro</th>
-                                            <th class="text-center" style="width: 150px;">Ações</th>
+                                            <th><span class="sort-button">Nome do EJC</span></th>
+                                            <th><span class="sort-button">Paróquia</span></th>
+                                            <th><span class="sort-button">Bairro</span></th>
+                                            <th style="width: 150px;"><span class="sort-button">Ações</span></th>
                                         </tr>
                                     </thead>
                                     <tbody id="outrosEjcsTableBody">
                                         <tr>
-                                            <td colspan="5" class="text-center">Carregando...</td>
+                                            <td colspan="4" class="text-center">Carregando...</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -236,7 +304,7 @@
                     aplicarFiltro();
                 } catch (error) {
                     console.error(error);
-                    tbody.innerHTML = `<tr><td colspan="5" class="text-center text-danger">Erro ao carregar dados.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="4" class="text-center text-danger">Erro ao carregar dados.</td></tr>`;
                     Swal.fire('Erro', 'Não foi possível carregar a lista de EJCs.', 'error');
                 }
             }
@@ -249,17 +317,21 @@
                 if (filtradosEl) filtradosEl.textContent = String((data || []).length);
 
                 if (data.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Nenhum registro encontrado.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Nenhum registro encontrado.</td></tr>`;
                     return;
                 }
 
-                tbody.innerHTML = data.map(registro => `
-                    <tr style="cursor: pointer;" onclick="window.OutrosEjcsApp.openDetailsModal(${registro.id})">
-                        <td class="align-middle fw-medium">${registro.nome || '-'}</td>
+                tbody.innerHTML = data.map((registro, index) => `
+                    <tr class="${index % 2 === 1 ? 'lista-mestre-row-striped' : ''}">
+                        <td class="align-middle">
+                            <div class="lista-mestre-mobile-name-wrap">
+                                <strong class="nome-clicavel" onclick="window.OutrosEjcsApp.openDetailsModal(${registro.id})">${registro.nome || '-'}</strong>
+                            </div>
+                        </td>
                         <td class="align-middle">${registro.paroquia || '-'}</td>
                         <td class="align-middle">${registro.bairro || '-'}</td>
-                        <td class="align-middle text-center">
-                            <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); window.OutrosEjcsApp.deleteRecord(${registro.id})" title="Excluir">
+                        <td class="align-middle outros-ejcs-action-cell">
+                            <button class="btn btn-sm btn-danger" onclick="window.OutrosEjcsApp.deleteRecord(${registro.id})" title="Excluir">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </td>

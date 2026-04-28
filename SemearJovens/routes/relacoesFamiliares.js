@@ -86,50 +86,102 @@ async function listarEntidadesRelacionaveis(tenantId, { sourceType, sourceId, q 
     const like = `%${termo}%`;
     const results = [];
 
-    const youngParams = [tenantId];
-    let youngWhere = 'j.tenant_id = ?';
-    if (temBusca) {
-        youngWhere += ' AND j.nome_completo LIKE ?';
-        youngParams.push(like);
+    let jovens;
+    if (temBusca && sourceType === ENTITY_TYPES.JOVEM && sourceId) {
+        [jovens] = await pool.query(
+            `SELECT j.id, j.nome_completo, j.telefone,
+                    COALESCE(j.origem_ejc_tipo, 'INCONFIDENTES') AS origem_ejc_tipo,
+                    oe.nome AS outro_ejc_nome, oe.paroquia AS outro_ejc_paroquia
+             FROM jovens j
+             LEFT JOIN outros_ejcs oe ON oe.id = j.outro_ejc_id AND oe.tenant_id = j.tenant_id
+             WHERE j.tenant_id = ? AND j.nome_completo LIKE ? AND j.id <> ?
+             ORDER BY j.nome_completo ASC`,
+            [tenantId, like, sourceId]
+        );
+    } else if (temBusca) {
+        [jovens] = await pool.query(
+            `SELECT j.id, j.nome_completo, j.telefone,
+                    COALESCE(j.origem_ejc_tipo, 'INCONFIDENTES') AS origem_ejc_tipo,
+                    oe.nome AS outro_ejc_nome, oe.paroquia AS outro_ejc_paroquia
+             FROM jovens j
+             LEFT JOIN outros_ejcs oe ON oe.id = j.outro_ejc_id AND oe.tenant_id = j.tenant_id
+             WHERE j.tenant_id = ? AND j.nome_completo LIKE ?
+             ORDER BY j.nome_completo ASC`,
+            [tenantId, like]
+        );
+    } else if (sourceType === ENTITY_TYPES.JOVEM && sourceId) {
+        [jovens] = await pool.query(
+            `SELECT j.id, j.nome_completo, j.telefone,
+                    COALESCE(j.origem_ejc_tipo, 'INCONFIDENTES') AS origem_ejc_tipo,
+                    oe.nome AS outro_ejc_nome, oe.paroquia AS outro_ejc_paroquia
+             FROM jovens j
+             LEFT JOIN outros_ejcs oe ON oe.id = j.outro_ejc_id AND oe.tenant_id = j.tenant_id
+             WHERE j.tenant_id = ? AND j.id <> ?
+             ORDER BY j.nome_completo ASC`,
+            [tenantId, sourceId]
+        );
+    } else {
+        [jovens] = await pool.query(
+            `SELECT j.id, j.nome_completo, j.telefone,
+                    COALESCE(j.origem_ejc_tipo, 'INCONFIDENTES') AS origem_ejc_tipo,
+                    oe.nome AS outro_ejc_nome, oe.paroquia AS outro_ejc_paroquia
+             FROM jovens j
+             LEFT JOIN outros_ejcs oe ON oe.id = j.outro_ejc_id AND oe.tenant_id = j.tenant_id
+             WHERE j.tenant_id = ?
+             ORDER BY j.nome_completo ASC`,
+            [tenantId]
+        );
     }
-    if (sourceType === ENTITY_TYPES.JOVEM && sourceId) {
-        youngWhere += ' AND j.id <> ?';
-        youngParams.push(sourceId);
-    }
-    const [jovens] = await pool.query(
-        `SELECT j.id, j.nome_completo, j.telefone,
-                COALESCE(j.origem_ejc_tipo, 'INCONFIDENTES') AS origem_ejc_tipo,
-                oe.nome AS outro_ejc_nome, oe.paroquia AS outro_ejc_paroquia
-         FROM jovens j
-         LEFT JOIN outros_ejcs oe ON oe.id = j.outro_ejc_id AND oe.tenant_id = j.tenant_id
-         WHERE ${youngWhere}
-         ORDER BY j.nome_completo ASC`,
-        youngParams
-    );
     for (const row of (jovens || [])) {
         results.push({ entity_type: ENTITY_TYPES.JOVEM, entity_id: Number(row.id), nome_completo: row.nome_completo || '', ...formatarDetalheJovem(row) });
     }
 
-    const tiosParams = [tenantId];
-    let tiosWhere = 'c.tenant_id = ?';
-    if (temBusca) {
-        tiosWhere += ' AND (c.nome_tio LIKE ? OR c.nome_tia LIKE ?)';
-        tiosParams.push(like, like);
+    let casais;
+    if (temBusca && sourceType === ENTITY_TYPES.TIO_CASAL && sourceId) {
+        [casais] = await pool.query(
+            `SELECT c.id, c.nome_tio, c.nome_tia, c.telefone_tio, c.telefone_tia,
+                    COALESCE(c.origem_tipo, 'EJC') AS origem_tipo,
+                    oe.nome AS outro_ejc_nome, oe.paroquia AS outro_ejc_paroquia
+             FROM tios_casais c
+             LEFT JOIN outros_ejcs oe ON oe.id = c.outro_ejc_id AND oe.tenant_id = c.tenant_id
+             WHERE c.tenant_id = ? AND (c.nome_tio LIKE ? OR c.nome_tia LIKE ?) AND c.id <> ?
+             ORDER BY c.nome_tio ASC, c.nome_tia ASC`,
+            [tenantId, like, like, sourceId]
+        );
+    } else if (temBusca) {
+        [casais] = await pool.query(
+            `SELECT c.id, c.nome_tio, c.nome_tia, c.telefone_tio, c.telefone_tia,
+                    COALESCE(c.origem_tipo, 'EJC') AS origem_tipo,
+                    oe.nome AS outro_ejc_nome, oe.paroquia AS outro_ejc_paroquia
+             FROM tios_casais c
+             LEFT JOIN outros_ejcs oe ON oe.id = c.outro_ejc_id AND oe.tenant_id = c.tenant_id
+             WHERE c.tenant_id = ? AND (c.nome_tio LIKE ? OR c.nome_tia LIKE ?)
+             ORDER BY c.nome_tio ASC, c.nome_tia ASC`,
+            [tenantId, like, like]
+        );
+    } else if (sourceType === ENTITY_TYPES.TIO_CASAL && sourceId) {
+        [casais] = await pool.query(
+            `SELECT c.id, c.nome_tio, c.nome_tia, c.telefone_tio, c.telefone_tia,
+                    COALESCE(c.origem_tipo, 'EJC') AS origem_tipo,
+                    oe.nome AS outro_ejc_nome, oe.paroquia AS outro_ejc_paroquia
+             FROM tios_casais c
+             LEFT JOIN outros_ejcs oe ON oe.id = c.outro_ejc_id AND oe.tenant_id = c.tenant_id
+             WHERE c.tenant_id = ? AND c.id <> ?
+             ORDER BY c.nome_tio ASC, c.nome_tia ASC`,
+            [tenantId, sourceId]
+        );
+    } else {
+        [casais] = await pool.query(
+            `SELECT c.id, c.nome_tio, c.nome_tia, c.telefone_tio, c.telefone_tia,
+                    COALESCE(c.origem_tipo, 'EJC') AS origem_tipo,
+                    oe.nome AS outro_ejc_nome, oe.paroquia AS outro_ejc_paroquia
+             FROM tios_casais c
+             LEFT JOIN outros_ejcs oe ON oe.id = c.outro_ejc_id AND oe.tenant_id = c.tenant_id
+             WHERE c.tenant_id = ?
+             ORDER BY c.nome_tio ASC, c.nome_tia ASC`,
+            [tenantId]
+        );
     }
-    if (sourceType === ENTITY_TYPES.TIO_CASAL && sourceId) {
-        tiosWhere += ' AND c.id <> ?';
-        tiosParams.push(sourceId);
-    }
-    const [casais] = await pool.query(
-        `SELECT c.id, c.nome_tio, c.nome_tia, c.telefone_tio, c.telefone_tia,
-                COALESCE(c.origem_tipo, 'EJC') AS origem_tipo,
-                oe.nome AS outro_ejc_nome, oe.paroquia AS outro_ejc_paroquia
-         FROM tios_casais c
-         LEFT JOIN outros_ejcs oe ON oe.id = c.outro_ejc_id AND oe.tenant_id = c.tenant_id
-         WHERE ${tiosWhere}
-         ORDER BY c.nome_tio ASC, c.nome_tia ASC`,
-        tiosParams
-    );
     for (const row of (casais || [])) {
         results.push({
             entity_type: ENTITY_TYPES.TIO_CASAL,
@@ -180,7 +232,6 @@ async function buscarDetalhesEntidades(tenantId, itens) {
     const tiosMap = new Map();
 
     if (jovensIds.length) {
-        const placeholders = jovensIds.map(() => '?').join(',');
         const [rows] = await pool.query(
             `SELECT j.id, j.nome_completo, j.telefone,
                     COALESCE(j.origem_ejc_tipo, 'INCONFIDENTES') AS origem_ejc_tipo,
@@ -188,14 +239,13 @@ async function buscarDetalhesEntidades(tenantId, itens) {
              FROM jovens j
              LEFT JOIN outros_ejcs oe ON oe.id = j.outro_ejc_id AND oe.tenant_id = j.tenant_id
              WHERE j.tenant_id = ?
-               AND j.id IN (${placeholders})`,
-            [tenantId, ...jovensIds]
+               AND j.id IN (?)`,
+            [tenantId, jovensIds]
         );
         (rows || []).forEach((row) => jovensMap.set(Number(row.id), row));
     }
 
     if (tiosIds.length) {
-        const placeholders = tiosIds.map(() => '?').join(',');
         const [rows] = await pool.query(
             `SELECT c.id, c.nome_tio, c.nome_tia, c.telefone_tio, c.telefone_tia,
                     COALESCE(c.origem_tipo, 'EJC') AS origem_tipo,
@@ -203,8 +253,8 @@ async function buscarDetalhesEntidades(tenantId, itens) {
              FROM tios_casais c
              LEFT JOIN outros_ejcs oe ON oe.id = c.outro_ejc_id AND oe.tenant_id = c.tenant_id
              WHERE c.tenant_id = ?
-               AND c.id IN (${placeholders})`,
-            [tenantId, ...tiosIds]
+               AND c.id IN (?)`,
+            [tenantId, tiosIds]
         );
         (rows || []).forEach((row) => tiosMap.set(Number(row.id), row));
     }

@@ -183,7 +183,6 @@ router.get('/historico/:id', async (req, res) => {
         const ids = coordenacoes.map(c => c.id);
         let membros = [];
         if (ids.length) {
-            const placeholders = ids.map(() => '?').join(', ');
             const [rowsMembros] = await pool.query(
                 `SELECT cm.id, cm.coordenacao_id, cm.jovem_id, cm.tio_casal_id, cm.membro_tipo, cm.comissao_id,
                         j.nome_completo, j.telefone, j.circulo,
@@ -192,9 +191,9 @@ router.get('/historico/:id', async (req, res) => {
                  LEFT JOIN jovens j ON j.id = cm.jovem_id AND j.tenant_id = cm.tenant_id
                  LEFT JOIN tios_casais tc ON tc.id = cm.tio_casal_id AND tc.tenant_id = cm.tenant_id
                  WHERE cm.tenant_id = ?
-                   AND cm.coordenacao_id IN (${placeholders})
+                   AND cm.coordenacao_id IN (?)
                  ORDER BY COALESCE(j.nome_completo, tc.nome_tio, tc.nome_tia) ASC`,
-                [tenantId, ...ids]
+                [tenantId, ids]
             );
             membros = rowsMembros;
         }
@@ -548,10 +547,9 @@ router.delete('/:id', async (req, res) => {
         );
         const idsComissao = membros.map(m => m.comissao_id).filter(Boolean);
         if (idsComissao.length) {
-            const placeholders = idsComissao.map(() => '?').join(', ');
             await connection.query(
-                `DELETE FROM jovens_comissoes WHERE tenant_id = ? AND id IN (${placeholders})`,
-                [tenantId, ...idsComissao]
+                'DELETE FROM jovens_comissoes WHERE tenant_id = ? AND id IN (?)',
+                [tenantId, idsComissao]
             );
         }
 

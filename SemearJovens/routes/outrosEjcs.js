@@ -2,6 +2,10 @@ const express = require('express');
 const router = express.Router();
 const db = require('../database');
 const { getTenantId } = require('../lib/tenantIsolation');
+const {
+    decryptJovemRecord,
+    ensureJovensSensitiveColumns
+} = require('../lib/jovensSensitiveData');
 
 async function hasTable(tableName) {
     const [rows] = await db.pool.query(`
@@ -59,6 +63,7 @@ async function ensureObservacoesStructure() {
 router.get('/', async (req, res) => {
     try {
         const tenantId = getTenantId(req);
+        await ensureJovensSensitiveColumns(db.pool);
         await ensureObservacoesStructure();
         const [rows] = await db.pool.query('SELECT * FROM outros_ejcs WHERE tenant_id = ? ORDER BY created_at DESC', [tenantId]);
         res.json(rows);
@@ -137,6 +142,7 @@ router.get('/:id/conjuges', async (req, res) => {
         const tenantId = getTenantId(req);
         const hasJovens = await hasTable('jovens');
         if (!hasJovens) return res.json([]);
+        await ensureJovensSensitiveColumns(db.pool);
 
         const hasConjugeOutroEjcId = await hasColumn('jovens', 'conjuge_outro_ejc_id');
         const hasConjugeNome = await hasColumn('jovens', 'conjuge_nome');
@@ -157,12 +163,18 @@ router.get('/:id/conjuges', async (req, res) => {
             ORDER BY j.conjuge_nome ASC, j.nome_completo ASC
         `, [id, tenantId]);
 
-        const payload = rows.map(r => ({
-            jovem_id: r.jovem_id,
-            jovem_nome: r.jovem_nome || '-',
-            conjuge_nome: r.conjuge_nome || '-',
-            telefone: r.conjuge_telefone || r.jovem_telefone || '-'
-        }));
+        const payload = rows.map((row) => {
+            const r = decryptJovemRecord({
+                conjuge_telefone: row.conjuge_telefone,
+                telefone: row.jovem_telefone
+            });
+            return {
+                jovem_id: row.jovem_id,
+                jovem_nome: row.jovem_nome || '-',
+                conjuge_nome: row.conjuge_nome || '-',
+                telefone: r.conjuge_telefone || r.telefone || '-'
+            };
+        });
 
         return res.json(payload);
     } catch (error) {
@@ -179,6 +191,7 @@ router.get('/:id/jovens', async (req, res) => {
 
     try {
         const tenantId = getTenantId(req);
+        await ensureJovensSensitiveColumns(db.pool);
         const [rows] = await db.pool.query(
             `SELECT j.id, j.nome_completo, j.telefone, j.outro_ejc_numero,
                     j.estado_civil, j.sexo, j.circulo
@@ -190,7 +203,7 @@ router.get('/:id/jovens', async (req, res) => {
              ORDER BY j.nome_completo ASC`,
             [tenantId, id]
         );
-        return res.json(rows || []);
+        return res.json((rows || []).map((row) => decryptJovemRecord(row)));
     } catch (error) {
         console.error('Erro ao listar jovens do outro EJC:', error);
         return res.status(500).json({ error: 'Erro ao listar jovens deste outro EJC.' });

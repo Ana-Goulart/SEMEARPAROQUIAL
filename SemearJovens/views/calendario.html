@@ -24,7 +24,7 @@
             --calendar-ink: #6f4e1f;
             --calendar-ink-strong: #8f6a24;
             --calendar-accent: #d9a650;
-            --calendar-accent-strong: #b88732;
+            --calendar-accent-strong: #b88732 !important;
             --calendar-accent-soft: rgba(217, 166, 80, 0.14);
             --calendar-accent-soft-strong: rgba(217, 166, 80, 0.22);
             --calendar-border: rgba(217, 166, 80, 0.24);
@@ -32,6 +32,20 @@
             --calendar-surface-strong: #fff7e8;
             --calendar-surface-muted: #fff3dc;
             --calendar-shadow: 0 18px 42px rgba(184, 135, 50, 0.16);
+        }
+
+        :root[data-theme="dark"] {
+            --calendar-ink: #f2e7d1;
+            --calendar-ink-strong: #f1d59f;
+            --calendar-accent: #c8a15a;
+            --calendar-accent-strong: #c8a15a !important;
+            --calendar-accent-soft: rgba(200, 161, 90, 0.12);
+            --calendar-accent-soft-strong: rgba(200, 161, 90, 0.18);
+            --calendar-border: rgba(210, 184, 136, 0.16);
+            --calendar-surface: #241d15;
+            --calendar-surface-strong: #2b2218;
+            --calendar-surface-muted: #31271c;
+            --calendar-shadow: 0 18px 42px rgba(0, 0, 0, 0.32);
         }
 
         .planner-cell {
@@ -67,6 +81,12 @@
             box-shadow: var(--calendar-shadow);
         }
 
+        :root[data-theme="dark"] .calendar-shell {
+            background:
+                radial-gradient(circle at top left, rgba(200, 161, 90, 0.14), transparent 28%),
+                linear-gradient(180deg, #241d15 0%, #1d1812 100%);
+        }
+
         .calendar-shell .fc {
             --fc-border-color: var(--calendar-border);
             --fc-page-bg-color: transparent;
@@ -78,8 +98,8 @@
             --fc-button-text-color: var(--calendar-ink-strong);
             --fc-button-hover-bg-color: #fff0d1;
             --fc-button-hover-border-color: rgba(217, 166, 80, 0.42);
-            --fc-button-active-bg-color: #d9a650;
-            --fc-button-active-border-color: #b88732;
+            --fc-button-active-bg-color: #7b5f2a;
+            --fc-button-active-border-color: #7b5f2a;
             --fc-button-active-text-color: #fffaf2;
             padding: 1.2rem;
             color: var(--calendar-ink);
@@ -135,19 +155,25 @@
             border-color: transparent !important;
         }
 
+        .calendar-shell .fc .fc-dayGridMonth-button,
+        .calendar-shell .fc .fc-timeGridWeek-button,
+        .calendar-shell .fc .fc-timeGridDay-button {
+            color: #fffaf2 !important;
+        }
+
         .calendar-shell .fc .fc-prev-button,
         .calendar-shell .fc .fc-next-button {
-            background: linear-gradient(180deg, #d9a650 0%, #b88732 100%) !important;
-            border-color: #b88732 !important;
+            background: linear-gradient(180deg, #8b6c31 0%, #7b5f2a 100%) !important;
+            border-color: #7b5f2a !important;
             color: #fffaf2 !important;
-            box-shadow: 0 10px 20px rgba(184, 135, 50, 0.24) !important;
+            box-shadow: 0 10px 20px rgba(123, 95, 42, 0.24) !important;
         }
 
         .calendar-shell .fc .fc-today-button {
-            background: var(--calendar-surface-muted) !important;
-            border-color: rgba(217, 166, 80, 0.22) !important;
-            color: var(--calendar-ink-strong) !important;
-            box-shadow: none !important;
+            background: linear-gradient(180deg, #8b6c31 0%, #7b5f2a 100%) !important;
+            border-color: #7b5f2a !important;
+            color: #fffaf2 !important;
+            box-shadow: 0 10px 20px rgba(123, 95, 42, 0.2) !important;
         }
 
         .calendar-shell .fc .fc-button:hover,
@@ -165,10 +191,10 @@
         .calendar-shell .fc .fc-prev-button:focus,
         .calendar-shell .fc .fc-next-button:hover,
         .calendar-shell .fc .fc-next-button:focus {
-            background: linear-gradient(180deg, #e0b15e 0%, #c8933f 100%) !important;
-            border-color: #c8933f !important;
+            background: linear-gradient(180deg, #94743a 0%, #85672f 100%) !important;
+            border-color: #85672f !important;
             color: #fffdf7 !important;
-            box-shadow: 0 12px 24px rgba(184, 135, 50, 0.28) !important;
+            box-shadow: 0 12px 24px rgba(123, 95, 42, 0.28) !important;
         }
 
         .calendar-shell .fc .fc-button:disabled {
@@ -179,15 +205,29 @@
 
         .calendar-shell .fc .fc-button-primary:not(:disabled).fc-button-active,
         .calendar-shell .fc .fc-button-primary:not(:disabled):active {
-            background: linear-gradient(180deg, #d9a650 0%, #c8933f 100%) !important;
-            border-color: #d9a650 !important;
+            background: linear-gradient(180deg, #8b6c31 0%, #7b5f2a 100%) !important;
+            border-color: #7b5f2a !important;
             color: #fff !important;
-            box-shadow: 0 10px 22px rgba(217, 166, 80, 0.28) !important;
+            box-shadow: 0 10px 22px rgba(123, 95, 42, 0.28) !important;
         }
 
         .calendar-shell .fc .fc-button-group .fc-button-primary:not(:disabled).fc-button-active,
         .calendar-shell .fc .fc-button-group .fc-button-primary:not(:disabled):active {
-            box-shadow: 0 8px 16px rgba(184, 135, 50, 0.22);
+            background: linear-gradient(180deg, #8b6c31 0%, #7b5f2a 100%) !important;
+            border-color: #7b5f2a !important;
+            color: #fffaf2 !important;
+            box-shadow: 0 8px 16px rgba(123, 95, 42, 0.22) !important;
+        }
+
+        .calendar-shell .fc .fc-dayGridMonth-button.fc-button-active,
+        .calendar-shell .fc .fc-timeGridWeek-button.fc-button-active,
+        .calendar-shell .fc .fc-timeGridDay-button.fc-button-active,
+        .calendar-shell .fc .fc-dayGridMonth-button:active,
+        .calendar-shell .fc .fc-timeGridWeek-button:active,
+        .calendar-shell .fc .fc-timeGridDay-button:active {
+            background: linear-gradient(180deg, #8b6c31 0%, #7b5f2a 100%) !important;
+            border-color: #7b5f2a !important;
+            color: #fffaf2 !important;
         }
 
         .calendar-shell .fc .fc-col-header-cell {

@@ -259,32 +259,15 @@ async function sincronizarServicosTiosDaMontagem({ tenantId, montagemId }) {
             continue;
         }
 
-        const updates = [];
-        const params = [];
-        if (temNomeTioSnapshot) {
-            updates.push('nome_tio_snapshot = ?');
-            params.push(desejado.nomeTio);
-        }
-        if (temTelefoneTioSnapshot) {
-            updates.push('telefone_tio_snapshot = ?');
-            params.push(desejado.telefoneTio);
-        }
-        if (temNomeTiaSnapshot) {
-            updates.push('nome_tia_snapshot = ?');
-            params.push(desejado.nomeTia);
-        }
-        if (temTelefoneTiaSnapshot) {
-            updates.push('telefone_tia_snapshot = ?');
-            params.push(desejado.telefoneTia);
-        }
-        if (updates.length) {
-            params.push(row.id, tenantId);
+        const updateData = {};
+        if (temNomeTioSnapshot) updateData.nome_tio_snapshot = desejado.nomeTio;
+        if (temTelefoneTioSnapshot) updateData.telefone_tio_snapshot = desejado.telefoneTio;
+        if (temNomeTiaSnapshot) updateData.nome_tia_snapshot = desejado.nomeTia;
+        if (temTelefoneTiaSnapshot) updateData.telefone_tia_snapshot = desejado.telefoneTia;
+        if (Object.keys(updateData).length) {
             await pool.query(
-                `UPDATE tios_casal_servicos
-                 SET ${updates.join(', ')}
-                 WHERE id = ?
-                   AND tenant_id = ?`,
-                params
+                'UPDATE tios_casal_servicos SET ? WHERE id = ? AND tenant_id = ?',
+                [updateData, row.id, tenantId]
             );
         }
         desejados.delete(chave);
@@ -320,16 +303,16 @@ async function sincronizarServicosTiosDaMontagem({ tenantId, montagemId }) {
     await pool.query(
         `DELETE FROM tios_casal_equipes
          WHERE tenant_id = ?
-           AND casal_id IN (${casalIdsTocados.map(() => '?').join(',')})`,
-        [tenantId, ...casalIdsTocados]
+           AND casal_id IN (?)`,
+        [tenantId, casalIdsTocados]
     );
 
     const [equipesRows] = await pool.query(
         `SELECT DISTINCT casal_id, equipe_id
          FROM tios_casal_servicos
          WHERE tenant_id = ?
-           AND casal_id IN (${casalIdsTocados.map(() => '?').join(',')})`,
-        [tenantId, ...casalIdsTocados]
+           AND casal_id IN (?)`,
+        [tenantId, casalIdsTocados]
     );
     if ((equipesRows || []).length) {
         await pool.query(
@@ -949,12 +932,10 @@ async function sincronizarEdicaoDaMontagem({
         }
         params.push(ejcId, tenantId);
 
-        await pool.query(
-            `UPDATE ejc
-             SET ${sets.join(', ')}
-             WHERE id = ? AND tenant_id = ?`,
-            params
+        const updateData = Object.fromEntries(
+            sets.map((setExpr, idx) => [String(setExpr).split('=')[0].trim(), params[idx]])
         );
+        await pool.query('UPDATE ejc SET ? WHERE id = ? AND tenant_id = ?', [updateData, ejcId, tenantId]);
     } else {
         const cols = [
             'tenant_id',
@@ -2104,19 +2085,20 @@ router.put('/:id', async (req, res) => {
         const comDataFimReunioes = await hasMontagemDataFimReunioesColumn();
         const comDiaSemanaReunioes = await hasMontagemDiaSemanaReunioesColumn();
 
-        const sets = ['numero_ejc = ?', 'data_encontro = ?'];
-        const params = [numero_ejc, dataEncontro];
-        if (comDataTarde) { sets.push('data_tarde_revelacao = ?'); params.push(dataTarde); }
-        if (comDataInicioReunioes) { sets.push('data_inicio_reunioes = ?'); params.push(inicioReunioes); }
-        if (comDataFimReunioes) { sets.push('data_fim_reunioes = ?'); params.push(fimReunioes); }
-        if (comDiaSemanaReunioes) { sets.push('dia_semana_reunioes = ?'); params.push(diaSemanaReunioes); }
-        if (comDataInicio) { sets.push('data_inicio = ?'); params.push(dataEncontro); }
-        if (comDataFim) { sets.push('data_fim = ?'); params.push(dataFimEncontro); }
-        params.push(montagemId, tenantId);
+        const updateMontagemData = {
+            numero_ejc,
+            data_encontro: dataEncontro
+        };
+        if (comDataTarde) updateMontagemData.data_tarde_revelacao = dataTarde;
+        if (comDataInicioReunioes) updateMontagemData.data_inicio_reunioes = inicioReunioes;
+        if (comDataFimReunioes) updateMontagemData.data_fim_reunioes = fimReunioes;
+        if (comDiaSemanaReunioes) updateMontagemData.dia_semana_reunioes = diaSemanaReunioes;
+        if (comDataInicio) updateMontagemData.data_inicio = dataEncontro;
+        if (comDataFim) updateMontagemData.data_fim = dataFimEncontro;
 
         await pool.query(
-            `UPDATE montagens SET ${sets.join(', ')} WHERE id = ? AND tenant_id = ?`,
-            params
+            'UPDATE montagens SET ? WHERE id = ? AND tenant_id = ?',
+            [updateMontagemData, montagemId, tenantId]
         );
         await sincronizarEdicaoDaMontagem({
             tenantId,
@@ -2636,13 +2618,12 @@ router.post('/:id/jovens-servir/selecionar', async (req, res) => {
             const selecionados = ids.map((id) => Number(id)).filter((id) => Number.isFinite(id) && id > 0);
 
             if (selecionados.length) {
-                const placeholders = selecionados.map(() => '?').join(',');
                 await pool.query(
                     `UPDATE montagem_jovens_servir
                      SET pode_servir = 0
                      WHERE montagem_id = ?
-                       AND jovem_id NOT IN (${placeholders})`,
-                    [montagemId, ...selecionados]
+                       AND jovem_id NOT IN (?)`,
+                    [montagemId, selecionados]
                 );
             } else {
                 await pool.query(
@@ -2820,13 +2801,12 @@ router.post('/:id/jovens-servir/distribuir', async (req, res) => {
         const historicoMap = new Map();
         if (hasHistorico) {
             const ids = pendentes.map(p => p.id);
-            const placeholders = ids.map(() => '?').join(',');
             const [histRows] = await connection.query(
                 `SELECT jovem_id, equipe
                  FROM historico_equipes
                  WHERE tenant_id = ?
-                   AND jovem_id IN (${placeholders})`,
-                [tenantId, ...ids]
+                   AND jovem_id IN (?)`,
+                [tenantId, ids]
             );
             for (const h of (histRows || [])) {
                 adicionarHistoricoNoMapa(historicoMap, h.jovem_id, h.equipe);
@@ -2983,6 +2963,14 @@ router.post('/:id/jovens-servir/distribuir', async (req, res) => {
                 });
                 continue;
             }
+
+            const totaisGrupo = grupo.reduce((acc, membro) => {
+                acc.total += 1;
+                const sexo = normalizarSexo(membro && membro.item && membro.item.sexo);
+                if (sexo === 'masculino') acc.homens += 1;
+                if (sexo === 'feminino') acc.mulheres += 1;
+                return acc;
+            }, { total: 0, homens: 0, mulheres: 0 });
 
             const minCount = Math.min(...elegiveis.map(eq => (assignedCount.get(eq.id) || { total: 0 }).total));
             const candidatos = elegiveis.filter(eq => ((assignedCount.get(eq.id) || { total: 0 }).total) === minCount);
@@ -3155,10 +3143,9 @@ router.post('/:id/tios-servir/distribuir', async (req, res) => {
         const casalIds = selecionadosRows.map((c) => c.id);
         const servicosMap = new Map();
         if (await hasTable('tios_casal_servicos')) {
-            const placeholders = casalIds.map(() => '?').join(',');
             const [servRows] = await pool.query(
-                `SELECT casal_id, equipe_id FROM tios_casal_servicos WHERE casal_id IN (${placeholders})`,
-                casalIds
+                'SELECT casal_id, equipe_id FROM tios_casal_servicos WHERE casal_id IN (?)',
+                [casalIds]
             );
             for (const r of (servRows || [])) {
                 if (!servicosMap.has(r.casal_id)) servicosMap.set(r.casal_id, new Set());
@@ -3317,11 +3304,10 @@ router.post('/:id/outro-ejc-servir/distribuir', async (req, res) => {
         const jovemIds = selecionados.map(s => Number(s.jovem_id)).filter(Boolean);
         const historicoMap = new Map();
         if (jovemIds.length && await hasTable('historico_equipes')) {
-            const placeholders = jovemIds.map(() => '?').join(',');
             const [histRows] = await pool.query(
                 `SELECT jovem_id, equipe FROM historico_equipes
-                 WHERE tenant_id = ? AND jovem_id IN (${placeholders})`,
-                [tenantId, ...jovemIds]
+                 WHERE tenant_id = ? AND jovem_id IN (?)`,
+                [tenantId, jovemIds]
             );
             for (const h of (histRows || [])) {
                 adicionarHistoricoNoMapa(historicoMap, h.jovem_id, h.equipe);
@@ -3465,6 +3451,13 @@ router.post('/:id/outro-ejc-servir/distribuir', async (req, res) => {
                 semEquipe.push(nome || `jovem ${jovemId}`);
                 continue;
             }
+            const totaisGrupo = grupo.reduce((acc, membro) => {
+                acc.total += 1;
+                const sexo = normalizarSexo(membro && membro.item && membro.item.sexo);
+                if (sexo === 'masculino') acc.homens += 1;
+                if (sexo === 'feminino') acc.mulheres += 1;
+                return acc;
+            }, { total: 0, homens: 0, mulheres: 0 });
             const escolhido = disponiveis[Math.floor(Math.random() * disponiveis.length)];
             if (!escolhido) continue;
 
@@ -3611,9 +3604,9 @@ router.get('/:id/tios-para-servir', async (req, res) => {
              JOIN equipes eq ON eq.id = ts.equipe_id AND eq.tenant_id = ts.tenant_id
              LEFT JOIN ejc e ON e.id = ts.ejc_id AND e.tenant_id = ts.tenant_id
              WHERE ts.tenant_id = ?
-               AND ts.casal_id IN (${placeholders})
+               AND ts.casal_id IN (?)
              ORDER BY e.numero DESC, eq.nome ASC`,
-            [tenantId, ...casalIds]
+            [tenantId, casalIds]
         );
 
         const historicoByCasal = new Map();
@@ -4879,23 +4872,20 @@ async function finalizarEncontroHandler(req, res) {
 
                 if (jovemListaMestreId < 0) {
                     const jovemId = Math.abs(jovemListaMestreId);
-                    const sets = ['nome_completo = ?', 'numero_ejc_fez = ?', 'circulo = ?'];
-                    const params = [nome, ejcId, circulo];
-                    if (comMontagemEjcId) {
-                        sets.push('montagem_ejc_id = NULL');
-                    }
-                    if (comEnderecoRua) { sets.push('endereco_rua = ?'); params.push(enderecoRua); }
-                    if (comEnderecoNumero) { sets.push('endereco_numero = ?'); params.push(enderecoNumero); }
-                    if (comEnderecoBairro) { sets.push('endereco_bairro = ?'); params.push(enderecoBairro); }
-                    if (comEnderecoCidade) { sets.push('endereco_cidade = ?'); params.push(enderecoCidade); }
-                    if (comEnderecoCep) { sets.push('endereco_cep = ?'); params.push(enderecoCep); }
-                    params.push(jovemId, tenantId);
+                    const updateJovemData = {
+                        nome_completo: nome,
+                        numero_ejc_fez: ejcId,
+                        circulo
+                    };
+                    if (comMontagemEjcId) updateJovemData.montagem_ejc_id = null;
+                    if (comEnderecoRua) updateJovemData.endereco_rua = enderecoRua;
+                    if (comEnderecoNumero) updateJovemData.endereco_numero = enderecoNumero;
+                    if (comEnderecoBairro) updateJovemData.endereco_bairro = enderecoBairro;
+                    if (comEnderecoCidade) updateJovemData.endereco_cidade = enderecoCidade;
+                    if (comEnderecoCep) updateJovemData.endereco_cep = enderecoCep;
                     await connection.query(
-                        `UPDATE jovens
-                         SET ${sets.join(', ')}
-                         WHERE id = ?
-                           AND tenant_id = ?`,
-                        params
+                        'UPDATE jovens SET ? WHERE id = ? AND tenant_id = ?',
+                        [updateJovemData, jovemId, tenantId]
                     );
                     if (Number.isInteger(respostaId)) {
                         await connection.query(
@@ -4937,23 +4927,20 @@ async function finalizarEncontroHandler(req, res) {
                 }
 
                 if (jovem && jovem.id) {
-                    const sets = ['nome_completo = ?', 'numero_ejc_fez = ?', 'circulo = ?'];
-                    const params = [nome, ejcId, circulo];
-                    if (comMontagemEjcId) {
-                        sets.push('montagem_ejc_id = NULL');
-                    }
-                    if (comEnderecoRua) { sets.push('endereco_rua = ?'); params.push(enderecoRua); }
-                    if (comEnderecoNumero) { sets.push('endereco_numero = ?'); params.push(enderecoNumero); }
-                    if (comEnderecoBairro) { sets.push('endereco_bairro = ?'); params.push(enderecoBairro); }
-                    if (comEnderecoCidade) { sets.push('endereco_cidade = ?'); params.push(enderecoCidade); }
-                    if (comEnderecoCep) { sets.push('endereco_cep = ?'); params.push(enderecoCep); }
-                    params.push(jovem.id, tenantId);
+                    const updateJovemExistenteData = {
+                        nome_completo: nome,
+                        numero_ejc_fez: ejcId,
+                        circulo
+                    };
+                    if (comMontagemEjcId) updateJovemExistenteData.montagem_ejc_id = null;
+                    if (comEnderecoRua) updateJovemExistenteData.endereco_rua = enderecoRua;
+                    if (comEnderecoNumero) updateJovemExistenteData.endereco_numero = enderecoNumero;
+                    if (comEnderecoBairro) updateJovemExistenteData.endereco_bairro = enderecoBairro;
+                    if (comEnderecoCidade) updateJovemExistenteData.endereco_cidade = enderecoCidade;
+                    if (comEnderecoCep) updateJovemExistenteData.endereco_cep = enderecoCep;
                     await connection.query(
-                        `UPDATE jovens
-                         SET ${sets.join(', ')}
-                         WHERE id = ?
-                           AND tenant_id = ?`,
-                        params
+                        'UPDATE jovens SET ? WHERE id = ? AND tenant_id = ?',
+                        [updateJovemExistenteData, jovem.id, tenantId]
                     );
                     if (Number.isInteger(respostaId)) {
                         await connection.query(

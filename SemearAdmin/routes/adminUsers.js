@@ -56,7 +56,7 @@ router.post('/', requireAdmin, async (req, res) => {
         await pool.query(
             `INSERT INTO tenant_admin_users (tenant_id, username, nome_completo, senha_hash, ativo)
              VALUES (?, ?, ?, ?, ?)`,
-            [tenantId, username, nomeCompleto, hashPassword(senha), ativo ? 1 : 0]
+            [tenantId, username, nomeCompleto, await hashPassword(senha), ativo ? 1 : 0]
         );
         return res.status(201).json({ message: 'Usuário do sistema criado com sucesso.' });
     } catch (err) {
@@ -89,7 +89,7 @@ router.put('/:id', requireAdmin, async (req, res) => {
         const params = [username, nomeCompleto, ativo ? 1 : 0];
         if (senha) {
             query += ', senha_hash = ?';
-            params.push(hashPassword(senha));
+            params.push(await hashPassword(senha));
         }
         query += ' WHERE id = ? AND tenant_id = ?';
         params.push(userId, tenantId);

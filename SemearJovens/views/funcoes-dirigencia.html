@@ -93,13 +93,13 @@
                         <h6><i class="fa-solid fa-users icon-accent"></i> Usuários (dirigentes)</h6>
                         <div class="text-muted small mb-2">Selecione os usuários para esta função.</div>
                         <div class="row g-2">
-                            <div class="col-md-6" v-for="u in usuarios" :key="`u-${u.id}`">
+                            <div class="col-md-6" v-for="u in usuariosVinculaveis" :key="`u-${u.id}`">
                                 <div class="form-check border rounded px-2 py-1">
                                     <input class="form-check-input" type="checkbox"
-                                        :id="`fd-user-${u.id}`"
-                                        :checked="form.usuarios.includes(u.id)"
-                                        @change="toggleUsuario(u.id)">
-                                    <label class="form-check-label" :for="`fd-user-${u.id}`">
+                                        :id="`fd-user-${u.vinculacao_id}`"
+                                        :checked="form.usuarios.includes(u.vinculacao_id)"
+                                        @change="toggleUsuario(u.vinculacao_id)">
+                                    <label class="form-check-label" :for="`fd-user-${u.vinculacao_id}`">
                                         {{ u.nome_completo }}
                                     </label>
                                 </div>
@@ -145,6 +145,18 @@
                     }
                 };
             },
+            computed: {
+                usuariosVinculaveis() {
+                    return (this.usuarios || []).filter((u) => {
+                        const vinculacaoId = Number(u && u.legacy_user_id);
+                        return Number.isInteger(vinculacaoId) && vinculacaoId > 0 && !u.managed_by_parish_admin;
+                    }).map((u) => ({
+                        ...u,
+                        id: Number(u.id),
+                        vinculacao_id: Number(u.legacy_user_id)
+                    }));
+                }
+            },
             methods: {
                 resetForm() {
                     this.form = { nome: '', descricao: '', usuarios: [] };
@@ -153,6 +165,9 @@
                 async carregarUsuarios() {
                     const res = await fetch('/api/usuarios');
                     this.usuarios = res.ok ? await res.json() : [];
+                    this.form.usuarios = (this.form.usuarios || []).filter((id) => (
+                        this.usuariosVinculaveis.some((u) => Number(u.vinculacao_id) === Number(id))
+                    ));
                 },
                 async carregarFuncoes() {
                     const res = await fetch('/api/funcoes-dirigencia');
@@ -188,10 +203,12 @@
                     this.modalNovaFuncao.show();
                 },
                 toggleUsuario(id) {
-                    if (this.form.usuarios.includes(id)) {
-                        this.form.usuarios = this.form.usuarios.filter(i => i !== id);
+                    const usuarioId = Number(id);
+                    if (!Number.isInteger(usuarioId) || usuarioId <= 0) return;
+                    if (this.form.usuarios.includes(usuarioId)) {
+                        this.form.usuarios = this.form.usuarios.filter(i => i !== usuarioId);
                     } else {
-                        this.form.usuarios.push(id);
+                        this.form.usuarios.push(usuarioId);
                     }
                 },
                 async salvarFuncao() {

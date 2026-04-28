@@ -145,6 +145,70 @@
             background: #fff;
         }
 
+        .sort-button {
+            width: 100%;
+            border: 0;
+            background: transparent;
+            padding: 0;
+            font-weight: 700;
+            color: inherit;
+            display: inline-flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 0.35rem;
+            line-height: 1.08;
+        }
+
+        .lista-mestre-grid.table > :not(caption) > * > * {
+            padding: 0.58rem 0.6rem !important;
+        }
+
+        .lista-mestre-grid thead th {
+            padding: 0.7rem 0.6rem !important;
+            font-size: 0.95rem;
+            text-align: left !important;
+        }
+
+        .lista-mestre-grid tbody td {
+            padding: 0.58rem 0.6rem !important;
+            font-size: 0.94rem;
+            line-height: 1.15;
+            vertical-align: middle;
+            text-align: left !important;
+            background: #fff;
+        }
+
+        .lista-mestre-grid tbody tr.lista-mestre-row-striped td {
+            background: #fffdf9;
+        }
+
+        .lista-mestre-grid .btn.btn-edit-standard.btn-sm {
+            min-width: 58px !important;
+            min-height: 30px !important;
+            padding: 0.22rem 0.62rem !important;
+            border-radius: 8px !important;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 12px rgba(217, 166, 80, 0.2);
+        }
+
+        .lista-mestre-mobile-name-wrap {
+            min-height: 1.8rem;
+            gap: 0.32rem;
+            line-height: 1.12;
+            display: flex;
+            align-items: center;
+        }
+
+        .lista-mestre-grid .nome-clicavel {
+            line-height: 1.12;
+        }
+
+        @media (max-width: 767.98px) {
+            .lista-mestre-grid.table > :not(caption) > * > * {
+                padding: 0.72rem 0.65rem !important;
+            }
+        }
+
         .lista-mestre-tabs-bar {
             align-items: flex-end;
             gap: 0.75rem;
@@ -1092,25 +1156,29 @@
 
                 <div v-else-if="aba==='membros'" class="card border-0 shadow-sm">
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle mb-0">
+                        <table class="table table-hover align-middle mb-0 lista-mestre-grid">
                             <thead class="table-light">
                                 <tr>
-                                    <th v-if="colunasVisiveisJovens.Nome">Nome</th>
-                                    <th v-if="colunasVisiveisJovens.Telefone">Telefone</th>
-                                    <th v-if="colunasVisiveisJovens.EjcOrigem">EJC de Origem</th>
-                                    <th v-if="colunasVisiveisJovens.Musico">Músico</th>
-                                    <th v-if="colunasVisiveisJovens.TermosUso">Termos de uso</th>
-                                    <th v-if="colunasVisiveisJovens.Idade">Idade</th>
-                                    <th v-if="colunasVisiveisJovens.Sexo">Sexo</th>
-                                    <th v-if="colunasVisiveisJovens.Moita">Moita</th>
-                                    <th v-if="colunasVisiveisJovens.Pcd">PcD</th>
-                                    <th v-if="colunasVisiveisJovens.RestricaoAlimentar">Restrição alimentar</th>
-                                    <th style="width: 120px;">Ações</th>
+                                    <th v-if="colunasVisiveisJovens.Nome"><span class="sort-button">Nome</span></th>
+                                    <th v-if="colunasVisiveisJovens.Telefone"><span class="sort-button">Telefone</span></th>
+                                    <th v-if="colunasVisiveisJovens.EjcOrigem"><span class="sort-button">EJC de Origem</span></th>
+                                    <th v-if="colunasVisiveisJovens.Musico"><span class="sort-button">Músico</span></th>
+                                    <th v-if="colunasVisiveisJovens.TermosUso"><span class="sort-button">Termos de uso</span></th>
+                                    <th v-if="colunasVisiveisJovens.Idade"><span class="sort-button">Idade</span></th>
+                                    <th v-if="colunasVisiveisJovens.Sexo"><span class="sort-button">Sexo</span></th>
+                                    <th v-if="colunasVisiveisJovens.Moita"><span class="sort-button">Moita</span></th>
+                                    <th v-if="colunasVisiveisJovens.Pcd"><span class="sort-button">PcD</span></th>
+                                    <th v-if="colunasVisiveisJovens.RestricaoAlimentar"><span class="sort-button">Restrição alimentar</span></th>
+                                    <th style="width: 120px;"><span class="sort-button">Ações</span></th>
                                 </tr>
                             </thead>
                             <tbody>
-                                <tr v-for="item in itensFiltrados" :key="item.jovem_id || (item.nome_completo + '|' + item.telefone)">
-                                    <td v-if="colunasVisiveisJovens.Nome">{{ item.nome_completo }}</td>
+                                <tr v-for="(item, index) in itensFiltrados" :key="item.jovem_id || (item.nome_completo + '|' + item.telefone)" :class="{ 'lista-mestre-row-striped': index % 2 === 1 }">
+                                    <td v-if="colunasVisiveisJovens.Nome">
+                                        <div class="lista-mestre-mobile-name-wrap">
+                                            <strong class="nome-clicavel" @click="abrirModalEditar(item)">{{ item.nome_completo }}</strong>
+                                        </div>
+                                    </td>
                                     <td v-if="colunasVisiveisJovens.Telefone">{{ item.telefone || '-' }}</td>
                                     <td v-if="colunasVisiveisJovens.EjcOrigem">{{ formatarOrigem(item) }}</td>
                                     <td v-if="colunasVisiveisJovens.Musico">{{ item.eh_musico ? 'Sim' : 'Não' }}</td>
@@ -1151,8 +1219,8 @@
                             <tbody>
                                 <tr v-for="c in casaisOutrosFiltrados" :key="`outro-${c.id}`">
                                     <td v-if="colunasVisiveisTios.Casal">
-                                        <div class="fw-semibold">{{ c.nome_tio }}</div>
-                                        <div class="text-muted">{{ c.nome_tia }}</div>
+                                        <div class="fw-semibold nome-clicavel" @click="abrirEditarCasal(c)">{{ c.nome_tio }}</div>
+                                        <div class="fw-semibold nome-clicavel" @click="abrirEditarCasal(c)">{{ c.nome_tia }}</div>
                                     </td>
                                     <td v-if="colunasVisiveisTios.Telefones">
                                         <div>{{ c.telefone_tio || '-' }}</div>
@@ -1388,7 +1456,7 @@
                                             </select>
                                         </div>
                                         <div class="col-lg-4">
-                                            <label class="text-muted small">É músico?</label>
+                                            <label class="text-muted small">Habilidades Musicais</label>
                                             <select class="form-select" v-model="novo.eh_musico">
                                                 <option :value="false">Não</option>
                                                 <option :value="true">Sim</option>
@@ -1638,7 +1706,7 @@
 
                                         <template v-else-if="subAbaDadosOutro === 'participacao'">
                                             <div class="col-12">
-                                                <label class="text-muted small mb-0">É músico?</label>
+                                                <label class="text-muted small mb-0">Habilidades Musicais</label>
                                                 <div v-if="!isEditingOutroFicha" class="py-1 px-2 bg-light border rounded">
                                                     {{ jovemOutroFicha.eh_musico ? 'Sim' : 'Não' }}
                                                     <span v-if="jovemOutroFicha.eh_musico && normalizarInstrumentosOutro(jovemOutroFicha.instrumentos_musicais).length">
@@ -1648,7 +1716,7 @@
                                                 <div v-else>
                                                     <div class="form-check">
                                                         <input class="form-check-input" type="checkbox" id="ehMusicoOutroFicha" v-model="jovemOutroFicha.eh_musico" @change="onMusicoToggleOutroFicha">
-                                                        <label class="form-check-label" for="ehMusicoOutroFicha">Sim, é músico</label>
+                                                        <label class="form-check-label" for="ehMusicoOutroFicha">Possui habilidades musicais</label>
                                                     </div>
                                                     <div v-if="jovemOutroFicha.eh_musico" class="mt-2 border rounded p-2 bg-light">
                                                         <small class="text-muted d-block mb-1">Selecione os instrumentos (pode marcar mais de um):</small>

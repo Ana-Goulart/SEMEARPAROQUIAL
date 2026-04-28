@@ -1353,8 +1353,8 @@ router.post('/:token/presencas', async (req, res) => {
                         }
                         paramsUpdate.push(jovemIdFinal, tenantId);
                         await pool.query(
-                            `UPDATE jovens SET ${camposUpdate.join(', ')} WHERE id = ? AND tenant_id = ?`,
-                            paramsUpdate
+                            'UPDATE jovens SET ? WHERE id = ? AND tenant_id = ?',
+                            [Object.fromEntries(camposUpdate.map((campo, idx) => [String(campo).split('=')[0].trim(), paramsUpdate[idx]])), jovemIdFinal, tenantId]
                         );
                     } else {
                         const camposInsert = ['tenant_id', 'nome_completo', 'telefone', 'origem_ejc_tipo', 'outro_ejc_id'];

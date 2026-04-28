@@ -1,5 +1,6 @@
 const express = require('express');
 const crypto = require('crypto');
+const bcrypt = require('bcrypt');
 const { pool, corePool } = require('../database');
 
 const router = express.Router();
@@ -9,8 +10,14 @@ const CORE_LEGACY_SOURCE = String(process.env.CORE_LEGACY_SOURCE || 'db_semearca
 
 let coreContextCache = null;
 
-function hashPassword(password) {
-    return crypto.createHash('sha256').update(String(password)).digest('hex');
+const BCRYPT_ROUNDS = Number(process.env.BCRYPT_ROUNDS || 12);
+
+function hashLegacyPassword(password) {
+    return crypto.createHash('sha256').update(String(password || '')).digest('hex');
+}
+
+async function hashPassword(password) {
+    return bcrypt.hash(String(password || ''), BCRYPT_ROUNDS);
 }
 
 async function getCoreContext(connection) {
@@ -182,7 +189,7 @@ router.post('/', async (req, res) => {
     }
 
     try {
-        const senhaHash = hashPassword(senha);
+        const senhaHash = await hashPassword(senha);
         const [result] = await pool.query(
             `INSERT INTO usuarios (nome_completo, username, senha, grupo, ativo)
              VALUES (?, ?, ?, ?, ?)`,
@@ -235,7 +242,7 @@ router.put('/:id', async (req, res) => {
 
         if (senha && String(senha).trim()) {
             query += ', senha = ?';
-            senhaHash = hashPassword(senha);
+            senhaHash = await hashPassword(senha);
             params.push(senhaHash);
         }
 

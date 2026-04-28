@@ -379,10 +379,9 @@ router.delete('/equipes/:id', async (req, res) => {
         );
         const idsComissao = (membros || []).map(m => m.comissao_id).filter(Boolean);
         if (idsComissao.length) {
-            const placeholders = idsComissao.map(() => '?').join(', ');
             await connection.query(
-                `DELETE FROM jovens_comissoes WHERE id IN (${placeholders})`,
-                idsComissao
+                'DELETE FROM jovens_comissoes WHERE id IN (?)',
+                [idsComissao]
             );
         }
 

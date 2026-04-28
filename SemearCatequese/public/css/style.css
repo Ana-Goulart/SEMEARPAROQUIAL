@@ -12,6 +12,18 @@
     --brand-shadow: 0 12px 30px rgba(15, 23, 42, 0.12);
 }
 
+:root[data-theme="dark"] {
+    --brand-primary: #c8a15a;
+    --brand-primary-600: #af8b4f;
+    --brand-accent: #d4a15a;
+    --brand-ink: #f2e7d1;
+    --brand-muted: #baa584;
+    --brand-border: rgba(210, 184, 136, 0.16);
+    --brand-surface: #241d15;
+    --brand-surface-2: #2d2419;
+    --brand-shadow: 0 14px 34px rgba(0, 0, 0, 0.32);
+}
+
 * {
     box-sizing: border-box;
 }
@@ -21,6 +33,10 @@ body {
     font-family: 'Manrope', 'Segoe UI', sans-serif;
     color: var(--brand-ink);
     background: radial-gradient(circle at top left, #ffffff 0%, #f6f7fb 45%, #eef2f7 100%);
+}
+
+:root[data-theme="dark"] body {
+    background: radial-gradient(circle at top left, #211a13 0%, #18130f 48%, #120f0c 100%);
 }
 
 h1, h2, h3, h4, h5, h6, .brand-name {
@@ -44,6 +60,11 @@ h1, h2, h3, h4, h5, h6, .brand-name {
     padding: 16px 12px;
     position: sticky;
     top: 0;
+}
+
+:root[data-theme="dark"] #sidebar {
+    background: linear-gradient(180deg, #1d1812 0%, #221b14 100%);
+    border-right-color: rgba(210, 184, 136, 0.14);
 }
 
 .logo-box {
@@ -79,6 +100,10 @@ h1, h2, h3, h4, h5, h6, .brand-name {
     color: #1f2937;
 }
 
+:root[data-theme="dark"] .brand-subtitle {
+    color: #d8c5a5;
+}
+
 .nav-link {
     color: #334155;
     text-decoration: none;
@@ -102,6 +127,20 @@ h1, h2, h3, h4, h5, h6, .brand-name {
     font-weight: 700;
 }
 
+:root[data-theme="dark"] .nav-link {
+    color: #e8dcc5;
+}
+
+:root[data-theme="dark"] .nav-link:hover {
+    background: rgba(200, 161, 90, 0.12);
+    color: #f2e7d1;
+}
+
+:root[data-theme="dark"] .nav-link.active {
+    background: rgba(200, 161, 90, 0.16);
+    color: #f2e7d1;
+}
+
 #main-content {
     flex: 1;
     min-width: 0;
@@ -116,6 +155,10 @@ h1, h2, h3, h4, h5, h6, .brand-name {
     position: sticky;
     top: 0;
     z-index: 100;
+}
+
+:root[data-theme="dark"] #page-topbar {
+    background: #1c1711;
 }
 
 .page-content {
@@ -143,6 +186,28 @@ h1, h2, h3, h4, h5, h6, .brand-name {
     padding: 16px;
     background: #fff;
     box-shadow: 0 6px 18px rgba(15, 23, 42, 0.06);
+}
+
+:root[data-theme="dark"] .metric-card,
+:root[data-theme="dark"] .card,
+:root[data-theme="dark"] .modal-content,
+:root[data-theme="dark"] .table,
+:root[data-theme="dark"] .table > :not(caption) > * > *,
+:root[data-theme="dark"] .table-light,
+:root[data-theme="dark"] .form-control,
+:root[data-theme="dark"] .form-select,
+:root[data-theme="dark"] .badge.bg-light,
+:root[data-theme="dark"] .badge.text-dark {
+    background: linear-gradient(180deg, rgba(36, 29, 21, 0.98), rgba(29, 24, 18, 0.96)) !important;
+    background-color: #241d15 !important;
+    color: #f2e7d1 !important;
+    border-color: rgba(210, 184, 136, 0.14) !important;
+}
+
+:root[data-theme="dark"] .text-muted,
+:root[data-theme="dark"] .text-dark,
+:root[data-theme="dark"] .metric-sub {
+    color: #baa584 !important;
 }
 
 .metric-title {
