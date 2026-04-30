@@ -38,6 +38,15 @@ async function garantirTabelaFinanceiro() {
     if (!(await hasColumn('financeiro_movimentacoes', 'usuario_nome'))) {
         await pool.query('ALTER TABLE financeiro_movimentacoes ADD COLUMN usuario_nome VARCHAR(255) NULL AFTER usuario_id');
     }
+    await pool.query(`
+        UPDATE financeiro_movimentacoes fm
+        JOIN usuarios u
+          ON u.id = fm.usuario_id
+         AND u.tenant_id = fm.tenant_id
+        SET fm.usuario_nome = COALESCE(NULLIF(TRIM(u.nome_completo), ''), NULLIF(TRIM(u.username), ''), fm.usuario_nome)
+        WHERE fm.usuario_id IS NOT NULL
+          AND (fm.usuario_nome IS NULL OR TRIM(fm.usuario_nome) = '')
+    `);
     tabelaFinanceiroGarantida = true;
 }
 
@@ -56,8 +65,18 @@ async function buscarSaldoAtual(tenantId, connection = pool) {
     return Number(rows && rows[0] ? rows[0].saldo_atual : 0);
 }
 
-router.get('/resumo', async (req, res) => {
+function validarTenantId(req, res) {
     const tenantId = getTenantId(req);
+    if (!tenantId) {
+        res.status(401).json({ error: 'Tenant não identificado.' });
+        return null;
+    }
+    return tenantId;
+}
+
+router.get('/resumo', async (req, res) => {
+    const tenantId = validarTenantId(req, res);
+    if (!tenantId) return;
     try {
         await garantirTabelaFinanceiro();
         const saldo = await buscarSaldoAtual(tenantId);
@@ -69,7 +88,8 @@ router.get('/resumo', async (req, res) => {
 });
 
 router.get('/movimentacoes', async (req, res) => {
-    const tenantId = getTenantId(req);
+    const tenantId = validarTenantId(req, res);
+    if (!tenantId) return;
     try {
         await garantirTabelaFinanceiro();
         const [rows] = await pool.query(`
@@ -86,7 +106,8 @@ router.get('/movimentacoes', async (req, res) => {
 });
 
 router.post('/movimentacoes', async (req, res) => {
-    const tenantId = getTenantId(req);
+    const tenantId = validarTenantId(req, res);
+    if (!tenantId) return;
     const tipo = String(req.body.tipo || '').trim().toUpperCase();
     const descricao = String(req.body.descricao || '').trim();
     const valor = Number(req.body.valor);
@@ -105,9 +126,9 @@ router.post('/movimentacoes', async (req, res) => {
         return res.status(400).json({ error: 'Valor inválido.' });
     }
 
+    await garantirTabelaFinanceiro();
     const connection = await pool.getConnection();
     try {
-        await garantirTabelaFinanceiro();
         await connection.beginTransaction();
 
         const saldoAtual = await buscarSaldoAtual(tenantId, connection);
@@ -124,10 +145,18 @@ router.post('/movimentacoes', async (req, res) => {
 
         await connection.commit();
         const novoSaldo = await buscarSaldoAtual(tenantId);
+        const [rows] = await pool.query(
+            `SELECT id, tipo, valor, descricao, usuario_id, usuario_nome, created_at
+             FROM financeiro_movimentacoes
+             WHERE id = ? AND tenant_id = ?
+             LIMIT 1`,
+            [result.insertId, tenantId]
+        );
         res.status(201).json({
             id: result.insertId,
             message: 'Movimentação registrada com sucesso.',
-            saldo_atual: novoSaldo
+            saldo_atual: novoSaldo,
+            movimentacao: rows && rows[0] ? rows[0] : null
         });
     } catch (err) {
         await connection.rollback();
@@ -139,7 +168,8 @@ router.post('/movimentacoes', async (req, res) => {
 });
 
 router.post('/zerar', async (req, res) => {
-    const tenantId = getTenantId(req);
+    const tenantId = validarTenantId(req, res);
+    if (!tenantId) return;
     try {
         await garantirTabelaFinanceiro();
         await pool.query('DELETE FROM financeiro_movimentacoes WHERE tenant_id = ?', [tenantId]);

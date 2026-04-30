@@ -93,6 +93,21 @@
             color: #b88732;
         }
 
+        .pastoral-add-button {
+            width: 0.95rem;
+            min-width: 0.95rem;
+            height: 0.95rem;
+            padding: 0;
+            border-radius: 50%;
+            font-size: 0.65rem;
+            font-weight: 700;
+            line-height: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            vertical-align: middle;
+        }
+
         .sort-button {
             width: 100%;
             border: 0;
@@ -1245,7 +1260,16 @@
                                             class="form-control" lang="pt-BR">
                                     </div>
                                     <div class="col-md-12" v-show="subAbaDados === 'participacao'">
-                                        <label class="text-muted small mb-0">Pastorais</label>
+                                        <div class="d-flex align-items-center gap-2 mb-0">
+                                            <label class="text-muted small mb-0">Pastorais</label>
+                                            <button
+                                                type="button"
+                                                class="btn btn-outline-secondary btn-sm rounded-circle pastoral-add-button"
+                                                @click="abrirNovaPastoralNaFicha"
+                                                title="Cadastrar nova pastoral">
+                                                +
+                                            </button>
+                                        </div>
                                         <div v-if="!isEditing" class="py-1 px-2 bg-light border rounded">
                                             <span v-if="jovemPastoraisTexto">{{ jovemPastoraisTexto }}</span>
                                             <span v-else>Não pertence a nenhuma pastoral</span>
@@ -2537,6 +2561,78 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                 </div>
             </div>
         </div>
+
+        <div class="modal fade" id="modalPastoralFicha" tabindex="-1" aria-hidden="true" style="z-index: 1065;">
+            <div class="modal-dialog modal-lg" style="z-index: 1066;">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-light">
+                        <h5 class="modal-title">{{ pastoralForm.id ? 'Editar pastoral' : 'Nova pastoral' }}</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <ul class="nav nav-tabs mb-3">
+                            <li class="nav-item">
+                                <button class="nav-link" :class="{active: pastoralAba==='dados'}" @click="pastoralAba='dados'">Dados</button>
+                            </li>
+                            <li class="nav-item" v-if="pastoralForm.id">
+                                <button class="nav-link" :class="{active: pastoralAba==='jovens'}" @click="abrirAbaJovensPastoralFicha">Jovens que pertencem a esta pastoral</button>
+                            </li>
+                        </ul>
+
+                        <div v-if="pastoralAba === 'dados'">
+                            <div class="mb-3">
+                                <label class="form-label">Nome</label>
+                                <input type="text" class="form-control" v-model.trim="pastoralForm.nome" maxlength="180">
+                            </div>
+                            <div class="mb-1">
+                                <label class="form-label">Descrição</label>
+                                <textarea class="form-control" rows="3" v-model.trim="pastoralForm.descricao" maxlength="255"></textarea>
+                            </div>
+                        </div>
+
+                        <div v-if="pastoralAba === 'jovens'">
+                            <div class="mb-3">
+                                <label class="form-label">Adicionar jovem da Lista Mestre</label>
+                                <div class="d-flex gap-2">
+                                    <input type="text" class="form-control" v-model.trim="pastoralBusca" placeholder="Buscar por nome">
+                                    <button class="btn btn-outline-primary" @click="buscarJovensPastoralFicha" :disabled="!pastoralBusca">Buscar</button>
+                                </div>
+                                <div v-if="pastoralResultados.length" class="mt-2">
+                                    <select class="form-select" v-model="pastoralSelecionado">
+                                        <option value="">Selecione um jovem</option>
+                                        <option v-for="j in pastoralResultados" :key="`pastoral-ficha-j-${j.id}`" :value="j.id">{{ j.nome_completo }}</option>
+                                    </select>
+                                    <div class="text-end mt-2">
+                                        <button class="btn btn-success btn-sm" @click="adicionarJovemPastoralFicha" :disabled="!pastoralSelecionado">Adicionar</button>
+                                    </div>
+                                </div>
+                                <div v-else-if="pastoralBusca" class="text-muted small mt-2">Nenhum jovem encontrado.</div>
+                            </div>
+
+                            <div class="border rounded p-2 bg-white">
+                                <div v-if="pastoralJovensLoading" class="text-center py-3">
+                                    <div class="spinner-border spinner-border-sm text-primary me-2"></div>Carregando...
+                                </div>
+                                <ul v-else-if="pastoralJovens.length" class="list-group list-group-flush">
+                                    <li v-for="j in pastoralJovens" :key="`pfj-${j.id}`" class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <strong>{{ j.nome_completo }}</strong>
+                                            <div class="text-muted small">{{ j.telefone || '-' }}</div>
+                                        </div>
+                                        <button class="btn btn-outline-danger btn-sm" @click="removerJovemPastoralFicha(j)">Remover</button>
+                                    </li>
+                                </ul>
+                                <div v-else class="text-muted small text-center py-3">Nenhum jovem vinculado.</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
+                        <button class="btn btn-primary" @click="salvarPastoralNaFicha">Salvar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -2575,6 +2671,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                     modalMissaoExterna: null,
                     modalMoita: null,
                     modalGarcomMissaoExterna: null,
+                    modalPastoralFicha: null,
                     outrosEjcsList: [], // Lista de EJCs de fora
                     eccEncontros: [],
                     funcoesMoita: [],
@@ -2583,6 +2680,13 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                     pastorais: [],
                     jovemPastoraisSelecionadas: [],
                     jovemPertencePastoral: false,
+                    pastoralForm: { id: null, nome: '', descricao: '' },
+                    pastoralAba: 'dados',
+                    pastoralJovens: [],
+                    pastoralJovensLoading: false,
+                    pastoralBusca: '',
+                    pastoralResultados: [],
+                    pastoralSelecionado: '',
                     tiosCasais: [],
                     familiaresJovem: [],
                     familiaresJovemRequestSeq: 0,
@@ -3512,6 +3616,124 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                 onTogglePastoral() {
                     if (!this.jovemPertencePastoral) {
                         this.jovemPastoraisSelecionadas = [];
+                    }
+                },
+                abrirNovaPastoralNaFicha() {
+                    this.pastoralForm = { id: null, nome: '', descricao: '' };
+                    this.pastoralAba = 'dados';
+                    this.pastoralJovens = [];
+                    this.pastoralBusca = '';
+                    this.pastoralResultados = [];
+                    this.pastoralSelecionado = '';
+                    if (!this.modalPastoralFicha) {
+                        this.modalPastoralFicha = new bootstrap.Modal(document.getElementById('modalPastoralFicha'));
+                    }
+                    this.modalPastoralFicha.show();
+                },
+                async abrirAbaJovensPastoralFicha() {
+                    this.pastoralAba = 'jovens';
+                    await this.carregarJovensPastoralFicha();
+                },
+                async salvarPastoralNaFicha() {
+                    if (!String(this.pastoralForm.nome || '').trim()) {
+                        alert('Nome é obrigatório.');
+                        return;
+                    }
+                    try {
+                        const isEdit = !!this.pastoralForm.id;
+                        const res = await fetch(isEdit ? `/api/pastorais/${this.pastoralForm.id}` : '/api/pastorais', {
+                            method: isEdit ? 'PUT' : 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                nome: this.pastoralForm.nome,
+                                descricao: this.pastoralForm.descricao
+                            })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao salvar pastoral.');
+                            return;
+                        }
+
+                        await this.carregarPastorais();
+
+                        const pastoralId = Number(data.id);
+                        if (!isEdit && Number.isFinite(pastoralId) && pastoralId > 0) {
+                            this.jovemPertencePastoral = true;
+                            if (!this.jovemPastoraisSelecionadas.includes(pastoralId)) {
+                                this.jovemPastoraisSelecionadas = [...this.jovemPastoraisSelecionadas, pastoralId];
+                            }
+                        }
+
+                        if (this.modalPastoralFicha) this.modalPastoralFicha.hide();
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao salvar pastoral.');
+                    }
+                },
+                async carregarJovensPastoralFicha() {
+                    if (!this.pastoralForm.id) return;
+                    this.pastoralJovensLoading = true;
+                    try {
+                        const res = await fetch(`/api/pastorais/${this.pastoralForm.id}/jovens`);
+                        const data = await res.json().catch(() => ([]));
+                        this.pastoralJovens = res.ok && Array.isArray(data) ? data : [];
+                    } catch (err) {
+                        console.error(err);
+                        this.pastoralJovens = [];
+                    } finally {
+                        this.pastoralJovensLoading = false;
+                    }
+                },
+                async buscarJovensPastoralFicha() {
+                    if (!String(this.pastoralBusca || '').trim()) return;
+                    try {
+                        const res = await fetch(`/api/lista-mestre/search?q=${encodeURIComponent(this.pastoralBusca)}`);
+                        const data = await res.json().catch(() => ([]));
+                        this.pastoralResultados = res.ok && Array.isArray(data) ? data : [];
+                        this.pastoralSelecionado = this.pastoralResultados.length ? String(this.pastoralResultados[0].id || '') : '';
+                    } catch (err) {
+                        console.error(err);
+                        this.pastoralResultados = [];
+                        this.pastoralSelecionado = '';
+                    }
+                },
+                async adicionarJovemPastoralFicha() {
+                    if (!this.pastoralForm.id || !this.pastoralSelecionado) return;
+                    try {
+                        const res = await fetch(`/api/pastorais/${this.pastoralForm.id}/jovens`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ jovem_id: Number(this.pastoralSelecionado) })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao vincular jovem.');
+                            return;
+                        }
+                        this.pastoralBusca = '';
+                        this.pastoralResultados = [];
+                        this.pastoralSelecionado = '';
+                        await this.carregarJovensPastoralFicha();
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao vincular jovem.');
+                    }
+                },
+                async removerJovemPastoralFicha(jovem) {
+                    if (!this.pastoralForm.id || !jovem || !jovem.id) return;
+                    if (!(await uiConfirm('Remover este jovem da pastoral?'))) return;
+                    try {
+                        const res = await fetch(`/api/pastorais/${this.pastoralForm.id}/jovens/${jovem.id}`, { method: 'DELETE' });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao remover jovem.');
+                            return;
+                        }
+                        await this.carregarJovensPastoralFicha();
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao remover jovem.');
                     }
                 },
                 async salvarPastoraisJovem() {
@@ -5552,6 +5774,14 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                 if (modalCirculoEl) {
                     this.modalCirculoListaMestreHiddenHandler = () => this.onModalCirculoListaMestreHidden();
                     modalCirculoEl.addEventListener('hidden.bs.modal', this.modalCirculoListaMestreHiddenHandler);
+                }
+                const modalPastoralFichaEl = document.getElementById('modalPastoralFicha');
+                if (modalPastoralFichaEl) {
+                    modalPastoralFichaEl.addEventListener('hidden.bs.modal', () => {
+                        if (document.getElementById('modalEditar')?.classList.contains('show')) {
+                            document.body.classList.add('modal-open');
+                        }
+                    });
                 }
                 await this.carregarCores();
                 this.carregarTiosCasais();

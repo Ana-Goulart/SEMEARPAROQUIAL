@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const { pool } = require('../database');
+const { decryptJovemRecord } = require('../lib/jovensSensitiveData');
 
 let estruturaGarantida = false;
 
@@ -137,9 +138,10 @@ router.get('/reservas', async (req, res) => {
             WHERE mr.tenant_id = ?
             ORDER BY j.nome_completo ASC
         `, [tenantId]);
+        const registros = (rows || []).map((item) => decryptJovemRecord(item));
         res.json({
-            mulheres: rows.filter(r => r.lista === 'MULHERES'),
-            homens: rows.filter(r => r.lista === 'HOMENS')
+            mulheres: registros.filter(r => r.lista === 'MULHERES'),
+            homens: registros.filter(r => r.lista === 'HOMENS')
         });
     } catch (err) {
         console.error('Erro ao listar reservas de moita:', err);
@@ -411,7 +413,7 @@ router.get('/registros', async (req, res) => {
               AND jc.tenant_id = ?
             ORDER BY jc.id DESC
         `, [tenantId]);
-        res.json(rows);
+        res.json((rows || []).map((item) => decryptJovemRecord(item)));
     } catch (err) {
         console.error('Erro ao listar registros de moita:', err);
         res.status(500).json({ error: 'Erro ao listar registros de moita' });

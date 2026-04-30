@@ -113,12 +113,20 @@ async function requireLoginView(req, res, next) {
         await purgeExpiredUsers();
         await ensureTenantStructure();
         await ensureTenantIsolation();
-        const [rows] = await pool.query('SELECT id, tenant_id FROM usuarios WHERE id = ? LIMIT 1', [req.user.id]);
+        const [rows] = await pool.query(
+            'SELECT id, tenant_id, nome_completo, username FROM usuarios WHERE id = ? LIMIT 1',
+            [req.user.id]
+        );
         if (!rows.length) {
             clearSessionCookie(res);
             return res.redirect('/login');
         }
-        req.user = { id: rows[0].id, tenant_id: rows[0].tenant_id || null };
+        req.user = {
+            id: rows[0].id,
+            tenant_id: rows[0].tenant_id || null,
+            nome_completo: rows[0].nome_completo || null,
+            username: rows[0].username || null
+        };
     } catch (err) {
         console.error('Erro ao validar sessão de view:', err);
         clearSessionCookie(res);
@@ -133,12 +141,20 @@ async function requireLoginApi(req, res, next) {
         await purgeExpiredUsers();
         await ensureTenantStructure();
         await ensureTenantIsolation();
-        const [rows] = await pool.query('SELECT id, tenant_id FROM usuarios WHERE id = ? LIMIT 1', [req.user.id]);
+        const [rows] = await pool.query(
+            'SELECT id, tenant_id, nome_completo, username FROM usuarios WHERE id = ? LIMIT 1',
+            [req.user.id]
+        );
         if (!rows.length) {
             clearSessionCookie(res);
             return res.status(401).json({ error: 'Sessão expirada.' });
         }
-        req.user = { id: rows[0].id, tenant_id: rows[0].tenant_id || null };
+        req.user = {
+            id: rows[0].id,
+            tenant_id: rows[0].tenant_id || null,
+            nome_completo: rows[0].nome_completo || null,
+            username: rows[0].username || null
+        };
     } catch (err) {
         console.error('Erro ao validar sessão de API:', err);
         clearSessionCookie(res);

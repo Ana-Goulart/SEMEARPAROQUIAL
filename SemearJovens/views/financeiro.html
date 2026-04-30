@@ -10,10 +10,12 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <link rel="stylesheet" href="/css/velzon-theme.css">
     <link rel="stylesheet" href="/css/style.css">
     <script src="/js/ui-kit.js"></script>
     <script src="/js/menu.js"></script>
+    <script src="/js/excel-utils.js"></script>
     <style>
         .saldo-card {
             border: 1px solid #e6ecf5;
@@ -37,6 +39,48 @@
             text-align: center;
         }
 
+        .financeiro-modal .modal-content {
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        .financeiro-modal-header {
+            background: linear-gradient(180deg, #fffaf1 0%, #fff3df 100%);
+            border-bottom: 1px solid rgba(197, 139, 42, 0.18);
+            padding: 1rem 1.25rem;
+        }
+
+        .financeiro-modal-title {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            color: #223750;
+            font-weight: 700;
+        }
+
+        .financeiro-modal-badge {
+            width: 38px;
+            height: 38px;
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(201, 146, 59, 0.16);
+            color: #c58b2a;
+            flex-shrink: 0;
+        }
+
+        .financeiro-modal-body {
+            padding: 1.25rem;
+            background: #fff;
+        }
+
+        .financeiro-modal-footer {
+            background: #eef3f8;
+            border-top: 1px solid rgba(34, 55, 80, 0.08);
+            padding: 1rem 1.25rem;
+        }
+
         :root[data-theme="dark"] .saldo-card {
             border-color: rgba(210, 184, 136, 0.14);
             background: linear-gradient(180deg, rgba(36, 29, 21, 0.98), rgba(29, 24, 18, 0.96));
@@ -53,6 +97,9 @@
                     <p class="text-muted mb-0">Controle de entradas, saídas e saldo do EJC.</p>
                 </div>
                 <div class="d-flex gap-2">
+                    <button class="btn btn-soft-primary" @click="exportarHistoricoExcel">
+                        <i class="fa-solid fa-file-excel me-1"></i> Exportar Excel
+                    </button>
                     <button class="btn btn-outline-danger" @click="zerarSaldo">Zerar saldo</button>
                     <button class="btn btn-soft-primary" @click="carregarTudo">
                         <i class="fas fa-sync-alt"></i> Atualizar
@@ -122,12 +169,17 @@
 
         <div class="modal fade" id="modalMovimentacao" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog">
-                <div class="modal-content border-0 shadow">
-                    <div class="modal-header" :class="form.tipo === 'ENTRADA' ? 'bg-success text-white' : 'bg-danger text-white'">
-                        <h5 class="modal-title">{{ form.tipo === 'ENTRADA' ? 'Registrar Entrada' : 'Registrar Saída' }}</h5>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                <div class="modal-content border-0 shadow financeiro-modal">
+                    <div class="modal-header financeiro-modal-header">
+                        <h5 class="modal-title financeiro-modal-title">
+                            <span class="financeiro-modal-badge">
+                                <i class="fa-solid" :class="form.tipo === 'ENTRADA' ? 'fa-plus' : 'fa-minus'"></i>
+                            </span>
+                            <span>{{ form.tipo === 'ENTRADA' ? 'Registrar Entrada' : 'Registrar Saída' }}</span>
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
-                    <div class="modal-body">
+                    <div class="modal-body financeiro-modal-body">
                         <div class="mb-3">
                             <label class="form-label">Valor *</label>
                             <input type="text" inputmode="decimal" v-model="form.valor" @input="onValorInput"
@@ -138,10 +190,12 @@
                             <textarea v-model="form.descricao" class="form-control" rows="3" placeholder="Descreva esta movimentação"></textarea>
                         </div>
                     </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn" :class="form.tipo === 'ENTRADA' ? 'btn-success' : 'btn-danger'" @click="salvarMovimentacao">
-                            Salvar
+                    <div class="modal-footer financeiro-modal-footer">
+                        <button type="button" class="btn btn-soft-secondary" data-bs-dismiss="modal">
+                            <i class="fa-solid fa-xmark me-1"></i> Cancelar
+                        </button>
+                        <button type="button" class="btn btn-primary" @click="salvarMovimentacao" :disabled="salvandoMovimentacao">
+                            <i class="fa-solid fa-floppy-disk me-1"></i> {{ salvandoMovimentacao ? 'Salvando...' : 'Salvar' }}
                         </button>
                     </div>
                 </div>
@@ -163,22 +217,38 @@
                     mostrarSaldo: false,
                     movimentacoes: [],
                     form: { tipo: 'ENTRADA', valor: null, descricao: '' },
-                    modalInstance: null
+                    modalInstance: null,
+                    salvandoMovimentacao: false,
+                    carregandoFinanceiro: false
                 }
             },
             methods: {
                 async carregarTudo() {
-                    await Promise.all([this.carregarResumo(), this.carregarMovimentacoes()]);
+                    this.carregandoFinanceiro = true;
+                    try {
+                        await Promise.all([this.carregarResumo(), this.carregarMovimentacoes()]);
+                    } catch (err) {
+                        console.error(err);
+                        await uiAlert('Não foi possível carregar os dados do financeiro.');
+                    } finally {
+                        this.carregandoFinanceiro = false;
+                    }
                 },
                 async carregarResumo() {
                     const res = await fetch('/api/financeiro/resumo');
-                    if (!res.ok) return;
+                    if (!res.ok) {
+                        const data = await res.json().catch(() => ({}));
+                        throw new Error(data.error || 'Erro ao carregar resumo financeiro.');
+                    }
                     const data = await res.json();
                     this.saldoAtual = Number(data.saldo_atual || 0);
                 },
                 async carregarMovimentacoes() {
                     const res = await fetch('/api/financeiro/movimentacoes');
-                    if (!res.ok) return;
+                    if (!res.ok) {
+                        const data = await res.json().catch(() => ({}));
+                        throw new Error(data.error || 'Erro ao carregar movimentações financeiras.');
+                    }
                     this.movimentacoes = await res.json();
                 },
                 abrirModal(tipo) {
@@ -209,42 +279,99 @@
                     const normalizado = texto.replace(/\./g, '').replace(',', '.');
                     return Number(normalizado);
                 },
+                descricaoNormalizada() {
+                    return String(this.form.descricao || '').trim();
+                },
                 async salvarMovimentacao() {
+                    if (this.salvandoMovimentacao) return;
+                    const tipo = this.form.tipo;
                     const valorNumerico = this.converterValorParaNumero(this.form.valor);
-                    if (!Number.isFinite(valorNumerico) || valorNumerico <= 0 || !this.form.descricao.trim()) {
-                        uiAlert('Preencha valor e descrição.');
+                    const descricao = this.descricaoNormalizada();
+                    if (!Number.isFinite(valorNumerico) || valorNumerico <= 0 || !descricao) {
+                        await uiAlert('Preencha valor e descrição.');
                         return;
                     }
-                    const res = await fetch('/api/financeiro/movimentacoes', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            tipo: this.form.tipo,
-                            valor: valorNumerico,
-                            descricao: this.form.descricao
-                        })
-                    });
-                    if (!res.ok) {
-                        const err = await res.json();
-                        uiAlert(err.error || 'Erro ao salvar movimentação');
+                    if (tipo === 'SAIDA' && valorNumerico > Number(this.saldoAtual || 0)) {
+                        await uiAlert('Saldo insuficiente para registrar esta saída.');
                         return;
                     }
-                    this.modalInstance.hide();
-                    await this.carregarTudo();
+                    this.salvandoMovimentacao = true;
+                    try {
+                        const res = await fetch('/api/financeiro/movimentacoes', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                tipo,
+                                valor: valorNumerico,
+                                descricao
+                            })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            await uiAlert(data.error || 'Erro ao salvar movimentação');
+                            return;
+                        }
+                        if (this.modalInstance) this.modalInstance.hide();
+                        this.form = { tipo: 'ENTRADA', valor: '', descricao: '' };
+                        this.saldoAtual = Number(data.saldo_atual || 0);
+                        if (data.movimentacao) {
+                            this.movimentacoes = [data.movimentacao, ...(this.movimentacoes || [])];
+                        } else {
+                            await this.carregarMovimentacoes();
+                        }
+                        if (window.showFloatingAlert) {
+                            await window.showFloatingAlert(
+                                tipo === 'ENTRADA' ? 'Entrada registrada com sucesso.' : 'Saída registrada com sucesso.',
+                                'Aviso'
+                            );
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        await uiAlert('Erro ao salvar movimentação.');
+                    } finally {
+                        this.salvandoMovimentacao = false;
+                    }
                 },
                 async zerarSaldo() {
                     const ok = await uiConfirm('Zerar o saldo remove todas as movimentações. Deseja continuar?');
                     if (!ok) return;
-                    const res = await fetch('/api/financeiro/zerar', { method: 'POST' });
-                    const data = await res.json().catch(() => ({}));
-                    if (!res.ok) {
-                        await uiAlert(data.error || 'Erro ao zerar saldo.');
-                        return;
+                    try {
+                        const res = await fetch('/api/financeiro/zerar', { method: 'POST' });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            await uiAlert(data.error || 'Erro ao zerar saldo.');
+                            return;
+                        }
+                        this.saldoAtual = 0;
+                        this.movimentacoes = [];
+                        if (window.showFloatingAlert) {
+                            await window.showFloatingAlert('Saldo zerado com sucesso.', 'Aviso');
+                        }
+                    } catch (err) {
+                        console.error(err);
+                        await uiAlert('Erro ao zerar saldo.');
                     }
-                    await this.carregarTudo();
                 },
                 formatarMoeda(valor) {
                     return Number(valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                },
+                exportarHistoricoExcel() {
+                    const rows = (this.movimentacoes || []).map((mov) => ({
+                        Data: this.formatarDataHora(mov.created_at),
+                        Tipo: mov.tipo === 'ENTRADA' ? 'Entrada' : 'Saída',
+                        Descricao: mov.descricao || '',
+                        LancadoPor: mov.usuario_nome || 'Não identificado',
+                        Valor: Number(mov.valor || 0)
+                    }));
+                    if (!rows.length) {
+                        uiAlert('Não há movimentações para exportar.');
+                        return;
+                    }
+                    ExcelUtils.exportJsonToXlsx({
+                        filename: 'historico_financeiro.xlsx',
+                        sheetName: 'Financeiro',
+                        rows
+                    });
                 },
                 formatarDataHora(data) {
                     if (!data) return '--/--/---- --:--';

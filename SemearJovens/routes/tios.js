@@ -5,6 +5,7 @@ const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
 const {
+    decryptJovemRecord,
     ensureJovensSensitiveColumns,
     jovemPhoneHash,
     normalizePhoneDigits
@@ -833,7 +834,7 @@ router.get('/:casalId/jovens', async (req, res) => {
              ORDER BY j.nome_completo ASC`,
             [tenantId, casalId]
         );
-        return res.json(rows);
+        return res.json((rows || []).map((item) => decryptJovemRecord(item)));
     } catch (err) {
         console.error('Erro ao listar jovens do casal:', err);
         return res.status(500).json({ error: 'Erro ao listar jovens.' });

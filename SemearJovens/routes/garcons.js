@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const { pool } = require('../database');
 const { getTenantId } = require('../lib/tenantIsolation');
+const { decryptJovemRecord } = require('../lib/jovensSensitiveData');
+const { decryptTiosCasal } = require('../lib/tiosSensitiveData');
 
 let estruturaGarantida = false;
 
@@ -92,10 +94,11 @@ router.get('/reservas', async (req, res) => {
             WHERE gr.tenant_id = ?
             ORDER BY j.nome_completo ASC
         `, [tenantId]);
+        const registros = (rows || []).map((item) => decryptJovemRecord(item));
 
         res.json({
-            mulheres: rows.filter(r => r.lista === 'MULHERES'),
-            homens: rows.filter(r => r.lista === 'HOMENS')
+            mulheres: registros.filter(r => r.lista === 'MULHERES'),
+            homens: registros.filter(r => r.lista === 'HOMENS')
         });
     } catch (err) {
         console.error('Erro ao listar reservas de garçons:', err);
@@ -310,6 +313,8 @@ router.get('/equipes', async (req, res) => {
                            ''
                        )
                    ) AS telefone,
+                   tc.telefone_tio,
+                   tc.telefone_tia,
                    j.circulo,
                    j.data_nascimento
             FROM garcons_membros gm
@@ -320,9 +325,19 @@ router.get('/equipes', async (req, res) => {
 
         const mapa = new Map();
         equipes.forEach(e => mapa.set(e.id, { ...e, membros: [] }));
-        membros.forEach(m => {
-            const item = mapa.get(m.equipe_id);
-            if (item) item.membros.push(m);
+        membros.forEach((membroBruto) => {
+            const membro = membroBruto && membroBruto.membro_tipo === 'TIO'
+                ? (() => {
+                    const telefones = decryptTiosCasal({
+                        telefone_tio: membroBruto.telefone_tio || null,
+                        telefone_tia: membroBruto.telefone_tia || null
+                    });
+                    const telefone = [telefones.telefone_tio, telefones.telefone_tia].filter(Boolean).join(' / ') || null;
+                    return { ...membroBruto, telefone };
+                })()
+                : decryptJovemRecord(membroBruto);
+            const item = mapa.get(membro.equipe_id);
+            if (item) item.membros.push(membro);
         });
 
         res.json(Array.from(mapa.values()));
