@@ -1103,7 +1103,7 @@
                                                 <i class="fa-solid fa-plus"></i>
                                             </span>
                                         </span>
-                                        <input type="file" accept="image/*" class="d-none"
+                                        <input type="file" accept=".jpeg,.jpg,.png,.webp" class="d-none"
                                             @change="uploadFotoJovem($event, jovemEditando.id)">
                                     </label>
                                 </div>
@@ -4579,6 +4579,22 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                 async uploadFotoJovem(event, jovemId) {
                     const file = event.target.files[0];
                     if (!file) return;
+                    const tiposPermitidos = ['image/jpeg', 'image/png', 'image/webp'];
+                    const extensoesPermitidas = ['jpeg', 'jpg', 'png', 'webp'];
+                    const extensao = String(file.name || '').split('.').pop().toLowerCase();
+                    const tamanhoMaximo = 5 * 1024 * 1024;
+
+                    if (!tiposPermitidos.includes(file.type) || !extensoesPermitidas.includes(extensao)) {
+                        alert('Envie apenas imagens JPG, JPEG, PNG ou WEBP.');
+                        event.target.value = '';
+                        return;
+                    }
+
+                    if (file.size > tamanhoMaximo) {
+                        alert('A imagem deve ter no máximo 5MB.');
+                        event.target.value = '';
+                        return;
+                    }
 
                     const formData = new FormData();
                     formData.append('foto', file);

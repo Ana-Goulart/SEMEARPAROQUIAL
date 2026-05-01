@@ -1576,7 +1576,7 @@
                                                 <i class="fa-solid fa-plus"></i>
                                             </span>
                                         </span>
-                                        <input type="file" accept="image/*" class="d-none" @change="uploadFotoOutroJovem">
+                                        <input type="file" accept=".jpeg,.jpg,.png,.webp" class="d-none" @change="uploadFotoOutroJovem">
                                     </label>
                                 </div>
                                 <div v-if="isEditingOutroFicha" class="text-muted small text-center px-1">
@@ -2130,7 +2130,7 @@
                                                             <i class="fa-solid fa-plus"></i>
                                                         </span>
                                                     </span>
-                                                    <input type="file" class="d-none" accept="image/*" @change="uploadFotoCasal" :disabled="!formCasal.id">
+                                                    <input type="file" class="d-none" accept=".jpeg,.jpg,.png,.webp" @change="uploadFotoCasal" :disabled="!formCasal.id">
                                                 </label>
                                             </div>
                                             <div v-if="isEditingCasal" class="small text-muted mt-1 text-center px-1">
@@ -3814,6 +3814,18 @@
                     const file = event && event.target && event.target.files ? event.target.files[0] : null;
                     event.target.value = '';
                     if (!file || !this.formCasal || !this.formCasal.id) return;
+                    const tiposPermitidos = ['image/jpeg', 'image/png', 'image/webp'];
+                    const extensoesPermitidas = ['jpeg', 'jpg', 'png', 'webp'];
+                    const extensao = String(file.name || '').split('.').pop().toLowerCase();
+                    const tamanhoMaximo = 5 * 1024 * 1024;
+                    if (!tiposPermitidos.includes(file.type) || !extensoesPermitidas.includes(extensao)) {
+                        alert('Envie apenas imagens JPG, JPEG, PNG ou WEBP.');
+                        return;
+                    }
+                    if (file.size > tamanhoMaximo) {
+                        alert('A imagem deve ter no máximo 5MB.');
+                        return;
+                    }
                     const formData = new FormData();
                     formData.append('foto', file);
                     try {
@@ -4313,6 +4325,20 @@
                 async uploadFotoOutroJovem(event) {
                     const file = event && event.target && event.target.files ? event.target.files[0] : null;
                     if (!file || !this.jovemOutroFicha || !this.jovemOutroFicha.id) {
+                        if (event && event.target) event.target.value = '';
+                        return;
+                    }
+                    const tiposPermitidos = ['image/jpeg', 'image/png', 'image/webp'];
+                    const extensoesPermitidas = ['jpeg', 'jpg', 'png', 'webp'];
+                    const extensao = String(file.name || '').split('.').pop().toLowerCase();
+                    const tamanhoMaximo = 5 * 1024 * 1024;
+                    if (!tiposPermitidos.includes(file.type) || !extensoesPermitidas.includes(extensao)) {
+                        alert('Envie apenas imagens JPG, JPEG, PNG ou WEBP.');
+                        if (event && event.target) event.target.value = '';
+                        return;
+                    }
+                    if (file.size > tamanhoMaximo) {
+                        alert('A imagem deve ter no máximo 5MB.');
                         if (event && event.target) event.target.value = '';
                         return;
                     }

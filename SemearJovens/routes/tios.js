@@ -20,6 +20,9 @@ const {
 
 const router = express.Router();
 const uploadDirAbs = path.join(__dirname, '..', 'public', 'uploads', 'fotos_tios');
+const FOTO_MAX_SIZE_BYTES = 5 * 1024 * 1024;
+const FOTO_MIME_TYPES_PERMITIDOS = new Set(['image/jpeg', 'image/png', 'image/webp']);
+const FOTO_EXTENSOES_PERMITIDAS = ['.jpeg', '.jpg', '.png', '.webp'];
 
 const storage = multer.diskStorage({
     destination: function (_req, _file, cb) {
@@ -33,7 +36,24 @@ const storage = multer.diskStorage({
         cb(null, uniqueSuffix + '-' + file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_'));
     }
 });
-const upload = multer({ storage });
+const upload = multer({
+    storage,
+    limits: { fileSize: FOTO_MAX_SIZE_BYTES },
+    fileFilter: (_req, file, cb) => {
+        const ext = path.extname(String(file.originalname || '')).toLowerCase();
+        const mime = String(file.mimetype || '').toLowerCase();
+        const extensaoValida = FOTO_EXTENSOES_PERMITIDAS.includes(ext);
+        const mimeValido = FOTO_MIME_TYPES_PERMITIDOS.has(mime);
+
+        if (!extensaoValida || !mimeValido) {
+            const err = new multer.MulterError('LIMIT_UNEXPECTED_FILE', file.fieldname);
+            err.message = 'Envie apenas imagens JPG, JPEG, PNG ou WEBP.';
+            return cb(err);
+        }
+
+        return cb(null, true);
+    }
+});
 
 let ensured = false;
 let ensurePromise = null;
@@ -1535,7 +1555,13 @@ router.post('/casais/:id/foto', (req, res) => {
     upload.single('foto')(req, res, async (uploadErr) => {
         if (uploadErr) {
             console.error('Erro no upload da foto do casal:', uploadErr);
-            return res.status(400).json({ error: 'Não foi possível enviar a foto.' });
+            if (uploadErr instanceof multer.MulterError) {
+                if (uploadErr.code === 'LIMIT_FILE_SIZE') {
+                    return res.status(400).json({ error: 'A imagem deve ter no máximo 5MB.' });
+                }
+                return res.status(400).json({ error: uploadErr.message || 'Envie apenas imagens JPG, JPEG, PNG ou WEBP.' });
+            }
+            return res.status(400).json({ error: uploadErr.message || 'Não foi possível enviar a foto.' });
         }
         try {
             await ensureStructure();
