@@ -1,0 +1,70 @@
+2026-05-09T14:21:35: Erro ao limpar usuários expirados: Error: Access denied for user 'infra'@'localhost' (using password: YES)
+    at purgeExpiredUsers (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearJovens/lib/usuariosExpiracao.js:6:37)
+    at requireLoginView (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearJovens/app.js:113:15)
+    at Layer.handleRequest (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearJovens/node_modules/router/lib/layer.js:152:17)
+    at next (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearJovens/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearJovens/node_modules/router/lib/route.js:117:3)
+    at handle (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearJovens/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearJovens/node_modules/router/lib/layer.js:152:17)
+    at /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearJovens/node_modules/router/index.js:295:15
+    at processParams (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearJovens/node_modules/router/index.js:582:12)
+    at next (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearJovens/node_modules/router/index.js:291:5)
+    at /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearJovens/app.js:102:35
+    at Layer.handleRequest (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearJovens/node_modules/router/lib/layer.js:152:17)
+    at trimPrefix (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearJovens/node_modules/router/index.js:342:13)
+    at /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearJovens/node_modules/router/index.js:297:9
+    at processParams (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearJovens/node_modules/router/index.js:582:12)
+    at next (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearJovens/node_modules/router/index.js:291:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'infra'@'localhost' (using password: YES)",
+  sql: undefined
+}
+2026-05-09T14:21:35: Erro ao validar sessão de view: Error: Access denied for user 'infra'@'localhost' (using password: YES)
+    at hasTable (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearJovens/lib/tenantSetup.js:49:35)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearJovens/lib/tenantSetup.js:75:14
+    at async ensureTenantStructure (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearJovens/lib/tenantSetup.js:232:9)
+    at async requireLoginView (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearJovens/app.js:114:9) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'infra'@'localhost' (using password: YES)",
+  sql: undefined
+}
+2026-05-09T14:21:47: Erro ao limpar usuários expirados: Error: Access denied for user 'infra'@'localhost' (using password: YES)
+    at purgeExpiredUsers (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearJovens/lib/usuariosExpiracao.js:6:37)
+    at requireLoginView (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearJovens/app.js:113:15)
+    at Layer.handleRequest (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearJovens/node_modules/router/lib/layer.js:152:17)
+    at next (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearJovens/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearJovens/node_modules/router/lib/route.js:117:3)
+    at handle (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearJovens/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearJovens/node_modules/router/lib/layer.js:152:17)
+    at /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearJovens/node_modules/router/index.js:295:15
+    at processParams (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearJovens/node_modules/router/index.js:582:12)
+    at next (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearJovens/node_modules/router/index.js:291:5)
+    at /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearJovens/app.js:102:35
+    at Layer.handleRequest (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearJovens/node_modules/router/lib/layer.js:152:17)
+    at trimPrefix (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearJovens/node_modules/router/index.js:342:13)
+    at /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearJovens/node_modules/router/index.js:297:9
+    at processParams (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearJovens/node_modules/router/index.js:582:12)
+    at next (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearJovens/node_modules/router/index.js:291:5) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'infra'@'localhost' (using password: YES)",
+  sql: undefined
+}
+2026-05-09T14:21:47: Erro ao validar sessão de view: Error: Access denied for user 'infra'@'localhost' (using password: YES)
+    at hasTable (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearJovens/lib/tenantSetup.js:49:35)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearJovens/lib/tenantSetup.js:75:14
+    at async ensureTenantStructure (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearJovens/lib/tenantSetup.js:232:9)
+    at async requireLoginView (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearJovens/app.js:114:9) {
+  code: 'ER_ACCESS_DENIED_ERROR',
+  errno: 1045,
+  sqlState: '28000',
+  sqlMessage: "Access denied for user 'infra'@'localhost' (using password: YES)",
+  sql: undefined
+}

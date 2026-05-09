@@ -12,6 +12,8 @@ const PORT = Number(process.env.PORT || 3002);
 const GLOBAL_RATE_LIMIT_WINDOW_MS = Number(process.env.GLOBAL_RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000);
 const GLOBAL_RATE_LIMIT_MAX = Number(process.env.GLOBAL_RATE_LIMIT_MAX || 300);
 
+app.set('trust proxy', 1);
+
 const globalLimiter = rateLimit({
     windowMs: GLOBAL_RATE_LIMIT_WINDOW_MS,
     limit: GLOBAL_RATE_LIMIT_MAX,
@@ -30,6 +32,7 @@ const loginLimiter = rateLimit({
 });
 
 app.use(helmet({ contentSecurityPolicy: false }));
+app.get('/favicon.ico', (_req, res) => res.status(204).end());
 app.use(globalLimiter);
 app.use(express.json());
 app.use(attachUserFromSession);

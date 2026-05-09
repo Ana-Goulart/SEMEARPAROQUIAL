@@ -1,0 +1,10 @@
+{
+  "name": "semear-paroquial-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "migrate": "node scripts/migrate.js",
+    "migrate:semear-paroquial": "node scripts/migrate.js --database semear_paroquial --env SemearLogin/.env",
+    "migrate:semear-paroquial:dry": "node scripts/migrate.js --database semear_paroquial --env SemearLogin/.env --dry-run"
+  }
+}

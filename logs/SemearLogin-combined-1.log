@@ -1,0 +1,407 @@
+Error: Cannot find module 'express'
+Require stack:
+- /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/app.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1134:15)
+    at Module._load (node:internal/modules/cjs/loader:975:27)
+    at Module.require (node:internal/modules/cjs/loader:1225:19)
+    at require (node:internal/modules/helpers:177:18)
+    at Object.<anonymous> (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/app.js:1:17)
+    at Module._compile (node:internal/modules/cjs/loader:1356:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1414:10)
+    at Module.load (node:internal/modules/cjs/loader:1197:32)
+    at Module._load (node:internal/modules/cjs/loader:1013:12)
+    at /usr/local/lib/node_modules/pm2/lib/ProcessContainer.js:291:27
+Error: Cannot find module 'express'
+Require stack:
+- /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/app.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1134:15)
+    at Module._load (node:internal/modules/cjs/loader:975:27)
+    at Module.require (node:internal/modules/cjs/loader:1225:19)
+    at require (node:internal/modules/helpers:177:18)
+    at Object.<anonymous> (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/app.js:1:17)
+    at Module._compile (node:internal/modules/cjs/loader:1356:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1414:10)
+    at Module.load (node:internal/modules/cjs/loader:1197:32)
+    at Module._load (node:internal/modules/cjs/loader:1013:12)
+    at /usr/local/lib/node_modules/pm2/lib/ProcessContainer.js:291:27
+Error: Cannot find module 'express'
+Require stack:
+- /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/app.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1134:15)
+    at Module._load (node:internal/modules/cjs/loader:975:27)
+    at Module.require (node:internal/modules/cjs/loader:1225:19)
+    at require (node:internal/modules/helpers:177:18)
+    at Object.<anonymous> (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/app.js:1:17)
+    at Module._compile (node:internal/modules/cjs/loader:1356:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1414:10)
+    at Module.load (node:internal/modules/cjs/loader:1197:32)
+    at Module._load (node:internal/modules/cjs/loader:1013:12)
+    at /usr/local/lib/node_modules/pm2/lib/ProcessContainer.js:291:27
+Error: Cannot find module 'express'
+Require stack:
+- /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/app.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1134:15)
+    at Module._load (node:internal/modules/cjs/loader:975:27)
+    at Module.require (node:internal/modules/cjs/loader:1225:19)
+    at require (node:internal/modules/helpers:177:18)
+    at Object.<anonymous> (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/app.js:1:17)
+    at Module._compile (node:internal/modules/cjs/loader:1356:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1414:10)
+    at Module.load (node:internal/modules/cjs/loader:1197:32)
+    at Module._load (node:internal/modules/cjs/loader:1013:12)
+    at /usr/local/lib/node_modules/pm2/lib/ProcessContainer.js:291:27
+Error: Cannot find module 'express'
+Require stack:
+- /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/app.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1134:15)
+    at Module._load (node:internal/modules/cjs/loader:975:27)
+    at Module.require (node:internal/modules/cjs/loader:1225:19)
+    at require (node:internal/modules/helpers:177:18)
+    at Object.<anonymous> (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/app.js:1:17)
+    at Module._compile (node:internal/modules/cjs/loader:1356:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1414:10)
+    at Module.load (node:internal/modules/cjs/loader:1197:32)
+    at Module._load (node:internal/modules/cjs/loader:1013:12)
+    at /usr/local/lib/node_modules/pm2/lib/ProcessContainer.js:291:27
+Error: Cannot find module 'express'
+Require stack:
+- /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/app.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1134:15)
+    at Module._load (node:internal/modules/cjs/loader:975:27)
+    at Module.require (node:internal/modules/cjs/loader:1225:19)
+    at require (node:internal/modules/helpers:177:18)
+    at Object.<anonymous> (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/app.js:1:17)
+    at Module._compile (node:internal/modules/cjs/loader:1356:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1414:10)
+    at Module.load (node:internal/modules/cjs/loader:1197:32)
+    at Module._load (node:internal/modules/cjs/loader:1013:12)
+    at /usr/local/lib/node_modules/pm2/lib/ProcessContainer.js:291:27
+Error: Cannot find module 'express'
+Require stack:
+- /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/app.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1134:15)
+    at Module._load (node:internal/modules/cjs/loader:975:27)
+    at Module.require (node:internal/modules/cjs/loader:1225:19)
+    at require (node:internal/modules/helpers:177:18)
+    at Object.<anonymous> (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/app.js:1:17)
+    at Module._compile (node:internal/modules/cjs/loader:1356:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1414:10)
+    at Module.load (node:internal/modules/cjs/loader:1197:32)
+    at Module._load (node:internal/modules/cjs/loader:1013:12)
+    at /usr/local/lib/node_modules/pm2/lib/ProcessContainer.js:291:27
+Error: Cannot find module 'express'
+Require stack:
+- /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/app.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1134:15)
+    at Module._load (node:internal/modules/cjs/loader:975:27)
+    at Module.require (node:internal/modules/cjs/loader:1225:19)
+    at require (node:internal/modules/helpers:177:18)
+    at Object.<anonymous> (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/app.js:1:17)
+    at Module._compile (node:internal/modules/cjs/loader:1356:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1414:10)
+    at Module.load (node:internal/modules/cjs/loader:1197:32)
+    at Module._load (node:internal/modules/cjs/loader:1013:12)
+    at /usr/local/lib/node_modules/pm2/lib/ProcessContainer.js:291:27
+Error: Cannot find module 'express'
+Require stack:
+- /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/app.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1134:15)
+    at Module._load (node:internal/modules/cjs/loader:975:27)
+    at Module.require (node:internal/modules/cjs/loader:1225:19)
+    at require (node:internal/modules/helpers:177:18)
+    at Object.<anonymous> (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/app.js:1:17)
+    at Module._compile (node:internal/modules/cjs/loader:1356:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1414:10)
+    at Module.load (node:internal/modules/cjs/loader:1197:32)
+    at Module._load (node:internal/modules/cjs/loader:1013:12)
+    at /usr/local/lib/node_modules/pm2/lib/ProcessContainer.js:291:27
+Error: Cannot find module 'express'
+Require stack:
+- /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/app.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1134:15)
+    at Module._load (node:internal/modules/cjs/loader:975:27)
+    at Module.require (node:internal/modules/cjs/loader:1225:19)
+    at require (node:internal/modules/helpers:177:18)
+    at Object.<anonymous> (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/app.js:1:17)
+    at Module._compile (node:internal/modules/cjs/loader:1356:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1414:10)
+    at Module.load (node:internal/modules/cjs/loader:1197:32)
+    at Module._load (node:internal/modules/cjs/loader:1013:12)
+    at /usr/local/lib/node_modules/pm2/lib/ProcessContainer.js:291:27
+Error: Cannot find module 'express'
+Require stack:
+- /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/app.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1134:15)
+    at Module._load (node:internal/modules/cjs/loader:975:27)
+    at Module.require (node:internal/modules/cjs/loader:1225:19)
+    at require (node:internal/modules/helpers:177:18)
+    at Object.<anonymous> (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/app.js:1:17)
+    at Module._compile (node:internal/modules/cjs/loader:1356:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1414:10)
+    at Module.load (node:internal/modules/cjs/loader:1197:32)
+    at Module._load (node:internal/modules/cjs/loader:1013:12)
+    at /usr/local/lib/node_modules/pm2/lib/ProcessContainer.js:291:27
+Error: Cannot find module 'express'
+Require stack:
+- /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/app.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1134:15)
+    at Module._load (node:internal/modules/cjs/loader:975:27)
+    at Module.require (node:internal/modules/cjs/loader:1225:19)
+    at require (node:internal/modules/helpers:177:18)
+    at Object.<anonymous> (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/app.js:1:17)
+    at Module._compile (node:internal/modules/cjs/loader:1356:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1414:10)
+    at Module.load (node:internal/modules/cjs/loader:1197:32)
+    at Module._load (node:internal/modules/cjs/loader:1013:12)
+    at /usr/local/lib/node_modules/pm2/lib/ProcessContainer.js:291:27
+Error: Cannot find module 'express'
+Require stack:
+- /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/app.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1134:15)
+    at Module._load (node:internal/modules/cjs/loader:975:27)
+    at Module.require (node:internal/modules/cjs/loader:1225:19)
+    at require (node:internal/modules/helpers:177:18)
+    at Object.<anonymous> (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/app.js:1:17)
+    at Module._compile (node:internal/modules/cjs/loader:1356:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1414:10)
+    at Module.load (node:internal/modules/cjs/loader:1197:32)
+    at Module._load (node:internal/modules/cjs/loader:1013:12)
+    at /usr/local/lib/node_modules/pm2/lib/ProcessContainer.js:291:27
+Error: Cannot find module 'express'
+Require stack:
+- /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/app.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1134:15)
+    at Module._load (node:internal/modules/cjs/loader:975:27)
+    at Module.require (node:internal/modules/cjs/loader:1225:19)
+    at require (node:internal/modules/helpers:177:18)
+    at Object.<anonymous> (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/app.js:1:17)
+    at Module._compile (node:internal/modules/cjs/loader:1356:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1414:10)
+    at Module.load (node:internal/modules/cjs/loader:1197:32)
+    at Module._load (node:internal/modules/cjs/loader:1013:12)
+    at /usr/local/lib/node_modules/pm2/lib/ProcessContainer.js:291:27
+Error: Cannot find module 'express'
+Require stack:
+- /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/app.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1134:15)
+    at Module._load (node:internal/modules/cjs/loader:975:27)
+    at Module.require (node:internal/modules/cjs/loader:1225:19)
+    at require (node:internal/modules/helpers:177:18)
+    at Object.<anonymous> (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/app.js:1:17)
+    at Module._compile (node:internal/modules/cjs/loader:1356:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1414:10)
+    at Module.load (node:internal/modules/cjs/loader:1197:32)
+    at Module._load (node:internal/modules/cjs/loader:1013:12)
+    at /usr/local/lib/node_modules/pm2/lib/ProcessContainer.js:291:27
+Error: Cannot find module 'express'
+Require stack:
+- /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/app.js
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1134:15)
+    at Module._load (node:internal/modules/cjs/loader:975:27)
+    at Module.require (node:internal/modules/cjs/loader:1225:19)
+    at require (node:internal/modules/helpers:177:18)
+    at Object.<anonymous> (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/app.js:1:17)
+    at Module._compile (node:internal/modules/cjs/loader:1356:14)
+    at Module._extensions..js (node:internal/modules/cjs/loader:1414:10)
+    at Module.load (node:internal/modules/cjs/loader:1197:32)
+    at Module._load (node:internal/modules/cjs/loader:1013:12)
+    at /usr/local/lib/node_modules/pm2/lib/ProcessContainer.js:291:27
+2026-05-09T12:24:20: ◇ injected env (12) from SemearLogin/.env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+2026-05-09T12:24:21: SemearLogin rodando na porta 3004
+2026-05-09T12:24:23: ValidationError: The 'X-Forwarded-For' header is set but the Express 'trust proxy' setting is false (default). This could indicate a misconfiguration which would prevent express-rate-limit from accurately identifying users. See https://express-rate-limit.github.io/ERR_ERL_UNEXPECTED_X_FORWARDED_FOR/ for more information.
+    at Object.xForwardedForHeader (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/express-rate-limit/dist/index.cjs:381:13)
+    at wrappedValidations.<computed> [as xForwardedForHeader] (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/express-rate-limit/dist/index.cjs:704:22)
+    at Object.keyGenerator (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/express-rate-limit/dist/index.cjs:811:20)
+    at /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/express-rate-limit/dist/index.cjs:893:32
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/express-rate-limit/dist/index.cjs:854:5 {
+  code: 'ERR_ERL_UNEXPECTED_X_FORWARDED_FOR',
+  help: 'https://express-rate-limit.github.io/ERR_ERL_UNEXPECTED_X_FORWARDED_FOR/'
+}
+2026-05-09T12:24:34: ValidationError: The 'X-Forwarded-For' header is set but the Express 'trust proxy' setting is false (default). This could indicate a misconfiguration which would prevent express-rate-limit from accurately identifying users. See https://express-rate-limit.github.io/ERR_ERL_UNEXPECTED_X_FORWARDED_FOR/ for more information.
+    at Object.xForwardedForHeader (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/express-rate-limit/dist/index.cjs:381:13)
+    at wrappedValidations.<computed> [as xForwardedForHeader] (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/express-rate-limit/dist/index.cjs:704:22)
+    at Object.keyGenerator (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/express-rate-limit/dist/index.cjs:811:20)
+    at /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/express-rate-limit/dist/index.cjs:893:32
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/express-rate-limit/dist/index.cjs:854:5 {
+  code: 'ERR_ERL_UNEXPECTED_X_FORWARDED_FOR',
+  help: 'https://express-rate-limit.github.io/ERR_ERL_UNEXPECTED_X_FORWARDED_FOR/'
+}
+2026-05-09T12:24:34: Erro no login: Error: Access denied for user 'semear_user'@'localhost' to database 'semear_paroquial_homo'
+    at /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/routes/auth.js:170:44
+    at Layer.handleRequest (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/router/lib/layer.js:152:17)
+    at next (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/router/lib/route.js:117:3)
+    at handle (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/router/lib/layer.js:152:17)
+    at /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/router/index.js:295:15
+    at processParams (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/router/index.js:582:12)
+    at next (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/router/index.js:291:5)
+    at Function.handle (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/router/index.js:186:3) {
+  code: 'ER_DBACCESS_DENIED_ERROR',
+  errno: 1044,
+  sqlState: '42000',
+  sqlMessage: "Access denied for user 'semear_user'@'localhost' to database 'semear_paroquial_homo'",
+  sql: undefined
+}
+2026-05-09T13:12:09: Erro no login: Error: Access denied for user 'semear_user'@'localhost' to database 'semear_paroquial_homo'
+    at /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/routes/auth.js:170:44
+    at Layer.handleRequest (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/router/lib/layer.js:152:17)
+    at next (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/router/lib/route.js:117:3)
+    at handle (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/router/lib/layer.js:152:17)
+    at /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/router/index.js:295:15
+    at processParams (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/router/index.js:582:12)
+    at next (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/router/index.js:291:5)
+    at Function.handle (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/router/index.js:186:3) {
+  code: 'ER_DBACCESS_DENIED_ERROR',
+  errno: 1044,
+  sqlState: '42000',
+  sqlMessage: "Access denied for user 'semear_user'@'localhost' to database 'semear_paroquial_homo'",
+  sql: undefined
+}
+2026-05-09T13:12:39: Erro no login: Error: Access denied for user 'semear_user'@'localhost' to database 'semear_paroquial_homo'
+    at /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/routes/auth.js:170:44
+    at Layer.handleRequest (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/router/lib/layer.js:152:17)
+    at next (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/router/lib/route.js:117:3)
+    at handle (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/router/lib/layer.js:152:17)
+    at /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/router/index.js:295:15
+    at processParams (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/router/index.js:582:12)
+    at next (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/router/index.js:291:5)
+    at Function.handle (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/router/index.js:186:3) {
+  code: 'ER_DBACCESS_DENIED_ERROR',
+  errno: 1044,
+  sqlState: '42000',
+  sqlMessage: "Access denied for user 'semear_user'@'localhost' to database 'semear_paroquial_homo'",
+  sql: undefined
+}
+2026-05-09T13:18:10: ◇ injected env (12) from SemearLogin/.env // tip: ◈ secrets for agents [www.dotenvx.com]
+2026-05-09T13:18:11: SemearLogin rodando na porta 3004
+2026-05-09T13:19:22: ValidationError: The 'X-Forwarded-For' header is set but the Express 'trust proxy' setting is false (default). This could indicate a misconfiguration which would prevent express-rate-limit from accurately identifying users. See https://express-rate-limit.github.io/ERR_ERL_UNEXPECTED_X_FORWARDED_FOR/ for more information.
+    at Object.xForwardedForHeader (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/express-rate-limit/dist/index.cjs:381:13)
+    at wrappedValidations.<computed> [as xForwardedForHeader] (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/express-rate-limit/dist/index.cjs:704:22)
+    at Object.keyGenerator (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/express-rate-limit/dist/index.cjs:811:20)
+    at /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/express-rate-limit/dist/index.cjs:893:32
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/express-rate-limit/dist/index.cjs:854:5 {
+  code: 'ERR_ERL_UNEXPECTED_X_FORWARDED_FOR',
+  help: 'https://express-rate-limit.github.io/ERR_ERL_UNEXPECTED_X_FORWARDED_FOR/'
+}
+2026-05-09T13:20:17: ◇ injected env (12) from SemearLogin/.env // tip: ⌁ auth for agents [www.vestauth.com]
+2026-05-09T13:20:17: SemearLogin rodando na porta 3004
+2026-05-09T13:20:26: ValidationError: The 'X-Forwarded-For' header is set but the Express 'trust proxy' setting is false (default). This could indicate a misconfiguration which would prevent express-rate-limit from accurately identifying users. See https://express-rate-limit.github.io/ERR_ERL_UNEXPECTED_X_FORWARDED_FOR/ for more information.
+    at Object.xForwardedForHeader (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/express-rate-limit/dist/index.cjs:381:13)
+    at wrappedValidations.<computed> [as xForwardedForHeader] (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/express-rate-limit/dist/index.cjs:704:22)
+    at Object.keyGenerator (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/express-rate-limit/dist/index.cjs:811:20)
+    at /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/express-rate-limit/dist/index.cjs:893:32
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/express-rate-limit/dist/index.cjs:854:5 {
+  code: 'ERR_ERL_UNEXPECTED_X_FORWARDED_FOR',
+  help: 'https://express-rate-limit.github.io/ERR_ERL_UNEXPECTED_X_FORWARDED_FOR/'
+}
+2026-05-09T13:50:42: ◇ injected env (12) from SemearLogin/.env // tip: ◈ secrets for agents [www.dotenvx.com]
+2026-05-09T13:50:42: SemearLogin rodando na porta 3004
+2026-05-09T14:15:43: ValidationError: The 'X-Forwarded-For' header is set but the Express 'trust proxy' setting is false (default). This could indicate a misconfiguration which would prevent express-rate-limit from accurately identifying users. See https://express-rate-limit.github.io/ERR_ERL_UNEXPECTED_X_FORWARDED_FOR/ for more information.
+    at Object.xForwardedForHeader (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/express-rate-limit/dist/index.cjs:381:13)
+    at wrappedValidations.<computed> [as xForwardedForHeader] (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/express-rate-limit/dist/index.cjs:704:22)
+    at Object.keyGenerator (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/express-rate-limit/dist/index.cjs:811:20)
+    at /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/express-rate-limit/dist/index.cjs:893:32
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/express-rate-limit/dist/index.cjs:854:5 {
+  code: 'ERR_ERL_UNEXPECTED_X_FORWARDED_FOR',
+  help: 'https://express-rate-limit.github.io/ERR_ERL_UNEXPECTED_X_FORWARDED_FOR/'
+}
+2026-05-09T14:18:15: ValidationError: The 'X-Forwarded-For' header is set but the Express 'trust proxy' setting is false (default). This could indicate a misconfiguration which would prevent express-rate-limit from accurately identifying users. See https://express-rate-limit.github.io/ERR_ERL_UNEXPECTED_X_FORWARDED_FOR/ for more information.
+    at Object.xForwardedForHeader (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/express-rate-limit/dist/index.cjs:381:13)
+    at wrappedValidations.<computed> [as xForwardedForHeader] (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/express-rate-limit/dist/index.cjs:704:22)
+    at Object.keyGenerator (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/express-rate-limit/dist/index.cjs:811:20)
+    at /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/express-rate-limit/dist/index.cjs:893:32
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/express-rate-limit/dist/index.cjs:854:5 {
+  code: 'ERR_ERL_UNEXPECTED_X_FORWARDED_FOR',
+  help: 'https://express-rate-limit.github.io/ERR_ERL_UNEXPECTED_X_FORWARDED_FOR/'
+}
+2026-05-09T14:18:15: Erro no login: Error: Access denied for user 'semear_user'@'localhost' to database 'semear_paroquial_homo'
+    at /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/routes/auth.js:170:44
+    at Layer.handleRequest (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/router/lib/layer.js:152:17)
+    at next (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/router/lib/route.js:157:13)
+    at Route.dispatch (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/router/lib/route.js:117:3)
+    at handle (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/router/index.js:435:11)
+    at Layer.handleRequest (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/router/lib/layer.js:152:17)
+    at /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/router/index.js:295:15
+    at processParams (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/router/index.js:582:12)
+    at next (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/router/index.js:291:5)
+    at Function.handle (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/node_modules/router/index.js:186:3) {
+  code: 'ER_DBACCESS_DENIED_ERROR',
+  errno: 1044,
+  sqlState: '42000',
+  sqlMessage: "Access denied for user 'semear_user'@'localhost' to database 'semear_paroquial_homo'",
+  sql: undefined
+}
+2026-05-09T14:19:47: ◇ injected env (12) from SemearLogin/.env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+2026-05-09T14:19:47: SemearLogin rodando na porta 3004
+2026-05-09T14:21:04: ◇ injected env (12) from SemearLogin/.env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+2026-05-09T14:21:04: SemearLogin rodando na porta 3004
+2026-05-09T14:21:35: Falha ao resolver redirecionamento central do login: Error: Access denied for user 'semear_user'@'localhost' to database 'semear_core'
+    at resolveCorePasswordAccess (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/routes/auth.js:73:35)
+    at /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/routes/auth.js:219:38 {
+  code: 'ER_DBACCESS_DENIED_ERROR',
+  errno: 1044,
+  sqlState: '42000',
+  sqlMessage: "Access denied for user 'semear_user'@'localhost' to database 'semear_core'",
+  sql: undefined
+}
+2026-05-09T14:21:47: Falha ao resolver redirecionamento central do login: Error: Access denied for user 'semear_user'@'localhost' to database 'semear_core'
+    at resolveCorePasswordAccess (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/routes/auth.js:73:35)
+    at /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/routes/auth.js:219:38 {
+  code: 'ER_DBACCESS_DENIED_ERROR',
+  errno: 1044,
+  sqlState: '42000',
+  sqlMessage: "Access denied for user 'semear_user'@'localhost' to database 'semear_core'",
+  sql: undefined
+}
+2026-05-09T14:24:20: ◇ injected env (12) from SemearLogin/.env // tip: ⌘ override existing { override: true }
+2026-05-09T14:24:20: SemearLogin rodando na porta 3004
+2026-05-09T14:24:56: ◇ injected env (12) from SemearLogin/.env // tip: ⌘ custom filepath { path: '/custom/path/.env' }
+2026-05-09T14:24:57: SemearLogin rodando na porta 3004
+2026-05-09T14:25:07: Falha ao resolver redirecionamento central do login: Error: Access denied for user 'semear_user'@'localhost' to database 'semear_core'
+    at resolveCorePasswordAccess (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/routes/auth.js:73:35)
+    at /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/routes/auth.js:219:38
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5) {
+  code: 'ER_DBACCESS_DENIED_ERROR',
+  errno: 1044,
+  sqlState: '42000',
+  sqlMessage: "Access denied for user 'semear_user'@'localhost' to database 'semear_core'",
+  sql: undefined
+}
+2026-05-09T14:25:26: Falha ao resolver redirecionamento central do login: Error: Access denied for user 'semear_user'@'localhost' to database 'semear_core'
+    at resolveCorePasswordAccess (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/routes/auth.js:73:35)
+    at /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/routes/auth.js:219:38 {
+  code: 'ER_DBACCESS_DENIED_ERROR',
+  errno: 1044,
+  sqlState: '42000',
+  sqlMessage: "Access denied for user 'semear_user'@'localhost' to database 'semear_core'",
+  sql: undefined
+}
+2026-05-09T14:43:52: Falha ao resolver redirecionamento central do login: Error: Access denied for user 'semear_user'@'localhost' to database 'semear_core'
+    at resolveCorePasswordAccess (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/routes/auth.js:73:35)
+    at /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/routes/auth.js:219:38 {
+  code: 'ER_DBACCESS_DENIED_ERROR',
+  errno: 1044,
+  sqlState: '42000',
+  sqlMessage: "Access denied for user 'semear_user'@'localhost' to database 'semear_core'",
+  sql: undefined
+}
+2026-05-09T15:05:02: Falha ao resolver redirecionamento central do login: Error: Access denied for user 'semear_user'@'localhost' to database 'semear_core'
+    at resolveCorePasswordAccess (/usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/routes/auth.js:73:35)
+    at /usr/local/semear-paroquial/SEMEARPAROQUIAL/SemearLogin/routes/auth.js:219:38 {
+  code: 'ER_DBACCESS_DENIED_ERROR',
+  errno: 1044,
+  sqlState: '42000',
+  sqlMessage: "Access denied for user 'semear_user'@'localhost' to database 'semear_core'",
+  sql: undefined
+}

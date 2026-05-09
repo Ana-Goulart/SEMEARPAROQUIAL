@@ -1,0 +1,12 @@
+2026-05-09T12:24:20: ◇ injected env (17) from SemearJovens/.env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+2026-05-09T12:24:21: 🚀 EJC rodando na porta 3003
+2026-05-09T13:18:10: ◇ injected env (20) from SemearJovens/.env // tip: ◈ secrets for agents [www.dotenvx.com]
+2026-05-09T13:18:11: 🚀 EJC rodando na porta 3003
+2026-05-09T13:20:17: ◇ injected env (17) from SemearJovens/.env // tip: ⌘ suppress logs { quiet: true }
+2026-05-09T13:20:18: 🚀 EJC rodando na porta 3003
+2026-05-09T13:50:42: ◇ injected env (17) from SemearJovens/.env // tip: ⌘ enable debugging { debug: true }
+2026-05-09T13:50:43: 🚀 EJC rodando na porta 3003
+2026-05-09T14:24:21: ◇ injected env (17) from SemearJovens/.env // tip: ⌁ auth for agents [www.vestauth.com]
+2026-05-09T14:24:21: 🚀 EJC rodando na porta 3003
+2026-05-09T14:24:57: ◇ injected env (17) from SemearJovens/.env // tip: ⌘ enable debugging { debug: true }
+2026-05-09T14:24:57: 🚀 EJC rodando na porta 3003
