@@ -4,6 +4,8 @@ const { getTenantId } = require('../lib/tenantIsolation');
 
 const router = express.Router();
 
+// Rotas de resumo do dashboard.
+
 function toMonth(value) {
     const num = Number(value);
     if (!Number.isInteger(num) || num < 1 || num > 12) return null;
