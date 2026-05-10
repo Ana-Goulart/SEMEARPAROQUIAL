@@ -8,7 +8,7 @@ const { attachUserFromSession } = require('./lib/authSession');
 const rotasAuth = require('./routes/auth');
 
 const app = express();
-const PORT = Number(process.env.PORT || 3002);
+const PORT = Number(process.env.PORT || 3004);
 const GLOBAL_RATE_LIMIT_WINDOW_MS = Number(process.env.GLOBAL_RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000);
 const GLOBAL_RATE_LIMIT_MAX = Number(process.env.GLOBAL_RATE_LIMIT_MAX || 300);
 
