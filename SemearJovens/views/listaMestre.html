@@ -94,18 +94,32 @@
         }
 
         .pastoral-add-button {
-            width: 0.95rem;
-            min-width: 0.95rem;
-            height: 0.95rem;
+            width: 2rem;
+            min-width: 2rem;
+            height: 2rem;
             padding: 0;
             border-radius: 50%;
-            font-size: 0.65rem;
-            font-weight: 700;
+            font-size: 0.85rem;
             line-height: 1;
             display: inline-flex;
             align-items: center;
             justify-content: center;
             vertical-align: middle;
+            box-sizing: border-box;
+            border: 1px solid #d9a650;
+            background-color: #d9a650;
+            color: #ffffff;
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+            transition: background-color 0.18s ease, transform 0.18s ease;
+        }
+
+        .pastoral-add-button i {
+            font-size: 0.85rem;
+        }
+
+        .pastoral-add-button:hover {
+            background-color: #c99b47;
+            transform: translateY(-1px);
         }
 
         .sort-button {
@@ -1263,11 +1277,13 @@
                                         <div class="d-flex align-items-center gap-2 mb-0">
                                             <label class="text-muted small mb-0">Pastorais</label>
                                             <button
+                                                v-if="isEditing"
                                                 type="button"
-                                                class="btn btn-outline-secondary btn-sm rounded-circle pastoral-add-button"
+                                                class="pastoral-add-button"
                                                 @click="abrirNovaPastoralNaFicha"
-                                                title="Cadastrar nova pastoral">
-                                                +
+                                                title="Adicionar pastoral"
+                                                aria-label="Adicionar pastoral">
+                                                <i class="fa-solid fa-plus"></i>
                                             </button>
                                         </div>
                                         <div v-if="!isEditing" class="py-1 px-2 bg-light border rounded">
