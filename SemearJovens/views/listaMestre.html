@@ -2393,7 +2393,7 @@
             <div class="modal-dialog modal-lg">
                 <div class="modal-content border-0 shadow">
                     <div class="modal-header bg-soft-primary">
-                        <h5 class="modal-title">Importar Excel (Modelo esperado)</h5>
+                        <h5 class="modal-title">Importar CSV (Modelo esperado)</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
@@ -2438,14 +2438,14 @@ Exemplo de erro mostrado na importação:
 Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado ou Amasiado.</div>
 
                         <p class="text-muted small mt-2 mb-2">Também aceitamos aliases antigos, como `Nome`, `Phone`, `BirthDate`, `EJCNumber` e `Team_XIEJC`.</p>
-                        <p class="text-muted small mt-0 mb-2">Importante: use arquivo Excel (.xlsx).</p>
+                        <p class="text-muted small mt-0 mb-2">Importante: use arquivo CSV (.csv).</p>
                         <div class="mb-3">
-                            <button type="button" class="btn btn-outline-primary" @click="baixarModeloImportacaoExcel">
-                                Baixar modelo Excel
+                            <button type="button" class="btn btn-outline-primary" @click="baixarModeloImportacaoCSV">
+                                Baixar modelo CSV
                             </button>
                         </div>
-                        <label class="form-label">Selecione o arquivo Excel</label>
-                        <input id="importExcelInput" type="file" class="form-control" accept=".xlsx" @change="onImportFileChange">
+                        <label class="form-label">Selecione o arquivo CSV</label>
+                        <input id="importExcelInput" type="file" class="form-control" accept=".csv" @change="onImportFileChange">
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-soft-secondary" data-bs-dismiss="modal">Cancelar</button>
@@ -3980,9 +3980,9 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                         return;
                     }
                     const nome = String(file.name || '').toLowerCase();
-                    if (!nome.endsWith('.xlsx')) {
+                    if (!nome.endsWith('.csv')) {
                         this.importFile = null;
-                        alert('Selecione um arquivo Excel (.xlsx).');
+                        alert('Selecione um arquivo CSV (.csv).');
                         event.target.value = '';
                         return;
                     }
@@ -3990,16 +3990,12 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                 },
                 async confirmarImportacao() {
                     if (!this.importFile) {
-                        alert('Selecione um arquivo Excel.');
+                        alert('Selecione um arquivo CSV.');
                         return;
                     }
                     try {
-                        const data = await this.importFile.arrayBuffer();
-                        const workbook = XLSX.read(data, { type: 'array' });
-                        const firstSheet = workbook.SheetNames[0];
-                        const ws = workbook.Sheets[firstSheet];
-                        const csv = XLSX.utils.sheet_to_csv(ws);
-                        await this.importarTextoCSV(csv);
+                        const texto = await this.importFile.text();
+                        await this.importarTextoCSV(texto);
                         this.importFile = null;
                         const input = document.getElementById('importExcelInput');
                         if (input) input.value = '';
@@ -4009,7 +4005,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                         alert(err && err.message ? err.message : "Erro ao enviar dados de importação.");
                     }
                 },
-                async baixarModeloImportacaoExcel() {
+                async baixarModeloImportacaoCSV() {
                     if (!this.ejcsList.length) await this.carregarEjcs();
                     const cabecalhoBase = [
                         'nome_completo',
@@ -4082,21 +4078,15 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                         exemplo[cabecalho.indexOf('XI EJC')] = 'Liturgia (Coordenador)';
                     }
                     const wsModelo = XLSX.utils.aoa_to_sheet([cabecalho, exemplo]);
-                    const wsInstrucoes = XLSX.utils.aoa_to_sheet([
-                        ['Campo', 'Como preencher'],
-                        ['sexo', 'Feminino ou Masculino'],
-                        ['estado_civil', 'Solteiro, Casado ou Amasiado'],
-                        ['termos_aceitos_em', 'AAAA-MM-DD HH:mm:ss'],
-                        ['data_nascimento / data_casamento', 'AAAA-MM-DD'],
-                        ['booleanos', 'Sim/Não, True/False ou 1/0'],
-                        ['instrumentos_musicais', 'Separar por vírgula'],
-                        ['numero_ejc', 'Número da edição do EJC existente no sistema'],
-                        ['XI EJC', 'Equipe servida naquele EJC. Exemplo: Liturgia (Coordenador - Música)']
-                    ]);
-                    const wb = XLSX.utils.book_new();
-                    XLSX.utils.book_append_sheet(wb, wsModelo, 'Modelo importacao');
-                    XLSX.utils.book_append_sheet(wb, wsInstrucoes, 'Instrucoes');
-                    XLSX.writeFile(wb, 'modelo_importacao_lista_mestre.xlsx');
+                    const csv = XLSX.utils.sheet_to_csv(wsModelo);
+                    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = 'modelo_importacao_lista_mestre.csv';
+                    link.style.display = 'none';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
                 },
                 async exportarExcel() {
                     const fonte = this.exportacaoOpcoes.somenteFiltrados ? this.jovensFiltrados : this.listaBaseAtual;

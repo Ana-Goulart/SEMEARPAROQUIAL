@@ -91,7 +91,8 @@ function isAdminHost(req) {
 }
 
 app.use(helmet({ contentSecurityPolicy: false }));
-app.use(express.json());
+app.use(express.json({ limit: '20mb' }));
+app.use(express.urlencoded({ limit: '20mb', extended: true }));
 app.use(personNameResponseMiddleware);
 app.use(attachUserFromSession);
 app.use(attachAdminFromSession);
