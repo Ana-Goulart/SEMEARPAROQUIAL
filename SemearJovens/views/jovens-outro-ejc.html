@@ -904,16 +904,7 @@
                                 <span class="btn-ejc-icon"><i class="fa-solid fa-plus icon-accent"></i></span>
                                 <span class="btn-ejc-text">Novo</span>
                             </button>
-                            <button class="btn btn-soft-secondary btn-ejc-action" @click="exportarExcel" title="Exportar" aria-label="Exportar">
-                                <span class="btn-ejc-icon"><i class="fa-solid fa-folder-open icon-accent"></i></span>
-                                <span class="btn-ejc-text">Exportar</span>
-                            </button>
-                            <label class="btn btn-soft-secondary btn-ejc-action mb-0" title="Importar" aria-label="Importar">
-                                <span class="btn-ejc-icon"><i class="fa-solid fa-file-import icon-accent"></i></span>
-                                <span class="btn-ejc-text">Importar</span>
-                                <input type="file" class="d-none" accept=".xlsx" @change="importarExcel">
-                            </label>
-                            <div class="vr mx-1 d-none d-lg-flex"></div>
+                            <div v-if="aba !== 'outros'" class="vr mx-1 d-none d-lg-flex"></div>
                             <div v-if="aba !== 'outros'" class="btn-group">
                                 <button class="btn btn-soft-secondary dropdown-toggle btn-ejc-action" data-bs-toggle="dropdown" title="Colunas" aria-label="Colunas">
                                     <span class="btn-ejc-icon"><i class="fa-solid fa-gear icon-accent"></i></span>

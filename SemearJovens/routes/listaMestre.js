@@ -91,6 +91,54 @@ function montarEtiquetaEdicao(numeroEjc) {
     return `${numeroEjc}º EJC (Montagem)`;
 }
 
+function numeroRomanoParaInteiro(valor) {
+    const texto = String(valor || '').trim().toUpperCase();
+    if (!/^[IVXLCDM]+$/.test(texto)) return NaN;
+    const mapa = { I: 1, V: 5, X: 10, L: 50, C: 100, D: 500, M: 1000 };
+    let total = 0;
+    for (let i = 0; i < texto.length; i += 1) {
+        const atual = mapa[texto[i]] || 0;
+        const proximo = mapa[texto[i + 1]] || 0;
+        total += atual < proximo ? -atual : atual;
+    }
+    return total;
+}
+
+function extrairNumeroEdicaoEquipe(item) {
+    const candidatos = [
+        item && item.ejc_numero,
+        item && item.numero_ejc,
+        item && item.edicao_ejc,
+        item && item.display_ejc,
+        item && item.outro_ejc_numero
+    ];
+
+    for (const candidato of candidatos) {
+        if (candidato === null || candidato === undefined) continue;
+        const numero = Number(candidato);
+        if (Number.isFinite(numero) && numero > 0) return numero;
+
+        const texto = String(candidato).trim();
+        const arabico = texto.match(/\d+/);
+        if (arabico) return Number(arabico[0]);
+
+        const romano = texto.match(/\b[IVXLCDM]+\b/i);
+        if (romano) {
+            const valorRomano = numeroRomanoParaInteiro(romano[0]);
+            if (Number.isFinite(valorRomano) && valorRomano > 0) return valorRomano;
+        }
+    }
+
+    return 0;
+}
+
+function compararEquipesPorEdicaoDesc(a, b) {
+    const numA = extrairNumeroEdicaoEquipe(a);
+    const numB = extrairNumeroEdicaoEquipe(b);
+    if (numA !== numB) return numB - numA;
+    return String(a && (a.equipe || a.nome_equipe) || '').localeCompare(String(b && (b.equipe || b.nome_equipe) || ''), 'pt-BR');
+}
+
 async function hasSubfuncaoColumn() {
     if (hasSubfuncaoColumnCache !== null) return hasSubfuncaoColumnCache;
     const [rows] = await pool.query(`
@@ -327,7 +375,7 @@ async function ensureNaoServeEjcColumns() {
     return true;
 }
 
-async function resolveNumeroEjcFezInput({ tenantId, value }) {
+async function resolveNumeroEjcFezInput({ tenantId, value, preferNumero = false }) {
     if (value === null || value === undefined || value === '') {
         return { numero_ejc_fez: null, montagem_ejc_id: null };
     }
@@ -350,7 +398,51 @@ async function resolveNumeroEjcFezInput({ tenantId, value }) {
             montagem_ejc_id: montagem && montagem.id ? Number(montagem.id) : null
         };
     }
-    const numeric = Number(txt);
+    const txtNumero = txt
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toUpperCase()
+        .replace(/\bEJC\b/g, '')
+        .replace(/[º°ª]/g, '')
+        .replace(/\s+/g, '')
+        .trim();
+    const numeric = /^\d+O?$/.test(txtNumero)
+        ? Number(txtNumero.replace(/O$/, ''))
+        : Number((txtNumero.match(/\d+/) || [txtNumero])[0]);
+    if (!Number.isFinite(numeric) || numeric <= 0) {
+        return { numero_ejc_fez: null, montagem_ejc_id: null };
+    }
+
+    if (preferNumero) {
+        const [[ejcPorNumero]] = await pool.query(
+            `SELECT id
+             FROM ejc
+             WHERE tenant_id = ?
+               AND numero = ?
+             LIMIT 1`,
+            [tenantId, numeric]
+        );
+        if (ejcPorNumero && ejcPorNumero.id) {
+            return { numero_ejc_fez: Number(ejcPorNumero.id), montagem_ejc_id: null };
+        }
+
+        if (await hasTable('montagens')) {
+            const [[montagemPorNumero]] = await pool.query(
+                `SELECT id
+                 FROM montagens
+                 WHERE tenant_id = ?
+                   AND numero_ejc = ?
+                 LIMIT 1`,
+                [tenantId, numeric]
+            );
+            if (montagemPorNumero && montagemPorNumero.id) {
+                return { numero_ejc_fez: null, montagem_ejc_id: Number(montagemPorNumero.id) };
+            }
+        }
+
+        return { numero_ejc_fez: null, montagem_ejc_id: null };
+    }
+
     return {
         numero_ejc_fez: Number.isFinite(numeric) && numeric > 0 ? numeric : null,
         montagem_ejc_id: null
@@ -723,10 +815,10 @@ async function ensureTiosTables() {
                 tenant_id INT NOT NULL,
                 ecc_id INT NULL,
                 nome_tio VARCHAR(180) NOT NULL,
-                telefone_tio VARCHAR(30) NOT NULL,
+                telefone_tio TEXT NULL,
                 data_nascimento_tio DATE NULL,
                 nome_tia VARCHAR(180) NOT NULL,
-                telefone_tia VARCHAR(30) NOT NULL,
+                telefone_tia TEXT NULL,
                 data_nascimento_tia DATE NULL,
                 restricao_alimentar TINYINT(1) NOT NULL DEFAULT 0,
                 deficiencia TINYINT(1) NOT NULL DEFAULT 0,
@@ -1582,12 +1674,7 @@ router.get('/jovens-outro-ejc', async (req, res) => {
                 termos_aceitos_em: i.termos_aceitos_em || null,
                 fontes: Array.from(i.fontes).sort(),
                 detalhes: Array.from(i.detalhes).sort(),
-                historico_equipes: Array.from(i.historico_equipes_map.values()).sort((a, b) => {
-                    const numA = Number(a.ejc_numero || 0);
-                    const numB = Number(b.ejc_numero || 0);
-                    if (numA !== numB) return numB - numA;
-                    return String(a.equipe || '').localeCompare(String(b.equipe || ''), 'pt-BR');
-                })
+                historico_equipes: Array.from(i.historico_equipes_map.values()).sort(compararEquipesPorEdicaoDesc)
             }))
             .sort((a, b) => a.nome_completo.localeCompare(b.nome_completo, 'pt-BR'));
 
@@ -1734,8 +1821,8 @@ router.post('/', async (req, res) => {
         const enderecoCidadeNormalizado = normalizeUpperText(endereco_cidade);
         const enderecoEstadoNormalizado = normalizeUpperText(endereco_estado);
 
-        if (!nomeCompletoNormalizado || !telefoneNormalizado) {
-            return res.status(400).json({ error: "Nome completo e telefone são obrigatórios" });
+        if (!nomeCompletoNormalizado) {
+            return res.status(400).json({ error: "Nome completo é obrigatório" });
         }
 
         const comEhMusico = await hasEhMusicoColumn();
@@ -1990,8 +2077,8 @@ router.put('/:id', async (req, res) => {
         merged.conjuge_nome = normalizeUpperText(merged.conjuge_nome);
         merged.conjuge_telefone = normalizeTrimmedText(merged.conjuge_telefone);
 
-        if (!merged.nome_completo || !merged.telefone) {
-            return res.status(400).json({ error: 'Nome completo e telefone são obrigatórios' });
+        if (!merged.nome_completo) {
+            return res.status(400).json({ error: 'Nome completo é obrigatório' });
         }
 
         if (!merged.eh_musico) {
@@ -2553,15 +2640,15 @@ router.post('/importacao', async (req, res) => {
                 throw new Error('Campo nao_serve_ejc fora do padrão: use apenas Sim/Não.');
             }
 
-            const numeroEjcOriginal = j.numero_ejc_fez;
+            const numeroEjcOriginal = j.numero_ejc_fez ?? j.numero_ejc ?? j.num_ejc;
             j._informou_numero_ejc_fez = !(numeroEjcOriginal === undefined || numeroEjcOriginal === null || String(numeroEjcOriginal).trim() === '');
             const numeroEjcResolvido = j._informou_numero_ejc_fez
-                ? await resolveNumeroEjcFezInput({ tenantId, value: numeroEjcOriginal })
+                ? await resolveNumeroEjcFezInput({ tenantId, value: numeroEjcOriginal, preferNumero: true })
                 : { numero_ejc_fez: null, montagem_ejc_id: null };
             j.numero_ejc_fez = numeroEjcResolvido.numero_ejc_fez || null;
             j.montagem_ejc_id = numeroEjcResolvido.montagem_ejc_id || null;
             if (j._informou_numero_ejc_fez && !j.numero_ejc_fez && !j.montagem_ejc_id) {
-                throw new Error(`Campo numero_ejc fora do padrão: "${numeroEjcOriginal}". Informe um EJC existente ou uma montagem válida.`);
+                throw new Error(`Campo num_ejc fora do padrão: "${numeroEjcOriginal}". Informe o número de um EJC existente ou uma montagem válida.`);
             }
             if (j.montagem_ejc_id && !comMontagemEjcId) {
                 throw new Error('A base atual ainda não suporta vincular jovens diretamente a uma montagem.');
@@ -2990,6 +3077,7 @@ router.get('/historico/:jovemId', async (req, res) => {
             }
         }
 
+        itens.sort(compararEquipesPorEdicaoDesc);
         res.json(itens);
     } catch (err) {
         console.error("Erro ao buscar histórico:", err);

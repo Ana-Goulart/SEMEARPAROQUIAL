@@ -1497,7 +1497,13 @@
                             ]);
 
                             const combined = [];
+                            const numerosEmMontagem = new Set(
+                                (Array.isArray(resMontagens) ? resMontagens : [])
+                                    .map((mont) => Number(mont && mont.numero_ejc))
+                                    .filter((numero) => Number.isFinite(numero) && numero > 0)
+                            );
                             for (let ejc of resEjcs) {
+                                if (numerosEmMontagem.has(Number(ejc && ejc.numero))) continue;
                                 combined.push(this.normalizarCardEjc({ ...ejc, isMontagem: false }));
                             }
                             for (let mont of resMontagens) {

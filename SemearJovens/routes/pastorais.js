@@ -2,6 +2,7 @@ const express = require('express');
 const { pool } = require('../database');
 const { getTenantId } = require('../lib/tenantIsolation');
 const { ensurePastoraisTables, ensureContatosPastoralColumn } = require('../lib/pastorais');
+const { decryptJovemRecord } = require('../lib/jovensSensitiveData');
 
 const router = express.Router();
 
@@ -21,7 +22,7 @@ router.get('/', async (req, res) => {
              ORDER BY nome ASC`,
             [tenantId]
         );
-        return res.json(rows);
+        return res.json((rows || []).map((row) => decryptJovemRecord(row)));
     } catch (err) {
         console.error('Erro ao listar pastorais:', err);
         return res.status(500).json({ error: 'Erro ao listar pastorais.' });

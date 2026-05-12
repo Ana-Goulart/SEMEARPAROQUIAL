@@ -281,6 +281,22 @@
             padding: 0;
         }
 
+        .lista-mestre-import-loading {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            border: 1px solid rgba(217, 166, 80, 0.35);
+            border-radius: 8px;
+            background: #fff8ee;
+            color: #7a5012;
+            padding: 0.85rem 1rem;
+        }
+
+        .lista-mestre-import-loading i {
+            color: #b88732;
+            font-size: 1.1rem;
+        }
+
         .lista-mestre-page-ellipsis {
             border-style: dashed;
             background: transparent;
@@ -2085,8 +2101,8 @@
                                             <input type="text" v-model="novoJovem.apelido" class="form-control" placeholder="Como gosta de ser chamado">
                                         </div>
                                         <div class="col-lg-4">
-                                            <label class="text-muted small">Telefone *</label>
-                                            <input type="tel" v-model="novoJovem.telefone" @input="onNovoTelefoneInput" class="form-control" placeholder="(31)99999-9999" required>
+                                            <label class="text-muted small">Telefone</label>
+                                            <input type="tel" v-model="novoJovem.telefone" @input="onNovoTelefoneInput" class="form-control" placeholder="(31)99999-9999">
                                         </div>
                                         <div class="col-lg-4">
                                             <label class="text-muted small">E-mail</label>
@@ -2332,15 +2348,21 @@
                         <div v-else>
                             <div v-if="jovensCirculoLoading" class="text-center py-3 text-muted">Carregando jovens...</div>
                             <div v-else-if="!jovensCirculoCadastro.length" class="text-center py-3 text-muted bg-light border rounded">Nenhum jovem neste círculo.</div>
-                            <div v-else class="list-group">
-                                <div v-for="jovem in jovensCirculoCadastro" :key="`circulo-jovem-lista-mestre-${jovem.id}`" class="list-group-item d-flex justify-content-between align-items-center">
-                                    <div>
-                                        <div class="fw-semibold">{{ jovem.nome_completo }}</div>
-                                        <div class="small text-muted">
-                                            {{ jovem.telefone || '-' }} • {{ jovem.sexo || '-' }} • {{ jovem.estado_civil || '-' }}
+                            <div v-else>
+                                <div class="d-flex justify-content-between align-items-center mb-2 px-1">
+                                    <span class="small text-muted">Total de jovens</span>
+                                    <span class="badge bg-soft-primary text-primary">{{ jovensCirculoCadastro.length }}</span>
+                                </div>
+                                <div class="list-group">
+                                    <div v-for="jovem in jovensCirculoCadastro" :key="`circulo-jovem-lista-mestre-${jovem.id}`" class="list-group-item d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <div class="fw-semibold">{{ jovem.nome_completo }}</div>
+                                            <div class="small text-muted">
+                                                {{ jovem.telefone || '-' }} • {{ jovem.sexo || '-' }} • {{ jovem.estado_civil || '-' }}
+                                            </div>
                                         </div>
+                                        <div class="small text-muted">{{ formatarIdadeCirculoListaMestre(jovem.data_nascimento) }}</div>
                                     </div>
-                                    <div class="small text-muted">{{ formatarIdadeCirculoListaMestre(jovem.data_nascimento) }}</div>
                                 </div>
                             </div>
                         </div>
@@ -2394,13 +2416,20 @@
                 <div class="modal-content border-0 shadow">
                     <div class="modal-header bg-soft-primary">
                         <h5 class="modal-title">Importar CSV (Modelo esperado)</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" :disabled="importandoDados"></button>
                     </div>
                     <div class="modal-body">
+                        <div v-if="importandoDados" class="lista-mestre-import-loading mb-3" role="status" aria-live="polite">
+                            <i class="fa-solid fa-circle-notch fa-spin"></i>
+                            <div>
+                                <div class="fw-semibold">Importando dados...</div>
+                                <div class="small">Aguarde enquanto os registros são criados ou atualizados.</div>
+                            </div>
+                        </div>
                         <p class="mb-2"><strong>1) Cabeçalho recomendado da planilha</strong></p>
-                        <div class="border rounded p-2 bg-light small" style="white-space: pre-wrap;">nome_completo, telefone, apelido, email, termos_aceitos_em, termos_aceitos_email, sexo, data_nascimento, estado_civil, data_casamento, circulo, numero_ejc, instagram, nao_serve_ejc, motivo_nao_serve_ejc, eh_musico, instrumentos_musicais, equipe_saude, deficiencia, qual_deficiencia, restricao_alimentar, detalhes_restricao, endereco_rua, endereco_numero, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, conjuge_nome
+                        <div class="border rounded p-2 bg-light small" style="white-space: pre-wrap;">nome_completo, telefone, apelido, email, termos_aceitos_em, termos_aceitos_email, sexo, data_nascimento, estado_civil, data_casamento, circulo, num_ejc, instagram, nao_serve_ejc, motivo_nao_serve_ejc, eh_musico, instrumentos_musicais, equipe_saude, deficiencia, qual_deficiencia, restricao_alimentar, detalhes_restricao, endereco_rua, endereco_numero, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, conjuge_nome
 
-Exemplo: numero_ejc = 11
+Exemplo: num_ejc = 11
 O sistema converte automaticamente esse número para o cadastro interno do EJC.</div>
 
                         <p class="mt-3 mb-2"><strong>2) Importar histórico de equipes por jovem (opcional)</strong></p>
@@ -2428,28 +2457,34 @@ Liturgia (Coordenador - Música)</div>
                         <div class="border rounded p-2 bg-light small" style="white-space: pre-wrap;">estado_civil: Solteiro, Casado ou Amasiado (exato)
 sexo: Feminino ou Masculino (exato)
 circulo: {{ textoCirculosImportacao }} (exato)
-telefone: 10 ou 11 dígitos
+telefone: opcional; quando informado, use 10 ou 11 dígitos
 data_nascimento/data_casamento: AAAA-MM-DD
 termos_aceitos_em: AAAA-MM-DD HH:mm:ss
-numero_ejc: deve existir no cadastro de EJC
+num_ejc: deve existir no cadastro de EJC
 campos booleanos: use Sim/Não, True/False, 1/0
 
 Exemplo de erro mostrado na importação:
 Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado ou Amasiado.</div>
 
-                        <p class="text-muted small mt-2 mb-2">Também aceitamos aliases antigos, como `Nome`, `Phone`, `BirthDate`, `EJCNumber` e `Team_XIEJC`.</p>
+                        <p class="text-muted small mt-2 mb-2">Também aceitamos aliases antigos, como `Nome`, `Phone`, `BirthDate`, `EJCNumber`, `numero_ejc` e `Team_XIEJC`.</p>
                         <p class="text-muted small mt-0 mb-2">Importante: use arquivo CSV (.csv).</p>
                         <div class="mb-3">
-                            <button type="button" class="btn btn-outline-primary" @click="baixarModeloImportacaoCSV">
+                            <button type="button" class="btn btn-outline-primary" @click="baixarModeloImportacaoCSV" :disabled="importandoDados">
                                 Baixar modelo CSV
                             </button>
                         </div>
                         <label class="form-label">Selecione o arquivo CSV</label>
-                        <input id="importExcelInput" type="file" class="form-control" accept=".csv" @change="onImportFileChange">
+                        <input id="importExcelInput" type="file" class="form-control" accept=".csv" @change="onImportFileChange" :disabled="importandoDados">
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-soft-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-primary" @click="confirmarImportacao">Importar</button>
+                        <button type="button" class="btn btn-soft-secondary" data-bs-dismiss="modal" :disabled="importandoDados">Cancelar</button>
+                        <button type="button" class="btn btn-primary btn-ejc-action" @click="confirmarImportacao" :disabled="importandoDados || !importFile">
+                            <span class="btn-ejc-icon">
+                                <i v-if="importandoDados" class="fa-solid fa-circle-notch fa-spin icon-accent"></i>
+                                <i v-else class="fa-solid fa-file-import icon-accent"></i>
+                            </span>
+                            <span class="btn-ejc-text">{{ importandoDados ? 'Importando...' : 'Importar' }}</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -2819,6 +2854,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                     modalImportacao: null,
                     modalCirculoListaMestre: null,
                     importFile: null,
+                    importandoDados: false,
                     exportacaoOpcoes: {
                         dadosPessoais: true,
                         historicoEquipes: true,
@@ -3970,7 +4006,12 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                     this.modalExportacao.show();
                 },
                 abrirModalImportacao() {
-                    if (!this.modalImportacao) this.modalImportacao = new bootstrap.Modal(document.getElementById('modalImportacaoDados'));
+                    if (!this.modalImportacao) {
+                        this.modalImportacao = new bootstrap.Modal(document.getElementById('modalImportacaoDados'), {
+                            backdrop: 'static',
+                            keyboard: false
+                        });
+                    }
                     this.modalImportacao.show();
                 },
                 onImportFileChange(event) {
@@ -3993,6 +4034,8 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                         alert('Selecione um arquivo CSV.');
                         return;
                     }
+                    if (this.importandoDados) return;
+                    this.importandoDados = true;
                     try {
                         const texto = await this.importFile.text();
                         await this.importarTextoCSV(texto);
@@ -4003,6 +4046,8 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                     } catch (err) {
                         console.error(err);
                         alert(err && err.message ? err.message : "Erro ao enviar dados de importação.");
+                    } finally {
+                        this.importandoDados = false;
                     }
                 },
                 async baixarModeloImportacaoCSV() {
@@ -4019,7 +4064,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                         'estado_civil',
                         'data_casamento',
                         'circulo',
-                        'numero_ejc',
+                        'num_ejc',
                         'instagram',
                         'nao_serve_ejc',
                         'motivo_nao_serve_ejc',
@@ -4371,6 +4416,24 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                             if (valor === null || valor === undefined || String(valor).trim() === '') return null;
                             return boolFromText(valor);
                         };
+                        const normalizarNumeroEjcImportacao = (valor) => {
+                            if (valor === null || valor === undefined) return null;
+                            const texto = String(valor)
+                                .trim()
+                                .normalize('NFD')
+                                .replace(/[\u0300-\u036f]/g, '')
+                                .toUpperCase();
+                            if (!texto) return null;
+                            const semEjc = texto
+                                .replace(/\bEJC\b/g, '')
+                                .replace(/[º°ª]/g, '')
+                                .replace(/\s+/g, '')
+                                .trim();
+                            if (/^\d+O?$/.test(semEjc)) return Number(semEjc.replace(/O$/, ''));
+                            if (/^[IVXLCDM]+$/.test(semEjc)) return this.romanoParaNumero(semEjc);
+                            const digitos = semEjc.match(/\d+/);
+                            return digitos ? Number(digitos[0]) : (Number(semEjc) || null);
+                        };
 
                         const dataNasc = getVal("BirthDate", "Data Nascimento", "data_nascimento", "data nascimento");
                         const dataCasamento = getVal("MarriageDate", "Data Casamento", "data_casamento", "data casamento");
@@ -4381,7 +4444,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                         const circuloCsv = getVal("Circle", "Círculo", "circulo") || valorColuna(5);
                         const deficienciaCsv = getVal("HasDisability", "Deficiência", "deficiencia") || valorColuna(6);
                         const restricaoCsv = getVal("HasFoodRestriction", "Restrição Alimentar", "restricao_alimentar", "restricao alimentar") || valorColuna(7);
-                        const numeroEjcCsv = getVal("EJCNumber", "Numero EJC", "numero_ejc", "numero ejc") || valorColuna(8);
+                        const numeroEjcCsv = getVal("EJCNumber", "Numero EJC", "numero_ejc", "numero ejc", "num_ejc", "num ejc") || valorColuna(8);
 
                         const jovem = {
                             nome_completo: nomeCsv,
@@ -4411,9 +4474,10 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                             endereco_bairro: getVal("Neighborhood", "Endereço Bairro", "endereco_bairro"),
                             endereco_cidade: getVal("City", "Endereço Cidade", "endereco_cidade"),
                             endereco_estado: getVal("State", "Endereço Estado", "endereco_estado"),
-                            endereco_cep: getVal("ZipCode", "Endereço CEP", "endereco_cep")
+                            endereco_cep: getVal("ZipCode", "Endereço CEP", "endereco_cep"),
+                            num_ejc: numeroEjcCsv
                         };
-                        if (numeroEjcCsv) jovem.numero_ejc_fez = this.romanoParaNumero(numeroEjcCsv) || Number(numeroEjcCsv) || null;
+                        if (numeroEjcCsv) jovem.numero_ejc_fez = normalizarNumeroEjcImportacao(numeroEjcCsv);
                         if (typeof jovem.instrumentos_musicais === 'string') {
                             jovem.instrumentos_musicais = jovem.instrumentos_musicais.split(',').map((item) => item.trim()).filter(Boolean);
                         }
@@ -4497,12 +4561,14 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                 async processarImportacao(event) {
                     const file = event.target.files[0];
                     if (!file) return;
+                    if (this.importandoDados) return;
 
                     if (!(await window.showFloatingConfirm("Tem certeza que deseja importar este arquivo? Isso irá criar novos registros e atualizar os existentes."))) {
                         event.target.value = '';
                         return;
                     }
 
+                    this.importandoDados = true;
                     const reader = new FileReader();
                     reader.onload = async (e) => {
                         try {
@@ -4511,7 +4577,13 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                         } catch (err) {
                             console.error(err);
                             alert(err && err.message ? err.message : "Erro ao enviar dados de importação.");
+                        } finally {
+                            this.importandoDados = false;
                         }
+                    };
+                    reader.onerror = () => {
+                        this.importandoDados = false;
+                        alert('Erro ao ler o arquivo de importação.');
                     };
                     reader.readAsText(file);
                 },
@@ -4767,8 +4839,8 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                 async salvarNovoJovem() {
                     try {
                         this.normalizarCamposMaiusculosJovem(this.novoJovem);
-                        if (!this.novoJovem.nome_completo || !this.novoJovem.telefone) {
-                            alert('Nome e telefone são obrigatórios');
+                        if (!this.novoJovem.nome_completo) {
+                            alert('Nome é obrigatório');
                             return;
                         }
                         if (this.novoJovem.origem_ejc_tipo === 'OUTRO_EJC' && !this.novoJovem.outro_ejc_id) {

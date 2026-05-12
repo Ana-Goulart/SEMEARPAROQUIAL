@@ -48,6 +48,8 @@ const rotasRelacoesFamiliares = require('./routes/relacoesFamiliares');
 const rotasLogs = require('./routes/logs');
 const { activityLoggerMiddleware } = require('./lib/activityLogs');
 const { personNameResponseMiddleware } = require('./lib/personNameFormatting');
+const { decryptJovemPhone } = require('./lib/jovensSensitiveData');
+const { decryptTioPhone } = require('./lib/tiosSensitiveData');
 
 const CORE_LOGIN_URL = String(process.env.CORE_LOGIN_URL || 'https://login.semearparoquial.com.br/login').trim();
 const SEMEAR_JOVENS_DASHBOARD_URL = String(process.env.SEMEAR_JOVENS_DASHBOARD_URL || 'https://ejc.semearparoquial.com.br:3003/dashboard').trim();
@@ -55,6 +57,23 @@ const PARISH_ADMIN_URL = String(process.env.PARISH_ADMIN_URL || 'https://admin.s
 const ADMIN_HOSTNAME = String(process.env.ADMIN_HOSTNAME || 'admin.semearparoquial.com.br').trim().toLowerCase();
 const GLOBAL_RATE_LIMIT_WINDOW_MS = Number(process.env.GLOBAL_RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000);
 const GLOBAL_RATE_LIMIT_MAX = Number(process.env.GLOBAL_RATE_LIMIT_MAX || 300);
+const PHONE_RESPONSE_FIELDS = new Set([
+    'telefone',
+    'jovem_telefone',
+    'telefone_referencia',
+    'conjuge_telefone',
+    'telefone_snapshot',
+    'telefone_tio',
+    'telefone_tia',
+    'telefone_tio_snapshot',
+    'telefone_tia_snapshot'
+]);
+const TIO_PHONE_RESPONSE_FIELDS = new Set([
+    'telefone_tio',
+    'telefone_tia',
+    'telefone_tio_snapshot',
+    'telefone_tia_snapshot'
+]);
 
 app.set('trust proxy', 1);
 
@@ -90,9 +109,52 @@ function isAdminHost(req) {
     return !!(host && host === ADMIN_HOSTNAME);
 }
 
+function decryptResponsePhone(value, preferTio = false) {
+    if (value === undefined || value === null || value === '') return value;
+    const text = String(value);
+    if (!text.includes('enc:v1:')) return value;
+
+    return text
+        .split('/')
+        .map((part) => {
+            const trimmed = String(part || '').trim();
+            if (!trimmed || !trimmed.includes('enc:v1:')) return trimmed;
+            const first = preferTio ? decryptTioPhone(trimmed) : decryptJovemPhone(trimmed);
+            const fallback = preferTio ? decryptJovemPhone(trimmed) : decryptTioPhone(trimmed);
+            return first || fallback || trimmed;
+        })
+        .join(' / ');
+}
+
+function decryptPhoneFieldsForResponse(payload) {
+    if (!payload || typeof payload !== 'object') return payload;
+    if (Array.isArray(payload)) return payload.map((item) => decryptPhoneFieldsForResponse(item));
+    const proto = Object.getPrototypeOf(payload);
+    if (proto !== Object.prototype && proto !== null) return payload;
+
+    const out = {};
+    Object.entries(payload).forEach(([key, value]) => {
+        if (PHONE_RESPONSE_FIELDS.has(key)) {
+            out[key] = decryptResponsePhone(value, TIO_PHONE_RESPONSE_FIELDS.has(key));
+        } else if (value && typeof value === 'object') {
+            out[key] = decryptPhoneFieldsForResponse(value);
+        } else {
+            out[key] = value;
+        }
+    });
+    return out;
+}
+
+function sensitivePhoneResponseMiddleware(_req, res, next) {
+    const originalJson = res.json.bind(res);
+    res.json = (body) => originalJson(decryptPhoneFieldsForResponse(body));
+    next();
+}
+
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(express.json({ limit: '20mb' }));
 app.use(express.urlencoded({ limit: '20mb', extended: true }));
+app.use(sensitivePhoneResponseMiddleware);
 app.use(personNameResponseMiddleware);
 app.use(attachUserFromSession);
 app.use(attachAdminFromSession);
@@ -106,7 +168,7 @@ app.use((req, res, next) => {
     }
     const targetPath = req.path === '/' ? '/login' : req.path;
     return res.redirect(`${PARISH_ADMIN_URL}${targetPath}`);
-});
+})
 
 async function requireLoginView(req, res, next) {
     if (!req.user || !req.user.id) return res.redirect('/login');
@@ -235,7 +297,12 @@ app.get('/contatos', requireLoginView, (req, res) => res.sendFile(path.join(__di
 app.get('/tios', requireLoginView, (req, res) => res.sendFile(path.join(__dirname, 'views', 'tios.html')));
 
 // --- ROTAS NOVAS DE NAVEGAÇÃO AGRUPADA ---
-app.get('/gestaodoencontro/listamestre', requireLoginView, (req, res) => res.sendFile(path.join(__dirname, 'views', 'listaMestre.html')));
+app.get('/gestaodoencontro/listamestre', requireLoginView, (req, res) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    return res.sendFile(path.join(__dirname, 'views', 'listaMestre.html'));
+});
 app.get('/gestaodoencontro/equipes', requireLoginView, (req, res) => res.sendFile(path.join(__dirname, 'views', 'equipes.html')));
 app.get('/gestaodoencontro/ejc', requireLoginView, (req, res) => {
     res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');

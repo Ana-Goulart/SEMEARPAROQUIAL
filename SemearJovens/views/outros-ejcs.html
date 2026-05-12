@@ -20,8 +20,6 @@
 
     <!-- Vue -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <script src="/js/excel-utils.js"></script>
 
     <style>
         .page-header {
@@ -112,13 +110,6 @@
                             <i class="fas fa-globe text-primary me-2"></i>Outros EJCs
                         </h2>
                         <div class="d-flex gap-2">
-                            <button class="btn btn-outline-success" onclick="window.OutrosEjcsApp.exportarExcel()">
-                                Exportar Excel
-                            </button>
-                            <label class="btn btn-outline-primary mb-0">
-                                Importar Excel
-                                <input type="file" class="d-none" accept=".xlsx" onchange="window.OutrosEjcsApp.importarExcel(event)">
-                            </label>
                             <button class="btn btn-primary" onclick="window.OutrosEjcsApp.openCreateModal()">
                                 <i class="fas fa-plus me-1"></i> Cadastrar Novo
                             </button>
@@ -278,6 +269,33 @@
             let currentEjcs = [];
             let selectedId = null;
 
+            function romanToNumber(value) {
+                const text = String(value || '').trim().toUpperCase();
+                if (!/^[IVXLCDM]+$/.test(text)) return NaN;
+                const map = { I: 1, V: 5, X: 10, L: 50, C: 100, D: 500, M: 1000 };
+                let total = 0;
+                for (let i = 0; i < text.length; i += 1) {
+                    const current = map[text[i]] || 0;
+                    const next = map[text[i + 1]] || 0;
+                    total += current < next ? -current : current;
+                }
+                return total;
+            }
+
+            function getEjcNumber(value) {
+                const number = Number(value);
+                if (Number.isFinite(number) && number > 0) return number;
+                const text = String(value || '').trim();
+                const arabic = text.match(/\d+/);
+                if (arabic) return Number(arabic[0]);
+                const roman = text.match(/\b[IVXLCDM]+\b/i);
+                if (roman) {
+                    const romanNumber = romanToNumber(roman[0]);
+                    if (Number.isFinite(romanNumber) && romanNumber > 0) return romanNumber;
+                }
+                return 0;
+            }
+
             // Inicializar o modal do Bootstrap quando disparado o carregamento das functions
             document.addEventListener('DOMContentLoaded', () => {
                 const createModalEl = document.getElementById('formModal');
@@ -410,6 +428,13 @@
                         return;
                     }
                     if (resumo) resumo.textContent = `Total: ${data.length}`;
+                    const sortedData = data.slice().sort((a, b) => {
+                        const numA = getEjcNumber(a.outro_ejc_numero);
+                        const numB = getEjcNumber(b.outro_ejc_numero);
+                        if (numA !== numB) return numB - numA;
+                        return String(a.nome_completo || '').localeCompare(String(b.nome_completo || ''), 'pt-BR');
+                    });
+
                     container.innerHTML = `
                         <div class="table-responsive">
                             <table class="table table-sm table-bordered align-middle">
@@ -424,7 +449,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    ${data.map((j) => `
+                                    ${sortedData.map((j) => `
                                         <tr>
                                             <td>${j.nome_completo || '-'}</td>
                                             <td>${j.telefone || '-'}</td>
@@ -443,74 +468,6 @@
                     container.innerHTML = `<div class="text-danger">Erro ao carregar jovens deste outro EJC.</div>`;
                 } finally {
                     loadingEl.classList.add('d-none');
-                }
-            }
-
-            async function exportarExcel() {
-                const filtroEl = document.getElementById('outrosEjcsFiltro');
-                const termo = String(filtroEl ? filtroEl.value : '').trim().toLowerCase();
-                const fonte = termo
-                    ? (currentEjcs || []).filter((r) => {
-                        const nome = String(r.nome || '').toLowerCase();
-                        const paroquia = String(r.paroquia || '').toLowerCase();
-                        const bairro = String(r.bairro || '').toLowerCase();
-                        return nome.includes(termo) || paroquia.includes(termo) || bairro.includes(termo);
-                    })
-                    : (currentEjcs || []);
-                if (!fonte.length) {
-                    Swal.fire('Aviso', 'Não há dados para exportar.', 'warning');
-                    return;
-                }
-                const rows = fonte.map(r => ({
-                    Nome: r.nome || '',
-                    Paroquia: r.paroquia || '',
-                    Bairro: r.bairro || ''
-                }));
-                ExcelUtils.exportJsonToXlsx({
-                    filename: 'outros_ejcs.xlsx',
-                    sheetName: 'Outros EJCs',
-                    rows
-                });
-            }
-
-            async function importarExcel(evt) {
-                const file = evt.target.files && evt.target.files[0] ? evt.target.files[0] : null;
-                evt.target.value = '';
-                if (!file) return;
-                if (!String(file.name || '').toLowerCase().endsWith('.xlsx')) {
-                    Swal.fire('Aviso', 'Selecione um arquivo Excel (.xlsx).', 'warning');
-                    return;
-                }
-                try {
-                    const rows = await ExcelUtils.readXlsxFile(file);
-                    if (!rows.length) {
-                        Swal.fire('Aviso', 'Arquivo vazio.', 'warning');
-                        return;
-                    }
-                    await loadData();
-                    const norm = (v) => String(v || '').trim().toLowerCase();
-                    for (const r of rows) {
-                        const nome = String(r.Nome || r.nome || '').trim();
-                        if (!nome) continue;
-                        const paroquia = String(r.Paroquia || r.paroquia || '').trim();
-                        const bairro = String(r.Bairro || r.bairro || '').trim();
-                        const existente = (currentEjcs || []).find(e =>
-                            norm(e.nome) === norm(nome) && norm(e.paroquia) === norm(paroquia)
-                        );
-                        const url = existente ? `/api/outros-ejcs/${existente.id}` : '/api/outros-ejcs';
-                        const method = existente ? 'PUT' : 'POST';
-                        // eslint-disable-next-line no-await-in-loop
-                        await fetch(url, {
-                            method,
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ nome, paroquia, bairro })
-                        });
-                    }
-                    await loadData();
-                    Swal.fire('Sucesso', 'Importação concluída.', 'success');
-                } catch (err) {
-                    console.error(err);
-                    Swal.fire('Erro', 'Não foi possível importar o Excel.', 'error');
                 }
             }
 
@@ -640,8 +597,6 @@
 
             return {
                 loadData,
-                exportarExcel,
-                importarExcel,
                 openCreateModal,
                 openDetailsModal,
                 saveDetails,

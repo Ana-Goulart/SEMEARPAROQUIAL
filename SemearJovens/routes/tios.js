@@ -63,15 +63,17 @@ const NORMALIZED_PHONE_SQL = "REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TRIM(COALE
 async function ensureTiosServicosSnapshots() {
     const colunas = [
         ['nome_tio_snapshot', 'VARCHAR(180) NULL'],
-        ['telefone_tio_snapshot', 'VARCHAR(30) NULL'],
+        ['telefone_tio_snapshot', 'TEXT NULL'],
         ['nome_tia_snapshot', 'VARCHAR(180) NULL'],
-        ['telefone_tia_snapshot', 'VARCHAR(30) NULL']
+        ['telefone_tia_snapshot', 'TEXT NULL']
     ];
 
     for (const [nome, definicao] of colunas) {
         if (await hasColumn('tios_casal_servicos', nome)) continue;
         await pool.query(`ALTER TABLE tios_casal_servicos ADD COLUMN ${nome} ${definicao}`);
     }
+    await pool.query('ALTER TABLE tios_casal_servicos MODIFY telefone_tio_snapshot TEXT NULL');
+    await pool.query('ALTER TABLE tios_casal_servicos MODIFY telefone_tia_snapshot TEXT NULL');
 
     await pool.query(`
         UPDATE tios_casal_servicos ts
@@ -94,15 +96,17 @@ async function ensureTiosServicosSnapshots() {
             equipe_id INT NOT NULL,
             ejc_id INT NULL,
             nome_tio_snapshot VARCHAR(180) NULL,
-            telefone_tio_snapshot VARCHAR(30) NULL,
+            telefone_tio_snapshot TEXT NULL,
             nome_tia_snapshot VARCHAR(180) NULL,
-            telefone_tia_snapshot VARCHAR(30) NULL,
+            telefone_tia_snapshot TEXT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             KEY idx_tios_serv_hist_tenant_ejc (tenant_id, ejc_id),
             KEY idx_tios_serv_hist_equipe (tenant_id, equipe_id),
             KEY idx_tios_serv_hist_casal (tenant_id, casal_id)
         )
     `);
+    await pool.query('ALTER TABLE tios_casal_servicos_historico MODIFY telefone_tio_snapshot TEXT NULL');
+    await pool.query('ALTER TABLE tios_casal_servicos_historico MODIFY telefone_tia_snapshot TEXT NULL');
 }
 
 function montarNomeCasal(nomeTio, nomeTia) {
@@ -391,13 +395,14 @@ async function ensureStructure() {
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 tenant_id INT NOT NULL,
                 ecc_id INT NULL,
+                encontro_tipo ENUM('ECC','ECNA') NULL,
                 origem_tipo ENUM('EJC','OUTRO_EJC') NOT NULL DEFAULT 'EJC',
                 outro_ejc_id INT NULL,
                 nome_tio VARCHAR(180) NOT NULL,
-                telefone_tio VARCHAR(30) NOT NULL,
+                telefone_tio TEXT NULL,
                 data_nascimento_tio DATE NULL,
                 nome_tia VARCHAR(180) NOT NULL,
-                telefone_tia VARCHAR(30) NOT NULL,
+                telefone_tia TEXT NULL,
                 data_nascimento_tia DATE NULL,
                 restricao_alimentar TINYINT(1) NOT NULL DEFAULT 0,
                 deficiencia TINYINT(1) NOT NULL DEFAULT 0,
@@ -419,6 +424,18 @@ async function ensureStructure() {
         `);
         try {
             await pool.query("ALTER TABLE tios_casais ADD COLUMN origem_tipo ENUM('EJC','OUTRO_EJC') NOT NULL DEFAULT 'EJC' AFTER ecc_id");
+        } catch (e) { }
+        try {
+            await pool.query("ALTER TABLE tios_casais ADD COLUMN encontro_tipo ENUM('ECC','ECNA') NULL AFTER ecc_id");
+        } catch (e) { }
+        try {
+            await pool.query(`
+                UPDATE tios_casais c
+                LEFT JOIN tios_ecc e ON e.id = c.ecc_id AND e.tenant_id = c.tenant_id
+                SET c.encontro_tipo = COALESCE(c.encontro_tipo, e.tipo)
+                WHERE c.encontro_tipo IS NULL
+                  AND e.tipo IN ('ECC', 'ECNA')
+            `);
         } catch (e) { }
         try {
             await pool.query("ALTER TABLE tios_casais ADD COLUMN outro_ejc_id INT NULL AFTER origem_tipo");
@@ -603,6 +620,14 @@ function normalizeTrimmedText(value) {
 function normalizeUpperText(value) {
     const text = normalizeTrimmedText(value);
     return text ? text.toLocaleUpperCase('pt-BR') : null;
+}
+
+function normalizarTipoEncontroTio(value) {
+    const texto = String(value || '').trim().toUpperCase();
+    if (!texto) return null;
+    if (texto.includes('ECNA') || texto.includes('ENCA')) return 'ECNA';
+    if (texto.includes('ECC')) return 'ECC';
+    return null;
 }
 
 async function validarDuplicidadeTelefoneCasal({
@@ -801,6 +826,71 @@ router.post('/ecc', async (req, res) => {
         }
         console.error('Erro ao criar ECC:', err);
         return res.status(500).json({ error: 'Erro ao criar ECC.' });
+    }
+});
+
+router.post('/ecc/bulk-replace', async (req, res) => {
+    try {
+        await ensureStructure();
+        const tenantId = getTenantId(req);
+        const itens = Array.isArray(req.body && req.body.encontros) ? req.body.encontros : [];
+        if (!itens.length) return res.status(400).json({ error: 'Nenhum encontro informado para importação.' });
+        if (itens.length > 5000) return res.status(400).json({ error: 'Importe no máximo 5000 encontros por arquivo.' });
+
+        const erros = [];
+        const validos = [];
+        const chavesArquivo = new Set();
+        itens.forEach((item, index) => {
+            const linha = Number(item && item.__linha) || index + 2;
+            const numero = String((item && item.numero) || '').trim();
+            const descricao = String((item && item.descricao) || '').trim() || null;
+            const tipoRaw = String((item && item.tipo) || 'ECC').trim().toUpperCase();
+            const tipo = tipoRaw === 'ECNA' ? 'ECNA' : 'ECC';
+            const chave = `${numero}|${tipo}`;
+            if (!numero) {
+                erros.push({ linha, error: 'Número do encontro é obrigatório.' });
+                return;
+            }
+            if (chavesArquivo.has(chave)) {
+                erros.push({ linha, error: 'Este encontro já aparece em outra linha do arquivo.' });
+                return;
+            }
+            chavesArquivo.add(chave);
+            validos.push({ linha, numero, tipo, descricao, chave });
+        });
+
+        if (!validos.length) {
+            return res.status(400).json({ error: 'Nenhum encontro válido para importar.', erros });
+        }
+
+        const [existentesRows] = await pool.query(
+            'SELECT numero, tipo FROM tios_ecc WHERE tenant_id = ?',
+            [tenantId]
+        );
+        const existentes = new Set((existentesRows || []).map((row) => `${String(row.numero || '').trim()}|${String(row.tipo || 'ECC').trim().toUpperCase()}`));
+        const criados = validos.filter((item) => !existentes.has(item.chave)).length;
+        const atualizados = validos.length - criados;
+
+        const valores = validos.map((item) => [tenantId, item.numero, item.tipo, item.descricao]);
+        await pool.query(
+            `INSERT INTO tios_ecc (tenant_id, numero, tipo, descricao)
+             VALUES ?
+             ON DUPLICATE KEY UPDATE
+                descricao = VALUES(descricao),
+                updated_at = CURRENT_TIMESTAMP`,
+            [valores]
+        );
+
+        return res.json({
+            message: 'Importação de encontros em lote concluída.',
+            criados,
+            atualizados,
+            ignorados: erros.length,
+            erros
+        });
+    } catch (err) {
+        console.error('Erro ao importar encontros em lote:', err);
+        return res.status(500).json({ error: 'Erro ao importar encontros em lote.' });
     }
 });
 
@@ -1134,12 +1224,12 @@ router.get('/casais', async (req, res) => {
                 ? "AND COALESCE(c.origem_tipo, 'EJC') = 'EJC'"
                 : '';
         const [casais] = await pool.query(
-            `SELECT c.id, c.ecc_id, c.origem_tipo, c.outro_ejc_id, c.nome_tio, c.telefone_tio, c.data_nascimento_tio,
+            `SELECT c.id, c.ecc_id, c.encontro_tipo, c.origem_tipo, c.outro_ejc_id, c.nome_tio, c.telefone_tio, c.data_nascimento_tio,
                     c.nome_tia, c.telefone_tia, c.data_nascimento_tia, c.restricao_alimentar, c.deficiencia,
                     c.restricao_alimentar_tio, c.detalhes_restricao_tio, c.deficiencia_tio, c.qual_deficiencia_tio,
                     c.restricao_alimentar_tia, c.detalhes_restricao_tia, c.deficiencia_tia, c.qual_deficiencia_tia,
                     c.observacoes, c.termos_aceitos_em, c.foto_url,
-                    c.created_at, c.updated_at, e.numero AS ecc_numero, e.tipo AS ecc_tipo, e.descricao AS ecc_descricao,
+                    c.created_at, c.updated_at, e.numero AS ecc_numero, COALESCE(c.encontro_tipo, e.tipo) AS ecc_tipo, e.descricao AS ecc_descricao,
                     oe.nome AS outro_ejc_nome, oe.paroquia AS outro_ejc_paroquia, oe.bairro AS outro_ejc_bairro
              FROM tios_casais c
              LEFT JOIN tios_ecc e ON e.id = c.ecc_id AND e.tenant_id = c.tenant_id
@@ -1193,6 +1283,289 @@ router.get('/casais', async (req, res) => {
     }
 });
 
+router.post('/casais/bulk-replace', async (req, res) => {
+    let connection;
+    const sincronizacoes = [];
+    try {
+        await ensureStructure();
+        const tenantId = getTenantId(req);
+        const itens = Array.isArray(req.body && req.body.casais) ? req.body.casais : [];
+        if (!itens.length) return res.status(400).json({ error: 'Nenhum casal informado para importação.' });
+        if (itens.length > 5000) return res.status(400).json({ error: 'Importe no máximo 5000 casais por arquivo.' });
+
+        const erros = [];
+        const validos = [];
+        const telefonesArquivo = new Map();
+        const normalizarLinha = (item, index) => {
+            const linha = Number(item && item.__linha) || index + 2;
+            const nomeTio = normalizeUpperText(item && item.nome_tio);
+            const telefoneTio = normalizeTrimmedText(item && item.telefone_tio);
+            const telefoneTioDigits = normalizePhoneDigits(telefoneTio);
+            const dataNascimentoTio = normalizeDate(item && item.data_nascimento_tio);
+            const nomeTia = normalizeUpperText(item && item.nome_tia);
+            const telefoneTia = normalizeTrimmedText(item && item.telefone_tia);
+            const telefoneTiaDigits = normalizePhoneDigits(telefoneTia);
+            const dataNascimentoTia = normalizeDate(item && item.data_nascimento_tia);
+            const restricaoAlimentarTio = parseBool(item && item.restricao_alimentar_tio);
+            const detalhesRestricaoTio = restricaoAlimentarTio ? (String((item && item.detalhes_restricao_tio) || '').trim() || null) : null;
+            const deficienciaTio = parseBool(item && item.deficiencia_tio);
+            const qualDeficienciaTio = deficienciaTio ? (String((item && item.qual_deficiencia_tio) || '').trim() || null) : null;
+            const restricaoAlimentarTia = parseBool(item && item.restricao_alimentar_tia);
+            const detalhesRestricaoTia = restricaoAlimentarTia ? (String((item && item.detalhes_restricao_tia) || '').trim() || null) : null;
+            const deficienciaTia = parseBool(item && item.deficiencia_tia);
+            const qualDeficienciaTia = deficienciaTia ? (String((item && item.qual_deficiencia_tia) || '').trim() || null) : null;
+            const origemTipo = String((item && item.origem_tipo) || 'EJC').trim().toUpperCase() === 'OUTRO_EJC' ? 'OUTRO_EJC' : 'EJC';
+            const eccId = item && item.ecc_id ? Number(item.ecc_id) : null;
+            const encontroTipo = normalizarTipoEncontroTio(item && (item.encontro_tipo || item.ecc_tipo || item.encontro));
+            const outroEjcId = item && item.outro_ejc_id ? Number(item.outro_ejc_id) : null;
+            const servicos = normalizeServicos(item && item.servicos, item && item.equipe_ids);
+            return {
+                linha,
+                nomeTio,
+                telefoneTio,
+                telefoneTioDigits,
+                dataNascimentoTio,
+                nomeTia,
+                telefoneTia,
+                telefoneTiaDigits,
+                dataNascimentoTia,
+                restricaoAlimentarTio,
+                detalhesRestricaoTio,
+                deficienciaTio,
+                qualDeficienciaTio,
+                restricaoAlimentarTia,
+                detalhesRestricaoTia,
+                deficienciaTia,
+                qualDeficienciaTia,
+                restricaoAlimentar: restricaoAlimentarTio || restricaoAlimentarTia,
+                deficiencia: deficienciaTio || deficienciaTia,
+                observacoes: String((item && item.observacoes) || '').trim() || null,
+                origemTipo,
+                eccId,
+                encontroTipo,
+                outroEjcId,
+                servicos
+            };
+        };
+
+        itens.forEach((item, index) => {
+            const row = normalizarLinha(item, index);
+            if (!row.nomeTio || !row.nomeTia) {
+                erros.push({ linha: row.linha, error: 'Dados obrigatórios: nome do tio e nome da tia.' });
+                return;
+            }
+            if (row.telefoneTioDigits && row.telefoneTiaDigits && row.telefoneTioDigits === row.telefoneTiaDigits) {
+                erros.push({ linha: row.linha, error: 'Os telefones do tio e da tia não podem ser iguais.' });
+                return;
+            }
+            const telefonesLinha = [row.telefoneTioDigits, row.telefoneTiaDigits].filter(Boolean);
+            const telefoneDuplicado = telefonesLinha.find((telefone) => telefonesArquivo.has(telefone));
+            if (telefoneDuplicado) {
+                erros.push({ linha: row.linha, error: `Telefone já aparece na linha ${telefonesArquivo.get(telefoneDuplicado)} do arquivo.` });
+                return;
+            }
+            for (const telefone of telefonesLinha) {
+                telefonesArquivo.set(telefone, row.linha);
+            }
+            validos.push(row);
+        });
+
+        if (!validos.length) {
+            return res.status(400).json({ error: 'Nenhum casal válido para importar.', erros });
+        }
+
+        const eccIds = Array.from(new Set(validos.filter((item) => item.origemTipo === 'EJC' && item.eccId).map((item) => item.eccId)));
+        const outroEjcIds = Array.from(new Set(validos.filter((item) => item.origemTipo === 'OUTRO_EJC' && item.outroEjcId).map((item) => item.outroEjcId)));
+        const equipeIds = Array.from(new Set(validos.flatMap((item) => item.servicos.map((s) => s.equipe_id))));
+        const ejcIds = Array.from(new Set(validos.flatMap((item) => item.servicos.map((s) => s.ejc_id).filter((id) => Number.isInteger(id) && id > 0))));
+
+        const validarIds = async (tabela, ids, mensagem) => {
+            if (!ids.length) return;
+            const [rows] = await pool.query(`SELECT id FROM ${tabela} WHERE tenant_id = ? AND id IN (?)`, [tenantId, ids]);
+            const encontrados = new Set((rows || []).map((row) => Number(row.id)));
+            ids.filter((id) => !encontrados.has(Number(id))).forEach((id) => {
+                erros.push({ linha: null, error: `${mensagem}: ${id}.` });
+            });
+        };
+        await validarIds('tios_ecc', eccIds, 'Encontro inválido');
+        await validarIds('outros_ejcs', outroEjcIds, 'Outro EJC inválido');
+        await validarIds('equipes', equipeIds, 'Equipe inválida');
+        await validarIds('ejc', ejcIds, 'EJC inválido');
+
+        validos.forEach((item) => {
+            if (item.origemTipo === 'OUTRO_EJC' && !item.outroEjcId) {
+                erros.push({ linha: item.linha, error: 'Selecione a paróquia de outro EJC.' });
+            }
+        });
+        if (erros.some((erro) => !erro.linha)) {
+            return res.status(400).json({ error: 'Existem referências inválidas no arquivo.', erros });
+        }
+        const linhasComErro = new Set(erros.filter((erro) => erro.linha).map((erro) => Number(erro.linha)));
+        const processaveis = validos.filter((item) => !linhasComErro.has(Number(item.linha)));
+        if (!processaveis.length) {
+            return res.status(400).json({ error: 'Nenhum casal válido para importar.', erros });
+        }
+
+        const [existentesRows] = await pool.query(
+            'SELECT id, nome_tio, telefone_tio, nome_tia, telefone_tia FROM tios_casais WHERE tenant_id = ?',
+            [tenantId]
+        );
+        const existentes = (existentesRows || []).map((row) => decryptTiosCasal(row));
+        const existentePorTelefone = new Map();
+        const existentePorNome = new Map();
+        for (const row of existentes) {
+            const id = Number(row.id);
+            [row.telefone_tio, row.telefone_tia].map(normalizePhoneDigits).filter(Boolean).forEach((telefone) => {
+                if (!existentePorTelefone.has(telefone)) existentePorTelefone.set(telefone, row);
+            });
+            const chaveNome = `${normalizarTextoComparacao(row.nome_tio)}|${normalizarTextoComparacao(row.nome_tia)}`;
+            if (chaveNome !== '|') existentePorNome.set(chaveNome, row);
+        }
+
+        const atualizacoes = [];
+        const insercoes = [];
+        for (const item of processaveis) {
+            const candidatos = [
+                existentePorTelefone.get(item.telefoneTioDigits),
+                existentePorTelefone.get(item.telefoneTiaDigits),
+                existentePorNome.get(`${normalizarTextoComparacao(item.nomeTio)}|${normalizarTextoComparacao(item.nomeTia)}`)
+            ].filter(Boolean);
+            const idsCandidatos = Array.from(new Set(candidatos.map((row) => Number(row.id)).filter(Boolean)));
+            if (idsCandidatos.length > 1) {
+                erros.push({ linha: item.linha, error: 'Os telefones informados apontam para casais diferentes já cadastrados.' });
+                continue;
+            }
+            const existente = candidatos[0] || null;
+            if (existente) {
+                atualizacoes.push({ ...item, casalId: Number(existente.id), nomeCasalAnterior: montarNomeCasal(existente.nome_tio, existente.nome_tia) });
+            } else {
+                insercoes.push(item);
+            }
+        }
+
+        connection = await pool.getConnection();
+        await connection.beginTransaction();
+
+        for (const item of atualizacoes) {
+            // eslint-disable-next-line no-await-in-loop
+            await connection.query(
+                `UPDATE tios_casais
+                 SET ecc_id = ?, encontro_tipo = ?, origem_tipo = ?, outro_ejc_id = ?, nome_tio = ?, telefone_tio = ?, data_nascimento_tio = ?,
+                     nome_tia = ?, telefone_tia = ?, data_nascimento_tia = ?, telefone_tio_hash = ?, telefone_tia_hash = ?,
+                     restricao_alimentar = ?, deficiencia = ?,
+                     restricao_alimentar_tio = ?, detalhes_restricao_tio = ?, deficiencia_tio = ?, qual_deficiencia_tio = ?,
+                     restricao_alimentar_tia = ?, detalhes_restricao_tia = ?, deficiencia_tia = ?, qual_deficiencia_tia = ?,
+                     observacoes = ?
+                 WHERE id = ? AND tenant_id = ?`,
+                [
+                    null, item.origemTipo === 'EJC' ? item.encontroTipo : null, item.origemTipo, item.origemTipo === 'OUTRO_EJC' ? item.outroEjcId : null,
+                    item.nomeTio, encryptTioPhone(item.telefoneTio), item.dataNascimentoTio, item.nomeTia, encryptTioPhone(item.telefoneTia), item.dataNascimentoTia,
+                    tioPhoneHash(item.telefoneTio), tioPhoneHash(item.telefoneTia),
+                    item.restricaoAlimentar ? 1 : 0, item.deficiencia ? 1 : 0,
+                    item.restricaoAlimentarTio ? 1 : 0, encryptTioSensitiveText(item.detalhesRestricaoTio, 'detalhes-restricao-tio'), item.deficienciaTio ? 1 : 0, encryptTioSensitiveText(item.qualDeficienciaTio, 'qual-deficiencia-tio'),
+                    item.restricaoAlimentarTia ? 1 : 0, encryptTioSensitiveText(item.detalhesRestricaoTia, 'detalhes-restricao-tia'), item.deficienciaTia ? 1 : 0, encryptTioSensitiveText(item.qualDeficienciaTia, 'qual-deficiencia-tia'),
+                    item.observacoes, item.casalId, tenantId
+                ]
+            );
+        }
+
+        if (insercoes.length) {
+            const valores = insercoes.map((item) => [
+                tenantId, null, item.origemTipo === 'EJC' ? item.encontroTipo : null, item.origemTipo, item.origemTipo === 'OUTRO_EJC' ? item.outroEjcId : null,
+                item.nomeTio, encryptTioPhone(item.telefoneTio), item.dataNascimentoTio, item.nomeTia, encryptTioPhone(item.telefoneTia), item.dataNascimentoTia,
+                tioPhoneHash(item.telefoneTio), tioPhoneHash(item.telefoneTia),
+                item.restricaoAlimentar ? 1 : 0, item.deficiencia ? 1 : 0,
+                item.restricaoAlimentarTio ? 1 : 0, encryptTioSensitiveText(item.detalhesRestricaoTio, 'detalhes-restricao-tio'), item.deficienciaTio ? 1 : 0, encryptTioSensitiveText(item.qualDeficienciaTio, 'qual-deficiencia-tio'),
+                item.restricaoAlimentarTia ? 1 : 0, encryptTioSensitiveText(item.detalhesRestricaoTia, 'detalhes-restricao-tia'), item.deficienciaTia ? 1 : 0, encryptTioSensitiveText(item.qualDeficienciaTia, 'qual-deficiencia-tia'), item.observacoes
+            ]);
+            const [result] = await connection.query(
+                `INSERT INTO tios_casais
+                    (tenant_id, ecc_id, encontro_tipo, origem_tipo, outro_ejc_id, nome_tio, telefone_tio, data_nascimento_tio, nome_tia, telefone_tia, data_nascimento_tia,
+                     telefone_tio_hash, telefone_tia_hash,
+                     restricao_alimentar, deficiencia,
+                     restricao_alimentar_tio, detalhes_restricao_tio, deficiencia_tio, qual_deficiencia_tio,
+                     restricao_alimentar_tia, detalhes_restricao_tia, deficiencia_tia, qual_deficiencia_tia, observacoes)
+                 VALUES ?`,
+                [valores]
+            );
+            insercoes.forEach((item, index) => {
+                item.casalId = Number(result.insertId) + index;
+            });
+        }
+
+        const processados = [...atualizacoes, ...insercoes].filter((item) => Number(item.casalId) > 0);
+        const casalIdsProcessados = processados.map((item) => Number(item.casalId));
+        if (casalIdsProcessados.length) {
+            await connection.query('DELETE FROM tios_casal_equipes WHERE tenant_id = ? AND casal_id IN (?)', [tenantId, casalIdsProcessados]);
+            await connection.query('DELETE FROM tios_casal_servicos WHERE tenant_id = ? AND casal_id IN (?)', [tenantId, casalIdsProcessados]);
+        }
+
+        const valoresEquipes = [];
+        const valoresServicos = [];
+        for (const item of processados) {
+            const equipeIdsItem = Array.from(new Set(item.servicos.map((s) => s.equipe_id)));
+            equipeIdsItem.forEach((equipeId) => valoresEquipes.push([tenantId, item.casalId, equipeId]));
+            item.servicos.forEach((servico) => {
+                valoresServicos.push([tenantId, item.casalId, servico.equipe_id, servico.ejc_id, item.nomeTio, item.telefoneTio, item.nomeTia, item.telefoneTia]);
+            });
+        }
+        if (valoresEquipes.length) {
+            await connection.query(
+                'INSERT IGNORE INTO tios_casal_equipes (tenant_id, casal_id, equipe_id) VALUES ?',
+                [valoresEquipes]
+            );
+        }
+        if (valoresServicos.length) {
+            await connection.query(
+                `INSERT IGNORE INTO tios_casal_servicos
+                    (tenant_id, casal_id, equipe_id, ejc_id, nome_tio_snapshot, telefone_tio_snapshot, nome_tia_snapshot, telefone_tia_snapshot)
+                 VALUES ?`,
+                [valoresServicos]
+            );
+        }
+
+        await connection.commit();
+        processados.forEach((item) => {
+            sincronizacoes.push({
+                tenantId,
+                casalId: item.casalId,
+                nomeTio: item.nomeTio,
+                telefoneTio: item.telefoneTio,
+                nomeTia: item.nomeTia,
+                telefoneTia: item.telefoneTia,
+                origemTipo: item.origemTipo,
+                aliasesNomes: item.nomeCasalAnterior ? [item.nomeCasalAnterior] : []
+            });
+        });
+        connection.release();
+        connection = null;
+
+        for (const item of sincronizacoes) {
+            if (item.origemTipo === 'EJC') {
+                // eslint-disable-next-line no-await-in-loop
+                await sincronizarCasalComListaMestre(item);
+            }
+            // eslint-disable-next-line no-await-in-loop
+            await sincronizarServicosCasalComMontagem(item);
+        }
+
+        return res.json({
+            message: 'Importação em lote concluída.',
+            criados: insercoes.length,
+            atualizados: atualizacoes.length,
+            ignorados: erros.length,
+            erros
+        });
+    } catch (err) {
+        if (connection) {
+            try { await connection.rollback(); } catch (rollbackErr) { console.error('Erro no rollback do bulk de tios:', rollbackErr); }
+            connection.release();
+        }
+        console.error('Erro ao importar casais de tios em lote:', err);
+        return res.status(500).json({ error: 'Erro ao importar casais em lote.' });
+    }
+});
+
 router.post('/casais', async (req, res) => {
     try {
         await ensureStructure();
@@ -1216,13 +1589,14 @@ router.post('/casais', async (req, res) => {
         const observacoes = String(req.body.observacoes || '').trim() || null;
         const origemTipo = String(req.body.origem_tipo || 'EJC').trim().toUpperCase() === 'OUTRO_EJC' ? 'OUTRO_EJC' : 'EJC';
         const eccId = req.body.ecc_id ? Number(req.body.ecc_id) : null;
+        const encontroTipo = normalizarTipoEncontroTio(req.body.encontro_tipo || req.body.ecc_tipo || req.body.encontro);
         const outroEjcId = req.body.outro_ejc_id ? Number(req.body.outro_ejc_id) : null;
         const servicos = normalizeServicos(req.body.servicos, req.body.equipe_ids);
         const equipeIds = Array.from(new Set(servicos.map((s) => s.equipe_id)));
         const ejcIds = Array.from(new Set(servicos.map((s) => s.ejc_id).filter((id) => Number.isInteger(id) && id > 0)));
 
-        if (!nomeTio || !telefoneTio || !nomeTia || !telefoneTia) {
-            return res.status(400).json({ error: 'Dados obrigatórios: nome e telefone de tio e tia.' });
+        if (!nomeTio || !nomeTia) {
+            return res.status(400).json({ error: 'Dados obrigatórios: nome do tio e nome da tia.' });
         }
 
         const duplicidade = await validarDuplicidadeTelefoneCasal({
@@ -1266,14 +1640,14 @@ router.post('/casais', async (req, res) => {
 
         const [result] = await pool.query(
             `INSERT INTO tios_casais
-                (tenant_id, ecc_id, origem_tipo, outro_ejc_id, nome_tio, telefone_tio, data_nascimento_tio, nome_tia, telefone_tia, data_nascimento_tia,
+                (tenant_id, ecc_id, encontro_tipo, origem_tipo, outro_ejc_id, nome_tio, telefone_tio, data_nascimento_tio, nome_tia, telefone_tia, data_nascimento_tia,
                  telefone_tio_hash, telefone_tia_hash,
                  restricao_alimentar, deficiencia,
                  restricao_alimentar_tio, detalhes_restricao_tio, deficiencia_tio, qual_deficiencia_tio,
                  restricao_alimentar_tia, detalhes_restricao_tia, deficiencia_tia, qual_deficiencia_tia, observacoes)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
-                tenantId, origemTipo === 'EJC' ? eccId : null, origemTipo, origemTipo === 'OUTRO_EJC' ? outroEjcId : null,
+                tenantId, null, origemTipo === 'EJC' ? encontroTipo : null, origemTipo, origemTipo === 'OUTRO_EJC' ? outroEjcId : null,
                 nomeTio, encryptTioPhone(telefoneTio), dataNascimentoTio, nomeTia, encryptTioPhone(telefoneTia), dataNascimentoTia,
                 tioPhoneHash(telefoneTio), tioPhoneHash(telefoneTia),
                 restricaoAlimentar ? 1 : 0, deficiencia ? 1 : 0,
@@ -1361,13 +1735,14 @@ router.put('/casais/:id', async (req, res) => {
         const observacoes = String(req.body.observacoes || '').trim() || null;
         const origemTipo = String(req.body.origem_tipo || 'EJC').trim().toUpperCase() === 'OUTRO_EJC' ? 'OUTRO_EJC' : 'EJC';
         const eccId = req.body.ecc_id ? Number(req.body.ecc_id) : null;
+        const encontroTipo = normalizarTipoEncontroTio(req.body.encontro_tipo || req.body.ecc_tipo || req.body.encontro);
         const outroEjcId = req.body.outro_ejc_id ? Number(req.body.outro_ejc_id) : null;
         const servicos = normalizeServicos(req.body.servicos, req.body.equipe_ids);
         const equipeIds = Array.from(new Set(servicos.map((s) => s.equipe_id)));
         const ejcIds = Array.from(new Set(servicos.map((s) => s.ejc_id).filter((id) => Number.isInteger(id) && id > 0)));
 
-        if (!nomeTio || !telefoneTio || !nomeTia || !telefoneTia) {
-            return res.status(400).json({ error: 'Dados obrigatórios: nome e telefone de tio e tia.' });
+        if (!nomeTio || !nomeTia) {
+            return res.status(400).json({ error: 'Dados obrigatórios: nome do tio e nome da tia.' });
         }
 
         const duplicidade = await validarDuplicidadeTelefoneCasal({
@@ -1412,7 +1787,7 @@ router.put('/casais/:id', async (req, res) => {
 
         const [result] = await pool.query(
             `UPDATE tios_casais
-             SET ecc_id = ?, origem_tipo = ?, outro_ejc_id = ?, nome_tio = ?, telefone_tio = ?, data_nascimento_tio = ?,
+             SET ecc_id = ?, encontro_tipo = ?, origem_tipo = ?, outro_ejc_id = ?, nome_tio = ?, telefone_tio = ?, data_nascimento_tio = ?,
                  nome_tia = ?, telefone_tia = ?, data_nascimento_tia = ?, telefone_tio_hash = ?, telefone_tia_hash = ?,
                  restricao_alimentar = ?, deficiencia = ?,
                  restricao_alimentar_tio = ?, detalhes_restricao_tio = ?, deficiencia_tio = ?, qual_deficiencia_tio = ?,
@@ -1420,7 +1795,7 @@ router.put('/casais/:id', async (req, res) => {
                  observacoes = ?
              WHERE id = ? AND tenant_id = ?`,
             [
-                origemTipo === 'EJC' ? eccId : null, origemTipo, origemTipo === 'OUTRO_EJC' ? outroEjcId : null,
+                null, origemTipo === 'EJC' ? encontroTipo : null, origemTipo, origemTipo === 'OUTRO_EJC' ? outroEjcId : null,
                 nomeTio, encryptTioPhone(telefoneTio), dataNascimentoTio, nomeTia, encryptTioPhone(telefoneTia), dataNascimentoTia,
                 tioPhoneHash(telefoneTio), tioPhoneHash(telefoneTia),
                 restricaoAlimentar ? 1 : 0, deficiencia ? 1 : 0,

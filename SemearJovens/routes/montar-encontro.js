@@ -28,6 +28,7 @@ let ensuredReunioesTables = false;
 let montagemFormulariosGarantido = false;
 let montagemEncontristasGarantido = false;
 let montagemEncontristasDadosGarantido = false;
+let tiosServicosSnapshotsCapacidadeGarantida = false;
 const hasColumnCache = new Map();
 let geocoderInstance = null;
 
@@ -70,6 +71,15 @@ function normalizarSexo(valor) {
     if (sexo === 'masculino') return 'masculino';
     if (sexo === 'feminino') return 'feminino';
     return '';
+}
+
+function normalizarChaveEquipe(valor) {
+    return String(valor || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim()
+        .replace(/\s+/g, ' ')
+        .toLowerCase();
 }
 
 async function ensureNaoServeEjcColumns() {
@@ -179,6 +189,19 @@ function montarJoinCasalTiosSql(casalAlias = 'tc', membroAlias = 'mm') {
           )`;
 }
 
+async function garantirCapacidadeSnapshotsServicosTios() {
+    if (tiosServicosSnapshotsCapacidadeGarantida) return;
+    if (await hasTable('tios_casal_servicos')) {
+        await pool.query('ALTER TABLE tios_casal_servicos MODIFY telefone_tio_snapshot TEXT NULL');
+        await pool.query('ALTER TABLE tios_casal_servicos MODIFY telefone_tia_snapshot TEXT NULL');
+    }
+    if (await hasTable('tios_casal_servicos_historico')) {
+        await pool.query('ALTER TABLE tios_casal_servicos_historico MODIFY telefone_tio_snapshot TEXT NULL');
+        await pool.query('ALTER TABLE tios_casal_servicos_historico MODIFY telefone_tia_snapshot TEXT NULL');
+    }
+    tiosServicosSnapshotsCapacidadeGarantida = true;
+}
+
 async function sincronizarServicosTiosDaMontagem({ tenantId, montagemId }) {
     const montagemIdNum = Number(montagemId);
     if (!tenantId || !montagemIdNum) return;
@@ -189,6 +212,19 @@ async function sincronizarServicosTiosDaMontagem({ tenantId, montagemId }) {
         hasTable('tios_casal_servicos')
     ]);
     if (!temCasais || !temServicos) return;
+
+    const [[montagem]] = await pool.query(
+        `SELECT m.id, e.id AS ejc_id
+         FROM montagens m
+         LEFT JOIN ejc e ON e.numero = m.numero_ejc AND e.tenant_id = m.tenant_id
+         WHERE m.id = ? AND m.tenant_id = ?
+         LIMIT 1`,
+        [montagemIdNum, tenantId]
+    );
+    const ejcId = Number(montagem && montagem.ejc_id);
+    if (!ejcId) return;
+
+    await garantirCapacidadeSnapshotsServicosTios();
 
     const temEquipesCasal = await hasTable('tios_casal_equipes');
     const [temNomeTioSnapshot, temTelefoneTioSnapshot, temNomeTiaSnapshot, temTelefoneTiaSnapshot] = await Promise.all([
@@ -239,7 +275,7 @@ async function sincronizarServicosTiosDaMontagem({ tenantId, montagemId }) {
          FROM tios_casal_servicos
          WHERE tenant_id = ?
            AND ejc_id = ?`,
-        [tenantId, montagemIdNum]
+        [tenantId, ejcId]
     );
 
     const existentesPorChave = new Map();
@@ -279,7 +315,7 @@ async function sincronizarServicosTiosDaMontagem({ tenantId, montagemId }) {
                 `INSERT IGNORE INTO tios_casal_servicos
                     (tenant_id, casal_id, equipe_id, ejc_id, nome_tio_snapshot, telefone_tio_snapshot, nome_tia_snapshot, telefone_tia_snapshot)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-                [tenantId, item.casalId, item.equipeId, montagemIdNum, item.nomeTio, item.telefoneTio, item.nomeTia, item.telefoneTia]
+                [tenantId, item.casalId, item.equipeId, ejcId, item.nomeTio, item.telefoneTio, item.nomeTia, item.telefoneTia]
             );
             continue;
         }
@@ -287,7 +323,7 @@ async function sincronizarServicosTiosDaMontagem({ tenantId, montagemId }) {
             `INSERT IGNORE INTO tios_casal_servicos
                 (tenant_id, casal_id, equipe_id, ejc_id)
              VALUES (?, ?, ?, ?)`,
-            [tenantId, item.casalId, item.equipeId, montagemIdNum]
+            [tenantId, item.casalId, item.equipeId, ejcId]
         );
     }
 
@@ -1091,6 +1127,180 @@ async function sincronizarHistoricoDaAlocacao({ montagemId, equipeId, funcaoId, 
     }
 
     return true;
+}
+
+async function obterOuCriarFuncaoEquipeParaMontagem(client, { tenantId, equipeId, nome = 'Membro', papelBase = 'Membro' }) {
+    const nomeFuncao = String(nome || papelBase || 'Membro').trim() || 'Membro';
+    const papel = String(papelBase || 'Membro').trim() || 'Membro';
+    const comPapelBase = await hasPapelBaseColumn();
+    const [existentes] = await client.query(
+        comPapelBase
+            ? `SELECT id
+               FROM equipes_funcoes
+               WHERE tenant_id = ?
+                 AND equipe_id = ?
+                 AND LOWER(TRIM(nome)) = LOWER(TRIM(?))
+                 AND COALESCE(papel_base, 'Membro') = ?
+               LIMIT 1`
+            : `SELECT id
+               FROM equipes_funcoes
+               WHERE tenant_id = ?
+                 AND equipe_id = ?
+                 AND LOWER(TRIM(nome)) = LOWER(TRIM(?))
+               LIMIT 1`,
+        comPapelBase ? [tenantId, equipeId, nomeFuncao, papel] : [tenantId, equipeId, nomeFuncao]
+    );
+    if (existentes && existentes.length) return Number(existentes[0].id);
+
+    const [result] = await client.query(
+        comPapelBase
+            ? 'INSERT INTO equipes_funcoes (tenant_id, equipe_id, nome, papel_base) VALUES (?, ?, ?, ?)'
+            : 'INSERT INTO equipes_funcoes (tenant_id, equipe_id, nome) VALUES (?, ?, ?)',
+        comPapelBase ? [tenantId, equipeId, nomeFuncao, papel] : [tenantId, equipeId, nomeFuncao]
+    );
+    return Number(result.insertId);
+}
+
+async function sincronizarMontagemComHistoricosExistentes(montagemId, tenantId) {
+    const montagemIdNumero = Number(montagemId);
+    const tenantIdNumero = Number(tenantId);
+    if (!montagemIdNumero || !tenantIdNumero) return;
+    if (!(await hasTable('historico_equipes'))) return;
+
+    const connection = await pool.getConnection();
+    try {
+        await connection.beginTransaction();
+
+        const [[montagem]] = await connection.query(
+            `SELECT m.id, m.numero_ejc, e.id AS ejc_id
+             FROM montagens m
+             LEFT JOIN ejc e ON e.numero = m.numero_ejc AND e.tenant_id = m.tenant_id
+             WHERE m.id = ? AND m.tenant_id = ?
+             LIMIT 1`,
+            [montagemIdNumero, tenantIdNumero]
+        );
+        if (!montagem || !montagem.numero_ejc) {
+            await connection.rollback();
+            return;
+        }
+
+        const [equipesRows] = await connection.query(
+            'SELECT id, nome FROM equipes WHERE tenant_id = ?',
+            [tenantIdNumero]
+        );
+        const equipePorNome = new Map();
+        for (const equipe of (equipesRows || [])) {
+            const chave = normalizarChaveEquipe(equipe.nome);
+            if (chave && !equipePorNome.has(chave)) equipePorNome.set(chave, Number(equipe.id));
+        }
+
+        const funcaoCache = new Map();
+        const obterFuncao = async ({ equipeId, nome, papelBase }) => {
+            const chave = `${equipeId}|${normalizarChaveEquipe(nome)}|${normalizarChaveEquipe(papelBase)}`;
+            if (funcaoCache.has(chave)) return funcaoCache.get(chave);
+            const id = await obterOuCriarFuncaoEquipeParaMontagem(connection, { tenantId: tenantIdNumero, equipeId, nome, papelBase });
+            funcaoCache.set(chave, id);
+            return id;
+        };
+
+        const regexEdicao = `^${Number(montagem.numero_ejc)}[[:space:]]*[º°oO]?[[:space:]]*EJC`;
+        const paramsHistorico = montagem.ejc_id
+            ? [tenantIdNumero, montagem.ejc_id, regexEdicao]
+            : [tenantIdNumero, regexEdicao];
+        const [historicos] = await connection.query(
+            montagem.ejc_id
+                ? `SELECT he.jovem_id, he.equipe, he.papel, he.subfuncao
+                   FROM historico_equipes he
+                   WHERE he.tenant_id = ?
+                     AND he.jovem_id IS NOT NULL
+                     AND (he.ejc_id = ? OR he.edicao_ejc REGEXP ?)
+                   ORDER BY he.id ASC`
+                : `SELECT he.jovem_id, he.equipe, he.papel, he.subfuncao
+                   FROM historico_equipes he
+                   WHERE he.tenant_id = ?
+                     AND he.jovem_id IS NOT NULL
+                     AND he.edicao_ejc REGEXP ?
+                   ORDER BY he.id ASC`,
+            paramsHistorico
+        );
+
+        const jovensVistos = new Set();
+        for (const hist of (historicos || [])) {
+            const jovemId = Number(hist.jovem_id);
+            if (!jovemId || jovensVistos.has(jovemId)) continue;
+            const equipeId = equipePorNome.get(normalizarChaveEquipe(hist.equipe));
+            if (!equipeId) continue;
+            const papelBase = String(hist.papel || 'Membro').trim() || 'Membro';
+            const nomeFuncao = String(hist.subfuncao || papelBase || 'Membro').trim() || 'Membro';
+            const funcaoId = await obterFuncao({ equipeId, nome: nomeFuncao, papelBase });
+            if (!funcaoId) continue;
+            const [existente] = await connection.query(
+                `SELECT id
+                 FROM montagem_membros
+                 WHERE tenant_id = ?
+                   AND montagem_id = ?
+                   AND jovem_id = ?
+                 LIMIT 1`,
+                [tenantIdNumero, montagemIdNumero, jovemId]
+            );
+            if (existente && existente.length) {
+                jovensVistos.add(jovemId);
+                continue;
+            }
+            await connection.query(
+                `INSERT INTO montagem_membros (tenant_id, montagem_id, equipe_id, funcao_id, jovem_id, eh_substituicao)
+                 VALUES (?, ?, ?, ?, ?, 0)`,
+                [tenantIdNumero, montagemIdNumero, equipeId, funcaoId, jovemId]
+            );
+            jovensVistos.add(jovemId);
+        }
+
+        if (await hasTable('tios_casal_servicos')) {
+            const [servicosTios] = await connection.query(
+                `SELECT ts.casal_id, ts.equipe_id
+                 FROM tios_casal_servicos ts
+                 LEFT JOIN ejc e ON e.id = ts.ejc_id AND e.tenant_id = ts.tenant_id
+                 WHERE ts.tenant_id = ?
+                   AND e.numero = ?
+                 ORDER BY ts.id ASC`,
+                [tenantIdNumero, montagem.numero_ejc]
+            );
+            const casaisVistos = new Set();
+            for (const servico of (servicosTios || [])) {
+                const casalId = Number(servico.casal_id);
+                const equipeId = Number(servico.equipe_id);
+                if (!casalId || !equipeId || casaisVistos.has(casalId)) continue;
+                const funcaoId = await obterFuncao({ equipeId, nome: 'Tio', papelBase: 'Tio' });
+                if (!funcaoId) continue;
+                const [existente] = await connection.query(
+                    `SELECT id
+                     FROM montagem_membros
+                     WHERE tenant_id = ?
+                       AND montagem_id = ?
+                       AND tio_casal_id = ?
+                     LIMIT 1`,
+                    [tenantIdNumero, montagemIdNumero, casalId]
+                );
+                if (existente && existente.length) {
+                    casaisVistos.add(casalId);
+                    continue;
+                }
+                await connection.query(
+                    `INSERT INTO montagem_membros (tenant_id, montagem_id, equipe_id, funcao_id, jovem_id, tio_casal_id, eh_substituicao)
+                     VALUES (?, ?, ?, ?, NULL, ?, 0)`,
+                    [tenantIdNumero, montagemIdNumero, equipeId, funcaoId, casalId]
+                );
+                casaisVistos.add(casalId);
+            }
+        }
+
+        await connection.commit();
+    } catch (err) {
+        await connection.rollback();
+        console.error('Erro ao sincronizar montagem com históricos existentes:', err);
+    } finally {
+        connection.release();
+    }
 }
 
 async function removerHistoricoDaAlocacao({ montagemId, equipeId, funcaoId, jovemId, tenantId }) {
@@ -2177,6 +2387,7 @@ router.get('/:id/estrutura', async (req, res) => {
     try {
         const tenantId = getTenantId(req);
         await garantirEstruturaMontagemMembrosExtra();
+        await sincronizarMontagemComHistoricosExistentes(montagemId, tenantId);
         const equipeIdsPermitidas = await obterEquipeIdsDaMontagem({ tenantId, montagemId });
         const comPapelBase = await hasPapelBaseColumn();
         const papelBaseSelect = comPapelBase
@@ -4228,6 +4439,7 @@ router.get('/:id/equipes/:equipeId/detalhes', async (req, res) => {
     try {
         const tenantId = getTenantId(req);
         await garantirEstruturaMontagemMembrosExtra();
+        await sincronizarMontagemComHistoricosExistentes(montagemId, tenantId);
         await normalizarOrdensReservaDaEquipe(pool, { tenantId, montagemId, equipeId });
         const [rows] = await pool.query(`
             SELECT mm.id AS membro_id, mm.equipe_id, mm.funcao_id, mm.jovem_id,
@@ -4434,6 +4646,7 @@ router.get('/:id/ligacoes', async (req, res) => {
     try {
         const tenantId = getTenantId(req);
         await garantirEstruturaMontagemMembrosExtra();
+        await sincronizarMontagemComHistoricosExistentes(montagemId, tenantId);
         const [rows] = await pool.query(`
             SELECT mm.id AS membro_id, mm.equipe_id, e.nome AS equipe_nome,
                    mm.funcao_id, ef.nome AS funcao_nome,

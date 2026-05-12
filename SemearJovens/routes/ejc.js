@@ -3,6 +3,7 @@ const router = express.Router();
 const { pool, registrarLog } = require('../database');
 const { getTenantId } = require('../lib/tenantIsolation');
 const { ensureEjcEncontristasHistoricoTable } = require('../lib/ejcHistorySnapshots');
+const { decryptJovemPhone, decryptJovemRecord } = require('../lib/jovensSensitiveData');
 
 async function hasColumn(tableName, columnName) {
     const [rows] = await pool.query(`
@@ -180,7 +181,10 @@ router.get('/:id/encontristas', async (req, res) => {
 
         if (historicoRows.length) {
             if (!usarRegraMoita) {
-                return res.json(historicoRows);
+                return res.json(historicoRows.map((row) => ({
+                    ...row,
+                    telefone: decryptJovemPhone(row.telefone) || row.telefone
+                })));
             }
 
             const [moitasOutroRows] = await pool.query(
@@ -223,6 +227,7 @@ router.get('/:id/encontristas', async (req, res) => {
             });
 
             moitasOutroRows.forEach((item) => {
+                item = decryptJovemRecord(item);
                 const chave = chaveEncontrista(item);
                 const idx = indicePorChave.get(chave);
                 if (idx === undefined) {
@@ -244,7 +249,10 @@ router.get('/:id/encontristas', async (req, res) => {
             });
 
             encontrados.sort((a, b) => String(a.nome_completo || '').localeCompare(String(b.nome_completo || ''), 'pt-BR'));
-            return res.json(encontrados);
+            return res.json(encontrados.map((row) => ({
+                ...row,
+                telefone: decryptJovemPhone(row.telefone) || row.telefone
+            })));
         }
 
         const sql = usarRegraMoita
@@ -267,7 +275,7 @@ router.get('/:id/encontristas', async (req, res) => {
             ? [ejcId, ejcId, tenantId, ejcId, ejcId]
             : [tenantId, ejcId];
         const [rows] = await pool.query(sql, params);
-        res.json(rows);
+        res.json((rows || []).map((row) => decryptJovemRecord(row)));
     } catch (err) {
         console.error("Erro ao buscar encontristas:", err);
         res.status(500).json({ error: "Erro ao buscar encontristas" });

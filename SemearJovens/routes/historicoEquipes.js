@@ -7,8 +7,21 @@ const {
     ensureHistoricoEquipesYoungFkPreserved,
     backfillHistoricoEquipesSnapshots
 } = require('../lib/ejcHistorySnapshots');
+const { decryptJovemPhone } = require('../lib/jovensSensitiveData');
+const { decryptTioPhone } = require('../lib/tiosSensitiveData');
 
 let hasSubfuncaoColumnCache = null;
+function decryptMixedPhones(value) {
+    return String(value || '')
+        .split('/')
+        .map((parte) => {
+            const texto = String(parte || '').trim();
+            if (!texto || texto === '-') return texto || '-';
+            return decryptJovemPhone(texto) || decryptTioPhone(texto) || texto;
+        })
+        .join(' / ');
+}
+
 async function hasSubfuncaoColumn() {
     if (hasSubfuncaoColumnCache !== null) return hasSubfuncaoColumnCache;
     const [rows] = await pool.query(`
@@ -169,6 +182,7 @@ router.get('/:equipeId/jovens/:ejcId', async (req, res) => {
 
         const unicos = new Map();
         [...(jovensRows || []), ...(tiosRows || []), ...(tiosHistoricoRows || [])].forEach((item) => {
+            item.telefone = decryptMixedPhones(item.telefone);
             const chave = [
                 String(item.nome_completo || '').trim().toLowerCase(),
                 String(item.telefone || '').trim(),

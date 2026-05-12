@@ -213,7 +213,7 @@
                                 <th>Telefone</th>
                                 <th>EJC de Origem</th>
                                 <th>Nº EJC</th>
-                                <th>Paróquia</th>
+                                <th>EJC</th>
                                 <th>Função</th>
                             </tr>
                         </thead>
@@ -223,7 +223,7 @@
                                 <td>{{ r.telefone || '-' }}</td>
                                 <td>{{ formatarEjcOrigem(r) }}</td>
                                 <td>{{ r.ejc_numero ? (r.ejc_numero + 'º EJC') : '-' }}</td>
-                                <td>{{ r.paroquia || '-' }}</td>
+                                <td>{{ nomeOutroEjc(r) }}</td>
                                 <td>{{ r.funcao_moita || '-' }}</td>
                             </tr>
                         </tbody>
@@ -599,7 +599,7 @@
                         ejcOrigem,
                         this.apenasDigitos(ejcOrigem),
                         registro?.ejc_numero,
-                        registro?.paroquia,
+                        this.nomeOutroEjc(registro),
                         registro?.funcao_moita
                     ];
                     return this.normalizarTextoBusca(partes.filter(Boolean).join(' '));
@@ -620,7 +620,7 @@
                         Telefone: r.telefone || '',
                         EjcOrigem: this.formatarEjcOrigem(r),
                         NumeroEJC: r.ejc_numero ? `${r.ejc_numero}º EJC` : '',
-                        Paroquia: r.paroquia || '',
+                        EJC: this.nomeOutroEjc(r),
                         Funcao: r.funcao_moita || ''
                     }));
                     ExcelUtils.exportJsonToXlsx({
@@ -843,6 +843,9 @@
                 formatarEjcOrigem(item) {
                     const numero = item?.ejc_origem_numero || item?.numero_ejc_fez;
                     return numero ? `${numero}º EJC ${this.nomeMeuEJC}` : '-';
+                },
+                nomeOutroEjc(item) {
+                    return item?.outro_ejc_nome || item?.outro_ejc_paroquia || item?.paroquia || '-';
                 },
                 numeroParaRomano(num) {
                     if (!num) return '';

@@ -385,11 +385,7 @@ router.get('/registros', async (req, res) => {
 
     try {
         await garantirEstrutura();
-        const comParoquiaCol = await hasColumn('jovens_comissoes', 'paroquia');
         const comFuncaoCol = await hasColumn('jovens_comissoes', 'funcao_garcom');
-        const selectParoquia = comParoquiaCol
-            ? 'COALESCE(oe.paroquia, jc.paroquia) AS paroquia'
-            : 'oe.paroquia AS paroquia';
         const selectFuncao = comFuncaoCol
             ? "COALESCE(jc.funcao_garcom, '-') AS funcao_moita"
             : "'-' AS funcao_moita";
@@ -403,7 +399,8 @@ router.get('/registros', async (req, res) => {
                 j.numero_ejc_fez,
                 eorig.numero AS ejc_origem_numero,
                 jc.ejc_numero,
-                ${selectParoquia},
+                oe.nome AS outro_ejc_nome,
+                oe.paroquia AS outro_ejc_paroquia,
                 ${selectFuncao}
             FROM jovens_comissoes jc
             JOIN jovens j ON j.id = jc.jovem_id AND j.tenant_id = jc.tenant_id
