@@ -16,14 +16,16 @@ const { activityLoggerMiddleware } = require('./lib/activityLogs');
 const app = express();
 const PORT = Number(process.env.PORT || 3001);
 const GLOBAL_RATE_LIMIT_WINDOW_MS = Number(process.env.GLOBAL_RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000);
-const GLOBAL_RATE_LIMIT_MAX = Number(process.env.GLOBAL_RATE_LIMIT_MAX || 300);
+const GLOBAL_RATE_LIMIT_MAX = Number(process.env.GLOBAL_RATE_LIMIT_MAX || 3000);
+
+app.set('trust proxy', 1);
 
 const globalLimiter = rateLimit({
     windowMs: GLOBAL_RATE_LIMIT_WINDOW_MS,
     limit: GLOBAL_RATE_LIMIT_MAX,
     standardHeaders: 'draft-8',
     legacyHeaders: false,
-    skip: (req) => req.path === '/health',
+    skip: (req) => req.method === 'OPTIONS' || req.path === '/health',
     handler: (_req, res) => res.status(429).json({ error: 'Muitas requisições. Tente novamente em alguns minutos.' })
 });
 

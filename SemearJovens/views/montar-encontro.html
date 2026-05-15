@@ -413,7 +413,7 @@
                             <li class="nav-item">
                                 <button class="nav-link"
                                     :class="{ active: abaMontagem === 'equipes' }"
-                                    @click="abaMontagem = 'equipes'">
+                                    @click="abaMontagem = 'equipes'; garantirEstruturaCarregada()">
                                     Equipes
                                 </button>
                             </li>
@@ -445,6 +445,14 @@
                                         <span class="mx-1">•</span>
                                         Feminino: {{ totalFemininoDaEquipe(equipe) }}
                                     </div>
+                                </div>
+                            </div>
+                            <div v-if="!estrutura.length" class="col-12">
+                                <div class="alert alert-warning d-flex flex-column flex-md-row align-items-md-center justify-content-between gap-2 mb-0">
+                                    <span>{{ erroEstrutura || 'As equipes não apareceram nesta tentativa de carregamento.' }}</span>
+                                    <button class="btn btn-sm btn-outline-primary" @click="carregarEstrutura({ forcar: true })">
+                                        <i class="fas fa-rotate-right me-1"></i> Recarregar equipes
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -877,12 +885,12 @@
                                     <div class="d-flex justify-content-between align-items-center mb-3">
                                         <div>
                                             <h5 class="mb-1">Coordenadores</h5>
-                                            <p class="text-muted mb-0">Membros que aceitaram servir na função de coordenação.</p>
+                                            <p class="text-muted mb-0">Membros escalados na função de coordenação.</p>
                                         </div>
                                         <div class="text-muted small">Total: {{ infoMontagem.coordenadores.length }}</div>
                                     </div>
 
-                                    <div v-if="!infoMontagem.coordenadores.length" class="text-muted">Nenhum coordenador aceito encontrado.</div>
+                                    <div v-if="!infoMontagem.coordenadores.length" class="text-muted">Nenhum coordenador encontrado.</div>
                                     <div v-else class="table-responsive">
                                         <table class="table table-sm align-middle">
                                             <thead>
@@ -890,6 +898,7 @@
                                                     <th>Nome</th>
                                                     <th>Equipe</th>
                                                     <th>Função</th>
+                                                    <th>Situação</th>
                                                     <th>Telefone</th>
                                                     <th>Idade</th>
                                                 </tr>
@@ -899,6 +908,7 @@
                                                     <td class="fw-semibold">{{ item.nome }}</td>
                                                     <td>{{ item.equipe }}</td>
                                                     <td>{{ item.funcao || '-' }}</td>
+                                                    <td>{{ formatarStatusExportacao(item.status_ligacao) }}</td>
                                                     <td>{{ item.telefone || '-' }}</td>
                                                     <td>{{ item.idade !== null && item.idade !== undefined ? (item.idade + ' anos') : '-' }}</td>
                                                 </tr>
@@ -1679,6 +1689,7 @@
                     montagemAtiva: null,
                     estrutura: [],
                     carregandoEstrutura: false,
+                    erroEstrutura: '',
                     abaPrincipalMontagem: 'encontreiros',
                     abaMontagem: 'equipes',
                     abaInfoMontagem: 'datas',
@@ -4319,6 +4330,7 @@
                     this.abaMontagem = 'equipes';
                     this.abaInfoMontagem = 'datas';
                     this.equipesFinalizadas = false;
+                    this.erroEstrutura = '';
                     this.estrutura = [];
                     this.jovensSemEquipe = [];
                     this.tiosParaServir = [];
@@ -4347,15 +4359,44 @@
                     if (m) this.entrarMontagem(m);
                 },
 
-                async carregarEstrutura() {
+                async garantirEstruturaCarregada() {
+                    if (this.estrutura.length || this.carregandoEstrutura) return;
+                    await this.carregarEstrutura({ forcar: true });
+                },
+                async carregarEstrutura(opcoes = {}) {
                     if (!this.montagemAtiva || !this.montagemAtiva.id) return;
+                    const tentativas = Number.isInteger(Number(opcoes.tentativas)) ? Number(opcoes.tentativas) : 2;
+                    const forcar = !!opcoes.forcar;
+                    if (this.carregandoEstrutura && !forcar) return;
                     this.carregandoEstrutura = true;
+                    this.erroEstrutura = '';
                     try {
-                        const res = await fetch(`/api/montar-encontro/${this.montagemAtiva.id}/estrutura`);
-                        this.estrutura = res.ok ? await res.json() : [];
+                        let dados = [];
+                        let ultimoErro = '';
+                        for (let tentativa = 1; tentativa <= tentativas; tentativa += 1) {
+                            try {
+                                const res = await fetch(`/api/montar-encontro/${this.montagemAtiva.id}/estrutura`);
+                                const payload = await res.json().catch(() => null);
+                                if (!res.ok) {
+                                    ultimoErro = payload && payload.error ? payload.error : 'Erro ao carregar as equipes.';
+                                } else {
+                                    dados = Array.isArray(payload) ? payload : [];
+                                    if (dados.length || tentativa === tentativas) break;
+                                    ultimoErro = 'Nenhuma equipe retornada.';
+                                }
+                            } catch (err) {
+                                ultimoErro = err && err.message ? err.message : 'Erro ao carregar as equipes.';
+                            }
+                            await new Promise((resolve) => setTimeout(resolve, 350));
+                        }
+                        this.estrutura = dados;
+                        if (!dados.length) {
+                            this.erroEstrutura = ultimoErro || 'Nenhuma equipe foi carregada.';
+                        }
                     } catch (err) {
                         console.error(err);
                         this.estrutura = [];
+                        this.erroEstrutura = 'Erro ao carregar as equipes.';
                     } finally {
                         this.carregandoEstrutura = false;
                         if (this.abaPrincipalMontagem === 'info') this.carregarInfoMontagem();
@@ -5148,6 +5189,7 @@
                         }
                         await this.carregarEstrutura();
                         await this.carregarDetalhesEquipe();
+                        await this.carregarJovensSemEquipe();
                     } catch (err) {
                         console.error(err);
                         await this.uiAlert('Erro ao remover membro.');

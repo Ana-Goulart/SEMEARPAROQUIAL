@@ -400,7 +400,7 @@
                         <select v-model="filtros.outro_ejc_id" class="form-select">
                             <option value="">Todos</option>
                             <option v-for="oe in outrosEjcs" :key="`filtro-garcom-${oe.id}`" :value="String(oe.id)">
-                                {{ oe.nome }}<span v-if="oe.paroquia"> - {{ oe.paroquia }}</span>
+                                {{ formatarOutroEjcOpcao(oe) }}
                             </option>
                         </select>
                     </div>
@@ -589,7 +589,7 @@
                             <select class="form-select" v-model.number="formEquipe.outro_ejc_id">
                                 <option :value="null">Selecione...</option>
                                 <option v-for="oe in outrosEjcs" :key="oe.id" :value="oe.id">
-                                    {{ oe.nome }}<span v-if="oe.paroquia"> - {{ oe.paroquia }}</span>
+                                    {{ formatarOutroEjcOpcao(oe) }}
                                 </option>
                             </select>
                         </div>
@@ -667,7 +667,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <tr v-for="m in equipeDetalheAtual.membros" :key="`det-${m.id}`">
+                                        <tr v-for="m in ordenarMembrosEquipe(equipeDetalheAtual.membros)" :key="`det-${m.id}`">
                                             <td>{{ m.nome_completo || '-' }}</td>
                                             <td><span class="garcom-badge">{{ m.papel || '-' }}</span></td>
                                             <td>{{ membroTipoLabel(m) }}</td>
@@ -1103,6 +1103,31 @@
                     if (valor === 'MEMBRO') return 'Membro';
                     return papel || '-';
                 },
+                formatarOutroEjcOpcao(outroEjc) {
+                    return [
+                        outroEjc?.nome,
+                        outroEjc?.paroquia
+                    ].map((item) => String(item || '').trim()).filter(Boolean).join(' - ') || 'EJC sem nome';
+                },
+                pesoOrdenacaoMembroEquipe(membro) {
+                    const papel = String(membro?.papel || '')
+                        .normalize('NFD')
+                        .replace(/[\u0300-\u036f]/g, '')
+                        .trim()
+                        .toUpperCase();
+                    if (papel === 'COORDENADOR' || papel === 'CORDENADOR') return 0;
+                    if (String(membro?.membro_tipo || 'JOVEM').toUpperCase() === 'TIO') return 1;
+                    return 2;
+                },
+                ordenarMembrosEquipe(membros) {
+                    return [...(Array.isArray(membros) ? membros : [])].sort((a, b) => {
+                        const peso = this.pesoOrdenacaoMembroEquipe(a) - this.pesoOrdenacaoMembroEquipe(b);
+                        if (peso !== 0) return peso;
+                        const nome = String(a?.nome_completo || '').localeCompare(String(b?.nome_completo || ''), 'pt-BR');
+                        if (nome !== 0) return nome;
+                        return Number(a?.id || 0) - Number(b?.id || 0);
+                    });
+                },
                 formatarSituacaoMembro(situacao) {
                     return String(situacao || 'TITULAR').toUpperCase() === 'RESERVA' ? 'Reserva' : 'Titular';
                 },
@@ -1191,8 +1216,9 @@
                         DataFim: this.formatarData(equipe.data_fim) || '-',
                         TotalIntegrantes: this.totalMembrosEquipe(equipe)
                     }];
-                    const integrantesRows = Array.isArray(equipe.membros) && equipe.membros.length
-                        ? equipe.membros.map((membro) => ({
+                    const integrantes = this.ordenarMembrosEquipe(equipe.membros);
+                    const integrantesRows = integrantes.length
+                        ? integrantes.map((membro) => ({
                             Nome: membro.nome_completo || '',
                             Funcao: membro.papel || '',
                             Tipo: this.membroTipoLabel(membro),

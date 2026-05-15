@@ -726,9 +726,9 @@
                                 <span class="btn-ejc-text">Cancelar</span>
                             </button>
                             <button type="button" class="btn btn-danger me-auto btn-ejc-action" v-if="editando"
-                                @click="deletarEJCModal" title="Excluir" aria-label="Excluir">
+                                :disabled="deletandoEjc" @click="deletarEJCModal" title="Excluir" aria-label="Excluir">
                                 <span class="btn-ejc-icon"><i class="fa-solid fa-trash icon-accent"></i></span>
-                                <span class="btn-ejc-text">Deletar</span>
+                                <span class="btn-ejc-text">{{ deletandoEjc ? 'Deletando...' : 'Deletar' }}</span>
                             </button>
                             <button type="button" class="btn btn-primary btn-ejc-action" @click="salvarEJC" title="Salvar" aria-label="Salvar">
                                 <span class="btn-ejc-icon"><i class="fa-solid fa-floppy-disk icon-accent"></i></span>
@@ -797,6 +797,7 @@
                     return {
                         ejcs: [],
                         editando: false,
+                        deletandoEjc: false,
                         tipoCadastroAtual: 'edicao_passada',
                         modalNovoTipoInstance: null,
                         nomeMeuEJC: (window.__NOME_EJC_ATUAL && String(window.__NOME_EJC_ATUAL).trim()) || 'Inconfidentes',
@@ -1471,12 +1472,14 @@
                         }
                     },
                     async deletarEJCModal() {
+                        if (this.deletandoEjc) return;
                         if (!(await window.showFloatingConfirm(`Tem certeza que deseja deletar o EJC ${this.rotuloNumeroEjc(this.formulario.numero)}? Esta ação não pode ser desfeita.`))) return;
 
+                        this.deletandoEjc = true;
                         try {
                             const res = await fetch(`/api/ejc/${this.formulario.id}`, { method: 'DELETE' });
                             if (!res.ok) {
-                                const erro = await res.json();
+                                const erro = await res.json().catch(() => ({}));
                                 alert(erro.error || "Erro ao deletar EJC");
                                 return;
                             }
@@ -1487,6 +1490,8 @@
                         } catch (err) {
                             console.error("Erro ao deletar:", err);
                             alert("Erro ao deletar EJC");
+                        } finally {
+                            this.deletandoEjc = false;
                         }
                     },
                     async buscarEJCs() {

@@ -299,7 +299,7 @@
                         </div>
 
                         <div class="mb-0">
-                            <label class="form-label">Função no Moita *</label>
+                            <label class="form-label">Função no Moita</label>
                             <select v-model="formCadastroMoita.funcao_moita" class="form-select">
                                 <option value="">Selecione...</option>
                                 <option v-for="f in funcoes" :key="`cad-funcao-${f.id}`" :value="f.nome">{{ f.nome }}</option>
@@ -897,8 +897,8 @@
                     this.searchResultsCadastroMoita = [];
                 },
                 async salvarCadastroMoita() {
-                    if (!this.formCadastroMoita.jovem_id || !this.formCadastroMoita.ejc_numero || !this.formCadastroMoita.outro_ejc_id || !String(this.formCadastroMoita.funcao_moita || '').trim()) {
-                        alert('Selecione o jovem e preencha número do EJC, outro EJC e função no moita.');
+                    if (!this.formCadastroMoita.jovem_id || !this.formCadastroMoita.ejc_numero || !this.formCadastroMoita.outro_ejc_id) {
+                        alert('Selecione o jovem e preencha número do EJC e outro EJC.');
                         return;
                     }
 
@@ -908,18 +908,19 @@
                         const endpoint = promovendoReserva
                             ? `/api/moita/reservas/${this.reservaPromocaoMoitaId}/titular`
                             : '/api/lista-mestre/comissoes';
+                        const funcaoMoita = String(this.formCadastroMoita.funcao_moita || '').trim();
                         const payload = promovendoReserva
                             ? {
                                 ejc_numero: this.formCadastroMoita.ejc_numero,
                                 outro_ejc_id: this.formCadastroMoita.outro_ejc_id,
-                                funcao_moita: this.formCadastroMoita.funcao_moita.trim()
+                                funcao_moita: funcaoMoita
                             }
                             : {
                                 jovem_id: this.formCadastroMoita.jovem_id,
                                 tipo: 'MOITA_OUTRO',
                                 ejc_numero: this.formCadastroMoita.ejc_numero,
                                 outro_ejc_id: this.formCadastroMoita.outro_ejc_id,
-                                funcao_garcom: this.formCadastroMoita.funcao_moita.trim()
+                                funcao_garcom: funcaoMoita
                             };
                         const res = await fetch(endpoint, {
                             method: 'POST',

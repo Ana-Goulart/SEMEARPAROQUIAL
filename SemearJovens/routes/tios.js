@@ -62,6 +62,8 @@ const NORMALIZED_PHONE_SQL = "REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(TRIM(COALE
 
 async function ensureTiosServicosSnapshots() {
     const colunas = [
+        ['papel', 'VARCHAR(50) NULL'],
+        ['subfuncao', 'VARCHAR(120) NULL'],
         ['nome_tio_snapshot', 'VARCHAR(180) NULL'],
         ['telefone_tio_snapshot', 'TEXT NULL'],
         ['nome_tia_snapshot', 'VARCHAR(180) NULL'],
@@ -74,7 +76,6 @@ async function ensureTiosServicosSnapshots() {
     }
     await pool.query('ALTER TABLE tios_casal_servicos MODIFY telefone_tio_snapshot TEXT NULL');
     await pool.query('ALTER TABLE tios_casal_servicos MODIFY telefone_tia_snapshot TEXT NULL');
-
     await pool.query(`
         UPDATE tios_casal_servicos ts
         JOIN tios_casais tc
@@ -95,6 +96,8 @@ async function ensureTiosServicosSnapshots() {
             casal_id INT NULL,
             equipe_id INT NOT NULL,
             ejc_id INT NULL,
+            papel VARCHAR(50) NULL,
+            subfuncao VARCHAR(120) NULL,
             nome_tio_snapshot VARCHAR(180) NULL,
             telefone_tio_snapshot TEXT NULL,
             nome_tia_snapshot VARCHAR(180) NULL,
@@ -105,6 +108,10 @@ async function ensureTiosServicosSnapshots() {
             KEY idx_tios_serv_hist_casal (tenant_id, casal_id)
         )
     `);
+    for (const [nome, definicao] of [['papel', 'VARCHAR(50) NULL'], ['subfuncao', 'VARCHAR(120) NULL']]) {
+        if (await hasColumn('tios_casal_servicos_historico', nome)) continue;
+        await pool.query(`ALTER TABLE tios_casal_servicos_historico ADD COLUMN ${nome} ${definicao}`);
+    }
     await pool.query('ALTER TABLE tios_casal_servicos_historico MODIFY telefone_tio_snapshot TEXT NULL');
     await pool.query('ALTER TABLE tios_casal_servicos_historico MODIFY telefone_tia_snapshot TEXT NULL');
 }
@@ -129,13 +136,19 @@ function escolherFuncaoTio(funcoes) {
     const lista = Array.isArray(funcoes) ? funcoes.filter(Boolean) : [];
     if (!lista.length) return null;
 
+    const tiosPadrao = lista.find((item) =>
+        normalizarTextoComparacao(item.nome) === 'tios'
+        && normalizarTextoComparacao(item.papel_base) === 'tios'
+    );
+    if (tiosPadrao) return tiosPadrao;
+
     const porNomeExato = lista.find((item) => ['tio', 'tios'].includes(normalizarTextoComparacao(item.nome)));
     if (porNomeExato) return porNomeExato;
 
-    const porPapelENome = lista.find((item) => normalizarTextoComparacao(item.papel_base) === 'tio' && /tio|tia/.test(normalizarTextoComparacao(item.nome)));
+    const porPapelENome = lista.find((item) => ['tio', 'tios'].includes(normalizarTextoComparacao(item.papel_base)) && /tio|tia/.test(normalizarTextoComparacao(item.nome)));
     if (porPapelENome) return porPapelENome;
 
-    const porPapel = lista.find((item) => normalizarTextoComparacao(item.papel_base) === 'tio');
+    const porPapel = lista.find((item) => ['tio', 'tios'].includes(normalizarTextoComparacao(item.papel_base)));
     if (porPapel) return porPapel;
 
     const porNome = lista.find((item) => /tio|tia/.test(normalizarTextoComparacao(item.nome)));
@@ -165,6 +178,8 @@ async function sincronizarServicosCasalComMontagem({
         `SELECT
             cs.equipe_id,
             cs.ejc_id,
+            cs.papel,
+            cs.subfuncao,
             COALESCE(e.numero, m_origem.numero_ejc) AS numero_ejc,
             m_destino.id AS montagem_id
          FROM tios_casal_servicos cs
@@ -183,7 +198,7 @@ async function sincronizarServicosCasalComMontagem({
     );
 
     const equipeIds = Array.from(new Set((servicosRows || []).map((item) => Number(item.equipe_id)).filter((id) => id > 0)));
-    const funcaoPorEquipe = new Map();
+    const funcoesPorEquipe = new Map();
     if (equipeIds.length) {
         const [funcoesRows] = await pool.query(
             `SELECT
@@ -198,16 +213,11 @@ async function sincronizarServicosCasalComMontagem({
             [tenantId, equipeIds]
         );
 
-        const agrupadas = new Map();
         for (const row of (funcoesRows || [])) {
             const equipeId = Number(row.equipe_id);
             if (!equipeId) continue;
-            if (!agrupadas.has(equipeId)) agrupadas.set(equipeId, []);
-            agrupadas.get(equipeId).push(row);
-        }
-        for (const [equipeId, funcoes] of agrupadas.entries()) {
-            const escolhida = escolherFuncaoTio(funcoes);
-            if (escolhida) funcaoPorEquipe.set(equipeId, escolhida);
+            if (!funcoesPorEquipe.has(equipeId)) funcoesPorEquipe.set(equipeId, []);
+            funcoesPorEquipe.get(equipeId).push(row);
         }
     }
 
@@ -216,7 +226,15 @@ async function sincronizarServicosCasalComMontagem({
         const equipeId = Number(servico && servico.equipe_id);
         const montagemId = Number(servico && servico.montagem_id);
         if (!equipeId || !montagemId) continue;
-        const funcao = funcaoPorEquipe.get(equipeId);
+        const funcoes = funcoesPorEquipe.get(equipeId) || [];
+        const papelServico = normalizarTextoComparacao(servico.papel);
+        const subfuncaoServico = normalizarTextoComparacao(servico.subfuncao);
+        const funcao = subfuncaoServico
+            ? funcoes.find((item) =>
+                normalizarTextoComparacao(item.nome) === subfuncaoServico
+                && (!papelServico || normalizarTextoComparacao(item.papel_base) === papelServico)
+            )
+            : escolherFuncaoTio(funcoes);
         if (!funcao || !funcao.id) continue;
         const chave = `${montagemId}:${equipeId}:${Number(funcao.id)}`;
         if (!desejados.has(chave)) {
@@ -502,9 +520,11 @@ async function ensureStructure() {
         CREATE TABLE IF NOT EXISTS tios_casal_servicos (
             id INT AUTO_INCREMENT PRIMARY KEY,
             tenant_id INT NOT NULL,
-            casal_id INT NOT NULL,
+                casal_id INT NOT NULL,
                 equipe_id INT NOT NULL,
                 ejc_id INT NULL,
+                papel VARCHAR(50) NULL,
+                subfuncao VARCHAR(120) NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 UNIQUE KEY uniq_tios_casal_servico (casal_id, equipe_id, ejc_id),
                 KEY idx_tios_casal_servicos_tenant (tenant_id),
@@ -582,10 +602,12 @@ function normalizeServicos(value, fallbackEquipeIds) {
             const ejcId = ejcIdRaw ? Number(ejcIdRaw) : null;
             if (!Number.isInteger(equipeId) || equipeId <= 0) continue;
             const validEjcId = Number.isInteger(ejcId) && ejcId > 0 ? ejcId : null;
+            const papel = String(item && item.papel ? item.papel : '').trim() || null;
+            const subfuncao = String(item && item.subfuncao ? item.subfuncao : '').trim() || null;
             const key = `${equipeId}:${validEjcId || 0}`;
             if (seen.has(key)) continue;
             seen.add(key);
-            result.push({ equipe_id: equipeId, ejc_id: validEjcId });
+            result.push({ equipe_id: equipeId, ejc_id: validEjcId, papel, subfuncao });
         }
     }
 
@@ -595,7 +617,7 @@ function normalizeServicos(value, fallbackEquipeIds) {
         const key = `${equipeId}:0`;
         if (seen.has(key)) continue;
         seen.add(key);
-        result.push({ equipe_id: equipeId, ejc_id: null });
+        result.push({ equipe_id: equipeId, ejc_id: null, papel: null, subfuncao: null });
     }
     return result;
 }
@@ -1243,7 +1265,7 @@ router.get('/casais', async (req, res) => {
         let servicosRows = [];
         if (casalIds.length) {
             const [rows] = await pool.query(
-                `SELECT cs.casal_id, cs.equipe_id, cs.ejc_id, eq.nome AS equipe_nome,
+                `SELECT cs.casal_id, cs.equipe_id, cs.ejc_id, cs.papel, cs.subfuncao, eq.nome AS equipe_nome,
                         COALESCE(e.numero, m.numero_ejc) AS ejc_numero,
                         e.paroquia AS ejc_paroquia
                  FROM tios_casal_servicos cs
@@ -1256,26 +1278,123 @@ router.get('/casais', async (req, res) => {
             );
             servicosRows = rows || [];
         }
+        const subfuncaoPorServico = new Map();
+        if (
+            casalIds.length
+            && await hasTable('montagem_membros')
+            && await hasTable('equipes_funcoes')
+            && await hasTable('montagens')
+            && await hasColumn('montagem_membros', 'tio_casal_id')
+        ) {
+            const comPapelBase = await hasColumn('equipes_funcoes', 'papel_base');
+            const [funcoesRows] = await pool.query(
+                `SELECT
+                    c.id AS casal_id,
+                    mm.equipe_id,
+                    ejc.id AS ejc_id,
+                    m.numero_ejc AS ejc_numero,
+                    ef.nome AS subfuncao,
+                    ${comPapelBase ? "COALESCE(ef.papel_base, 'Tios')" : "'Tios'"} AS papel
+                 FROM tios_casais c
+                 JOIN montagem_membros mm
+                   ON mm.tenant_id = c.tenant_id
+                  AND (
+                        mm.tio_casal_id = c.id
+                        OR (
+                            mm.tio_casal_id IS NULL
+                            AND LOWER(TRIM(COALESCE(mm.nome_externo, ''))) = LOWER(TRIM(CONCAT(COALESCE(c.nome_tio, ''), ' e ', COALESCE(c.nome_tia, ''))))
+                        )
+                  )
+                 JOIN equipes_funcoes ef
+                   ON ef.id = mm.funcao_id
+                  AND ef.tenant_id = mm.tenant_id
+                 LEFT JOIN montagens m
+                   ON m.id = mm.montagem_id
+                  AND m.tenant_id = mm.tenant_id
+                 LEFT JOIN ejc
+                   ON ejc.numero = m.numero_ejc
+                  AND ejc.tenant_id = mm.tenant_id
+                 WHERE c.tenant_id = ?
+                   AND c.id IN (?)
+                   AND mm.jovem_id IS NULL
+                   AND mm.equipe_id IS NOT NULL
+                   AND mm.funcao_id IS NOT NULL
+                   AND (mm.status_ligacao IS NULL OR mm.status_ligacao <> 'RECUSOU')
+                 ORDER BY m.numero_ejc DESC, mm.id DESC`,
+                [tenantId, casalIds]
+            );
+            const registrarSubfuncao = (row, chaveEjc) => {
+                const subfuncao = String(row.subfuncao || '').trim();
+                if (!subfuncao || !chaveEjc) return;
+                const chave = `${Number(row.casal_id)}:${Number(row.equipe_id)}:${chaveEjc}`;
+                if (!subfuncaoPorServico.has(chave)) {
+                    subfuncaoPorServico.set(chave, {
+                        subfuncao,
+                        papel: String(row.papel || '').trim() || null
+                    });
+                }
+            };
+            for (const row of (funcoesRows || [])) {
+                registrarSubfuncao(row, `ejc:${Number(row.ejc_id || 0)}`);
+                registrarSubfuncao(row, `numero:${Number(row.ejc_numero || 0)}`);
+            }
+        }
         const byCasal = new Map();
+        const obterSubfuncaoServico = (row) => {
+            const base = `${Number(row.casal_id)}:${Number(row.equipe_id)}:`;
+            return subfuncaoPorServico.get(`${base}ejc:${Number(row.ejc_id || 0)}`)
+                || subfuncaoPorServico.get(`${base}numero:${Number(row.ejc_numero || 0)}`)
+                || null;
+        };
+        const servicoTemEdicao = (servico) => Number(servico && servico.ejc_id) > 0 || Number(servico && servico.ejc_numero) > 0;
+        const filtrarServicosDuplicados = (servicos) => {
+            const lista = Array.isArray(servicos) ? servicos : [];
+            const equipesComEdicao = new Set(
+                lista
+                    .filter(servicoTemEdicao)
+                    .map((servico) => Number(servico.equipe_id))
+                    .filter((id) => id > 0)
+            );
+            const vistos = new Set();
+            return lista.filter((servico) => {
+                const equipeId = Number(servico && servico.equipe_id);
+                if (!equipeId) return false;
+                if (!servicoTemEdicao(servico) && equipesComEdicao.has(equipeId)) return false;
+                const chave = [
+                    equipeId,
+                    Number(servico.ejc_id || 0),
+                    Number(servico.ejc_numero || 0)
+                ].join(':');
+                if (vistos.has(chave)) return false;
+                vistos.add(chave);
+                return true;
+            });
+        };
         for (const row of servicosRows) {
             if (!byCasal.has(row.casal_id)) byCasal.set(row.casal_id, []);
+            const funcaoServico = obterSubfuncaoServico(row);
             byCasal.get(row.casal_id).push({
                 equipe_id: row.equipe_id,
                 equipe_nome: row.equipe_nome,
                 ejc_id: row.ejc_id || null,
                 ejc_numero: row.ejc_numero || null,
-                ejc_paroquia: row.ejc_paroquia || null
+                ejc_paroquia: row.ejc_paroquia || null,
+                papel: row.papel || (funcaoServico ? funcaoServico.papel : null),
+                subfuncao: row.subfuncao || (funcaoServico ? funcaoServico.subfuncao : null)
             });
         }
 
-        const payload = (casais || []).map((c) => ({
-            ...decryptTiosCasal(c),
-            servicos: byCasal.get(c.id) || [],
-            equipes: Array.from(
-                new Map((byCasal.get(c.id) || []).map((s) => [s.equipe_id, { id: s.equipe_id, nome: s.equipe_nome }])).values()
-            ),
-            equipe_ids: Array.from(new Set((byCasal.get(c.id) || []).map((s) => s.equipe_id)))
-        }));
+        const payload = (casais || []).map((c) => {
+            const servicos = filtrarServicosDuplicados(byCasal.get(c.id) || []);
+            return {
+                ...decryptTiosCasal(c),
+                servicos,
+                equipes: Array.from(
+                    new Map(servicos.map((s) => [s.equipe_id, { id: s.equipe_id, nome: s.equipe_nome }])).values()
+                ),
+                equipe_ids: Array.from(new Set(servicos.map((s) => s.equipe_id)))
+            };
+        });
         return res.json(payload);
     } catch (err) {
         console.error('Erro ao listar casais de tios:', err);
@@ -1506,7 +1625,7 @@ router.post('/casais/bulk-replace', async (req, res) => {
             const equipeIdsItem = Array.from(new Set(item.servicos.map((s) => s.equipe_id)));
             equipeIdsItem.forEach((equipeId) => valoresEquipes.push([tenantId, item.casalId, equipeId]));
             item.servicos.forEach((servico) => {
-                valoresServicos.push([tenantId, item.casalId, servico.equipe_id, servico.ejc_id, item.nomeTio, item.telefoneTio, item.nomeTia, item.telefoneTia]);
+                valoresServicos.push([tenantId, item.casalId, servico.equipe_id, servico.ejc_id, servico.papel, servico.subfuncao, item.nomeTio, item.telefoneTio, item.nomeTia, item.telefoneTia]);
             });
         }
         if (valoresEquipes.length) {
@@ -1518,7 +1637,7 @@ router.post('/casais/bulk-replace', async (req, res) => {
         if (valoresServicos.length) {
             await connection.query(
                 `INSERT IGNORE INTO tios_casal_servicos
-                    (tenant_id, casal_id, equipe_id, ejc_id, nome_tio_snapshot, telefone_tio_snapshot, nome_tia_snapshot, telefone_tia_snapshot)
+                    (tenant_id, casal_id, equipe_id, ejc_id, papel, subfuncao, nome_tio_snapshot, telefone_tio_snapshot, nome_tia_snapshot, telefone_tia_snapshot)
                  VALUES ?`,
                 [valoresServicos]
             );
@@ -1668,9 +1787,9 @@ router.post('/casais', async (req, res) => {
             // eslint-disable-next-line no-await-in-loop
             await pool.query(
                 `INSERT IGNORE INTO tios_casal_servicos
-                    (tenant_id, casal_id, equipe_id, ejc_id, nome_tio_snapshot, telefone_tio_snapshot, nome_tia_snapshot, telefone_tia_snapshot)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-                [tenantId, casalId, servico.equipe_id, servico.ejc_id, nomeTio, telefoneTio, nomeTia, telefoneTia]
+                    (tenant_id, casal_id, equipe_id, ejc_id, papel, subfuncao, nome_tio_snapshot, telefone_tio_snapshot, nome_tia_snapshot, telefone_tia_snapshot)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [tenantId, casalId, servico.equipe_id, servico.ejc_id, servico.papel, servico.subfuncao, nomeTio, telefoneTio, nomeTia, telefoneTia]
             );
         }
 
@@ -1830,9 +1949,9 @@ router.put('/casais/:id', async (req, res) => {
             // eslint-disable-next-line no-await-in-loop
             await pool.query(
                 `INSERT IGNORE INTO tios_casal_servicos
-                    (tenant_id, casal_id, equipe_id, ejc_id, nome_tio_snapshot, telefone_tio_snapshot, nome_tia_snapshot, telefone_tia_snapshot)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-                [tenantId, casalId, servico.equipe_id, servico.ejc_id, nomeTio, telefoneTio, nomeTia, telefoneTia]
+                    (tenant_id, casal_id, equipe_id, ejc_id, papel, subfuncao, nome_tio_snapshot, telefone_tio_snapshot, nome_tia_snapshot, telefone_tia_snapshot)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [tenantId, casalId, servico.equipe_id, servico.ejc_id, servico.papel, servico.subfuncao, nomeTio, telefoneTio, nomeTia, telefoneTia]
             );
         }
 
@@ -1879,12 +1998,14 @@ router.delete('/casais/:id', async (req, res) => {
 
         await pool.query(
             `INSERT INTO tios_casal_servicos_historico
-                (tenant_id, casal_id, equipe_id, ejc_id, nome_tio_snapshot, telefone_tio_snapshot, nome_tia_snapshot, telefone_tia_snapshot)
+                (tenant_id, casal_id, equipe_id, ejc_id, papel, subfuncao, nome_tio_snapshot, telefone_tio_snapshot, nome_tia_snapshot, telefone_tia_snapshot)
              SELECT
                 ts.tenant_id,
                 ts.casal_id,
                 ts.equipe_id,
                 ts.ejc_id,
+                ts.papel,
+                ts.subfuncao,
                 COALESCE(ts.nome_tio_snapshot, ?),
                 COALESCE(ts.telefone_tio_snapshot, ?),
                 COALESCE(ts.nome_tia_snapshot, ?),

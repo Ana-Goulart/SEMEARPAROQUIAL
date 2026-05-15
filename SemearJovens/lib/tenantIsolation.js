@@ -60,6 +60,7 @@ async function ensureTenantIsolation() {
             'equipes_funcoes',
             'equipes_papeis',
             'equipes_funcoes_padrao',
+            'equipes_funcoes_padrao_exclusoes',
             'montagens',
             'montagem_membros',
             'formularios_pastas',

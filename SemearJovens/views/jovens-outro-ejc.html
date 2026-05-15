@@ -3357,8 +3357,25 @@
                 servicosRegistradosCasalComIndice() {
                     const base = this.formCasal && Array.isArray(this.formCasal.servicos) ? this.formCasal.servicos : [];
                     const out = [];
+                    const indicePorEquipe = new Map();
+                    const pontuarServico = (srv) => {
+                        if (!srv) return 0;
+                        let pontos = 0;
+                        if (Number(srv.ejc_numero || 0) > 0) pontos += 20;
+                        if (Number(srv.ejc_id || 0) > 0) pontos += 10;
+                        if (String(srv.ejc_paroquia || '').trim()) pontos += 5;
+                        return pontos;
+                    };
                     base.forEach((srv, idx) => {
-                        if (Number(srv && srv.equipe_id) > 0) out.push({ srv, idx });
+                        const equipeId = Number(srv && srv.equipe_id);
+                        if (!equipeId) return;
+                        if (indicePorEquipe.has(equipeId)) {
+                            const outIdx = indicePorEquipe.get(equipeId);
+                            if (pontuarServico(srv) > pontuarServico(out[outIdx].srv)) out[outIdx] = { srv, idx };
+                            return;
+                        }
+                        indicePorEquipe.set(equipeId, out.length);
+                        out.push({ srv, idx });
                     });
                     return out;
                 },

@@ -3,6 +3,7 @@ const helmet = require('helmet');
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env'), override: true });
 const rateLimit = require('express-rate-limit');
+const { ipKeyGenerator } = rateLimit;
 const app = express();
 const { attachUserFromSession, clearSessionCookie } = require('./lib/authSession');
 const { attachAdminFromSession } = require('./lib/adminSession');
@@ -56,7 +57,7 @@ const SEMEAR_JOVENS_DASHBOARD_URL = String(process.env.SEMEAR_JOVENS_DASHBOARD_U
 const PARISH_ADMIN_URL = String(process.env.PARISH_ADMIN_URL || 'https://admin.semearparoquial.com.br:3001').trim().replace(/\/+$/, '');
 const ADMIN_HOSTNAME = String(process.env.ADMIN_HOSTNAME || 'admin.semearparoquial.com.br').trim().toLowerCase();
 const GLOBAL_RATE_LIMIT_WINDOW_MS = Number(process.env.GLOBAL_RATE_LIMIT_WINDOW_MS || 15 * 60 * 1000);
-const GLOBAL_RATE_LIMIT_MAX = Number(process.env.GLOBAL_RATE_LIMIT_MAX || 300);
+const GLOBAL_RATE_LIMIT_MAX = Number(process.env.GLOBAL_RATE_LIMIT_MAX || 3000);
 const PHONE_RESPONSE_FIELDS = new Set([
     'telefone',
     'jovem_telefone',
@@ -82,7 +83,12 @@ const globalLimiter = rateLimit({
     limit: GLOBAL_RATE_LIMIT_MAX,
     standardHeaders: 'draft-8',
     legacyHeaders: false,
-    skip: (req) => req.path === '/api/ping',
+    keyGenerator: (req) => {
+        if (req.user && req.user.id) return `user:${req.user.id}`;
+        if (req.admin && req.admin.id) return `admin:${req.admin.id}`;
+        return ipKeyGenerator(req.ip);
+    },
+    skip: (req) => req.method === 'OPTIONS' || req.path === '/api/ping',
     handler: (_req, res) => res.status(429).json({ error: 'Muitas requisições. Tente novamente em alguns minutos.' })
 });
 

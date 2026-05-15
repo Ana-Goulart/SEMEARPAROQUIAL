@@ -1814,7 +1814,7 @@
                                                     <span class="badge-role">{{ h.papel }}</span>
                                                     <span v-if="h.subfuncao" class="badge-subrole">{{ h.subfuncao }}</span>
                                                 </div>
-                                                <button v-if="isEditing"
+                                                <button v-if="isEditing && podeRemoverEquipeHistorico(h)"
                                                     class="btn btn-danger btn-ejc-action btn-sm"
                                                     @click="removerEquipeHistorico(h.id)"
                                                     title="Remover"
@@ -3983,10 +3983,19 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                         alert("Erro ao adicionar equipe ao histórico");
                     }
                 },
+                podeRemoverEquipeHistorico(item) {
+                    const id = String(item && item.id || '');
+                    return !!id && !id.startsWith('montagem-atual-');
+                },
                 async removerEquipeHistorico(id) {
                     if (!(await window.showFloatingConfirm("Remover este item do histórico?"))) return;
                     try {
-                        const res = await fetch(`/api/lista-mestre/historico/${id}`, { method: 'DELETE' });
+                        const idTexto = String(id || '');
+                        const montagemMatch = idTexto.match(/^montagem-(\d+)$/);
+                        const endpoint = montagemMatch
+                            ? `/api/montar-encontro/membro/${montagemMatch[1]}`
+                            : `/api/lista-mestre/historico/${encodeURIComponent(idTexto)}`;
+                        const res = await fetch(endpoint, { method: 'DELETE' });
                         if (!res.ok) throw new Error("Erro ao remover");
 
                         // Recarregar histórico

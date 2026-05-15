@@ -402,6 +402,7 @@ router.put('/:id', async (req, res) => {
 
 // DELETE - Deletar EJC
 router.delete('/:id', async (req, res) => {
+    const connection = await pool.getConnection();
     try {
         const tenantId = getTenantId(req);
         const ejcId = Number(req.params.id);
@@ -485,47 +486,63 @@ router.delete('/:id', async (req, res) => {
             }
         }
 
-        if (hasHistoricoEquipes) {
-            const [historico] = await pool.query(
-                'SELECT COUNT(*) as count FROM historico_equipes WHERE ejc_id = ? AND tenant_id = ?',
-                [ejcId, tenantId]
-            );
-            if (historico[0].count > 0) {
-                return res.status(400).json({
-                    error: "Não é possível deletar este EJC. Ele já possui histórico de equipes."
-                });
-            }
-        }
+        await connection.beginTransaction();
 
         if (hasEquipesEjc) {
-            await pool.query(
+            await connection.query(
                 'DELETE FROM equipes_ejc WHERE ejc_id = ? AND tenant_id = ?',
                 [ejcId, tenantId]
             );
         }
 
         if (hasTiosCasalServicos) {
-            await pool.query(
+            await connection.query(
                 'DELETE FROM tios_casal_servicos WHERE ejc_id = ? AND tenant_id = ?',
                 [ejcId, tenantId]
             );
         }
 
-        const [result] = await pool.query(
+        if (hasHistoricoEquipes) {
+            await connection.query(
+                'DELETE FROM historico_equipes WHERE ejc_id = ? AND tenant_id = ?',
+                [ejcId, tenantId]
+            );
+        }
+
+        if (await hasTable('ejc_encontristas_historico')) {
+            await connection.query(
+                'DELETE FROM ejc_encontristas_historico WHERE ejc_id = ? AND tenant_id = ?',
+                [ejcId, tenantId]
+            );
+        }
+
+        if (await hasTable('ejc_regras')) {
+            await connection.query(
+                'DELETE FROM ejc_regras WHERE ejc_id = ? AND tenant_id = ?',
+                [ejcId, tenantId]
+            );
+        }
+
+        const [result] = await connection.query(
             'DELETE FROM ejc WHERE id = ? AND tenant_id = ?',
             [ejcId, tenantId]
         );
 
         if (result.affectedRows === 0) {
+            await connection.rollback();
             return res.status(404).json({ error: "EJC não encontrado" });
         }
 
+        await connection.commit();
         await registrarLog('sistema', 'DELETE', `EJC deletado`);
 
         res.json({ message: "EJC deletado com sucesso" });
     } catch (err) {
+        try { await connection.rollback(); } catch (_) { }
         console.error("Erro ao deletar EJC:", err);
         res.status(500).json({ error: "Erro ao deletar EJC" });
+    } finally {
+        connection.release();
     }
 });
 

@@ -19,6 +19,7 @@ const TENANT_SCOPED_TABLES = [
     'equipes_funcoes',
     'equipes_papeis',
     'equipes_funcoes_padrao',
+    'equipes_funcoes_padrao_exclusoes',
     'montagens',
     'montagem_membros',
     'montagem_jovens_servir',

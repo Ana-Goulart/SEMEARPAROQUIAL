@@ -345,13 +345,21 @@
                                 <tr v-for="m in membros" :key="`m-${m.membro_id}`">
                                     <td class="fw-semibold nome-caixa-alta">{{ nomeMembro(m) }}</td>
                                     <td>
-                                        {{
-                                            (m.jovem_idade !== null && m.jovem_idade !== undefined)
-                                                ? (m.jovem_idade + ' anos')
-                                                : (calcularIdade(m.jovem_data_nascimento) ? (calcularIdade(m.jovem_data_nascimento) + ' anos') : '-')
-                                        }}
+                                        <div v-if="m.casal_jovens" class="ligacoes-telefone-lista">
+                                            <span v-for="(idade, idx) in idadesDoMembro(m)" :key="`idade-${m.membro_id}-${idx}`" class="ligacoes-telefone-item">
+                                                {{ idade }}
+                                            </span>
+                                        </div>
+                                        <template v-else>{{ idadeExibicao(m) }}</template>
                                     </td>
-                                    <td>{{ origemExibicao(m) }}</td>
+                                    <td>
+                                        <div v-if="m.casal_jovens" class="ligacoes-telefone-lista">
+                                            <span v-for="(origem, idx) in origensDoMembro(m)" :key="`origem-${m.membro_id}-${idx}`" class="ligacoes-telefone-item">
+                                                {{ origem }}
+                                            </span>
+                                        </div>
+                                        <template v-else>{{ origemExibicao(m) }}</template>
+                                    </td>
                                     <td
                                         :class="[
                                             'ligacoes-telefone',
@@ -364,7 +372,20 @@
                                         </div>
                                         <template v-else>{{ telefoneExibicao(m) }}</template>
                                     </td>
-                                    <td>{{ m.funcao_nome || '-' }}</td>
+                                    <td>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span>{{ m.funcao_nome || '-' }}</span>
+                                            <button
+                                                type="button"
+                                                class="btn btn-sm btn-outline-secondary btn-icone-acao"
+                                                data-ui-skip-standardize
+                                                @click="abrirModalEditarFuncao(m)"
+                                                title="Editar função"
+                                                aria-label="Editar função">
+                                                <i class="fa-solid fa-pen-to-square"></i>
+                                            </button>
+                                        </div>
+                                    </td>
                                     <td class="ligacoes-cell-status">
                                         <span v-if="m.confirmado" class="ligacoes-status-badge">{{ labelStatusLigacao(m.status_ligacao) }}</span>
                                         <select v-else class="form-select form-select-sm ligacoes-status-select" v-model="m.status_ligacao" @change="onStatusChange(m)">
@@ -472,6 +493,37 @@
                 </div>
             </div>
         </main>
+
+        <div class="modal fade" id="modalEditarFuncaoMembro" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-light">
+                        <h5 class="modal-title">Editar função</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label small text-muted mb-1">Membro</label>
+                            <div class="fw-semibold nome-caixa-alta">{{ edicaoFuncao.nome }}</div>
+                        </div>
+                        <div class="mb-0">
+                            <label class="form-label small text-muted mb-1">Função/Subfunção</label>
+                            <select class="form-select" v-model.number="edicaoFuncao.funcaoId">
+                                <option :value="0">Selecione...</option>
+                                <option v-for="f in funcoes" :key="`edit-f-${f.id}`" :value="f.id">{{ f.nome }}</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-soft-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-primary d-inline-flex align-items-center gap-2" @click="salvarFuncaoMembro" :disabled="salvandoFuncao || !edicaoFuncao.funcaoId">
+                            <i class="fa-solid fa-floppy-disk"></i>
+                            <span>{{ salvandoFuncao ? 'Salvando...' : 'Salvar' }}</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <div class="modal fade" id="modalAdicionarMembro" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
@@ -648,6 +700,7 @@
                     searchResults: [],
                     searchTimer: null,
                     searchErroMsg: '',
+                    modalEditarFuncaoInstance: null,
                     modalAdicionarMembroInstance: null,
                     modalPuxarReservaInstance: null,
                     modalBuscaInstance: null,
@@ -655,6 +708,8 @@
                     modalPuxarReserva: { lista: 'jovens', criterioSexo: 'primeiro', funcaoId: 0 },
                     modalPuxarReservaNomeAdicionado: '',
                     puxandoReserva: false,
+                    salvandoFuncao: false,
+                    edicaoFuncao: { membroId: 0, funcaoId: 0, nome: '' },
                     observacaoMembroAbertoId: 0,
                     observacaoTexto: '',
                     observacaoSalvando: false
@@ -743,11 +798,14 @@
                     const data = res.ok ? await res.json() : {};
                     const equipes = Array.isArray(data.equipes) ? data.equipes : [];
                     const eq = equipes.find(e => Number(e.id) === Number(this.equipeId));
-                    this.membros = eq ? (eq.membros || []).map((m) => ({
+                    const membros = eq ? (eq.membros || []).map((m) => ({
                         ...m,
                         confirmado: String(m.status_ligacao || '').toUpperCase() === 'ACEITOU'
                     })) : [];
-                    this.recusas = (Array.isArray(data.recusas) ? data.recusas : []).filter(r => Number(r.equipe_id) === Number(this.equipeId));
+                    this.membros = this.ordenarMembrosEquipe(this.agruparCasaisJovensEquipe(membros));
+                    this.recusas = this.ordenarMembrosEquipe(
+                        (Array.isArray(data.recusas) ? data.recusas : []).filter(r => Number(r.equipe_id) === Number(this.equipeId))
+                    );
                 },
                 async carregarOutrosEjcs() {
                     const res = await fetch('/api/outros-ejcs');
@@ -756,9 +814,100 @@
                         this.outroEjcSelecionado = Number(this.outrosEjcs[0].id) || 0;
                     }
                 },
+                agruparCasaisJovensEquipe(lista) {
+                    const itens = Array.isArray(lista) ? lista : [];
+                    const porJovemId = new Map();
+                    itens.forEach((item) => {
+                        const jovemId = Number(item && item.jovem_id || 0);
+                        if (jovemId) porJovemId.set(jovemId, item);
+                    });
+                    const usados = new Set();
+                    const resultado = [];
+                    for (const item of itens) {
+                        const jovemId = Number(item && item.jovem_id || 0);
+                        if (jovemId && usados.has(jovemId)) continue;
+                        const conjugeId = Number(item && item.jovem_conjuge_id || 0);
+                        const parceiro = conjugeId ? porJovemId.get(conjugeId) : null;
+                        const mesmoGrupo = parceiro
+                            && Number(parceiro.equipe_id || 0) === Number(item.equipe_id || 0)
+                            && Number(parceiro.funcao_id || 0) === Number(item.funcao_id || 0)
+                            && Number(parceiro.eh_substituicao || 0) === Number(item.eh_substituicao || 0);
+                        if (!mesmoGrupo) {
+                            if (jovemId) usados.add(jovemId);
+                            resultado.push(item);
+                            continue;
+                        }
+                        if (jovemId) usados.add(jovemId);
+                        usados.add(conjugeId);
+                        resultado.push({
+                            ...item,
+                            casal_jovens: true,
+                            conjuge_membro_id: parceiro.membro_id,
+                            conjuge_jovem_id_display: parceiro.jovem_id,
+                            conjuge_nome_display: parceiro.jovem_nome || item.conjuge_nome || '',
+                            conjuge_telefone_display: parceiro.jovem_telefone || item.conjuge_telefone || '',
+                            conjuge_sexo_display: parceiro.jovem_sexo || item.conjuge_sexo || '',
+                            conjuge_idade_display: parceiro.jovem_idade ?? item.conjuge_idade ?? null,
+                            conjuge_data_nascimento_display: parceiro.jovem_data_nascimento || item.conjuge_data_nascimento || null,
+                            conjuge_origem_ejc_tipo_display: parceiro.origem_ejc_tipo || item.origem_ejc_tipo || 'INCONFIDENTES',
+                            conjuge_numero_ejc_fez_display: parceiro.numero_ejc_fez || null,
+                            conjuge_ejc_numero_fez_display: parceiro.ejc_numero_fez || null,
+                            conjuge_outro_ejc_numero_display: parceiro.outro_ejc_numero || null,
+                            conjuge_outro_ejc_id_display: parceiro.outro_ejc_id || null,
+                            conjuge_outro_ejc_nome_display: parceiro.outro_ejc_nome || null,
+                            conjuge_outro_ejc_paroquia_display: parceiro.outro_ejc_paroquia || null
+                        });
+                    }
+                    return resultado;
+                },
                 nomeMembro(membro) {
+                    if (membro && membro.casal_jovens) {
+                        const nomes = [membro.jovem_nome, membro.conjuge_nome_display || membro.conjuge_nome]
+                            .map((nome) => String(nome || '').trim())
+                            .filter(Boolean);
+                        if (nomes.length) return nomes.join(' e ');
+                    }
                     const nomeTios = [membro && membro.nome_tio, membro && membro.nome_tia].filter(Boolean).join(' e ');
                     return String(membro && (membro.jovem_nome || membro.nome_externo || membro.nome_completo || nomeTios) || '').trim() || '-';
+                },
+                normalizarTextoOrdenacao(valor) {
+                    return String(valor || '')
+                        .normalize('NFD')
+                        .replace(/[\u0300-\u036f]/g, '')
+                        .trim()
+                        .toLowerCase();
+                },
+                ehFuncaoCoordenacao(membro) {
+                    const papel = this.normalizarTextoOrdenacao(membro && membro.papel_base);
+                    if (papel) return papel === 'coordenador' || papel === 'cordenador';
+                    const funcao = this.normalizarTextoOrdenacao(membro && membro.funcao_nome);
+                    return funcao === 'coordenacao' || funcao === 'coordenador' || funcao === 'coordenadora' || funcao === 'cordenador' || funcao === 'cordenadora';
+                },
+                grupoOrdenacaoMembroEquipe(membro) {
+                    const ehTio = this.ehMembroTio(membro);
+                    const ehCoordenacao = this.ehFuncaoCoordenacao(membro);
+                    if (!ehTio && ehCoordenacao) return 0;
+                    if (!ehTio) return 1;
+                    if (ehCoordenacao) return 2;
+                    return 3;
+                },
+                compararMembrosEquipe(a, b) {
+                    const grupoA = this.grupoOrdenacaoMembroEquipe(a);
+                    const grupoB = this.grupoOrdenacaoMembroEquipe(b);
+                    if (grupoA !== grupoB) return grupoA - grupoB;
+
+                    const funcaoA = this.normalizarTextoOrdenacao(a && a.funcao_nome);
+                    const funcaoB = this.normalizarTextoOrdenacao(b && b.funcao_nome);
+                    if (funcaoA !== funcaoB) return funcaoA.localeCompare(funcaoB, 'pt-BR');
+
+                    const nomeA = this.normalizarTextoOrdenacao(this.nomeMembro(a));
+                    const nomeB = this.normalizarTextoOrdenacao(this.nomeMembro(b));
+                    if (nomeA !== nomeB) return nomeA.localeCompare(nomeB, 'pt-BR');
+
+                    return Number(a && a.membro_id || 0) - Number(b && b.membro_id || 0);
+                },
+                ordenarMembrosEquipe(lista) {
+                    return (Array.isArray(lista) ? lista.slice() : []).sort((a, b) => this.compararMembrosEquipe(a, b));
                 },
                 origemExibicao(membro) {
                     if (!membro) return '-';
@@ -783,6 +932,41 @@
                         return `${numero} EJC ${this.nomeMeuEJC || ''}`.trim();
                     }
                     return `EJC ${this.nomeMeuEJC || ''}`.trim();
+                },
+                origemConjugeExibicao(membro) {
+                    if (!membro) return '-';
+                    return this.origemExibicao({
+                        origem_ejc_tipo: membro.conjuge_origem_ejc_tipo_display,
+                        numero_ejc_fez: membro.conjuge_numero_ejc_fez_display,
+                        ejc_numero_fez: membro.conjuge_ejc_numero_fez_display,
+                        outro_ejc_numero: membro.conjuge_outro_ejc_numero_display,
+                        outro_ejc_id: membro.conjuge_outro_ejc_id_display,
+                        outro_ejc_nome: membro.conjuge_outro_ejc_nome_display,
+                        outro_ejc_paroquia: membro.conjuge_outro_ejc_paroquia_display
+                    });
+                },
+                origensDoMembro(membro) {
+                    if (!membro || !membro.casal_jovens) return [this.origemExibicao(membro)];
+                    return [this.origemExibicao(membro), this.origemConjugeExibicao(membro)];
+                },
+                idadeExibicao(membro) {
+                    if (!membro) return '-';
+                    if (this.ehMembroTio(membro)) return '-';
+                    const idade = membro.jovem_idade !== null && membro.jovem_idade !== undefined
+                        ? Number(membro.jovem_idade)
+                        : Number(this.calcularIdade(membro.jovem_data_nascimento));
+                    return Number.isFinite(idade) && idade >= 0 ? `${idade} anos` : '-';
+                },
+                idadeConjugeExibicao(membro) {
+                    if (!membro) return '-';
+                    const idade = membro.conjuge_idade_display !== null && membro.conjuge_idade_display !== undefined
+                        ? Number(membro.conjuge_idade_display)
+                        : Number(this.calcularIdade(membro.conjuge_data_nascimento_display));
+                    return Number.isFinite(idade) && idade >= 0 ? `${idade} anos` : '-';
+                },
+                idadesDoMembro(membro) {
+                    if (!membro || !membro.casal_jovens) return [this.idadeExibicao(membro)];
+                    return [this.idadeExibicao(membro), this.idadeConjugeExibicao(membro)];
                 },
                 observacaoEstaAberta(membro) {
                     return Number(this.observacaoMembroAbertoId || 0) === Number(membro && membro.membro_id || 0);
@@ -838,7 +1022,14 @@
                 },
                 telefonesDoMembro(membro) {
                     if (!membro) return [];
-                    const lista = [membro.jovem_telefone, membro.telefone_tio, membro.telefone_tia, membro.telefone_externo]
+                    const lista = [
+                        membro.jovem_telefone,
+                        membro.conjuge_telefone_display,
+                        membro.conjuge_telefone,
+                        membro.telefone_tio,
+                        membro.telefone_tia,
+                        membro.telefone_externo
+                    ]
                         .reduce((acc, valor) => acc.concat(this.partesTelefone(valor)), []);
                     const vistos = new Set();
                     const unicos = [];
@@ -851,7 +1042,7 @@
                     return unicos;
                 },
                 deveQuebrarTelefone(membro) {
-                    return this.ehMembroTio(membro) && this.telefonesDoMembro(membro).length > 1;
+                    return (this.ehMembroTio(membro) || membro.casal_jovens) && this.telefonesDoMembro(membro).length > 1;
                 },
                 telefoneExibicao(membro) {
                     const telefones = this.telefonesDoMembro(membro);
@@ -889,7 +1080,9 @@
                         if (temNomeTio || temNomeTia) return temNomeTio ? 1 : 0;
                         return 1;
                     }
-                    return this.normalizarSexo(membro.jovem_sexo || membro.sexo) === 'masculino' ? 1 : 0;
+                    let total = this.normalizarSexo(membro.jovem_sexo || membro.sexo) === 'masculino' ? 1 : 0;
+                    if (membro.casal_jovens && this.normalizarSexo(membro.conjuge_sexo_display || membro.conjuge_sexo) === 'masculino') total += 1;
+                    return total;
                 },
                 totalMulheresDoMembro(membro) {
                     if (!membro) return 0;
@@ -899,13 +1092,16 @@
                         if (temNomeTio || temNomeTia) return temNomeTia ? 1 : 0;
                         return 1;
                     }
-                    return this.normalizarSexo(membro.jovem_sexo || membro.sexo) === 'feminino' ? 1 : 0;
+                    let total = this.normalizarSexo(membro.jovem_sexo || membro.sexo) === 'feminino' ? 1 : 0;
+                    if (membro.casal_jovens && this.normalizarSexo(membro.conjuge_sexo_display || membro.conjuge_sexo) === 'feminino') total += 1;
+                    return total;
                 },
                 pesoMembro(membro) {
                     if (!membro) return 0;
                     if (this.ehMembroTio(membro)) {
                         return 2;
                     }
+                    if (membro.casal_jovens) return 2;
                     return 1;
                 },
                 totalPessoasLista(lista) {
@@ -947,6 +1143,44 @@
                     }
                     this.searchErroMsg = '';
                     this.modalAdicionarMembroInstance.show();
+                },
+                abrirModalEditarFuncao(membro) {
+                    if (!membro || !membro.membro_id) return;
+                    this.edicaoFuncao = {
+                        membroId: Number(membro.membro_id),
+                        funcaoId: Number(membro.funcao_id || 0),
+                        nome: this.nomeMembro(membro)
+                    };
+                    if (!this.modalEditarFuncaoInstance) {
+                        this.modalEditarFuncaoInstance = new bootstrap.Modal(document.getElementById('modalEditarFuncaoMembro'));
+                    }
+                    this.modalEditarFuncaoInstance.show();
+                },
+                async salvarFuncaoMembro() {
+                    const membroId = Number(this.edicaoFuncao && this.edicaoFuncao.membroId || 0);
+                    const funcaoId = Number(this.edicaoFuncao && this.edicaoFuncao.funcaoId || 0);
+                    if (!membroId || !funcaoId || this.salvandoFuncao) return;
+                    this.salvandoFuncao = true;
+                    try {
+                        const res = await fetch(`/api/montar-encontro/membro/${membroId}/funcao`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ funcao_id: funcaoId })
+                        });
+                        if (!res.ok) {
+                            const err = await res.json().catch(() => ({}));
+                            await uiAlert(err.error || 'Erro ao atualizar função.');
+                            return;
+                        }
+                        if (this.modalEditarFuncaoInstance) this.modalEditarFuncaoInstance.hide();
+                        await this.carregarEstruturaEquipe();
+                        await this.carregarMembros();
+                    } catch (err) {
+                        console.error(err);
+                        await uiAlert('Erro ao atualizar função.');
+                    } finally {
+                        this.salvandoFuncao = false;
+                    }
                 },
                 abrirModalPuxarReserva() {
                     if (!this.modalPuxarReservaInstance) {
@@ -1427,9 +1661,13 @@
                         const res = await fetch(`/api/montar-encontro/membro/${membroId}`, { method: 'DELETE' });
                         if (res.ok) {
                             await this.carregarMembros();
+                            return;
                         }
+                        const err = await res.json().catch(() => ({}));
+                        await uiAlert(err.error || 'Erro ao remover membro.');
                     } catch (err) {
                         console.error(err);
+                        await uiAlert('Erro ao remover membro.');
                     }
                 },
                 formatarData(d) {

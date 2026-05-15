@@ -377,9 +377,9 @@
                                             <button type="button"
                                                 class="btn-icon-delete"
                                                 data-ui-skip-standardize
-                                                @click="removerFuncao(funcao.id)"
-                                                title="Remover função"
-                                                aria-label="Remover função">
+                                                @click="removerFuncao(funcao)"
+                                                :title="funcao.is_padrao ? 'Remover função padrão desta equipe' : 'Remover função'"
+                                                :aria-label="funcao.is_padrao ? 'Remover função padrão desta equipe' : 'Remover função'">
                                                 <i class="fas fa-trash-alt"></i>
                                             </button>
                                         </div>
@@ -921,8 +921,12 @@
                     } catch (e) { }
                 },
 
-                async removerFuncao(funcaoId) {
-                    if (!(await window.showFloatingConfirm("Tem certeza que deseja remover esta função/cargo?"))) return;
+                async removerFuncao(funcao) {
+                    const funcaoId = funcao && funcao.id ? funcao.id : funcao;
+                    const mensagem = funcao && funcao.is_padrao
+                        ? "Remover esta função padrão apenas desta equipe? Ela continuará existindo nas outras equipes."
+                        : "Tem certeza que deseja remover esta função/cargo?";
+                    if (!(await window.showFloatingConfirm(mensagem))) return;
                     try {
                         const res = await fetch(`/api/equipes/funcoes/${funcaoId}`, { method: 'DELETE' });
                         if (res.ok) {

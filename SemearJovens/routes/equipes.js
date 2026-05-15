@@ -12,6 +12,7 @@ let hasPapelBaseColumnCache = null;
 let hasFuncoesPadraoTableCache = null;
 let hasOrigemPadraoColumnCache = null;
 let hasPapeisTableCache = null;
+let hasFuncoesPadraoExclusoesTableCache = null;
 let hasIconeClasseColumnCache = null;
 let hasCorIconeColumnCache = null;
 let hasMembrosOutroEjcColumnCache = null;
@@ -65,6 +66,18 @@ async function hasPapeisTable() {
     `);
     hasPapeisTableCache = !!(rows && rows[0] && rows[0].cnt > 0);
     return hasPapeisTableCache;
+}
+
+async function hasFuncoesPadraoExclusoesTable() {
+    if (hasFuncoesPadraoExclusoesTableCache !== null) return hasFuncoesPadraoExclusoesTableCache;
+    const [rows] = await pool.query(`
+        SELECT COUNT(*) AS cnt
+        FROM information_schema.TABLES
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = 'equipes_funcoes_padrao_exclusoes'
+    `);
+    hasFuncoesPadraoExclusoesTableCache = !!(rows && rows[0] && rows[0].cnt > 0);
+    return hasFuncoesPadraoExclusoesTableCache;
 }
 
 async function hasIconeClasseColumn() {
@@ -151,14 +164,41 @@ async function normalizarPapelBase(papel, tenantId) {
     return match ? match.nome : null;
 }
 
+function chaveFuncaoPadrao(nome, papelBase) {
+    return `${(nome || '').toString().trim().toLowerCase()}::${(papelBase || 'Membro').toString().trim().toLowerCase()}`;
+}
+
+async function localizarFuncaoPadraoPorNomeEPapel(tenantId, nome, papelBase) {
+    if (!await hasFuncoesPadraoTable()) return null;
+    const [rows] = await pool.query(
+        `SELECT id
+         FROM equipes_funcoes_padrao
+         WHERE tenant_id = ?
+           AND LOWER(TRIM(nome)) = LOWER(TRIM(?))
+           AND LOWER(TRIM(COALESCE(papel_base, 'Membro'))) = LOWER(TRIM(?))
+         LIMIT 1`,
+        [tenantId, nome || '', papelBase || 'Membro']
+    );
+    return rows && rows.length > 0 ? rows[0] : null;
+}
+
 async function aplicarFuncoesPadraoNaEquipe(equipeId, tenantId) {
     const tabelaPadraoExiste = await hasFuncoesPadraoTable();
     if (!tabelaPadraoExiste || !equipeId) return;
 
     const comPapelBase = await hasPapelBaseColumn();
     const comOrigemPadrao = await hasOrigemPadraoColumn();
+    const comExclusoes = await hasFuncoesPadraoExclusoesTable();
     const [padroes] = await pool.query('SELECT id, nome, papel_base FROM equipes_funcoes_padrao WHERE tenant_id = ? ORDER BY id ASC', [tenantId]);
     for (const p of padroes) {
+        if (comExclusoes) {
+            const [exclusoes] = await pool.query(
+                'SELECT id FROM equipes_funcoes_padrao_exclusoes WHERE tenant_id = ? AND equipe_id = ? AND funcao_padrao_id = ? LIMIT 1',
+                [tenantId, equipeId, p.id]
+            );
+            if (exclusoes.length > 0) continue;
+        }
+
         const [exists] = comOrigemPadrao
             ? await pool.query(
                 'SELECT id FROM equipes_funcoes WHERE tenant_id = ? AND equipe_id = ? AND origem_padrao_id = ? LIMIT 1',
@@ -631,6 +671,7 @@ router.delete('/funcoes-padrao/:id', async (req, res) => {
 
         const comOrigemPadrao = await hasOrigemPadraoColumn();
         const comPapelBase = await hasPapelBaseColumn();
+        const comExclusoes = await hasFuncoesPadraoExclusoesTable();
         if (comOrigemPadrao) {
             await pool.query('DELETE FROM equipes_funcoes WHERE origem_padrao_id = ? AND tenant_id = ?', [padrao.id, tenantId]);
         } else {
@@ -640,6 +681,9 @@ router.delete('/funcoes-padrao/:id', async (req, res) => {
                     : 'DELETE FROM equipes_funcoes WHERE tenant_id = ? AND nome = ?',
                 comPapelBase ? [tenantId, padrao.nome, padrao.papel_base] : [tenantId, padrao.nome]
             );
+        }
+        if (comExclusoes) {
+            await pool.query('DELETE FROM equipes_funcoes_padrao_exclusoes WHERE funcao_padrao_id = ? AND tenant_id = ?', [padrao.id, tenantId]);
         }
 
         await pool.query('DELETE FROM equipes_funcoes_padrao WHERE id = ? AND tenant_id = ?', [padrao.id, tenantId]);
@@ -664,6 +708,15 @@ router.get('/:id/funcoes', async (req, res) => {
                 ? 'SELECT id, equipe_id, nome, "Membro" AS papel_base, origem_padrao_id, CASE WHEN origem_padrao_id IS NULL THEN 0 ELSE 1 END AS is_padrao FROM equipes_funcoes WHERE equipe_id = ? AND tenant_id = ? ORDER BY nome ASC'
                 : 'SELECT id, equipe_id, nome, "Membro" AS papel_base, NULL AS origem_padrao_id, 0 AS is_padrao FROM equipes_funcoes WHERE equipe_id = ? AND tenant_id = ? ORDER BY nome ASC');
         const [rows] = await pool.query(sql, [req.params.id, tenantId]);
+        if (await hasFuncoesPadraoTable()) {
+            const [padroes] = await pool.query('SELECT nome, COALESCE(papel_base, "Membro") AS papel_base FROM equipes_funcoes_padrao WHERE tenant_id = ?', [tenantId]);
+            const chavesPadrao = new Set(padroes.map(p => chaveFuncaoPadrao(p.nome, p.papel_base)));
+            rows.forEach(row => {
+                if (Number(row.is_padrao) === 0 && chavesPadrao.has(chaveFuncaoPadrao(row.nome, row.papel_base))) {
+                    row.is_padrao = 1;
+                }
+            });
+        }
         res.json(rows);
     } catch (err) {
         console.error("Erro ao buscar funções:", err);
@@ -709,6 +762,34 @@ router.post('/:id/funcoes', async (req, res) => {
 router.delete('/funcoes/:id', async (req, res) => {
     try {
         const tenantId = getTenantId(req);
+        const comPapelBase = await hasPapelBaseColumn();
+        const comOrigemPadrao = await hasOrigemPadraoColumn();
+        const selectFuncao = comPapelBase
+            ? (comOrigemPadrao
+                ? 'SELECT id, equipe_id, nome, COALESCE(papel_base, "Membro") AS papel_base, origem_padrao_id FROM equipes_funcoes WHERE id = ? AND tenant_id = ? LIMIT 1'
+                : 'SELECT id, equipe_id, nome, COALESCE(papel_base, "Membro") AS papel_base, NULL AS origem_padrao_id FROM equipes_funcoes WHERE id = ? AND tenant_id = ? LIMIT 1')
+            : (comOrigemPadrao
+                ? 'SELECT id, equipe_id, nome, "Membro" AS papel_base, origem_padrao_id FROM equipes_funcoes WHERE id = ? AND tenant_id = ? LIMIT 1'
+                : 'SELECT id, equipe_id, nome, "Membro" AS papel_base, NULL AS origem_padrao_id FROM equipes_funcoes WHERE id = ? AND tenant_id = ? LIMIT 1');
+        const [rows] = await pool.query(selectFuncao, [req.params.id, tenantId]);
+        if (rows.length === 0) return res.status(404).json({ error: "Função não encontrada" });
+
+        const funcao = rows[0];
+        if (await hasFuncoesPadraoExclusoesTable()) {
+            let funcaoPadraoId = Number(funcao.origem_padrao_id || 0);
+            if (!funcaoPadraoId) {
+                const padrao = await localizarFuncaoPadraoPorNomeEPapel(tenantId, funcao.nome, funcao.papel_base);
+                funcaoPadraoId = padrao ? Number(padrao.id || 0) : 0;
+            }
+
+            if (funcaoPadraoId) {
+                await pool.query(
+                    'INSERT IGNORE INTO equipes_funcoes_padrao_exclusoes (tenant_id, equipe_id, funcao_padrao_id) VALUES (?, ?, ?)',
+                    [tenantId, funcao.equipe_id, funcaoPadraoId]
+                );
+            }
+        }
+
         const [result] = await pool.query('DELETE FROM equipes_funcoes WHERE id = ? AND tenant_id = ?', [req.params.id, tenantId]);
         if (result.affectedRows === 0) return res.status(404).json({ error: "Função não encontrada" });
         res.json({ message: "Função excluída" });

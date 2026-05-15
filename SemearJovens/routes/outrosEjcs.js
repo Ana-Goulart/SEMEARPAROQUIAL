@@ -63,7 +63,6 @@ async function ensureObservacoesStructure() {
 router.get('/', async (req, res) => {
     try {
         const tenantId = getTenantId(req);
-        await ensureJovensSensitiveColumns(db.pool);
         await ensureObservacoesStructure();
         const [rows] = await db.pool.query('SELECT * FROM outros_ejcs WHERE tenant_id = ? ORDER BY created_at DESC', [tenantId]);
         res.json(rows);

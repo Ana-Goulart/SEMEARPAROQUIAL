@@ -1171,8 +1171,8 @@ preencha outro_ejc_paroquia</div>
                                                             </div>
                                                         </div>
                                                         <div class="history-entry-meta">
-                                                            <span class="badge-role">Tios</span>
-                                                            <span class="badge-role">{{ obterNomeEquipeServico(item.srv) }}</span>
+                                                            <span v-if="item.srv.papel" class="badge-role">{{ item.srv.papel }}</span>
+                                                            <span v-if="obterSubfuncaoServico(item.srv)" class="badge-subrole">{{ obterSubfuncaoServico(item.srv) }}</span>
                                                         </div>
                                                         <button v-if="isEditingCasal" class="btn btn-ejc-action btn-danger" @click="removerServicoCasal(item.idx)" title="Remover equipe"><i class="fa-solid fa-trash icon-accent"></i></button>
                                                     </li>
@@ -1184,9 +1184,16 @@ preencha outro_ejc_paroquia</div>
                                                             <option :value="null">EJC...</option>
                                                             <option v-for="ejc in ejcs" :key="`ejc-casal-add-${ejc.id}`" :value="ejc.id">{{ formatarEjcOption(ejc) }}</option>
                                                         </select>
-                                                        <select v-model="novoServicoCasal.equipe_id" class="form-select form-select-sm">
+                                                        <select v-model="novoServicoCasal.equipe_id" class="form-select form-select-sm" @change="onEquipeServicoCasalChange">
                                                             <option :value="null">Equipe...</option>
                                                             <option v-for="eq in equipes" :key="`eq-casal-add-${eq.id}`" :value="eq.id">{{ eq.nome }}</option>
+                                                        </select>
+                                                        <select v-model="novoServicoCasal.papel" class="form-select form-select-sm" style="width: 110px;" @change="onPapelServicoCasalChange">
+                                                            <option v-for="p in papeisEquipeDisponiveis" :key="`papel-casal-add-${p.id}`" :value="p.nome">{{ p.nome }}</option>
+                                                        </select>
+                                                        <select v-model="novoServicoCasal.subfuncao" class="form-select form-select-sm" style="max-width: 220px;" :disabled="!novoServicoCasal.equipe_id">
+                                                            <option value="">Subfunção...</option>
+                                                            <option v-for="f in subfuncoesServicoCasalDisponiveis" :key="`subfuncao-casal-add-${f.id}`" :value="f.nome">{{ f.nome }}</option>
                                                         </select>
                                                         <button type="button" class="btn btn-success btn-sm" @click="adicionarServicoCasal" :disabled="!novoServicoCasal.equipe_id || !novoServicoCasal.ejc_id" title="Adicionar equipe"><i class="fa-solid fa-plus icon-accent"></i></button>
                                                     </div>
@@ -1671,7 +1678,13 @@ preencha outro_ejc_paroquia</div>
                     },
                     observacoesExtrasCasal: [],
                     novaObservacaoCasal: '',
-                    novoServicoCasal: { equipe_id: null, ejc_id: null },
+                    papeisEquipeDisponiveis: [
+                        { id: 1, nome: 'Membro' },
+                        { id: 2, nome: 'Tio' },
+                        { id: 3, nome: 'Coordenador' }
+                    ],
+                    funcoesPorEquipeServico: {},
+                    novoServicoCasal: { equipe_id: null, ejc_id: null, papel: 'Tio', subfuncao: '' },
                     formEcc: { id: null, numero: '', tipo: 'ECC', descricao: '' }
                 };
             },
@@ -2236,6 +2249,7 @@ preencha outro_ejc_paroquia</div>
                         this.carregarEccs(),
                         this.carregarEquipes(),
                         this.carregarEjcs(),
+                        this.carregarPapeisEquipe(),
                         this.carregarOutrosEjcs()
                     ]);
                 },
@@ -2288,6 +2302,36 @@ preencha outro_ejc_paroquia</div>
                     } catch (err) {
                         console.error(err);
                         this.equipes = [];
+                    }
+                },
+                async carregarPapeisEquipe() {
+                    try {
+                        const res = await fetch('/api/equipes/papeis');
+                        const data = await res.json().catch(() => ([]));
+                        if (res.ok && Array.isArray(data) && data.length) {
+                            this.papeisEquipeDisponiveis = data;
+                        }
+                    } catch (err) {
+                        console.error(err);
+                    } finally {
+                        this.novoServicoCasal.papel = this.getPapelPadraoServicoCasal();
+                    }
+                },
+                getPapelPadraoServicoCasal() {
+                    const papeis = this.papeisEquipeDisponiveis || [];
+                    const tio = papeis.find((p) => String(p.nome || '').toLowerCase() === 'tio');
+                    return tio ? tio.nome : (papeis[0] && papeis[0].nome ? papeis[0].nome : 'Tio');
+                },
+                async carregarFuncoesEquipeServico(equipeId) {
+                    if (!equipeId || this.funcoesPorEquipeServico[equipeId]) return;
+                    try {
+                        const res = await fetch(`/api/equipes/${equipeId}/funcoes`);
+                        if (!res.ok) return;
+                        const data = await res.json().catch(() => ([]));
+                        this.funcoesPorEquipeServico[equipeId] = Array.isArray(data) ? data.filter(Boolean) : [];
+                    } catch (err) {
+                        console.error(err);
+                        this.funcoesPorEquipeServico[equipeId] = [];
                     }
                 },
                 async carregarEjcs() {
@@ -2977,6 +3021,10 @@ preencha outro_ejc_paroquia</div>
                     const equipe = (this.equipes || []).find((e) => Number(e.id) === equipeId);
                     return (equipe && equipe.nome) ? equipe.nome : 'Equipe não informada';
                 },
+                obterSubfuncaoServico(srv) {
+                    if (!srv) return '';
+                    return String(srv.subfuncao || srv.funcao_nome || srv.funcao || '').trim();
+                },
                 formatarEdicaoServico(srv) {
                     if (!srv) return 'Edição não informada';
                     const numeroBruto = Number(srv.ejc_numero || 0);
@@ -3015,6 +3063,13 @@ preencha outro_ejc_paroquia</div>
                         if (Number(srv && srv.equipe_id) > 0) out.push({ srv, idx });
                     });
                     return out.sort((a, b) => this.compararServicosCasalPorEdicaoDesc(a.srv, b.srv));
+                },
+                subfuncoesServicoCasalDisponiveis() {
+                    const equipeId = this.novoServicoCasal && this.novoServicoCasal.equipe_id;
+                    if (!equipeId) return [];
+                    const funcoes = this.funcoesPorEquipeServico[equipeId] || [];
+                    const papelSelecionado = (this.novoServicoCasal && this.novoServicoCasal.papel) || 'Tio';
+                    return funcoes.filter((f) => (f.papel_base || 'Membro') === papelSelecionado);
                 },
                 obterNumeroEdicaoServico(srv) {
                     if (!srv) return 0;
@@ -3304,7 +3359,7 @@ preencha outro_ejc_paroquia</div>
                     this.observacoesExtrasCasal = [];
                     this.comissoesCasal = [];
                     this.novaObservacaoCasal = '';
-                    this.novoServicoCasal = { equipe_id: null, ejc_id: null };
+                    this.novoServicoCasal = { equipe_id: null, ejc_id: null, papel: this.getPapelPadraoServicoCasal(), subfuncao: '' };
                     this.abaCasal = 'dados';
                     this.subAbaCasalDados = 'cadastro';
                     this.isEditingCasal = true;
@@ -3340,7 +3395,15 @@ preencha outro_ejc_paroquia</div>
                         ecc_id: item.ecc_id || null,
                         equipe_ids: Array.isArray(item.equipe_ids) ? item.equipe_ids.slice() : [],
                         servicos: Array.isArray(item.servicos) && item.servicos.length
-                            ? item.servicos.map((s) => ({ equipe_id: s.equipe_id || null, ejc_id: s.ejc_id || null }))
+                            ? item.servicos.map((s) => ({
+                                equipe_id: s.equipe_id || null,
+                                equipe_nome: s.equipe_nome || s.equipe || '',
+                                ejc_id: s.ejc_id || null,
+                                ejc_numero: s.ejc_numero || null,
+                                ejc_paroquia: s.ejc_paroquia || null,
+                                papel: s.papel || null,
+                                subfuncao: s.subfuncao || s.funcao_nome || s.funcao || null
+                            }))
                             : [],
                         restricao_alimentar: !!item.restricao_alimentar,
                         deficiencia: !!item.deficiencia,
@@ -3359,7 +3422,7 @@ preencha outro_ejc_paroquia</div>
                     this.observacoesExtrasCasal = [];
                     this.comissoesCasal = [];
                     this.novaObservacaoCasal = '';
-                    this.novoServicoCasal = { equipe_id: null, ejc_id: null };
+                    this.novoServicoCasal = { equipe_id: null, ejc_id: null, papel: this.getPapelPadraoServicoCasal(), subfuncao: '' };
                     this.abaCasal = 'dados';
                     this.subAbaCasalDados = 'cadastro';
                     this.isEditingCasal = false;
@@ -3373,13 +3436,29 @@ preencha outro_ejc_paroquia</div>
                     if (!this.modalCasal) this.modalCasal = new bootstrap.Modal(document.getElementById('modalCasal'));
                     this.modalCasal.show();
                 },
+                onEquipeServicoCasalChange() {
+                    this.novoServicoCasal.subfuncao = '';
+                    this.carregarFuncoesEquipeServico(this.novoServicoCasal.equipe_id);
+                },
+                onPapelServicoCasalChange() {
+                    this.novoServicoCasal.subfuncao = '';
+                },
                 adicionarServicoCasal() {
                     if (!this.isEditingCasal) return;
                     const equipeId = this.novoServicoCasal && this.novoServicoCasal.equipe_id ? Number(this.novoServicoCasal.equipe_id) : null;
                     const ejcId = this.novoServicoCasal && this.novoServicoCasal.ejc_id ? Number(this.novoServicoCasal.ejc_id) : null;
                     if (!equipeId || !ejcId) return;
-                    this.formCasal.servicos.push({ equipe_id: equipeId, ejc_id: ejcId });
-                    this.novoServicoCasal = { equipe_id: null, ejc_id: null };
+                    if (this.subfuncoesServicoCasalDisponiveis.length > 0 && !this.novoServicoCasal.subfuncao) {
+                        alert("Selecione uma subfunção cadastrada para este papel.");
+                        return;
+                    }
+                    this.formCasal.servicos.push({
+                        equipe_id: equipeId,
+                        ejc_id: ejcId,
+                        papel: this.novoServicoCasal.papel || this.getPapelPadraoServicoCasal(),
+                        subfuncao: this.novoServicoCasal.subfuncao ? this.novoServicoCasal.subfuncao.trim() : null
+                    });
+                    this.novoServicoCasal = { equipe_id: null, ejc_id: null, papel: this.getPapelPadraoServicoCasal(), subfuncao: '' };
                 },
                 removerServicoCasal(idx) {
                     if (!this.isEditingCasal) return;

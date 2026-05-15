@@ -249,8 +249,8 @@ router.post('/reservas/:id/titular', async (req, res) => {
     const outroEjcId = Number(req.body.outro_ejc_id);
     const funcaoMoita = String(req.body.funcao_moita || '').trim();
 
-    if (!reservaId || !Number.isInteger(ejcNumero) || ejcNumero <= 0 || !outroEjcId || !funcaoMoita) {
-        return res.status(400).json({ error: 'Informe número do EJC, outro EJC e função no moita.' });
+    if (!reservaId || !Number.isInteger(ejcNumero) || ejcNumero <= 0 || !outroEjcId) {
+        return res.status(400).json({ error: 'Informe número do EJC e outro EJC.' });
     }
 
     const connection = await pool.getConnection();
