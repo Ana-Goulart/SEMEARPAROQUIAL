@@ -102,7 +102,7 @@ async function ensureNaoServeEjcColumns() {
     }
 }
 
-async function validarNumeroMontagemUnico({ tenantId, numero, montagemIdIgnorar = null }) {
+async function validarNumeroMontagemUnico({ tenantId, numero, montagemIdIgnorar = null, numeroEjcAtualIgnorar = null }) {
     const numeroNormalizado = Number(numero);
     if (!Number.isInteger(numeroNormalizado) || numeroNormalizado <= 0) {
         return 'Número do EJC inválido.';
@@ -121,7 +121,8 @@ async function validarNumeroMontagemUnico({ tenantId, numero, montagemIdIgnorar 
         return 'Já existe uma montagem com esse número de EJC.';
     }
 
-    if (await hasTable('ejc')) {
+    const deveIgnorarEjcAtual = Number(numeroEjcAtualIgnorar) === numeroNormalizado;
+    if (!deveIgnorarEjcAtual && await hasTable('ejc')) {
         const [ejcs] = await pool.query(
             `SELECT id
              FROM ejc
@@ -1870,31 +1871,38 @@ router.get('/', async (req, res) => {
         const comDataFimReunioes = await hasMontagemDataFimReunioesColumn();
         const comDiaSemanaReunioes = await hasMontagemDiaSemanaReunioesColumn();
 
-        const selectDataInicio = comDataInicio ? 'data_inicio' : 'data_encontro';
-        const selectDataFim = comDataFim ? 'data_fim' : 'data_encontro';
-        const selectDataTarde = comDataTarde ? 'data_tarde_revelacao' : 'NULL';
-        const selectDataInicioReunioes = comDataInicioReunioes ? 'data_inicio_reunioes' : 'NULL';
-        const selectDataFimReunioes = comDataFimReunioes ? 'data_fim_reunioes' : 'NULL';
-        const selectDiaSemanaReunioes = comDiaSemanaReunioes ? 'dia_semana_reunioes' : '0';
+        const selectDataInicio = comDataInicio ? 'm.data_inicio' : 'm.data_encontro';
+        const selectDataFim = comDataFim ? 'm.data_fim' : 'm.data_encontro';
+        const selectDataTarde = comDataTarde ? 'm.data_tarde_revelacao' : 'NULL';
+        const selectDataInicioReunioes = comDataInicioReunioes ? 'm.data_inicio_reunioes' : 'NULL';
+        const selectDataFimReunioes = comDataFimReunioes ? 'm.data_fim_reunioes' : 'NULL';
+        const selectDiaSemanaReunioes = comDiaSemanaReunioes ? 'm.dia_semana_reunioes' : '0';
+        const comEjcDescricao = await hasColumn('ejc', 'descricao');
+        const comEjcMusicaTema = await hasColumn('ejc', 'musica_tema');
+        const selectDescricao = comEjcDescricao ? 'e.descricao' : 'NULL';
+        const selectMusicaTema = comEjcMusicaTema ? 'e.musica_tema' : 'NULL';
         const [rows] = await pool.query(`
             SELECT
-                id,
-                numero_ejc,
-                data_encontro,
+                m.id,
+                m.numero_ejc,
+                m.data_encontro,
                 ${selectDataTarde} AS data_tarde_revelacao,
                 ${selectDataInicioReunioes} AS data_inicio_reunioes,
                 ${selectDataFimReunioes} AS data_fim_reunioes,
                 ${selectDiaSemanaReunioes} AS dia_semana_reunioes,
                 ${selectDataInicio} AS data_inicio,
                 ${selectDataFim} AS data_fim,
+                ${selectDescricao} AS descricao,
+                ${selectMusicaTema} AS musica_tema,
                 CASE
-                    WHEN COALESCE(${selectDataFimReunioes}, ${selectDataFim}, data_encontro) < CURDATE() THEN 1
+                    WHEN COALESCE(${selectDataFimReunioes}, ${selectDataFim}, m.data_encontro) < CURDATE() THEN 1
                     ELSE 0
                 END AS encerrada,
-                created_at
-            FROM montagens
-            WHERE tenant_id = ?
-            ORDER BY encerrada ASC, created_at DESC
+                m.created_at
+            FROM montagens m
+            LEFT JOIN ejc e ON e.tenant_id = m.tenant_id AND e.numero = m.numero_ejc
+            WHERE m.tenant_id = ?
+            ORDER BY encerrada ASC, m.created_at DESC
         `, [tenantId]);
         res.json(rows);
     } catch (err) {
@@ -2429,10 +2437,6 @@ router.post('/', async (req, res) => {
     if (inicioReunioes > fimReunioes) {
         return res.status(400).json({ error: "A data fim das reuniões não pode ser menor que a data início." });
     }
-    if (!gerarDatasReunioesPorDiaSemana(inicioReunioes, fimReunioes, diaSemanaReunioes).length) {
-        return res.status(400).json({ error: "Não existe nenhuma reunião nesse dia da semana dentro do período informado." });
-    }
-
     try {
         const tenantId = getTenantId(req);
         await garantirEstruturaMontagemMembrosExtra();
@@ -2527,7 +2531,7 @@ router.put('/:id', async (req, res) => {
         await garantirEstruturaMontagemMembrosExtra();
         await garantirEstruturaMontagemDatas();
         const [exists] = await pool.query(
-            `SELECT id, data_tarde_revelacao, data_inicio_reunioes, data_fim_reunioes, dia_semana_reunioes, data_inicio, data_fim, data_encontro
+            `SELECT id, numero_ejc, data_tarde_revelacao, data_inicio_reunioes, data_fim_reunioes, dia_semana_reunioes, data_inicio, data_fim, data_encontro
              FROM montagens
              WHERE id = ? AND tenant_id = ?
              LIMIT 1`,
@@ -2563,10 +2567,12 @@ router.put('/:id', async (req, res) => {
         if (inicioReunioes > fimReunioes) {
             return res.status(400).json({ error: 'A data fim das reuniões não pode ser menor que a data início.' });
         }
-        if (!gerarDatasReunioesPorDiaSemana(inicioReunioes, fimReunioes, diaSemanaReunioes).length) {
-            return res.status(400).json({ error: 'Não existe nenhuma reunião nesse dia da semana dentro do período informado.' });
-        }
-        const erroNumero = await validarNumeroMontagemUnico({ tenantId, numero: numero_ejc, montagemIdIgnorar: montagemId });
+        const erroNumero = await validarNumeroMontagemUnico({
+            tenantId,
+            numero: numero_ejc,
+            montagemIdIgnorar: montagemId,
+            numeroEjcAtualIgnorar: montagemAtual.numero_ejc
+        });
         if (erroNumero) {
             return res.status(400).json({ error: erroNumero });
         }
@@ -2677,6 +2683,17 @@ router.get('/:id/estrutura', async (req, res) => {
         const papelBaseSelect = comPapelBase
             ? 'COALESCE(ef.papel_base, "Membro")'
             : '"Membro"';
+        const [
+            hasEstadoCivilJovem,
+            hasConjugeIdJovem,
+            hasConjugeNomeJovem,
+            hasConjugeEccTipoJovem
+        ] = await Promise.all([
+            hasColumn('jovens', 'estado_civil'),
+            hasColumn('jovens', 'conjuge_id'),
+            hasColumn('jovens', 'conjuge_nome'),
+            hasColumn('jovens', 'conjuge_ecc_tipo')
+        ]);
         const filtrosEquipes = ['eq.tenant_id = ?'];
         const paramsEquipes = [tenantId];
         if (equipeIdsPermitidas.length) {
@@ -2695,6 +2712,10 @@ router.get('/:id/estrutura', async (req, res) => {
 
         const [membros] = await pool.query(`
             SELECT mm.id as membro_id, mm.equipe_id, mm.funcao_id, mm.jovem_id, j.nome_completo as jovem_nome, j.telefone, j.sexo,
+                   ${hasEstadoCivilJovem ? 'j.estado_civil' : 'NULL'} AS estado_civil,
+                   ${hasConjugeIdJovem ? 'j.conjuge_id' : 'NULL'} AS conjuge_id,
+                   ${hasConjugeNomeJovem ? 'j.conjuge_nome' : 'NULL'} AS conjuge_nome,
+                   ${hasConjugeEccTipoJovem ? 'j.conjuge_ecc_tipo' : 'NULL'} AS conjuge_ecc_tipo,
                    mm.status_ligacao, mm.motivo_recusa, mm.eh_substituicao, mm.nome_externo, mm.telefone_externo,
                    tc.id AS tio_casal_id, tc.telefone_tio, tc.telefone_tia
             FROM montagem_membros mm
@@ -4067,12 +4088,16 @@ router.get('/:id/tios-para-servir', async (req, res) => {
                 c.nome_tia,
                 c.telefone_tio,
                 c.telefone_tia,
+                c.encontro_tipo,
+                e.numero AS ecc_numero,
+                COALESCE(c.encontro_tipo, e.tipo) AS ecc_tipo,
                 oe.nome AS outro_ejc_nome,
                 oe.paroquia AS outro_ejc_paroquia,
                 COALESCE(mts.pode_servir, 0) AS pode_servir,
                 COALESCE(mts.destino, 'titular') AS destino,
                 mts.ordem_reserva
             FROM tios_casais c
+            LEFT JOIN tios_ecc e ON e.id = c.ecc_id AND e.tenant_id = c.tenant_id
             LEFT JOIN outros_ejcs oe ON oe.id = c.outro_ejc_id AND oe.tenant_id = c.tenant_id
             LEFT JOIN montagem_tios_servir mts ON mts.casal_id = c.id AND mts.montagem_id = ?
             LEFT JOIN montagem_membros mm
@@ -4763,12 +4788,14 @@ router.get('/:id/equipes/:equipeId/detalhes', async (req, res) => {
                    mm.nome_externo, mm.telefone_externo,
                    ef.nome AS funcao_nome, COALESCE(ef.papel_base, 'Membro') AS papel_base,
                    j.nome_completo AS jovem_nome, j.telefone AS jovem_telefone,
-                   tc.id AS tio_casal_id, tc.nome_tio, tc.nome_tia, tc.telefone_tio, tc.telefone_tia
+                   tc.id AS tio_casal_id, tc.nome_tio, tc.nome_tia, tc.telefone_tio, tc.telefone_tia,
+                   tc.encontro_tipo, COALESCE(tc.encontro_tipo, tecc.tipo) AS ecc_tipo
             FROM montagem_membros mm
             JOIN equipes_funcoes ef ON ef.id = mm.funcao_id
             LEFT JOIN jovens j ON j.id = mm.jovem_id
             LEFT JOIN tios_casais tc
               ON ${montarJoinCasalTiosSql('tc', 'mm')}
+            LEFT JOIN tios_ecc tecc ON tecc.id = tc.ecc_id AND tecc.tenant_id = tc.tenant_id
             WHERE mm.montagem_id = ? AND mm.equipe_id = ? AND mm.tenant_id = ?
               AND (mm.status_ligacao IS NULL OR mm.status_ligacao <> 'RECUSOU')
             ORDER BY
@@ -5139,7 +5166,8 @@ router.get('/:id/ligacoes', async (req, res) => {
                    COALESCE(oe_j.paroquia, oe_tio.paroquia) AS outro_ejc_paroquia,
                    mm.status_ligacao, mm.motivo_recusa, mm.eh_substituicao,
                    mm.nome_externo, mm.telefone_externo,
-                   tc.id AS tio_casal_id, tc.nome_tio, tc.nome_tia, tc.telefone_tio, tc.telefone_tia
+                   tc.id AS tio_casal_id, tc.nome_tio, tc.nome_tia, tc.telefone_tio, tc.telefone_tia,
+                   tc.encontro_tipo, COALESCE(tc.encontro_tipo, tecc.tipo) AS ecc_tipo
             FROM montagem_membros mm
             JOIN equipes e ON e.id = mm.equipe_id
             JOIN equipes_funcoes ef ON ef.id = mm.funcao_id
@@ -5153,6 +5181,7 @@ router.get('/:id/ligacoes', async (req, res) => {
              AND e_num.tenant_id = j.tenant_id
             LEFT JOIN tios_casais tc
               ON ${montarJoinCasalTiosSql('tc', 'mm')}
+            LEFT JOIN tios_ecc tecc ON tecc.id = tc.ecc_id AND tecc.tenant_id = tc.tenant_id
             LEFT JOIN outros_ejcs oe_j ON oe_j.id = j.outro_ejc_id
             LEFT JOIN outros_ejcs oe_tio ON oe_tio.id = tc.outro_ejc_id
             WHERE mm.montagem_id = ?
@@ -5197,6 +5226,8 @@ router.get('/:id/ligacoes', async (req, res) => {
                 nome_tia: row.nome_tia,
                 telefone_tio: row.telefone_tio,
                 telefone_tia: row.telefone_tia,
+                encontro_tipo: row.encontro_tipo,
+                ecc_tipo: row.ecc_tipo,
                 status_ligacao: row.status_ligacao,
                 motivo_recusa: row.motivo_recusa,
                 eh_substituicao: row.eh_substituicao ? 1 : 0
@@ -5856,35 +5887,60 @@ router.get('/:id/exportar-equipes-excel', async (req, res) => {
     try {
         const tenantId = getTenantId(req);
         await garantirEstruturaMontagemMembrosExtra();
+        await sincronizarMontagemComHistoricosExistentes(montagemId, tenantId);
+        await sincronizarCasaisJovensDaMontagem({ tenantId, montagemId });
         const temTabelaTios = await hasTable('tios_casais');
         const tioJoin = temTabelaTios
             ? `LEFT JOIN tios_casais tc
-                 ON ${montarJoinCasalTiosSql('tc', 'mm')}`
+                 ON ${montarJoinCasalTiosSql('tc', 'mm')}
+                LEFT JOIN tios_ecc tecc
+                  ON tecc.id = tc.ecc_id AND tecc.tenant_id = tc.tenant_id`
             : '';
-        const [rows] = await pool.query(`
-            SELECT
-                e.nome AS equipe_nome,
-                COALESCE(j.nome_completo, mm.nome_externo) AS nome,
-                COALESCE(j.telefone, mm.telefone_externo, tc.telefone_tio, tc.telefone_tia) AS telefone,
-                mm.status_ligacao,
-                CASE
-                    WHEN j.data_nascimento IS NULL THEN NULL
-                    ELSE TIMESTAMPDIFF(YEAR, j.data_nascimento, CURDATE())
-                END AS idade,
-                CASE
+        const nomeCasalTiosSql = temTabelaTios
+            ? "NULLIF(TRIM(CONCAT_WS(' e ', NULLIF(TRIM(tc.nome_tio), ''), NULLIF(TRIM(tc.nome_tia), ''))), '')"
+            : 'NULL';
+        const nomeExportacaoSql = `COALESCE(NULLIF(TRIM(j.nome_completo), ''), NULLIF(TRIM(mm.nome_externo), ''), ${nomeCasalTiosSql})`;
+        const telefoneExportacaoSql = temTabelaTios
+            ? 'COALESCE(j.telefone, mm.telefone_externo, tc.telefone_tio, tc.telefone_tia)'
+            : 'COALESCE(j.telefone, mm.telefone_externo)';
+        const origemExportacaoSql = temTabelaTios
+            ? `CASE
                     WHEN mm.jovem_id IS NULL AND tc.id IS NOT NULL THEN CASE
                         WHEN tc.outro_ejc_id IS NOT NULL THEN 'OUTRO_EJC'
                         ELSE COALESCE(tc.origem_tipo, 'EJC')
                     END
                     ELSE COALESCE(j.origem_ejc_tipo, 'INCONFIDENTES')
-                END AS origem_ejc_tipo,
+                END`
+            : "COALESCE(j.origem_ejc_tipo, 'INCONFIDENTES')";
+        const outroEjcIdSql = temTabelaTios ? 'COALESCE(j.outro_ejc_id, tc.outro_ejc_id)' : 'j.outro_ejc_id';
+        const outroEjcNomeSql = temTabelaTios ? 'COALESCE(oe_j.nome, oe_tio.nome)' : 'oe_j.nome';
+        const outroEjcParoquiaSql = temTabelaTios ? 'COALESCE(oe_j.paroquia, oe_tio.paroquia)' : 'oe_j.paroquia';
+        const tioCasalIdSql = temTabelaTios ? 'tc.id' : 'NULL';
+        const tioEncontroTipoSql = temTabelaTios ? 'tc.encontro_tipo' : 'NULL';
+        const tioEccTipoSql = temTabelaTios ? 'COALESCE(tc.encontro_tipo, tecc.tipo)' : 'NULL';
+        const outroTioJoin = temTabelaTios
+            ? 'LEFT JOIN outros_ejcs oe_tio ON oe_tio.id = tc.outro_ejc_id'
+            : '';
+        const [rows] = await pool.query(`
+            SELECT
+                e.nome AS equipe_nome,
+                ${nomeExportacaoSql} AS nome,
+                ${telefoneExportacaoSql} AS telefone,
+                mm.status_ligacao,
+                CASE
+                    WHEN j.data_nascimento IS NULL THEN NULL
+                    ELSE TIMESTAMPDIFF(YEAR, j.data_nascimento, CURDATE())
+                END AS idade,
+                ${origemExportacaoSql} AS origem_ejc_tipo,
                 j.numero_ejc_fez,
                 COALESCE(e_id.numero, e_num.numero) AS ejc_numero_fez,
                 j.outro_ejc_numero,
-                COALESCE(j.outro_ejc_id, tc.outro_ejc_id) AS outro_ejc_id,
-                COALESCE(oe_j.nome, oe_tio.nome) AS outro_ejc_nome,
-                COALESCE(oe_j.paroquia, oe_tio.paroquia) AS outro_ejc_paroquia,
-                tc.id AS tio_casal_id
+                ${outroEjcIdSql} AS outro_ejc_id,
+                ${outroEjcNomeSql} AS outro_ejc_nome,
+                ${outroEjcParoquiaSql} AS outro_ejc_paroquia,
+                ${tioCasalIdSql} AS tio_casal_id,
+                ${tioEncontroTipoSql} AS encontro_tipo,
+                ${tioEccTipoSql} AS ecc_tipo
             FROM montagem_membros mm
             JOIN equipes e ON e.id = mm.equipe_id
             LEFT JOIN jovens j ON j.id = mm.jovem_id
@@ -5896,10 +5952,10 @@ router.get('/:id/exportar-equipes-excel', async (req, res) => {
              AND e_num.tenant_id = j.tenant_id
             ${tioJoin}
             LEFT JOIN outros_ejcs oe_j ON oe_j.id = j.outro_ejc_id
-            LEFT JOIN outros_ejcs oe_tio ON oe_tio.id = tc.outro_ejc_id
+            ${outroTioJoin}
             WHERE mm.montagem_id = ?
               AND mm.tenant_id = ?
-              AND COALESCE(j.nome_completo, mm.nome_externo) IS NOT NULL
+              AND ${nomeExportacaoSql} IS NOT NULL
             ORDER BY e.nome ASC, nome ASC
         `, [montagemId, tenantId]);
         return res.json(rows || []);

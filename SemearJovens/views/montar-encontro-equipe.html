@@ -794,17 +794,38 @@
                     this.funcoes = this.equipe ? (this.equipe.funcoes || []) : [];
                 },
                 async carregarMembros() {
-                    const res = await fetch(`/api/montar-encontro/${this.montagemId}/ligacoes`);
+                    const [res, resCasaisFicha] = await Promise.all([
+                        fetch(`/api/montar-encontro/${this.montagemId}/ligacoes`),
+                        fetch('/api/tios/casais')
+                    ]);
                     const data = res.ok ? await res.json() : {};
+                    const casaisFicha = resCasaisFicha.ok ? await resCasaisFicha.json().catch(() => ([])) : [];
+                    const fichaPorId = new Map(
+                        (Array.isArray(casaisFicha) ? casaisFicha : [])
+                            .filter((casal) => Number(casal && casal.id) > 0)
+                            .map((casal) => [Number(casal.id), casal])
+                    );
                     const equipes = Array.isArray(data.equipes) ? data.equipes : [];
                     const eq = equipes.find(e => Number(e.id) === Number(this.equipeId));
                     const membros = eq ? (eq.membros || []).map((m) => ({
                         ...m,
+                        encontro_tipo: m.encontro_tipo || (fichaPorId.get(Number(m.tio_casal_id)) || {}).encontro_tipo || '',
+                        ecc_tipo: m.ecc_tipo || (fichaPorId.get(Number(m.tio_casal_id)) || {}).ecc_tipo || '',
+                        outro_ejc_nome: m.outro_ejc_nome || (fichaPorId.get(Number(m.tio_casal_id)) || {}).outro_ejc_nome || '',
+                        outro_ejc_paroquia: m.outro_ejc_paroquia || (fichaPorId.get(Number(m.tio_casal_id)) || {}).outro_ejc_paroquia || '',
                         confirmado: String(m.status_ligacao || '').toUpperCase() === 'ACEITOU'
                     })) : [];
                     this.membros = this.ordenarMembrosEquipe(this.agruparCasaisJovensEquipe(membros));
                     this.recusas = this.ordenarMembrosEquipe(
-                        (Array.isArray(data.recusas) ? data.recusas : []).filter(r => Number(r.equipe_id) === Number(this.equipeId))
+                        (Array.isArray(data.recusas) ? data.recusas : [])
+                            .filter(r => Number(r.equipe_id) === Number(this.equipeId))
+                            .map((m) => ({
+                                ...m,
+                                encontro_tipo: m.encontro_tipo || (fichaPorId.get(Number(m.tio_casal_id)) || {}).encontro_tipo || '',
+                                ecc_tipo: m.ecc_tipo || (fichaPorId.get(Number(m.tio_casal_id)) || {}).ecc_tipo || '',
+                                outro_ejc_nome: m.outro_ejc_nome || (fichaPorId.get(Number(m.tio_casal_id)) || {}).outro_ejc_nome || '',
+                                outro_ejc_paroquia: m.outro_ejc_paroquia || (fichaPorId.get(Number(m.tio_casal_id)) || {}).outro_ejc_paroquia || ''
+                            }))
                     );
                 },
                 async carregarOutrosEjcs() {
@@ -913,15 +934,16 @@
                     if (!membro) return '-';
                     const origem = String(membro.origem_ejc_tipo || 'INCONFIDENTES').trim().toUpperCase();
                     if (this.ehMembroTio(membro)) {
+                        const movimento = this.movimentoMembroTio(membro);
+                        if (!movimento) return '';
                         const ehOutroTio = origem === 'OUTRO_EJC'
                             || !!membro.outro_ejc_id
                             || !!String(membro.outro_ejc_paroquia || '').trim()
                             || !!String(membro.outro_ejc_nome || '').trim();
                         if (ehOutroTio) {
-                            const paroquia = String(membro.outro_ejc_paroquia || membro.outro_ejc_nome || '').trim();
-                            return `ECC${paroquia ? ' ' + paroquia : ''}`.trim();
+                            return movimento;
                         }
-                        return `ECC ${this.nomeMeuEJC || ''}`.trim();
+                        return `${movimento} ${this.nomeMeuEJC || ''}`.trim();
                     }
                     if (origem === 'OUTRO_EJC') {
                         const nomeOutroEjc = String(membro.outro_ejc_nome || membro.outro_ejc_paroquia || '').trim();
@@ -932,6 +954,15 @@
                         return `${numero} EJC ${this.nomeMeuEJC || ''}`.trim();
                     }
                     return `EJC ${this.nomeMeuEJC || ''}`.trim();
+                },
+                movimentoMembroTio(membro) {
+                    if (String(membro && membro.origem_ejc_tipo || '').trim().toUpperCase() === 'OUTRO_EJC' || membro && membro.outro_ejc_id) {
+                        return [membro && membro.outro_ejc_nome, membro && membro.outro_ejc_paroquia]
+                            .map((valor) => String(valor || '').trim())
+                            .filter(Boolean)
+                            .join(' ');
+                    }
+                    return String((membro && (membro.encontro_tipo || membro.ecc_tipo)) || '').trim().toUpperCase();
                 },
                 origemConjugeExibicao(membro) {
                     if (!membro) return '-';

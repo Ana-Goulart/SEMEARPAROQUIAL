@@ -534,7 +534,7 @@
                                                     <th>Telefone</th>
                                                     <th v-if="abaSeparar === 'jovens'">Idade</th>
                                                     <th v-else-if="abaSeparar === 'tios'">ECC/ECNA</th>
-                                                    <th v-else-if="abaSeparar === 'tios_outro'">Paróquia</th>
+                                                    <th v-else-if="abaSeparar === 'tios_outro'">Movimento</th>
                                                     <th v-else>EJC</th>
                                                     <th v-if="abaSeparar !== 'tios' && abaSeparar !== 'tios_outro'">EJC que fez</th>
                                                     <th class="text-end">Ação</th>
@@ -603,7 +603,7 @@
                                                             {{ t.nome_tio }} e {{ t.nome_tia }}
                                                         </td>
                                                         <td>{{ telefonesCasal(t) }}</td>
-                                                        <td>{{ t.ecc_numero ? (t.ecc_numero + ' ' + t.ecc_tipo) : '-' }}</td>
+                                                        <td>{{ movimentoCasalTio(t) }}</td>
                                                         <td class="text-end">
                                                             <div class="d-flex flex-column flex-md-row justify-content-end align-items-stretch align-items-md-center gap-2">
                                                                 <button class="btn btn-sm btn-outline-primary" @click="abrirEscolhaEquipe(t)">
@@ -640,7 +640,7 @@
                                                             {{ t.nome_tio }} e {{ t.nome_tia }}
                                                         </td>
                                                         <td>{{ telefonesCasal(t) }}</td>
-                                                        <td>{{ [t.outro_ejc_paroquia, t.outro_ejc_nome].filter(Boolean).join(' - ') || '-' }}</td>
+                                                        <td>{{ movimentoCasalTio(t) || '-' }}</td>
                                                         <td class="text-end">
                                                             <div class="d-flex flex-column flex-md-row justify-content-end align-items-stretch align-items-md-center gap-2">
                                                                 <button class="btn btn-sm btn-outline-primary" @click="abrirEscolhaEquipe(t)">
@@ -878,6 +878,19 @@
                                                 </div>
                                             </div>
                                         </div>
+                                        <div class="col-12 col-md-6">
+                                            <div class="border rounded h-100 p-3 bg-light-subtle">
+                                                <div class="text-muted small fw-semibold mb-2">Detalhes do encontro</div>
+                                                <div class="mb-2">
+                                                    <div class="text-muted small">Tema</div>
+                                                    <div class="fw-semibold">{{ montagemAtiva.descricao || 'Sem tema informado' }}</div>
+                                                </div>
+                                                <div>
+                                                    <div class="text-muted small">Música tema</div>
+                                                    <div class="fw-semibold">{{ montagemAtiva.musica_tema || 'Sem música tema informada' }}</div>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
                                 </template>
 
@@ -980,6 +993,14 @@
                         <div class="mb-3">
                             <label class="form-label text-muted">Data de fim do encontro</label>
                             <input type="text" v-model="formEditarMontagem.data_fim_encontro" class="form-control date-br" placeholder="dd/mês/aaaa">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Tema do encontro</label>
+                            <input type="text" v-model.trim="formEditarMontagem.descricao" class="form-control" placeholder="Ex: Inconfidentes">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label text-muted">Música tema</label>
+                            <input type="text" v-model.trim="formEditarMontagem.musica_tema" class="form-control" placeholder="Ex: Nome da música">
                         </div>
                         <div v-if="montagemAtiva && montagemAtiva.id" class="border-top pt-3 mt-4">
                             <div class="small text-muted fw-semibold mb-1">Excluir montagem</div>
@@ -1577,7 +1598,7 @@
                                     <select class="form-select form-select-sm" v-model="modalData.fonte" @change="onFonteChange" :disabled="equipeDetalhe && equipeDetalhe.membros_outro_ejc">
                                         <option value="LISTA_MESTRE">Jovens - Lista Mestre</option>
                                         <option value="OUTRO_EJC">Jovens - Outro EJC</option>
-                                        <option value="TIOS">Tios do ECC</option>
+                                        <option value="TIOS">Tios do ECC/ECNA</option>
                                     </select>
                                 </div>
                                 <div class="col-12" v-if="modalData.fonte === 'OUTRO_EJC'">
@@ -1698,7 +1719,7 @@
                     nomeMeuEJC: (window.__NOME_EJC_ATUAL && String(window.__NOME_EJC_ATUAL).trim()) || 'Inconfidentes',
 
                     formMontagem: { numero_ejc: '', data_inicio_encontro: '', data_fim_encontro: '', data_tarde_revelacao: '', data_inicio_reunioes: '', data_fim_reunioes: '', dia_semana_reunioes: 0 },
-                    formEditarMontagem: { numero_ejc: '', data_inicio_encontro: '', data_fim_encontro: '', data_tarde_revelacao: '', data_inicio_reunioes: '', data_fim_reunioes: '', dia_semana_reunioes: 0 },
+                    formEditarMontagem: { numero_ejc: '', data_inicio_encontro: '', data_fim_encontro: '', data_tarde_revelacao: '', data_inicio_reunioes: '', data_fim_reunioes: '', dia_semana_reunioes: 0, descricao: '', musica_tema: '' },
                     excluindoMontagemId: null,
                     modalMontagemInstance: null,
                     modalEditarMontagemInstance: null,
@@ -1886,7 +1907,8 @@
                     let total = 0;
                     for (const equipe of (this.estrutura || [])) {
                         for (const funcao of (equipe.funcoes || [])) {
-                            total += (funcao.membros || []).length;
+                            total += (funcao.membros || [])
+                                .reduce((subtotal, membro) => subtotal + this.pesoMembroEquipe(membro), 0);
                         }
                     }
                     return total;
@@ -2191,13 +2213,32 @@
                 },
                 pesoMembroEquipe(membro) {
                     if (membro && membro.eh_casal_tios && !membro.jovem_id) return 2;
+                    if (this.deveContarConjugeSemEcc(membro)) return 2;
                     return 1;
+                },
+                deveContarConjugeSemEcc(membro) {
+                    if (!membro || !membro.jovem_id) return false;
+                    if (Number(membro.conjuge_id || 0) > 0) return false;
+                    const estadoCivil = String(membro.estado_civil || '').trim();
+                    if (!['Casado', 'Amasiado'].includes(estadoCivil)) return false;
+                    if (!String(membro.conjuge_nome || '').trim()) return false;
+                    const eccTipo = String(membro.conjuge_ecc_tipo || '').trim().toUpperCase();
+                    return !['ECC', 'ECNA'].includes(eccTipo);
                 },
                 telefonesCasal(item) {
                     const lista = [item && item.telefone_tio, item && item.telefone_tia]
                         .map((valor) => String(valor || '').trim())
                         .filter(Boolean);
                     return lista.length ? Array.from(new Set(lista)).join(' / ') : '-';
+                },
+                movimentoCasalTio(item) {
+                    if (String(item && item.origem_tipo || '').trim().toUpperCase() === 'OUTRO_EJC' || item && item.outro_ejc_id) {
+                        return [item && item.outro_ejc_nome, item && item.outro_ejc_paroquia]
+                            .map((valor) => String(valor || '').trim())
+                            .filter(Boolean)
+                            .join(' ');
+                    }
+                    return String((item && (item.encontro_tipo || item.ecc_tipo)) || '').trim().toUpperCase();
                 },
                 resetarControleSelecaoServir() {
                     this.selecaoSalvaPorTipo = { jovens: false, tios: false, tios_outro: false, outro: false };
@@ -4212,7 +4253,9 @@
                         data_tarde_revelacao: this.formatarDataBr(this.montagemAtiva.data_tarde_revelacao || ''),
                         data_inicio_reunioes: this.formatarDataBr(this.montagemAtiva.data_inicio_reunioes || this.montagemAtiva.data_inicio || ''),
                         data_fim_reunioes: this.formatarDataBr(this.montagemAtiva.data_fim_reunioes || this.montagemAtiva.data_fim || ''),
-                        dia_semana_reunioes: Number.isFinite(Number(this.montagemAtiva.dia_semana_reunioes)) ? Number(this.montagemAtiva.dia_semana_reunioes) : 0
+                        dia_semana_reunioes: Number.isFinite(Number(this.montagemAtiva.dia_semana_reunioes)) ? Number(this.montagemAtiva.dia_semana_reunioes) : 0,
+                        descricao: this.montagemAtiva.descricao || '',
+                        musica_tema: this.montagemAtiva.musica_tema || ''
                     };
                     if (!this.modalEditarMontagemInstance) {
                         this.modalEditarMontagemInstance = new bootstrap.Modal(document.getElementById('modalEditarMontagem'));
@@ -4244,7 +4287,9 @@
                                 numero_ejc: this.formEditarMontagem.numero_ejc,
                                 data_encontro: de,
                                 data_inicio_encontro: de,
-                                data_fim_encontro: dfenc
+                                data_fim_encontro: dfenc,
+                                descricao: this.formEditarMontagem.descricao || '',
+                                musica_tema: this.formEditarMontagem.musica_tema || ''
                             })
                         });
                         const data = await res.json().catch(() => ({}));
@@ -4262,7 +4307,9 @@
                             data_fim_reunioes: this.montagemAtiva.data_fim_reunioes || de,
                             dia_semana_reunioes: Number.isFinite(Number(this.montagemAtiva.dia_semana_reunioes)) ? Number(this.montagemAtiva.dia_semana_reunioes) : 0,
                             data_inicio: de,
-                            data_fim: dfenc
+                            data_fim: dfenc,
+                            descricao: this.formEditarMontagem.descricao || '',
+                            musica_tema: this.formEditarMontagem.musica_tema || ''
                         };
                         await this.carregarMontagens();
                         await this.uiAlert('Montagem atualizada com sucesso.', 'Sucesso');
@@ -4445,14 +4492,25 @@
                 async carregarTiosParaServir() {
                     if (!this.montagemAtiva || !this.montagemAtiva.id) return;
                     try {
-                        const [res, resCasaisOutro] = await Promise.all([
+                        const [res, resCasaisOutro, resCasaisFicha] = await Promise.all([
                             fetch(`/api/montar-encontro/${this.montagemAtiva.id}/tios-para-servir`),
-                            fetch('/api/tios/casais?tipo=OUTRO_EJC')
+                            fetch('/api/tios/casais?tipo=OUTRO_EJC'),
+                            fetch('/api/tios/casais')
                         ]);
                         const rows = res.ok ? await res.json() : [];
                         this.casaisTiosOutroCadastrados = resCasaisOutro.ok ? await resCasaisOutro.json().catch(() => ([])) : [];
+                        const casaisFicha = resCasaisFicha.ok ? await resCasaisFicha.json().catch(() => ([])) : [];
+                        const fichaPorId = new Map(
+                            (Array.isArray(casaisFicha) ? casaisFicha : [])
+                                .filter((casal) => Number(casal && casal.id) > 0)
+                                .map((casal) => [Number(casal.id), casal])
+                        );
                         this.tiosParaServir = (rows || []).map(t => ({
                             ...t,
+                            encontro_tipo: t.encontro_tipo || (fichaPorId.get(Number(t.id)) || {}).encontro_tipo || '',
+                            ecc_tipo: t.ecc_tipo || (fichaPorId.get(Number(t.id)) || {}).ecc_tipo || '',
+                            outro_ejc_nome: t.outro_ejc_nome || (fichaPorId.get(Number(t.id)) || {}).outro_ejc_nome || '',
+                            outro_ejc_paroquia: t.outro_ejc_paroquia || (fichaPorId.get(Number(t.id)) || {}).outro_ejc_paroquia || '',
                             selecionado: Number(t.pode_servir || 0) === 1,
                             destino: String(t.destino || 'titular').trim().toLowerCase() === 'reserva' ? 'reserva' : 'titular',
                             ordem_reserva: Number.isInteger(Number(t.ordem_reserva)) && Number(t.ordem_reserva) > 0 ? Number(t.ordem_reserva) : null
@@ -5326,11 +5384,10 @@
                         || !!String(item.outro_ejc_paroquia || '').trim()
                         || !!String(item.outro_ejc_nome || '').trim();
                     if (ehTio) {
-                        const paroquia = [item.outro_ejc_paroquia, item.outro_ejc_nome]
-                            .map((v) => String(v || '').trim())
-                            .find(Boolean);
-                        if (ehOutro) return `ECC${paroquia ? ' ' + paroquia : ''}`.trim();
-                        return `ECC ${this.nomeMeuEJC || ''}`.trim();
+                        const movimento = this.movimentoCasalTio(item);
+                        if (!movimento) return '';
+                        if (ehOutro) return movimento;
+                        return `${movimento} ${this.nomeMeuEJC || ''}`.trim();
                     }
                     if (ehOutro) {
                         const numero = this.formatarNumeroEjcFez(item.outro_ejc_numero);

@@ -752,19 +752,21 @@
                                 <thead class="table-light">
                                     <tr>
                                         <th>Nome completo</th>
+                                        <th>Subfunção</th>
                                         <th>Origem</th>
                                         <th>Telefone</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr v-if="!jovensEquipe.length">
-                                        <td colspan="3" class="text-muted text-center py-3">Nenhum integrante nessa equipe
+                                        <td colspan="4" class="text-muted text-center py-3">Nenhum integrante nessa equipe
                                         </td>
                                     </tr>
                                     <tr v-for="jovem in jovensEquipe" :key="jovem.id">
                                         <td>
                                             <strong>{{ jovem.nome_completo }}</strong>
                                         </td>
+                                        <td>{{ jovem.subfuncao || (['TIO', 'TIOS'].includes(String(jovem.papel || '').toUpperCase()) ? 'Tios' : 'Membro') }}</td>
                                         <td>
                                             {{ formatarOrigemEquipe(jovem) }}
                                         </td>

@@ -325,7 +325,12 @@ app.get(
     requireLoginView,
     (req, res) => res.sendFile(path.join(__dirname, 'views', 'ejc-detalhes.html'))
 );
-app.get('/gestaodoencontro/outrosejcs', requireLoginView, (req, res) => res.sendFile(path.join(__dirname, 'views', 'jovens-outro-ejc.html')));
+app.get('/gestaodoencontro/outrosejcs', requireLoginView, (req, res) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    return res.sendFile(path.join(__dirname, 'views', 'jovens-outro-ejc.html'));
+});
 app.get('/gestaodoencontro/jovensoutroejc', requireLoginView, (req, res) => {
     const params = new URLSearchParams(req.query || {});
     params.set('aba', 'membros');

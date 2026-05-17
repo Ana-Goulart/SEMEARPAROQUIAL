@@ -35,6 +35,21 @@ async function hasSubfuncaoColumn() {
     return hasSubfuncaoColumnCache;
 }
 
+function normalizarTextoOrdenacao(valor) {
+    return String(valor || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim()
+        .toLowerCase();
+}
+
+function subfuncaoPadrao(item) {
+    const subfuncao = String(item && item.subfuncao ? item.subfuncao : '').trim();
+    if (subfuncao) return subfuncao;
+    const papel = normalizarTextoOrdenacao(item && item.papel);
+    return papel === 'tio' || papel === 'tios' ? 'Tios' : 'Membro';
+}
+
 // GET - Jovens de uma equipe em um EJC específico
 router.get('/:equipeId/jovens/:ejcId', async (req, res) => {
     try {
@@ -62,8 +77,31 @@ router.get('/:equipeId/jovens/:ejcId', async (req, res) => {
             return res.status(404).json({ error: "Equipe não encontrada" });
         }
 
+        const [funcoesRows] = await pool.query(`
+            SELECT DISTINCT ef.nome, COALESCE(ef.papel_base, 'Membro') AS papel_base
+            FROM equipes_funcoes ef
+            JOIN equipes eq
+              ON eq.id = ef.equipe_id
+             AND eq.tenant_id = ef.tenant_id
+            WHERE ef.tenant_id = ?
+              AND (
+                    ef.equipe_id = ?
+                    OR LOWER(TRIM(eq.nome)) = LOWER(TRIM(?))
+              )
+            ORDER BY ef.nome ASC
+        `, [tenantId, Number.isInteger(equipeIdNumero) && equipeIdNumero > 0 ? equipeIdNumero : 0, nomeEquipe]);
+        const ordemSubfuncoes = new Map();
+        (funcoesRows || []).forEach((funcao) => {
+            const nomeFuncao = String(funcao && funcao.nome ? funcao.nome : '').trim();
+            if (!nomeFuncao) return;
+            const chave = normalizarTextoOrdenacao(nomeFuncao);
+            if (!ordemSubfuncoes.has(chave)) ordemSubfuncoes.set(chave, ordemSubfuncoes.size);
+        });
+
         const comSubfuncao = await hasSubfuncaoColumn();
-        const subfuncaoSelect = comSubfuncao ? 'he.subfuncao' : 'NULL as subfuncao';
+        const subfuncaoSelect = comSubfuncao
+            ? `COALESCE(NULLIF(TRIM(he.subfuncao), ''), CASE WHEN LOWER(TRIM(COALESCE(he.papel, ''))) IN ('tio', 'tios') THEN 'Tios' ELSE 'Membro' END) AS subfuncao`
+            : `CASE WHEN LOWER(TRIM(COALESCE(he.papel, ''))) IN ('tio', 'tios') THEN 'Tios' ELSE 'Membro' END AS subfuncao`;
         const [jovensRows] = await pool.query(`
             SELECT DISTINCT
                 COALESCE(j.id, he.jovem_id) AS id,
@@ -107,9 +145,9 @@ router.get('/:equipeId/jovens/:ejcId', async (req, res) => {
                     ' / ',
                     COALESCE(c.telefone_tia, ts.telefone_tia_snapshot, '-')
                 ) AS telefone,
-                'Tios' AS papel,
+                COALESCE(NULLIF(TRIM(ts.papel), ''), 'Tios') AS papel,
                 NULL AS sexo,
-                NULL AS subfuncao,
+                COALESCE(NULLIF(TRIM(ts.subfuncao), ''), 'Tios') AS subfuncao,
                 NULL AS numero_ejc_fez,
                 e.numero AS ecc_numero,
                 e.tipo AS ecc_tipo,
@@ -150,9 +188,9 @@ router.get('/:equipeId/jovens/:ejcId', async (req, res) => {
                     ' / ',
                     COALESCE(c.telefone_tia, th.telefone_tia_snapshot, '-')
                 ) AS telefone,
-                'Tios' AS papel,
+                COALESCE(NULLIF(TRIM(th.papel), ''), 'Tios') AS papel,
                 NULL AS sexo,
-                NULL AS subfuncao,
+                COALESCE(NULLIF(TRIM(th.subfuncao), ''), 'Tios') AS subfuncao,
                 NULL AS numero_ejc_fez,
                 e.numero AS ecc_numero,
                 e.tipo AS ecc_tipo,
@@ -183,6 +221,7 @@ router.get('/:equipeId/jovens/:ejcId', async (req, res) => {
         const unicos = new Map();
         [...(jovensRows || []), ...(tiosRows || []), ...(tiosHistoricoRows || [])].forEach((item) => {
             item.telefone = decryptMixedPhones(item.telefone);
+            item.subfuncao = subfuncaoPadrao(item);
             const chave = [
                 String(item.nome_completo || '').trim().toLowerCase(),
                 String(item.telefone || '').trim(),
@@ -191,7 +230,18 @@ router.get('/:equipeId/jovens/:ejcId', async (req, res) => {
             if (!unicos.has(chave)) unicos.set(chave, item);
         });
         const rows = Array.from(unicos.values())
-            .sort((a, b) => String(a.nome_completo || '').localeCompare(String(b.nome_completo || ''), 'pt-BR'));
+            .sort((a, b) => {
+                const ordemA = ordemSubfuncoes.has(normalizarTextoOrdenacao(a.subfuncao))
+                    ? ordemSubfuncoes.get(normalizarTextoOrdenacao(a.subfuncao))
+                    : Number.MAX_SAFE_INTEGER;
+                const ordemB = ordemSubfuncoes.has(normalizarTextoOrdenacao(b.subfuncao))
+                    ? ordemSubfuncoes.get(normalizarTextoOrdenacao(b.subfuncao))
+                    : Number.MAX_SAFE_INTEGER;
+                if (ordemA !== ordemB) return ordemA - ordemB;
+                const subCmp = String(a.subfuncao || '').localeCompare(String(b.subfuncao || ''), 'pt-BR');
+                if (subCmp) return subCmp;
+                return String(a.nome_completo || '').localeCompare(String(b.nome_completo || ''), 'pt-BR');
+            });
         res.json(rows);
     } catch (err) {
         console.error("Erro ao buscar jovens da equipe:", err);

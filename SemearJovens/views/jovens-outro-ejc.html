@@ -904,6 +904,13 @@
                                 <span class="btn-ejc-icon"><i class="fa-solid fa-plus icon-accent"></i></span>
                                 <span class="btn-ejc-text">Novo</span>
                             </button>
+                            <button class="btn btn-soft-secondary btn-ejc-action"
+                                @click="abrirModalImportacaoOutro"
+                                title="Importar jovens"
+                                aria-label="Importar jovens">
+                                <span class="btn-ejc-icon"><i class="fa-solid fa-file-import icon-accent"></i></span>
+                                <span class="btn-ejc-text">Importar jovens</span>
+                            </button>
                             <div v-if="aba !== 'outros'" class="vr mx-1 d-none d-lg-flex"></div>
                             <div v-if="aba !== 'outros'" class="btn-group">
                                 <button class="btn btn-soft-secondary dropdown-toggle btn-ejc-action" data-bs-toggle="dropdown" title="Colunas" aria-label="Colunas">
@@ -2522,6 +2529,63 @@
                 </div>
             </div>
         </div>
+
+        <div class="modal fade" id="modalImportacaoOutroEjc" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-soft-primary">
+                        <h5 class="modal-title">Importar jovens de outros EJCs</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" :disabled="importandoOutroEjc"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div v-if="importandoOutroEjc" class="alert alert-info">
+                            <i class="fa-solid fa-circle-notch fa-spin me-2"></i>Importando jovens...
+                        </div>
+
+                        <p class="mb-2"><strong>1) Cabeçalho básico</strong></p>
+                        <div class="border rounded p-2 bg-light small" style="white-space: pre-wrap;">nome_completo, sexo, ejc, telefone, numero_ejc_origem</div>
+
+                        <p class="mt-3 mb-2"><strong>2) Coluna do outro EJC</strong></p>
+                        <div class="border rounded p-2 bg-light small" style="white-space: pre-wrap;">Use uma coluna chamada "ejc" e, em cada linha, informe o nome exatamente como está cadastrado:
+EJC SÃO JOÃO
+EJC NOSSA SENHORA DAS DORES
+
+Se souber a edição que o jovem fez no EJC de origem, use a coluna opcional "numero_ejc_origem".
+Exemplo: 15 ou XV</div>
+
+                        <p class="mt-3 mb-2"><strong>3) Equipes em que serviu no nosso EJC (opcional)</strong></p>
+                        <div class="border rounded p-2 bg-light small" style="white-space: pre-wrap;">Para cada edição servida, crie uma coluna no formato:
+I EJC
+II EJC
+III EJC
+
+Na célula, informe a equipe:
+Liturgia
+Liturgia (Tio)
+Liturgia (Coordenador - Música)</div>
+
+                        <p class="text-muted small mt-2 mb-2">Use arquivo CSV (.csv). A coluna "ejc" identifica o EJC de origem do jovem; as colunas "I EJC", "II EJC" etc. registram onde ele serviu no nosso EJC.</p>
+                        <div class="mb-3">
+                            <button type="button" class="btn btn-outline-primary" @click="baixarModeloImportacaoOutro" :disabled="importandoOutroEjc">
+                                Baixar modelo CSV
+                            </button>
+                        </div>
+                        <label class="form-label" for="arquivoImportacaoOutroEjc">Selecione o arquivo CSV</label>
+                        <input id="arquivoImportacaoOutroEjc" type="file" class="form-control" accept=".csv" @change="onArquivoImportacaoOutroChange" :disabled="importandoOutroEjc">
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-soft-secondary" data-bs-dismiss="modal" :disabled="importandoOutroEjc">Cancelar</button>
+                        <button type="button" class="btn btn-primary btn-ejc-action" @click="confirmarImportacaoOutro" :disabled="importandoOutroEjc || !arquivoImportacaoOutroEjc">
+                            <span class="btn-ejc-icon">
+                                <i v-if="importandoOutroEjc" class="fa-solid fa-circle-notch fa-spin icon-accent"></i>
+                                <i v-else class="fa-solid fa-file-import icon-accent"></i>
+                            </span>
+                            <span class="btn-ejc-text">{{ importandoOutroEjc ? 'Importando...' : 'Importar' }}</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -2560,6 +2624,9 @@
                     modalEditarInstance: null,
                     modalPresencasInstance: null,
                     modalEscolhaNovo: null,
+                    modalImportacaoOutro: null,
+                    arquivoImportacaoOutroEjc: null,
+                    importandoOutroEjc: false,
                     modalOutroEjc: null,
                     isEditingOutroFicha: false,
                     subAbaDadosOutro: 'cadastro',
@@ -3893,7 +3960,234 @@
                     ExcelUtils.exportJsonToXlsx({ filename: 'membros_outro_ejc_tios.xlsx', sheetName: 'Tios', rows });
                 },
                 async importarExcel() {
-                    alert('A estrutura da nova tela já foi ajustada. A importação detalhada dessa aba será finalizada na próxima etapa.');
+                    this.abrirModalImportacaoOutro();
+                },
+                abrirModalImportacaoOutro() {
+                    this.arquivoImportacaoOutroEjc = null;
+                    const input = document.getElementById('arquivoImportacaoOutroEjc');
+                    if (input) input.value = '';
+                    if (!this.modalImportacaoOutro) {
+                        this.modalImportacaoOutro = new bootstrap.Modal(document.getElementById('modalImportacaoOutroEjc'), {
+                            backdrop: 'static',
+                            keyboard: false
+                        });
+                    }
+                    this.modalImportacaoOutro.show();
+                },
+                onArquivoImportacaoOutroChange(event) {
+                    const file = event.target.files && event.target.files[0] ? event.target.files[0] : null;
+                    if (!file) {
+                        this.arquivoImportacaoOutroEjc = null;
+                        return;
+                    }
+                    if (!String(file.name || '').toLowerCase().endsWith('.csv')) {
+                        this.arquivoImportacaoOutroEjc = null;
+                        event.target.value = '';
+                        alert('Selecione um arquivo CSV (.csv).');
+                        return;
+                    }
+                    this.arquivoImportacaoOutroEjc = file;
+                },
+                parseCsvLineOutro(line, delimiter) {
+                    const cols = [];
+                    let current = '';
+                    let inQuotes = false;
+                    for (let i = 0; i < line.length; i += 1) {
+                        const ch = line[i];
+                        const next = line[i + 1];
+                        if (ch === '"') {
+                            if (inQuotes && next === '"') {
+                                current += '"';
+                                i += 1;
+                            } else {
+                                inQuotes = !inQuotes;
+                            }
+                            continue;
+                        }
+                        if (ch === delimiter && !inQuotes) {
+                            cols.push(current.trim());
+                            current = '';
+                            continue;
+                        }
+                        current += ch;
+                    }
+                    cols.push(current.trim());
+                    return cols.map(c => c.replace(/^"|"$/g, ''));
+                },
+                detectarDelimitadorOutro(headerLine) {
+                    const semicolonCount = (headerLine.match(/;/g) || []).length;
+                    const commaCount = (headerLine.match(/,/g) || []).length;
+                    const tabCount = (headerLine.match(/\t/g) || []).length;
+                    if (tabCount > semicolonCount && tabCount > commaCount) return '\t';
+                    return semicolonCount >= commaCount ? ';' : ',';
+                },
+                normalizarHeaderImportacaoOutro(valor) {
+                    return String(valor || '')
+                        .normalize('NFD')
+                        .replace(/[\u0300-\u036f]/g, '')
+                        .toLowerCase()
+                        .replace(/[^a-z0-9]+/g, '_')
+                        .replace(/^_+|_+$/g, '');
+                },
+                normalizarNomeImportacaoOutro(valor) {
+                    return String(valor || '')
+                        .normalize('NFD')
+                        .replace(/[\u0300-\u036f]/g, '')
+                        .toLowerCase()
+                        .replace(/[^a-z0-9]+/g, ' ')
+                        .trim();
+                },
+                baixarModeloImportacaoOutro() {
+                    const headers = [
+                        'nome_completo',
+                        'sexo',
+                        'ejc',
+                        'telefone',
+                        'numero_ejc_origem',
+                        'estado_civil',
+                        'data_nascimento',
+                        'circulo',
+                        'I EJC',
+                        'II EJC'
+                    ];
+                    const row = [
+                        'Maria Aparecida Silva',
+                        '(31)99999-0000',
+                        'Feminino',
+                        'EJC SÃO JOÃO',
+                        '(31)99999-0000',
+                        '',
+                        'Solteiro',
+                        '2004-06-14',
+                        '',
+                        'Liturgia (Membro)',
+                        'Apoio (Coordenador - Música)'
+                    ];
+                    const csv = [headers, row]
+                        .map((linha) => linha.map((valor) => `"${String(valor || '').replace(/"/g, '""')}"`).join(';'))
+                        .join('\n');
+                    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                    const link = document.createElement('a');
+                    link.href = URL.createObjectURL(blob);
+                    link.download = 'modelo_importacao_outros_ejcs.csv';
+                    link.style.display = 'none';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                },
+                montarPayloadImportacaoOutro(textoOriginal) {
+                    const text = String(textoOriginal || '').replace(/^\uFEFF/, '');
+                    const linhas = text.split(/\r?\n/).filter(l => l.trim() !== '');
+                    if (linhas.length < 2) throw new Error('Arquivo inválido ou vazio.');
+                    const delimiter = this.detectarDelimitadorOutro(linhas[0]);
+                    const headers = this.parseCsvLineOutro(linhas[0], delimiter);
+                    const headerIndex = {};
+                    headers.forEach((h, idx) => {
+                        headerIndex[h] = idx;
+                        headerIndex[this.normalizarHeaderImportacaoOutro(h)] = idx;
+                    });
+
+                    const outrosPorColuna = new Map();
+                    (this.outrosEjcs || []).forEach((ejc) => {
+                        const nome = String(ejc.nome || '').trim();
+                        if (!nome) return;
+                        outrosPorColuna.set(this.normalizarNomeImportacaoOutro(`EJC ${nome}`), ejc);
+                        outrosPorColuna.set(this.normalizarNomeImportacaoOutro(nome), ejc);
+                    });
+
+                    const colunasOutroEjc = headers.map((header, index) => {
+                        const outro = outrosPorColuna.get(this.normalizarNomeImportacaoOutro(header));
+                        return outro ? { index, outro } : null;
+                    }).filter(Boolean);
+                    const resolverOutroPorNome = (valor) => {
+                        const chave = this.normalizarNomeImportacaoOutro(valor);
+                        return outrosPorColuna.get(chave) || outrosPorColuna.get(this.normalizarNomeImportacaoOutro(`EJC ${valor || ''}`)) || null;
+                    };
+
+                    const colunasHistorico = headers.map((header, index) => {
+                        const chave = this.normalizarNomeImportacaoOutro(header);
+                        const match = chave.match(/^([ivxlcdm]+|\d+)\s+ejc$/i);
+                        if (!match) return null;
+                        return { index, edicao: match[1] };
+                    }).filter(Boolean);
+
+                    const getVal = (colunas, ...nomes) => {
+                        for (const nome of nomes) {
+                            const idx = headerIndex[nome] !== undefined ? headerIndex[nome] : headerIndex[this.normalizarHeaderImportacaoOutro(nome)];
+                            if (idx !== undefined && colunas[idx] !== undefined && String(colunas[idx]).trim() !== '') return colunas[idx];
+                        }
+                        return null;
+                    };
+
+                    const payload = [];
+                    for (let i = 1; i < linhas.length; i += 1) {
+                        const colunas = this.parseCsvLineOutro(linhas[i], delimiter);
+                        const nome = getVal(colunas, 'nome_completo', 'nome', 'Nome');
+                        if (!String(nome || '').trim()) continue;
+                        const outroInformado = getVal(colunas, 'ejc', 'EJC', 'outro_ejc', 'Outro EJC', 'ejc_origem', 'EJC de Origem');
+                        let vinculo = outroInformado ? { outro: resolverOutroPorNome(outroInformado), numero: getVal(colunas, 'numero_ejc_origem', 'numero_ejc', 'número_ejc_origem', 'edicao_ejc_origem', 'edição_ejc_origem') } : null;
+                        if (!vinculo || !vinculo.outro) {
+                            const colunaComValor = colunasOutroEjc.find((col) => String(colunas[col.index] || '').trim());
+                            const colunaUnica = colunasOutroEjc.length === 1 ? colunasOutroEjc[0] : null;
+                            const colunaVinculo = colunaComValor || colunaUnica;
+                            vinculo = colunaVinculo ? { outro: colunaVinculo.outro, numero: String(colunas[colunaVinculo.index] || '').trim() } : null;
+                        }
+                        const historico = colunasHistorico
+                            .filter((col) => String(colunas[col.index] || '').trim())
+                            .map((col) => ({ numero_ejc: col.edicao, equipe: String(colunas[col.index] || '').trim() }));
+                        payload.push({
+                            linha: i + 1,
+                            jovem: {
+                                nome_completo: nome,
+                                telefone: getVal(colunas, 'telefone', 'Phone', 'celular'),
+                                sexo: getVal(colunas, 'sexo', 'Sexo', 'Gender'),
+                                estado_civil: getVal(colunas, 'estado_civil', 'Estado Civil', 'estado civil'),
+                                data_nascimento: getVal(colunas, 'data_nascimento', 'Data Nascimento', 'BirthDate'),
+                                circulo: getVal(colunas, 'circulo', 'Círculo', 'Circle'),
+                                outro_ejc_id: vinculo && vinculo.outro ? vinculo.outro.id : '',
+                                outro_ejc_nome: vinculo && vinculo.outro ? vinculo.outro.nome : (outroInformado || ''),
+                                outro_ejc_numero: vinculo ? String(vinculo.numero || '').trim() : ''
+                            },
+                            historico
+                        });
+                    }
+                    return payload;
+                },
+                async confirmarImportacaoOutro() {
+                    if (!this.arquivoImportacaoOutroEjc || this.importandoOutroEjc) return;
+                    this.importandoOutroEjc = true;
+                    try {
+                        if (!this.outrosEjcs.length) await this.carregarOutrosEjcs();
+                        const texto = await this.arquivoImportacaoOutroEjc.text();
+                        const payload = this.montarPayloadImportacaoOutro(texto);
+                        if (!payload.length) throw new Error('Nenhum jovem válido encontrado no arquivo.');
+                        const res = await fetch('/api/outros-ejcs/importar-jovens', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(payload)
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) throw new Error(data.error || 'Erro ao importar jovens.');
+                        const resumo = data.resumo || {};
+                        const erros = Array.isArray(data.detalhesErros) ? data.detalhesErros : [];
+                        let msg = `Importação concluída!\nCriados: ${resumo.criados || 0}\nAtualizados: ${resumo.atualizados || 0}\nHistóricos de equipe: ${resumo.historicos || 0}\nErros: ${resumo.erros || 0}`;
+                        if (erros.length) {
+                            msg += '\n\n' + erros.slice(0, 8).map((erro) => `Linha ${erro.linha} (${erro.nome}): ${erro.erro}`).join('\n');
+                        }
+                        alert(msg);
+                        this.arquivoImportacaoOutroEjc = null;
+                        const input = document.getElementById('arquivoImportacaoOutroEjc');
+                        if (input) input.value = '';
+                        if (this.modalImportacaoOutro) this.modalImportacaoOutro.hide();
+                        await this.carregarOutrosEjcs();
+                        await this.carregarJovensOutroEjc();
+                        this.definirAba('membros');
+                    } catch (err) {
+                        console.error(err);
+                        alert(err && err.message ? err.message : 'Erro ao importar jovens.');
+                    } finally {
+                        this.importandoOutroEjc = false;
+                    }
                 },
                 resetNovoJovemOutroEjc() {
                     this.editandoJovemOutro = false;
