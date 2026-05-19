@@ -635,6 +635,16 @@ function normalizeUpperText(value) {
     return text ? text.toLocaleUpperCase('pt-BR') : null;
 }
 
+function normalizeNameKey(value) {
+    return String(value || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLocaleUpperCase('pt-BR')
+        .replace(/[^A-Z0-9\s]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
 function encryptListaMestrePhone(value) {
     const normalized = normalizeTrimmedText(value);
     return normalized ? encryptValue(normalized, 'lista-mestre:telefone') : null;
@@ -691,6 +701,127 @@ function decryptListaMestreRecord(record) {
         item.detalhes_restricao = decryptListaMestreSensitiveText(item.detalhes_restricao, 'detalhes-restricao');
     }
     return item;
+}
+
+async function encontrarIdsConjugesListaMestre({ tenantId, jovemId, atual = {}, merged = {} }) {
+    const idAtual = Number(jovemId);
+    const ids = new Set();
+    const adicionarId = (valor) => {
+        const id = Number(valor || 0);
+        if (Number.isInteger(id) && id > 0 && id !== idAtual) ids.add(id);
+    };
+
+    adicionarId(merged.conjuge_id);
+    adicionarId(atual.conjuge_id);
+
+    const montarCandidatosNome = (valores) => Array.from(new Set(
+        valores.flatMap((valor) => [
+            normalizeUpperText(valor),
+            normalizeNameKey(valor)
+        ]).filter(Boolean)
+    ));
+
+    const nomesDoConjuge = montarCandidatosNome([
+        merged.conjuge_nome,
+        atual.conjuge_nome
+    ]);
+
+    const telefonesDoConjuge = Array.from(new Set([
+        merged.conjuge_telefone,
+        atual.conjuge_telefone
+    ].map((valor) => normalizePhoneDigits(valor)).filter(Boolean)));
+
+    const nomesDoJovem = montarCandidatosNome([
+        merged.nome_completo,
+        atual.nome_completo
+    ]);
+
+    const telefonesDoJovem = Array.from(new Set([
+        merged.telefone,
+        atual.telefone
+    ].map((valor) => normalizePhoneDigits(valor)).filter(Boolean)));
+
+    const buscarPorNomeETelefone = async ({ nomes, telefones, nomeCampo, telefoneHashCampo }) => {
+        for (const nome of nomes) {
+            let encontrados = [];
+            if (telefones.length) {
+                const condicoesTelefone = telefones
+                    .map(() => `${telefoneHashCampo} = ?`)
+                    .join(' OR ');
+                const paramsTelefone = telefones.map((telefone) => phoneBlindIndex(telefone) || '');
+                const [rowsNomeTelefone] = await pool.query(
+                    `SELECT id
+                     FROM jovens
+                     WHERE tenant_id = ?
+                       AND id <> ?
+                       AND ${nomeCampo} IS NOT NULL
+                       AND UPPER(TRIM(${nomeCampo})) = ?
+                       AND (${condicoesTelefone})
+                     LIMIT 3`,
+                    [tenantId, idAtual, nome, ...paramsTelefone]
+                );
+                encontrados = rowsNomeTelefone || [];
+            }
+
+            if (!encontrados.length) {
+                const [rowsNome] = await pool.query(
+                    `SELECT id
+                     FROM jovens
+                     WHERE tenant_id = ?
+                       AND id <> ?
+                       AND ${nomeCampo} IS NOT NULL
+                       AND UPPER(TRIM(${nomeCampo})) = ?
+                     LIMIT 3`,
+                    [tenantId, idAtual, nome]
+                );
+                encontrados = rowsNome || [];
+            }
+
+            if (encontrados.length === 1) adicionarId(encontrados[0].id);
+        }
+
+        if (telefones.length) {
+            const hashes = telefones.map((telefone) => phoneBlindIndex(telefone)).filter(Boolean);
+            if (hashes.length) {
+                const [rowsTelefone] = await pool.query(
+                    `SELECT id
+                     FROM jovens
+                     WHERE tenant_id = ?
+                       AND id <> ?
+                       AND ${telefoneHashCampo} IN (?)
+                     LIMIT 3`,
+                    [tenantId, idAtual, hashes]
+                );
+                if ((rowsTelefone || []).length === 1) adicionarId(rowsTelefone[0].id);
+            }
+        }
+    };
+
+    await buscarPorNomeETelefone({
+        nomes: nomesDoConjuge,
+        telefones: telefonesDoConjuge,
+        nomeCampo: 'nome_completo',
+        telefoneHashCampo: 'telefone_hash'
+    });
+
+    await buscarPorNomeETelefone({
+        nomes: nomesDoJovem,
+        telefones: telefonesDoJovem,
+        nomeCampo: 'conjuge_nome',
+        telefoneHashCampo: 'conjuge_telefone_hash'
+    });
+
+    const [vinculosReversos] = await pool.query(
+        `SELECT id
+         FROM jovens
+         WHERE tenant_id = ?
+           AND conjuge_id = ?
+           AND id <> ?`,
+        [tenantId, idAtual, idAtual]
+    );
+    (vinculosReversos || []).forEach((row) => adicionarId(row && row.id));
+
+    return Array.from(ids);
 }
 
 async function ensureListaMestreSensitiveColumns() {
@@ -1029,35 +1160,6 @@ async function ensureTiosVinculos() {
     }
 }
 
-async function listarChavesTiosPorNomeTelefone(tenantId) {
-    if (!await hasTable('tios_casais')) return new Set();
-    const [rows] = await pool.query(
-        `SELECT nome_tio, telefone_tio, nome_tia, telefone_tia
-         FROM tios_casais
-         WHERE tenant_id = ?`,
-        [tenantId]
-    );
-    const keys = new Set();
-    for (const row of rows || []) {
-        const tioNome = String(row.nome_tio || '').trim().toLowerCase();
-        const tiaNome = String(row.nome_tia || '').trim().toLowerCase();
-        const tioTelefone = normalizePhoneDigits(row.telefone_tio);
-        const tiaTelefone = normalizePhoneDigits(row.telefone_tia);
-        if (tioNome && tioTelefone) keys.add(`tio:${tioNome}|${tioTelefone}`);
-        if (tiaNome && tiaTelefone) keys.add(`tia:${tiaNome}|${tiaTelefone}`);
-    }
-    return keys;
-}
-
-function filtrarJovensQueNaoSaoTios(items, tiosKeys) {
-    return (items || []).filter((item) => {
-        const nome = String(item && item.nome_completo || '').trim().toLowerCase();
-        const telefone = normalizePhoneDigits(item && item.telefone);
-        if (!nome || !telefone) return true;
-        return !tiosKeys.has(`tio:${nome}|${telefone}`) && !tiosKeys.has(`tia:${nome}|${telefone}`);
-    });
-}
-
 function isTipoEccValido(tipo) {
     return tipo === 'ECC' || tipo === 'ECNA';
 }
@@ -1362,9 +1464,6 @@ router.get('/', async (req, res) => {
         await ensureEquipeSaudeColumn();
         await ensureNaoServeEjcColumns();
         await ensurePastoraisTables();
-        const jovemTelefoneNormalizado = normalizedPhoneExpr('j.telefone');
-        const tioTelefoneNormalizado = normalizedPhoneExpr('tc2.telefone_tio');
-        const tiaTelefoneNormalizado = normalizedPhoneExpr('tc2.telefone_tia');
         const [rows] = await pool.query(`
             SELECT j.*, e.numero as numero_ejc, e.paroquia as paroquia_ejc,
                    me.id AS montagem_ejc_rel_id, me.numero_ejc AS numero_ejc_montagem,
@@ -1394,21 +1493,10 @@ router.get('/', async (req, res) => {
             WHERE COALESCE(j.origem_ejc_tipo, 'INCONFIDENTES') <> 'OUTRO_EJC'
               AND COALESCE(j.lista_mestre_ativo, 1) = 1
               AND j.tenant_id = ?
-              AND NOT EXISTS (
-                  SELECT 1
-                  FROM tios_casais tc2
-                  WHERE tc2.tenant_id = j.tenant_id
-                    AND (
-                        (LOWER(TRIM(tc2.nome_tio)) = LOWER(TRIM(j.nome_completo)) AND ${tioTelefoneNormalizado} = ${jovemTelefoneNormalizado})
-                        OR
-                        (LOWER(TRIM(tc2.nome_tia)) = LOWER(TRIM(j.nome_completo)) AND ${tiaTelefoneNormalizado} = ${jovemTelefoneNormalizado})
-                    )
-              )
             ORDER BY j.nome_completo ASC
         `, [tenantId]);
-        const tiosKeys = await listarChavesTiosPorNomeTelefone(tenantId);
         const items = (rows || []).map((row) => decryptListaMestreRecord(row));
-        res.json(filtrarJovensQueNaoSaoTios(items, tiosKeys));
+        res.json(items);
     } catch (err) {
         console.error("Erro detalhado no banco:", err);
         res.status(500).json({ error: "Erro interno ao acessar o banco" });
@@ -1424,9 +1512,6 @@ router.get('/search', async (req, res) => {
         const tenantId = getTenantId(req);
         await ensureListaMestreSensitiveColumns();
         const like = `%${q}%`;
-        const jovemTelefoneNormalizado = normalizedPhoneExpr('jovens.telefone');
-        const tioTelefoneNormalizado = normalizedPhoneExpr('tc2.telefone_tio');
-        const tiaTelefoneNormalizado = normalizedPhoneExpr('tc2.telefone_tia');
         const [rows] = await pool.query(`
             SELECT id, nome_completo, circulo, telefone, numero_ejc_fez, sexo, data_nascimento, estado_civil,
                    CASE
@@ -1438,22 +1523,11 @@ router.get('/search', async (req, res) => {
               AND tenant_id = ?
               AND COALESCE(origem_ejc_tipo, 'INCONFIDENTES') <> 'OUTRO_EJC'
               AND COALESCE(lista_mestre_ativo, 1) = 1
-              AND NOT EXISTS (
-                  SELECT 1
-                  FROM tios_casais tc2
-                  WHERE tc2.tenant_id = jovens.tenant_id
-                    AND (
-                        (LOWER(TRIM(tc2.nome_tio)) = LOWER(TRIM(jovens.nome_completo)) AND ${tioTelefoneNormalizado} = ${jovemTelefoneNormalizado})
-                        OR
-                        (LOWER(TRIM(tc2.nome_tia)) = LOWER(TRIM(jovens.nome_completo)) AND ${tiaTelefoneNormalizado} = ${jovemTelefoneNormalizado})
-                    )
-              )
             ORDER BY nome_completo
             LIMIT 20
         `, [like, tenantId]);
-        const tiosKeys = await listarChavesTiosPorNomeTelefone(tenantId);
         const items = (rows || []).map((row) => decryptListaMestreRecord(row));
-        res.json(filtrarJovensQueNaoSaoTios(items, tiosKeys).slice(0, 20));
+        res.json(items.slice(0, 20));
     } catch (err) {
         console.error('Erro na busca de jovens:', err);
         res.status(500).json({ error: 'Erro no servidor' });
@@ -2437,6 +2511,10 @@ router.put('/:id', async (req, res) => {
                     };
                     if (hasConjugeEccTipo) partnerData.conjuge_ecc_tipo = merged.conjuge_ecc_tipo || null;
                     if (hasConjugeEccNumero) partnerData.conjuge_ecc_numero = merged.conjuge_ecc_numero || null;
+                    if (merged.nao_serve_ejc) {
+                        partnerData.nao_serve_ejc = 1;
+                        partnerData.motivo_nao_serve_ejc = parceiro.motivo_nao_serve_ejc || merged.motivo_nao_serve_ejc || null;
+                    }
                     await pool.query('UPDATE jovens SET ? WHERE id = ? AND tenant_id = ?', [partnerData, newConjugeId, tenantId]);
 
                     const deveMoverCasalParaTios = req.body && (
@@ -2524,8 +2602,34 @@ router.put('/:id', async (req, res) => {
             }
         }
 
+        const conjugesMarcadosNaoServe = [];
+        if (merged.nao_serve_ejc) {
+            try {
+                const ids = await encontrarIdsConjugesListaMestre({
+                    tenantId,
+                    jovemId: id,
+                    atual,
+                    merged
+                });
+                if (ids.length) {
+                    await pool.query(
+                        `UPDATE jovens
+                         SET nao_serve_ejc = 1,
+                             motivo_nao_serve_ejc = COALESCE(NULLIF(TRIM(motivo_nao_serve_ejc), ''), ?)
+                         WHERE tenant_id = ?
+                           AND id IN (?)`,
+                        [merged.motivo_nao_serve_ejc || null, tenantId, ids]
+                    );
+                    conjugesMarcadosNaoServe.push(...ids);
+                }
+            } catch (e) {
+                console.error('Erro ao marcar cônjuge como não serve no EJC:', e);
+            }
+        }
+
         res.json({
             message: "Jovem atualizado com sucesso",
+            conjuges_marcados_nao_servem: Array.from(new Set(conjugesMarcadosNaoServe)),
             removidos_da_lista_mestre: Array.from(new Set(removidosDaListaMestre.filter((item) => Number.isInteger(item) && item > 0)))
         });
     } catch (err) {

@@ -184,7 +184,7 @@ const menuTemplate = `
                 </div>
                 <div class="topbar-user-pill" id="page-header-user-dropdown" title="Usuário logado">
                     <span class="topbar-user-avatar">SP</span>
-                    <span class="user-name-text">Admin</span>
+                    <span class="user-name-text">Usuário</span>
                 </div>
                 <button id="btnLogoutSistema" type="button" class="btn btn-sm btn-outline-danger" title="Sair do sistema">
                     Sair
@@ -283,6 +283,52 @@ async function carregarNomeMeuEJC() {
         }
         const nome = data && data.nome ? String(data.nome).trim() : '';
         if (nome) aplicarNomeMeuEJC(nome);
+    } catch (_) { }
+}
+
+function obterNomeCurtoUsuario(usuario) {
+    const nome = String((usuario && usuario.nome_completo) || '').trim().replace(/\s+/g, ' ');
+    if (nome) {
+        const partes = nome.split(' ').filter(Boolean);
+        if (partes.length >= 2) return `${partes[0]} ${partes[partes.length - 1]}`;
+        return partes[0];
+    }
+
+    const username = String((usuario && usuario.username) || '').trim();
+    if (!username) return '';
+    const antesDoEmail = username.split('@')[0] || username;
+    return antesDoEmail.replace(/[._-]+/g, ' ').trim() || username;
+}
+
+function obterIniciaisUsuario(nome) {
+    const partes = String(nome || '').trim().split(/\s+/).filter(Boolean);
+    if (!partes.length) return 'SP';
+    const primeira = partes[0].charAt(0);
+    const segunda = partes.length > 1 ? partes[partes.length - 1].charAt(0) : partes[0].charAt(1);
+    return `${primeira || ''}${segunda || ''}`.toUpperCase() || 'SP';
+}
+
+function aplicarUsuarioNoTopo(usuario) {
+    const nomeCurto = obterNomeCurtoUsuario(usuario);
+    if (!nomeCurto) return;
+
+    const nomeEl = document.querySelector('.topbar-user-pill .user-name-text');
+    const avatarEl = document.querySelector('.topbar-user-pill .topbar-user-avatar');
+    const pillEl = document.getElementById('page-header-user-dropdown');
+
+    if (nomeEl) nomeEl.textContent = nomeCurto;
+    if (avatarEl) avatarEl.textContent = obterIniciaisUsuario(nomeCurto);
+    if (pillEl) pillEl.setAttribute('title', `Usuário logado: ${nomeCurto}`);
+}
+
+async function carregarUsuarioDoTopo() {
+    try {
+        const res = await fetch('/api/auth/me', { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json().catch(() => ({}));
+        if (data && data.logged && data.user) {
+            aplicarUsuarioNoTopo(data.user);
+        }
     } catch (_) { }
 }
 
@@ -715,6 +761,7 @@ function injetarMenu(selector = '#app', position = 'prepend') {
     }
 
     carregarNomeMeuEJC();
+    carregarUsuarioDoTopo();
     inicializarMascaraTelefoneGlobal();
     garantirUxUi();
     window.requestAnimationFrame(() => ocultarTituloDoMenuAtivo(window.location.pathname));

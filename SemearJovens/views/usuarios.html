@@ -194,20 +194,25 @@
                                     <input type="text" class="form-control" v-model="form.username" readonly>
                                     <div class="text-muted small mt-1">O login é o e-mail informado na ficha do jovem.</div>
                                 </div>
-                                <div class="mb-3" v-if="!isEditing && tipoCadastro === 'JOVEM'">
-                                    <label class="form-label">Senha gerada</label>
-                                    <input type="text" class="form-control" v-model="generatedPassword" readonly>
-                                    <div class="text-muted small mt-1">Guarde essa senha para o jovem acessar o sistema.</div>
-                                </div>
                                 <div class="mb-3" v-else>
                                     <label class="form-label">Nome de Usuário *</label>
                                     <input type="text" class="form-control" v-model="form.username" required>
                                 </div>
-                                <div class="mb-3" v-if="isEditing || tipoCadastro === 'TIO'">
-                                    <label class="form-label">Senha {{ isEditing ? '(Deixe em branco para manter)' : '*'
-                                        }}</label>
-                                    <input type="password" class="form-control" v-model="form.senha"
-                                        :required="!isEditing">
+                                <div class="mb-3">
+                                    <label class="form-label">{{ isEditing ? 'Nova senha (deixe em branco para manter)' : 'Senha inicial *' }}</label>
+                                    <div class="input-group">
+                                        <input :type="mostrarSenha ? 'text' : 'password'" class="form-control" v-model="form.senha"
+                                            :required="!isEditing" autocomplete="new-password" minlength="6">
+                                        <button class="btn btn-outline-secondary" type="button" @click="mostrarSenha = !mostrarSenha" :title="mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'">
+                                            <i class="fa-solid" :class="mostrarSenha ? 'fa-eye-slash' : 'fa-eye'"></i>
+                                        </button>
+                                    </div>
+                                    <div class="text-muted small mt-1" v-if="!isEditing">Informe a senha temporária que o usuário vai trocar depois de acessar.</div>
+                                </div>
+                                <div class="mb-3" v-if="!isEditing || form.senha">
+                                    <label class="form-label">Confirmar senha *</label>
+                                    <input :type="mostrarSenha ? 'text' : 'password'" class="form-control" v-model="form.confirmar_senha"
+                                        :required="!isEditing || !!form.senha" autocomplete="new-password" minlength="6">
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">Grupo *</label>
@@ -283,17 +288,18 @@
                             nome_completo: '',
                             username: '',
                             senha: '',
+                            confirmar_senha: '',
                             grupo: '',
                             jovem_id: null,
                             funcoes_dirigencia_ids: []
                         },
+                        mostrarSenha: false,
                         funcoesDirigencia: [],
                         searchTerm: '',
                         resultadosBusca: [],
                         mostrarResultados: false,
                         modalInstance: null,
                         searchTimeout: null,
-                        generatedPassword: '',
                         tipoCadastro: 'JOVEM',
                         tiosList: [],
                         tioSelecionadoId: 0
@@ -355,14 +361,15 @@
                             nome_completo: '',
                             username: '',
                             senha: '',
+                            confirmar_senha: '',
                             grupo: '',
                             jovem_id: null,
                             funcoes_dirigencia_ids: []
                         };
+                        this.mostrarSenha = false;
                         this.searchTerm = '';
                         this.resultadosBusca = [];
                         this.mostrarResultados = false;
-                        this.generatedPassword = '';
                         this.tipoCadastro = 'JOVEM';
                         this.tioSelecionadoId = 0;
                     },
@@ -376,9 +383,11 @@
                         this.form = {
                             ...user,
                             senha: '',
+                            confirmar_senha: '',
                             jovem_id: user.jovem_id || null,
                             funcoes_dirigencia_ids: Array.isArray(user.funcoes_dirigencia_ids) ? [...user.funcoes_dirigencia_ids] : []
                         };
+                        this.mostrarSenha = false;
                         this.searchTerm = user.nome_completo;
                         this.tipoCadastro = user.jovem_id ? 'JOVEM' : 'TIO';
                         if (this.tipoCadastro === 'TIO') {
@@ -438,7 +447,7 @@
                         this.resultadosBusca = [];
                         this.form.username = '';
                         this.form.senha = '';
-                        this.generatedPassword = '';
+                        this.form.confirmar_senha = '';
                     },
                     aplicarTioSelecionado() {
                         const id = Number(this.tioSelecionadoId || 0);
@@ -449,14 +458,6 @@
                         }
                         this.form.nome_completo = `${tio.nome_tio} e ${tio.nome_tia}`;
                         this.form.jovem_id = null;
-                    },
-                    gerarSenhaAleatoria(tamanho = 10) {
-                        const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%';
-                        let senha = '';
-                        for (let i = 0; i < tamanho; i++) {
-                            senha += chars.charAt(Math.floor(Math.random() * chars.length));
-                        }
-                        return senha;
                     },
                     async definirLoginSenhaPorEmail(jovemId) {
                         try {
@@ -472,10 +473,9 @@
                                 this.limparSelecaoJovem();
                                 return;
                             }
-                            const senha = this.gerarSenhaAleatoria(10);
                             this.form.username = email;
-                            this.form.senha = senha;
-                            this.generatedPassword = senha;
+                            this.form.senha = '';
+                            this.form.confirmar_senha = '';
                         } catch (err) {
                             console.error(err);
                             if (window.uiAlert) window.uiAlert('Erro ao buscar e-mail do jovem.');
@@ -487,6 +487,23 @@
                         const url = this.isEditing ? `/api/usuarios/${this.form.id}` : '/api/usuarios';
 
                         try {
+                            const senha = String(this.form.senha || '').trim();
+                            const confirmarSenha = String(this.form.confirmar_senha || '').trim();
+                            if (!this.isEditing && !senha) {
+                                if (window.uiAlert) window.uiAlert('Informe a senha inicial do usuário.');
+                                else alert('Informe a senha inicial do usuário.');
+                                return;
+                            }
+                            if (senha && senha.length < 6) {
+                                if (window.uiAlert) window.uiAlert('A senha deve ter pelo menos 6 caracteres.');
+                                else alert('A senha deve ter pelo menos 6 caracteres.');
+                                return;
+                            }
+                            if (senha && senha !== confirmarSenha) {
+                                if (window.uiAlert) window.uiAlert('A confirmação da senha não confere.');
+                                else alert('A confirmação da senha não confere.');
+                                return;
+                            }
                             if (!this.isEditing) {
                                 if (this.tipoCadastro === 'JOVEM') {
                                     if (!this.form.jovem_id) {
@@ -495,8 +512,8 @@
                                         return;
                                     }
                                     if (!this.form.username || !this.form.senha) {
-                                        if (window.uiAlert) window.uiAlert('Não é possível criar usuário sem e-mail do jovem.');
-                                        else alert('Não é possível criar usuário sem e-mail do jovem.');
+                                        if (window.uiAlert) window.uiAlert('Não é possível criar usuário sem e-mail do jovem e senha inicial.');
+                                        else alert('Não é possível criar usuário sem e-mail do jovem e senha inicial.');
                                         return;
                                     }
                                 } else {
@@ -513,10 +530,15 @@
                                     this.aplicarTioSelecionado();
                                 }
                             }
+                            const payload = {
+                                ...this.form,
+                                senha,
+                                confirmar_senha: undefined
+                            };
                             const res = await fetch(url, {
                                 method: method,
                                 headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify(this.form)
+                                body: JSON.stringify(payload)
                             });
 
                             const data = await res.json();

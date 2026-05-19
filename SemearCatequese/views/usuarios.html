@@ -6,6 +6,7 @@
     <title>Usuários - Semear Catequese</title>
     <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/css/style.css">
     <style>
         [v-cloak] { display: none; }
@@ -76,8 +77,17 @@
                                     <input class="form-control" v-model="form.username" required>
                                 </div>
                                 <div class="mb-3">
-                                    <label class="form-label">Senha {{ editando ? '(deixe em branco para manter)' : '*' }}</label>
-                                    <input class="form-control" type="password" v-model="form.senha" :required="!editando">
+                                    <label class="form-label">{{ editando ? 'Nova senha (deixe em branco para manter)' : 'Criar senha *' }}</label>
+                                    <div class="input-group">
+                                        <input class="form-control" :type="mostrarSenha ? 'text' : 'password'" v-model="form.senha" :required="!editando" autocomplete="new-password" minlength="6">
+                                        <button class="btn btn-outline-secondary" type="button" @click="mostrarSenha = !mostrarSenha" :title="mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'">
+                                            <i class="fa-solid" :class="mostrarSenha ? 'fa-eye-slash' : 'fa-eye'"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="mb-3" v-if="!editando || form.senha">
+                                    <label class="form-label">Confirmar senha *</label>
+                                    <input class="form-control" :type="mostrarSenha ? 'text' : 'password'" v-model="form.confirmar_senha" :required="!editando || !!form.senha" autocomplete="new-password" minlength="6">
                                 </div>
                                 <div class="mb-3">
                                     <label class="form-label">Grupo *</label>
@@ -123,11 +133,13 @@
                         usuarios: [],
                         modal: null,
                         editando: false,
+                        mostrarSenha: false,
                         form: {
                             id: null,
                             nome_completo: '',
                             username: '',
                             senha: '',
+                            confirmar_senha: '',
                             grupo: '',
                             ativo: true
                         }
@@ -144,6 +156,7 @@
                             nome_completo: '',
                             username: '',
                             senha: '',
+                            confirmar_senha: '',
                             grupo: '',
                             ativo: true
                         };
@@ -165,6 +178,7 @@
                     abrirModalNovo() {
                         this.editando = false;
                         this.limparForm();
+                        this.mostrarSenha = false;
                         this.modal.show();
                     },
                     abrirModalEdicao(user) {
@@ -174,19 +188,35 @@
                             nome_completo: user.nome_completo,
                             username: user.username,
                             senha: '',
+                            confirmar_senha: '',
                             grupo: user.grupo,
                             ativo: !!user.ativo
                         };
+                        this.mostrarSenha = false;
                         this.modal.show();
                     },
                     async salvar() {
                         try {
+                            const senha = String(this.form.senha || '').trim();
+                            const confirmarSenha = String(this.form.confirmar_senha || '').trim();
+                            if (!this.editando && !senha) {
+                                alert('Crie uma senha para o novo usuário.');
+                                return;
+                            }
+                            if (senha && senha.length < 6) {
+                                alert('A senha deve ter pelo menos 6 caracteres.');
+                                return;
+                            }
+                            if (senha && senha !== confirmarSenha) {
+                                alert('A confirmação da senha não confere.');
+                                return;
+                            }
                             const method = this.editando ? 'PUT' : 'POST';
                             const url = this.editando ? `/api/usuarios/${this.form.id}` : '/api/usuarios';
                             const payload = {
                                 nome_completo: this.form.nome_completo,
                                 username: this.form.username,
-                                senha: this.form.senha,
+                                senha,
                                 grupo: this.form.grupo,
                                 ativo: !!this.form.ativo
                             };

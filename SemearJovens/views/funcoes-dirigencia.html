@@ -148,12 +148,12 @@
             computed: {
                 usuariosVinculaveis() {
                     return (this.usuarios || []).filter((u) => {
-                        const vinculacaoId = Number(u && u.legacy_user_id);
-                        return Number.isInteger(vinculacaoId) && vinculacaoId > 0 && !u.managed_by_parish_admin;
+                        const vinculacaoId = Number(u && u.id);
+                        return Number.isInteger(vinculacaoId) && vinculacaoId > 0;
                     }).map((u) => ({
                         ...u,
                         id: Number(u.id),
-                        vinculacao_id: Number(u.legacy_user_id)
+                        vinculacao_id: Number(u.id)
                     }));
                 }
             },

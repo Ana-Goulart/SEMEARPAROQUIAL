@@ -965,7 +965,12 @@
                             <label class="lista-mestre-search-label">Pesquisa rápida</label>
                             <div class="input-group">
                                 <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
-                                <input v-model.trim="pesquisaRapidaAtual" class="form-control" :placeholder="placeholderPesquisaRapida">
+                                <input
+                                    v-model.trim="pesquisaRapidaAtual"
+                                    type="search"
+                                    class="form-control"
+                                    data-ui-skip-phone-mask
+                                    :placeholder="placeholderPesquisaRapida">
                                 <button v-if="pesquisaRapidaAtual"
                                     type="button"
                                     class="btn btn-outline-secondary"

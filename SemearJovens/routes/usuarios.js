@@ -157,6 +157,7 @@ router.post('/', async (req, res) => {
     let { username, nome_completo, senha, data_entrada, data_saida, grupo, jovem_id, funcoes_dirigencia_ids } = req.body;
     const tenantId = getTenantId(req);
     const grupoFinal = normalizarGrupo(grupo);
+    const senhaTexto = String(senha || '').trim();
     const jovemIdNum = Number(jovem_id);
     const jovemId = Number.isInteger(jovemIdNum) && jovemIdNum > 0 ? jovemIdNum : null;
 
@@ -171,8 +172,11 @@ router.post('/', async (req, res) => {
 
     const login = String(username || '').trim().toLowerCase();
     const nome = String(nome_completo || '').trim();
-    if (!login || !nome || !senha || !grupoFinal) {
+    if (!login || !nome || !senhaTexto || !grupoFinal) {
         return res.status(400).json({ error: 'Campos obrigatórios faltando.' });
+    }
+    if (senhaTexto.length < 6) {
+        return res.status(400).json({ error: 'A senha deve ter pelo menos 6 caracteres.' });
     }
     if (login.length > 50) {
         return res.status(400).json({ error: 'Login deve ter no máximo 50 caracteres.' });
@@ -189,7 +193,7 @@ router.post('/', async (req, res) => {
                 tenantId,
                 login,
                 nome,
-                await hashPassword(senha),
+                await hashPassword(senhaTexto),
                 data_entrada || null,
                 data_saida || null,
                 grupoFinal,
@@ -219,6 +223,7 @@ router.put('/:id', async (req, res) => {
     const grupoFinal = normalizarGrupo(grupo);
     const login = String(username || '').trim().toLowerCase();
     const nome = String(nome_completo || '').trim();
+    const senhaTexto = String(senha || '').trim();
 
     if (!Number.isInteger(usuarioId) || usuarioId <= 0) {
         return res.status(400).json({ error: 'ID de usuário inválido.' });
@@ -231,6 +236,9 @@ router.put('/:id', async (req, res) => {
     }
     if (await isManagedByParishAdmin(tenantId, login)) {
         return res.status(403).json({ error: 'Este usuário é gerenciado pelo painel da paróquia.' });
+    }
+    if (senhaTexto && senhaTexto.length < 6) {
+        return res.status(400).json({ error: 'A senha deve ter pelo menos 6 caracteres.' });
     }
 
     const connection = await pool.getConnection();
@@ -251,7 +259,9 @@ router.put('/:id', async (req, res) => {
             data_saida: data_saida || null,
             grupo: grupoFinal
         };
-        if (senha) updateData.senha = await hashPassword(senha);
+        if (senhaTexto) {
+            updateData.senha = await hashPassword(senhaTexto);
+        }
         await connection.query(
             'UPDATE usuarios SET ? WHERE id = ? AND tenant_id = ?',
             [updateData, usuarioId, tenantId]

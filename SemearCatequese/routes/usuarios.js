@@ -183,13 +183,17 @@ router.get('/', async (_req, res) => {
 
 router.post('/', async (req, res) => {
     const { nome_completo, username, senha, grupo, ativo } = req.body || {};
+    const senhaTexto = String(senha || '').trim();
 
-    if (!nome_completo || !username || !senha || !grupo) {
+    if (!nome_completo || !username || !senhaTexto || !grupo) {
         return res.status(400).json({ error: 'Preencha nome, usuário, senha e grupo.' });
+    }
+    if (senhaTexto.length < 6) {
+        return res.status(400).json({ error: 'A senha deve ter pelo menos 6 caracteres.' });
     }
 
     try {
-        const senhaHash = await hashPassword(senha);
+        const senhaHash = await hashPassword(senhaTexto);
         const [result] = await pool.query(
             `INSERT INTO usuarios (nome_completo, username, senha, grupo, ativo)
              VALUES (?, ?, ?, ?, ?)`,
@@ -223,6 +227,7 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
     const { id } = req.params;
     const { nome_completo, username, senha, grupo, ativo } = req.body || {};
+    const senhaTexto = String(senha || '').trim();
 
     if (!nome_completo || !username || !grupo) {
         return res.status(400).json({ error: 'Preencha nome, usuário e grupo.' });
@@ -240,9 +245,12 @@ router.put('/:id', async (req, res) => {
         const params = [String(nome_completo).trim(), String(username).trim(), String(grupo).trim(), ativo ? 1 : 0];
         let senhaHash = '';
 
-        if (senha && String(senha).trim()) {
+        if (senhaTexto) {
+            if (senhaTexto.length < 6) {
+                return res.status(400).json({ error: 'A senha deve ter pelo menos 6 caracteres.' });
+            }
             query += ', senha = ?';
-            senhaHash = await hashPassword(senha);
+            senhaHash = await hashPassword(senhaTexto);
             params.push(senhaHash);
         }
 

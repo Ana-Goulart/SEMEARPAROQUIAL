@@ -5049,10 +5049,17 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                             this.jovemEditando.tio_nome_tia = null;
                         }
 
+                        const conjugesMarcadosNaoServem = Array.isArray(resposta.conjuges_marcados_nao_servem)
+                            ? resposta.conjuges_marcados_nao_servem.map((item) => Number(item)).filter((item) => Number.isInteger(item) && item > 0)
+                            : [];
+                        const mensagemSucesso = conjugesMarcadosNaoServem.length
+                            ? 'Dados salvos com sucesso. O cônjuge vinculado também foi marcado como não serve no EJC.'
+                            : 'Dados salvos com sucesso';
+
                         if (window.showFloatingAlert) {
-                            await window.showFloatingAlert('Dados salvos com sucesso', 'Aviso');
+                            await window.showFloatingAlert(mensagemSucesso, 'Aviso');
                         } else {
-                            alert('Dados salvos com sucesso');
+                            alert(mensagemSucesso);
                         }
 
                         const modalEditar = bootstrap.Modal.getInstance(document.getElementById('modalEditar'));

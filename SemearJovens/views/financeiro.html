@@ -235,7 +235,7 @@
                     }
                 },
                 async carregarResumo() {
-                    const res = await fetch('/api/financeiro/resumo');
+                    const res = await fetch(`/api/financeiro/resumo?_ts=${Date.now()}`, { cache: 'no-store' });
                     if (!res.ok) {
                         const data = await res.json().catch(() => ({}));
                         throw new Error(data.error || 'Erro ao carregar resumo financeiro.');
@@ -244,7 +244,7 @@
                     this.saldoAtual = Number(data.saldo_atual || 0);
                 },
                 async carregarMovimentacoes() {
-                    const res = await fetch('/api/financeiro/movimentacoes');
+                    const res = await fetch(`/api/financeiro/movimentacoes?_ts=${Date.now()}`, { cache: 'no-store' });
                     if (!res.ok) {
                         const data = await res.json().catch(() => ({}));
                         throw new Error(data.error || 'Erro ao carregar movimentações financeiras.');
@@ -313,11 +313,14 @@
                         }
                         if (this.modalInstance) this.modalInstance.hide();
                         this.form = { tipo: 'ENTRADA', valor: '', descricao: '' };
-                        this.saldoAtual = Number(data.saldo_atual || 0);
+                        this.saldoAtual = Number(data.saldo_atual || this.saldoAtual || 0);
                         if (data.movimentacao) {
                             this.movimentacoes = [data.movimentacao, ...(this.movimentacoes || [])];
-                        } else {
-                            await this.carregarMovimentacoes();
+                        }
+                        try {
+                            await this.carregarTudo();
+                        } catch (reloadErr) {
+                            console.error('Erro ao atualizar histórico financeiro após salvar:', reloadErr);
                         }
                         if (window.showFloatingAlert) {
                             await window.showFloatingAlert(
