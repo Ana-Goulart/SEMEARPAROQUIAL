@@ -6,6 +6,7 @@ require('dotenv').config({ path: path.join(__dirname, '.env'), override: true })
 
 const { attachUserFromSession } = require('./lib/authSession');
 const rotasAuth = require('./routes/auth');
+const rotasGoogleAuth = require('./routes/googleAuth');
 
 const app = express();
 const PORT = Number(process.env.PORT || 3004);
@@ -43,6 +44,7 @@ app.get('/login', (_req, res) => res.sendFile(path.join(__dirname, 'views', 'log
 app.get('/', (_req, res) => res.redirect('/login'));
 
 app.use('/api/auth/login', loginLimiter);
+app.use('/api/auth', rotasGoogleAuth);
 app.use('/api/auth', rotasAuth);
 
 app.listen(PORT, () => {
