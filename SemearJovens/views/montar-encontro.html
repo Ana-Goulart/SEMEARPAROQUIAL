@@ -675,15 +675,6 @@
                                                         </td>
                                                         <td class="fw-semibold">
                                                             {{ j.nome_completo }}
-                                                            <span v-if="tagOutroEjc(j)" class="badge bg-soft-warning text-warning ms-2">{{ tagOutroEjc(j) }}</span>
-                                                            <div v-if="nomeConjugeDoItem(j)" class="small text-muted mt-1">
-                                                                Cônjuge: {{ nomeConjugeDoItem(j) }}
-                                                            </div>
-                                                            <div v-if="historicoResumoOutroEjc(j).length" class="small mt-1 d-flex flex-wrap gap-1">
-                                                                <span v-for="(item, idx) in historicoResumoOutroEjc(j)" :key="'hist-outro-'+(j.jovem_id||j.nome_completo)+'-'+idx" class="badge bg-soft-primary text-primary">
-                                                                    {{ item }}
-                                                                </span>
-                                                            </div>
                                                         </td>
                                                         <td>{{ j.telefone || '-' }}</td>
                                                         <td>{{ [j.outro_ejc_paroquia, j.outro_ejc_nome].filter(Boolean).join(' - ') || '-' }}</td>

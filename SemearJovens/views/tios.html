@@ -990,12 +990,16 @@ preencha outro_ejc_paroquia</div>
                                                         maxlength="180"
                                                         placeholder="Nome do tio">
                                                 </div>
-                                                <div class="col-lg-4">
+                                                <div class="col-lg-3">
                                                     <label class="text-muted small">Telefone do tio</label>
                                                     <input class="form-control"
                                                         v-model.trim="formCasal.telefone_tio"
                                                         maxlength="30"
                                                         placeholder="(31)99999-9999">
+                                                </div>
+                                                <div class="col-lg-2">
+                                                    <label class="text-muted small">CPF do tio</label>
+                                                    <input class="form-control" v-model="formCasal.cpf_tio" @input="formCasal.cpf_tio = formatarCpf(formCasal.cpf_tio)" maxlength="14" placeholder="000.000.000-00">
                                                 </div>
                                                 <div class="col-lg-3">
                                                     <label class="text-muted small">Nascimento</label>
@@ -1016,12 +1020,16 @@ preencha outro_ejc_paroquia</div>
                                                         maxlength="180"
                                                         placeholder="Nome da tia">
                                                 </div>
-                                                <div class="col-lg-4">
+                                                <div class="col-lg-3">
                                                     <label class="text-muted small">Telefone da tia</label>
                                                     <input class="form-control"
                                                         v-model.trim="formCasal.telefone_tia"
                                                         maxlength="30"
                                                         placeholder="(31)99999-9999">
+                                                </div>
+                                                <div class="col-lg-2">
+                                                    <label class="text-muted small">CPF da tia</label>
+                                                    <input class="form-control" v-model="formCasal.cpf_tia" @input="formCasal.cpf_tia = formatarCpf(formCasal.cpf_tia)" maxlength="14" placeholder="000.000.000-00">
                                                 </div>
                                                 <div class="col-lg-3">
                                                     <label class="text-muted small">Nascimento</label>
@@ -1131,13 +1139,15 @@ preencha outro_ejc_paroquia</div>
                                     </div>
                                     <div class="row g-3">
                                         <div class="col-12"><h6 class="tios-section-heading">Dados do Tio</h6></div>
-                                        <div class="col-md-6"><label class="form-label">Nome do tio</label><input class="form-control" v-model="formCasal.nome_tio" @input="normalizarCampoMaiusculoCasal('nome_tio')" maxlength="180"></div>
+                                        <div class="col-md-4"><label class="form-label">Nome do tio</label><input class="form-control" v-model="formCasal.nome_tio" @input="normalizarCampoMaiusculoCasal('nome_tio')" maxlength="180"></div>
                                         <div class="col-md-3"><label class="form-label">Telefone</label><input class="form-control" v-model.trim="formCasal.telefone_tio" maxlength="30"></div>
+                                        <div class="col-md-2"><label class="form-label">CPF</label><input class="form-control" v-model="formCasal.cpf_tio" @input="formCasal.cpf_tio = formatarCpf(formCasal.cpf_tio)" maxlength="14"></div>
                                         <div class="col-md-3"><label class="form-label">Nascimento</label><input type="date" class="form-control" v-model="formCasal.data_nascimento_tio" lang="pt-BR"></div>
 
                                         <div class="col-12 pt-2"><h6 class="tios-section-heading">Dados da Tia</h6></div>
-                                        <div class="col-md-6"><label class="form-label">Nome da tia</label><input class="form-control" v-model="formCasal.nome_tia" @input="normalizarCampoMaiusculoCasal('nome_tia')" maxlength="180"></div>
+                                        <div class="col-md-4"><label class="form-label">Nome da tia</label><input class="form-control" v-model="formCasal.nome_tia" @input="normalizarCampoMaiusculoCasal('nome_tia')" maxlength="180"></div>
                                         <div class="col-md-3"><label class="form-label">Telefone</label><input class="form-control" v-model.trim="formCasal.telefone_tia" maxlength="30"></div>
+                                        <div class="col-md-2"><label class="form-label">CPF</label><input class="form-control" v-model="formCasal.cpf_tia" @input="formCasal.cpf_tia = formatarCpf(formCasal.cpf_tia)" maxlength="14"></div>
                                         <div class="col-md-3"><label class="form-label">Nascimento</label><input type="date" class="form-control" v-model="formCasal.data_nascimento_tia" lang="pt-BR"></div>
                                         <div class="col-md-6">
                                             <label class="text-muted small mb-0">Termos de uso</label>
@@ -1653,9 +1663,11 @@ preencha outro_ejc_paroquia</div>
                         foto_url: '',
                         nome_tio: '',
                         telefone_tio: '',
+                        cpf_tio: '',
                         data_nascimento_tio: '',
                         nome_tia: '',
                         telefone_tia: '',
+                        cpf_tia: '',
                         data_nascimento_tia: '',
                         origem_tipo: 'EJC',
                         outro_ejc_id: null,
@@ -1901,6 +1913,13 @@ preencha outro_ejc_paroquia</div>
                 },
                 apenasDigitos(value) {
                     return String(value || '').replace(/\D+/g, '');
+                },
+                formatarCpf(value) {
+                    const d = this.apenasDigitos(value).slice(0, 11);
+                    if (d.length <= 3) return d;
+                    if (d.length <= 6) return `${d.slice(0, 3)}.${d.slice(3)}`;
+                    if (d.length <= 9) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6)}`;
+                    return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
                 },
                 obterNumeroOrdenacaoEncontro(item) {
                     const numero = String(item && item.numero !== undefined && item.numero !== null ? item.numero : '').trim();
@@ -3333,9 +3352,11 @@ preencha outro_ejc_paroquia</div>
                         foto_url: '',
                         nome_tio: '',
                         telefone_tio: '',
+                        cpf_tio: '',
                         data_nascimento_tio: '',
                         nome_tia: '',
                         telefone_tia: '',
+                        cpf_tia: '',
                         data_nascimento_tia: '',
                         origem_tipo: 'EJC',
                         outro_ejc_id: null,
@@ -3385,9 +3406,11 @@ preencha outro_ejc_paroquia</div>
                         foto_url: item.foto_url || '',
                         nome_tio: item.nome_tio || '',
                         telefone_tio: item.telefone_tio || '',
+                        cpf_tio: this.formatarCpf(item.cpf_tio || ''),
                         data_nascimento_tio: item.data_nascimento_tio ? String(item.data_nascimento_tio).split('T')[0] : '',
                         nome_tia: item.nome_tia || '',
                         telefone_tia: item.telefone_tia || '',
+                        cpf_tia: this.formatarCpf(item.cpf_tia || ''),
                         data_nascimento_tia: item.data_nascimento_tia ? String(item.data_nascimento_tia).split('T')[0] : '',
                         origem_tipo: item.origem_tipo || 'EJC',
                         outro_ejc_id: item.outro_ejc_id || null,

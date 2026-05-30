@@ -12,6 +12,7 @@
     <link rel="stylesheet" href="/css/style.css">
     <script src="/js/ui-kit.js"></script>
     <script src="/js/date-br.js" defer></script>
+    <script src="/js/termos-uso-lgpd.js" defer></script>
 </head>
 <body style="min-height:100vh;background:linear-gradient(155deg,#fbf5e9 0%,#f3e6cc 46%,#efe5d8 100%);">
     <div id="app" class="container py-4 py-md-5">
@@ -147,9 +148,9 @@
                                 <div class="p-3 bg-light border rounded">
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" id="aceiteTermosAtualizacaoTios" v-model="aceiteTermos">
-                                        <label class="form-check-label" for="aceiteTermosAtualizacaoTios">Li e aceito os termos de uso</label>
+                                        <label class="form-check-label" for="aceiteTermosAtualizacaoTios">Li e concordo com os termos de uso</label>
                                     </div>
-                                    <div class="small text-muted mt-2">{{ termosTexto }}</div>
+                                    <button class="btn btn-link btn-sm px-0 mt-2" type="button" onclick="abrirTermosUsoSemear()">Ler mais</button>
                                 </div>
                             </div>
                             <div class="col-12 d-flex gap-2 pt-2">
@@ -182,9 +183,9 @@
                                 <div class="p-3 bg-light border rounded">
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" id="aceiteTermosNaoEncontradoTios" v-model="aceiteTermos">
-                                        <label class="form-check-label" for="aceiteTermosNaoEncontradoTios">Li e aceito os termos de uso</label>
+                                        <label class="form-check-label" for="aceiteTermosNaoEncontradoTios">Li e concordo com os termos de uso</label>
                                     </div>
-                                    <div class="small text-muted mt-2">{{ termosTexto }}</div>
+                                    <button class="btn btn-link btn-sm px-0 mt-2" type="button" onclick="abrirTermosUsoSemear()">Ler mais</button>
                                 </div>
                             </div>
                             <div class="col-12 d-flex gap-2 pt-2">
@@ -239,9 +240,9 @@
                                 <div class="p-3 bg-light border rounded">
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" id="aceiteTermosCriarTios" v-model="aceiteTermos">
-                                        <label class="form-check-label" for="aceiteTermosCriarTios">Li e aceito os termos de uso</label>
+                                        <label class="form-check-label" for="aceiteTermosCriarTios">Li e concordo com os termos de uso</label>
                                     </div>
-                                    <div class="small text-muted mt-2">{{ termosTexto }}</div>
+                                    <button class="btn btn-link btn-sm px-0 mt-2" type="button" onclick="abrirTermosUsoSemear()">Ler mais</button>
                                 </div>
                             </div>
                             <div class="col-12 d-flex gap-2 pt-2">
@@ -276,7 +277,6 @@
                     cadastroValidado: false,
                     token: '',
                     aceiteTermos: false,
-                    termosTexto: 'Ao enviar este formulário, você autoriza o EJC a armazenar e utilizar seus dados pessoais para contato e atualização cadastral. Você pode solicitar atualização ou remoção dos dados a qualquer momento.',
                     restricoesDisponiveis: [
                         'Alergia a amendoim',
                         'Alergia a castanhas',

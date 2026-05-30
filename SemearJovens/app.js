@@ -37,6 +37,7 @@ const rotasJovensPublic = require('./routes/jovensPublic');
 const rotasTiosPublic = require('./routes/tiosPublic');
 const rotasJovensOutroEjcPublic = require('./routes/jovensOutroEjcPublic');
 const rotasAtualizacoesCadastro = require('./routes/atualizacoesCadastro');
+const rotasAtualizacoesCadastroPublic = require('./routes/atualizacoesCadastroPublic');
 const rotasAuth = require('./routes/auth');
 const rotasMeuEjc = require('./routes/meuEjc');
 const rotasCirculos = require('./routes/circulos');
@@ -262,6 +263,24 @@ app.get('/jovens/atualizar-cadastro', (_req, res) => {
 });
 app.get('/jovens/criar-cadastro', (_req, res) => res.sendFile(path.join(__dirname, 'views', 'jovens-criar.html')));
 app.get('/jovens/atualizar-cadastro/obrigado', (_req, res) => res.sendFile(path.join(__dirname, 'views', 'jovens-atualizar-obrigado.html')));
+app.get('/atualizar/:token', (_req, res) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    return res.sendFile(path.join(__dirname, 'views', 'jovens-atualizar-magic.html'));
+});
+app.get('/formulario-equipe/:token', (_req, res) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    return res.sendFile(path.join(__dirname, 'views', 'equipe-atualizacao-links.html'));
+});
+app.get('/atualizar-tios/:token', (_req, res) => {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    return res.sendFile(path.join(__dirname, 'views', 'tios-atualizar-magic.html'));
+});
 app.get('/tios/atualizar-telefone', (_req, res) => res.sendFile(path.join(__dirname, 'views', 'tios-atualizar.html')));
 app.get('/jovens-outro-ejc/atualizar-cadastro', (_req, res) => res.sendFile(path.join(__dirname, 'views', 'jovens-outro-ejc-atualizar.html')));
 app.get('/', (req, res) => {
@@ -385,6 +404,7 @@ app.use('/api/formularios/public', rotasFormulariosPublic);
 app.use('/api/jovens-public', rotasJovensPublic);
 app.use('/api/tios-public', rotasTiosPublic);
 app.use('/api/jovens-outro-ejc-public', rotasJovensOutroEjcPublic);
+app.use('/api/atualizacoes-cadastro-public', rotasAtualizacoesCadastroPublic);
 app.use('/api/cep', rotasCep);
 app.use('/api', requireLoginApi);
 app.use('/api', activityLoggerMiddleware);

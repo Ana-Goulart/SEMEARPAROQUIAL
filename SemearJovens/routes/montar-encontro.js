@@ -30,6 +30,7 @@ let montagemFormulariosGarantido = false;
 let montagemEncontristasGarantido = false;
 let montagemEncontristasDadosGarantido = false;
 let tiosServicosSnapshotsCapacidadeGarantida = false;
+let montagemMembrosExtraGarantida = false;
 const hasColumnCache = new Map();
 let geocoderInstance = null;
 
@@ -56,6 +57,17 @@ async function hasColumn(tableName, columnName) {
     const exists = !!(rows && rows[0] && rows[0].cnt > 0);
     hasColumnCache.set(key, exists);
     return exists;
+}
+
+async function hasIndex(tableName, indexName) {
+    const [rows] = await pool.query(`
+        SELECT COUNT(*) AS cnt
+        FROM information_schema.STATISTICS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = ?
+          AND INDEX_NAME = ?
+    `, [tableName, indexName]);
+    return !!(rows && rows[0] && rows[0].cnt > 0);
 }
 
 async function ensureEquipeAtivaColumn() {
@@ -1742,6 +1754,34 @@ async function hasMontagemDiaSemanaReunioesColumn() {
 }
 
 async function garantirEstruturaMontagemMembrosExtra() {
+    if (montagemMembrosExtraGarantida) return;
+    const [
+        hasTioCasalId,
+        hasTioCasalIndex,
+        hasStatusLigacao,
+        hasMotivoRecusa,
+        hasEhSubstituicao,
+        hasOrdemReserva,
+        hasNomeExterno,
+        hasTelefoneExterno
+    ] = await Promise.all([
+        hasColumn('montagem_membros', 'tio_casal_id'),
+        hasIndex('montagem_membros', 'idx_montagem_membros_tio_casal'),
+        hasColumn('montagem_membros', 'status_ligacao'),
+        hasColumn('montagem_membros', 'motivo_recusa'),
+        hasColumn('montagem_membros', 'eh_substituicao'),
+        hasColumn('montagem_membros', 'ordem_reserva'),
+        hasColumn('montagem_membros', 'nome_externo'),
+        hasColumn('montagem_membros', 'telefone_externo')
+    ]);
+    if (
+        hasTioCasalId && hasTioCasalIndex && hasStatusLigacao && hasMotivoRecusa
+        && hasEhSubstituicao && hasOrdemReserva && hasNomeExterno && hasTelefoneExterno
+    ) {
+        montagemMembrosExtraGarantida = true;
+        return;
+    }
+
     await runAlterIgnoreDuplicate("ALTER TABLE montagem_membros ADD COLUMN tio_casal_id INT NULL AFTER jovem_id");
     await runAlterIgnoreDuplicate("ALTER TABLE montagem_membros ADD KEY idx_montagem_membros_tio_casal (tio_casal_id)");
     await runAlterIgnoreDuplicate("ALTER TABLE montagem_membros ADD COLUMN status_ligacao ENUM('ACEITOU','RECUSOU','LIGAR_MAIS_TARDE','TELEFONE_INCORRETO') NULL AFTER jovem_id");
@@ -1786,6 +1826,7 @@ async function garantirEstruturaMontagemMembrosExtra() {
             }
         }
     }
+    montagemMembrosExtraGarantida = true;
 }
 
 async function garantirEstruturaMontagemDatas() {

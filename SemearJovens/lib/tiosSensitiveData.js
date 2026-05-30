@@ -39,6 +39,30 @@ function tioPhoneHash(value) {
     return normalized ? blindIndex(normalized, 'tios:telefone') : null;
 }
 
+function normalizeCpfDigits(value) {
+    return String(value || '').replace(/\D/g, '').slice(0, 11);
+}
+
+function formatCpf(value) {
+    const digits = normalizeCpfDigits(value);
+    if (!digits) return '';
+    return digits.length === 11 ? `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}` : digits;
+}
+
+function encryptTioCpf(value) {
+    const formatted = formatCpf(value);
+    return formatted && normalizeCpfDigits(formatted).length === 11 ? encryptValue(formatted, 'tios:cpf') : null;
+}
+
+function decryptTioCpf(value) {
+    return normalizeTrimmedText(decryptValue(value, 'tios:cpf'));
+}
+
+function tioCpfHash(value) {
+    const normalized = normalizeCpfDigits(value);
+    return normalized.length === 11 ? blindIndex(normalized, 'tios:cpf') : null;
+}
+
 function encryptTioSensitiveText(value, purpose) {
     const normalized = normalizeTrimmedText(value);
     return normalized ? encryptValue(normalized, `tios:${purpose}`) : null;
@@ -53,6 +77,8 @@ function decryptTiosCasal(record) {
     const item = { ...record };
     if (Object.prototype.hasOwnProperty.call(item, 'telefone_tio')) item.telefone_tio = decryptTioPhone(item.telefone_tio);
     if (Object.prototype.hasOwnProperty.call(item, 'telefone_tia')) item.telefone_tia = decryptTioPhone(item.telefone_tia);
+    if (Object.prototype.hasOwnProperty.call(item, 'cpf_tio')) item.cpf_tio = decryptTioCpf(item.cpf_tio);
+    if (Object.prototype.hasOwnProperty.call(item, 'cpf_tia')) item.cpf_tia = decryptTioCpf(item.cpf_tia);
     if (Object.prototype.hasOwnProperty.call(item, 'detalhes_restricao_tio')) item.detalhes_restricao_tio = decryptTioSensitiveText(item.detalhes_restricao_tio, 'detalhes-restricao-tio');
     if (Object.prototype.hasOwnProperty.call(item, 'qual_deficiencia_tio')) item.qual_deficiencia_tio = decryptTioSensitiveText(item.qual_deficiencia_tio, 'qual-deficiencia-tio');
     if (Object.prototype.hasOwnProperty.call(item, 'detalhes_restricao_tia')) item.detalhes_restricao_tia = decryptTioSensitiveText(item.detalhes_restricao_tia, 'detalhes-restricao-tia');
@@ -92,9 +118,12 @@ async function ensureTiosSensitiveColumns(pool) {
 
 module.exports = {
     decryptTioPhone,
+    decryptTioCpf,
     decryptTiosCasal,
+    encryptTioCpf,
     encryptTioPhone,
     encryptTioSensitiveText,
     ensureTiosSensitiveColumns,
+    tioCpfHash,
     tioPhoneHash
 };

@@ -835,7 +835,7 @@
                                 data-ui-skip-phone-mask="true"
                                 autocomplete="off"
                                 spellcheck="false"
-                                placeholder="Pesquise por nome, telefone, e-mail, círculo, Instagram...">
+                                placeholder="Pesquise por nome, CPF, telefone, e-mail, círculo, Instagram...">
                             <button v-show="pesquisaRapida"
                                 type="button"
                                 class="btn btn-outline-secondary"
@@ -863,6 +863,9 @@
                             class="form-control"></div>
                     <div class="col-md-2"><label>Telefone</label><input type="text" v-model="filtros.telefone"
                             class="form-control"></div>
+                    <div class="col-md-2"><label>CPF</label><input type="text" v-model="filtros.cpf"
+                            @input="filtros.cpf = formatarCpfPadrao(filtros.cpf)"
+                            class="form-control" placeholder="000.000.000-00" maxlength="14"></div>
                     <div class="col-md-2"><label>Apelido</label><input type="text" v-model="filtros.apelido"
                             class="form-control"></div>
                     <div class="col-md-3"><label>E-mail</label><input type="text" v-model="filtros.email"
@@ -951,6 +954,7 @@
                             </th>
                             <th v-if="colunasVisiveis.Nome"><button type="button" class="sort-button" @click="ordenarPor('nome_completo')">Nome <span class="sort-indicator">{{ iconeOrdenacao('nome_completo') }}</span></button></th>
                             <th v-if="colunasVisiveis.Telefone" class="lista-mestre-mobile-hidden"><button type="button" class="sort-button" @click="ordenarPor('telefone')">Telefone <span class="sort-indicator">{{ iconeOrdenacao('telefone') }}</span></button></th>
+                            <th v-if="colunasVisiveis.CPF" class="lista-mestre-mobile-hidden"><button type="button" class="sort-button" @click="ordenarPor('cpf')">CPF <span class="sort-indicator">{{ iconeOrdenacao('cpf') }}</span></button></th>
                             <th v-if="colunasVisiveis.Apelido" class="lista-mestre-mobile-hidden"><button type="button" class="sort-button" @click="ordenarPor('apelido')">Apelido <span class="sort-indicator">{{ iconeOrdenacao('apelido') }}</span></button></th>
                             <th v-if="colunasVisiveis.Email" class="lista-mestre-mobile-hidden"><button type="button" class="sort-button" @click="ordenarPor('email')">E-mail <span class="sort-indicator">{{ iconeOrdenacao('email') }}</span></button></th>
                             <th v-if="colunasVisiveis.TermosUso" class="lista-mestre-mobile-hidden"><button type="button" class="sort-button" @click="ordenarPor('termos_aceitos_em')">Termos de uso <span class="sort-indicator">{{ iconeOrdenacao('termos_aceitos_em') }}</span></button></th>
@@ -994,6 +998,7 @@
                                     </div>
                                 </td>
                                 <td v-if="colunasVisiveis.Telefone" class="lista-mestre-mobile-hidden">{{ jovem.telefone }}</td>
+                                <td v-if="colunasVisiveis.CPF" class="lista-mestre-mobile-hidden">{{ jovem.cpf || '-' }}</td>
                                 <td v-if="colunasVisiveis.Apelido" class="lista-mestre-mobile-hidden">{{ jovem.apelido || '-' }}</td>
                                 <td v-if="colunasVisiveis.Email" class="lista-mestre-mobile-hidden">{{ jovem.email || '-' }}</td>
                                 <td v-if="colunasVisiveis.TermosUso" class="lista-mestre-mobile-hidden">{{ jovem.termos_aceitos_em ? 'Aceito' : 'Não' }}</td>
@@ -1275,6 +1280,12 @@
                                         <div v-if="!isEditing" class="py-1 px-2 bg-light border rounded">{{
                                             jovemEditando.telefone }}</div>
                                         <input v-else type="text" v-model="jovemEditando.telefone" class="form-control">
+                                    </div>
+                                    <div class="col-12 col-sm-4" v-show="subAbaDados === 'cadastro'">
+                                        <label class="text-muted small mb-0">CPF</label>
+                                        <div v-if="!isEditing" class="py-1 px-2 bg-light border rounded">{{
+                                            jovemEditando.cpf || 'Não informado' }}</div>
+                                        <input v-else type="text" v-model="jovemEditando.cpf" @input="onCpfInput(jovemEditando, 'cpf')" class="form-control" placeholder="000.000.000-00" maxlength="14">
                                     </div>
                                     <div class="col-12 col-sm-4" v-show="subAbaDados === 'cadastro'">
                                         <label class="text-muted small mb-0">E-mail</label>
@@ -2105,6 +2116,10 @@
                                             <input type="tel" v-model="novoJovem.telefone" @input="onNovoTelefoneInput" class="form-control" placeholder="(31)99999-9999">
                                         </div>
                                         <div class="col-lg-4">
+                                            <label class="text-muted small">CPF</label>
+                                            <input type="text" v-model="novoJovem.cpf" @input="onCpfInput(novoJovem, 'cpf')" class="form-control" placeholder="000.000.000-00" maxlength="14">
+                                        </div>
+                                        <div class="col-lg-4">
                                             <label class="text-muted small">E-mail</label>
                                             <input type="email" v-model="novoJovem.email" class="form-control" placeholder="email@exemplo.com">
                                         </div>
@@ -2782,6 +2797,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                         nome_completo: '',
                         apelido: '',
                         telefone: '',
+                        cpf: '',
                         email: '',
                         data_nascimento: '',
                         numero_ejc_fez: '',
@@ -2808,6 +2824,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                     colunasVisiveis: {
                         Nome: true,
                         Telefone: true,
+                        CPF: false,
                         Apelido: false,
                         Email: true,
                         TermosUso: false,
@@ -2830,6 +2847,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                     filtros: {
                         nome: '',
                         telefone: '',
+                        cpf: '',
                         apelido: '',
                         email: '',
                         idadeMin: null,
@@ -2894,6 +2912,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                         return this.registroAtendePesquisaRapida(j, termosPesquisaRapida) &&
                             (!this.filtros.nome || j.nome_completo.toLowerCase().includes(this.filtros.nome.toLowerCase())) &&
                             (!this.filtros.telefone || String(j.telefone || '').toLowerCase().includes(this.filtros.telefone.toLowerCase())) &&
+                            (!this.filtros.cpf || this.apenasDigitos(j.cpf).includes(this.apenasDigitos(this.filtros.cpf))) &&
                             (!this.filtros.apelido || String(j.apelido || '').toLowerCase().includes(this.filtros.apelido.toLowerCase())) &&
                             (!this.filtros.email || String(j.email || '').toLowerCase().includes(this.filtros.email.toLowerCase())) &&
                             (!this.filtros.idadeMin || idade >= this.filtros.idadeMin) &&
@@ -3243,6 +3262,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                     return {
                         Nome: true,
                         Telefone: true,
+                        CPF: false,
                         Apelido: false,
                         Email: true,
                         TermosUso: false,
@@ -3300,6 +3320,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                     const labels = {
                         Nome: 'Nome',
                         Telefone: 'Telefone',
+                        CPF: 'CPF',
                         Apelido: 'Apelido',
                         Email: 'E-mail',
                         TermosUso: 'Termos de uso',
@@ -3345,6 +3366,8 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                         jovem.nome_completo,
                         jovem.telefone,
                         this.apenasDigitos(jovem.telefone),
+                        jovem.cpf,
+                        this.apenasDigitos(jovem.cpf),
                         jovem.apelido,
                         jovem.email,
                         jovem.termos_aceitos_email,
@@ -3423,6 +3446,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                     };
 
                     addDetalhe(this.colunasVisiveis.Telefone, 'Telefone', jovem.telefone);
+                    addDetalhe(this.colunasVisiveis.CPF, 'CPF', jovem.cpf);
                     addDetalhe(this.colunasVisiveis.Apelido, 'Apelido', jovem.apelido);
                     addDetalhe(this.colunasVisiveis.Email, 'E-mail', jovem.email);
                     addDetalhe(this.colunasVisiveis.TermosUso, 'Termos de uso', jovem.termos_aceitos_em ? 'Aceito' : 'Não');
@@ -3443,6 +3467,10 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                 normalizarTelefoneDuplicidade(value) {
                     return String(value || '').replace(/\D/g, '');
                 },
+                normalizarCpfDuplicidade(value) {
+                    const digits = String(value || '').replace(/\D/g, '').slice(0, 11);
+                    return digits.length === 11 ? digits : '';
+                },
                 normalizarEmailDuplicidade(value) {
                     return String(value || '').trim().toLowerCase();
                 },
@@ -3451,6 +3479,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                 },
                 validarDuplicidadeListaMestre(payload, excludeId = null) {
                     const telefone = this.normalizarTelefoneDuplicidade(payload.telefone);
+                    const cpf = this.normalizarCpfDuplicidade(payload.cpf);
                     const email = this.normalizarEmailDuplicidade(payload.email);
                     const instagram = this.normalizarInstagramDuplicidade(payload.instagram);
                     const jovensBase = Array.isArray(this.jovens) ? this.jovens : [];
@@ -3460,18 +3489,24 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
 
                         const mesmoTelefone = telefone
                             && this.normalizarTelefoneDuplicidade(jovem.telefone) === telefone;
+                        const mesmoCpf = cpf
+                            && this.normalizarCpfDuplicidade(jovem.cpf) === cpf;
                         const mesmoEmail = email
                             && this.normalizarEmailDuplicidade(jovem.email) === email;
                         const mesmoInstagram = instagram
                             && this.normalizarInstagramDuplicidade(jovem.instagram) === instagram;
 
-                        return mesmoTelefone || mesmoEmail || mesmoInstagram;
+                        return mesmoTelefone || mesmoCpf || mesmoEmail || mesmoInstagram;
                     });
 
                     if (!duplicado) return null;
 
                     if (telefone && this.normalizarTelefoneDuplicidade(duplicado.telefone) === telefone) {
                         return { campo: 'telefone', error: 'Telefone já cadastrado neste EJC.' };
+                    }
+
+                    if (cpf && this.normalizarCpfDuplicidade(duplicado.cpf) === cpf) {
+                        return { campo: 'cpf', error: 'CPF já cadastrado neste EJC.' };
                     }
 
                     if (email && this.normalizarEmailDuplicidade(duplicado.email) === email) {
@@ -3492,6 +3527,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                     }
 
                     const telefone = this.normalizarTelefoneDuplicidade(payload.telefone);
+                    const cpf = this.normalizarCpfDuplicidade(payload.cpf);
                     const email = this.normalizarEmailDuplicidade(payload.email);
                     const instagram = this.normalizarInstagramDuplicidade(payload.instagram);
                     const registros = Array.isArray(listaAtual) ? listaAtual : [];
@@ -3501,18 +3537,24 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
 
                         const mesmoTelefone = telefone
                             && this.normalizarTelefoneDuplicidade(jovem.telefone) === telefone;
+                        const mesmoCpf = cpf
+                            && this.normalizarCpfDuplicidade(jovem.cpf) === cpf;
                         const mesmoEmail = email
                             && this.normalizarEmailDuplicidade(jovem.email) === email;
                         const mesmoInstagram = instagram
                             && this.normalizarInstagramDuplicidade(jovem.instagram) === instagram;
 
-                        return mesmoTelefone || mesmoEmail || mesmoInstagram;
+                        return mesmoTelefone || mesmoCpf || mesmoEmail || mesmoInstagram;
                     });
 
                     if (!duplicado) return null;
 
                     if (telefone && this.normalizarTelefoneDuplicidade(duplicado.telefone) === telefone) {
                         return { campo: 'telefone', error: 'Telefone já cadastrado neste EJC.' };
+                    }
+
+                    if (cpf && this.normalizarCpfDuplicidade(duplicado.cpf) === cpf) {
+                        return { campo: 'cpf', error: 'CPF já cadastrado neste EJC.' };
                     }
 
                     if (email && this.normalizarEmailDuplicidade(duplicado.email) === email) {
@@ -4064,6 +4106,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                     const cabecalhoBase = [
                         'nome_completo',
                         'telefone',
+                        'cpf',
                         'apelido',
                         'email',
                         'termos_aceitos_em',
@@ -4100,6 +4143,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                     const exemplo = [
                         'Ana Clara Goulart Claudino',
                         '(31)98575-1945',
+                        '123.456.789-09',
                         'Ana',
                         'ana@email.com',
                         '2026-03-26 18:00:00',
@@ -4180,6 +4224,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                         const colunasTabela = [
                             { key: 'Nome', label: 'Nome', getter: (j) => j.nome_completo || '' },
                             { key: 'Telefone', label: 'Telefone', getter: (j) => j.telefone || '' },
+                            { key: 'CPF', label: 'CPF', getter: (j) => j.cpf || '' },
                             { key: 'Apelido', label: 'Apelido', getter: (j) => j.apelido || '' },
                             { key: 'Email', label: 'E-mail', getter: (j) => j.email || '' },
                             { key: 'TermosUso', label: 'Termos de uso', getter: (j) => j.termos_aceitos_em ? 'Aceito' : 'Não' },
@@ -4217,7 +4262,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                     }
                     if (op.dadosPessoais) {
                         const headersDados = [
-                            'Nome completo', 'Telefone', 'Apelido', 'E-mail', 'Termos aceitos em', 'Termos aceitos e-mail',
+                            'Nome completo', 'Telefone', 'CPF', 'Apelido', 'E-mail', 'Termos aceitos em', 'Termos aceitos e-mail',
                             'Sexo', 'Data de nascimento', 'Idade', 'Estado civil', 'Data do casamento', 'Círculo',
                             'Número do EJC', 'Instagram', 'Serve no EJC', 'Habilidades Musicais', 'Instrumentos musicais',
                             'Equipe de saúde', 'Deficiência', 'Qual deficiência', 'Restrição alimentar',
@@ -4228,6 +4273,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                         const rowsDados = fonte.map((j) => ([
                             j.nome_completo || '',
                             j.telefone || '',
+                            j.cpf || '',
                             j.apelido || '',
                             j.email || '',
                             j.termos_aceitos_em || '',
@@ -4448,6 +4494,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                         const dataCasamento = getVal("MarriageDate", "Data Casamento", "data_casamento", "data casamento");
                         const nomeCsv = getVal("FullName", "Nome", "nome", "nome_completo", "full_name") || valorColuna(0);
                         const telefoneCsv = getVal("Phone", "Telefone", "telefone", "celular") || valorColuna(1);
+                        const cpfCsv = getVal("CPF", "Cpf", "cpf");
                         const sexoCsv = getVal("Gender", "Sexo", "sexo") || valorColuna(3);
                         const estadoCivilCsv = getVal("CivilStatus", "Estado Civil", "estado_civil", "estado civil") || valorColuna(4);
                         const circuloCsv = getVal("Circle", "Círculo", "circulo") || valorColuna(5);
@@ -4458,6 +4505,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                         const jovem = {
                             nome_completo: nomeCsv,
                             telefone: telefoneCsv,
+                            cpf: this.formatarCpfPadrao(cpfCsv),
                             apelido: getVal("Nickname", "Apelido", "apelido"),
                             email: getVal("Email", "E-mail", "email"),
                             termos_aceitos_em: normalizarDataHoraPlanilha(getVal("TermsAcceptedAt", "Termos Aceitos Em", "termos_aceitos_em")),
@@ -4617,6 +4665,18 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                 onNovoTelefoneInput() {
                     this.novoJovem.telefone = this.formatarTelefonePadrao(this.novoJovem.telefone);
                 },
+                formatarCpfPadrao(v) {
+                    const digits = String(v || '').replace(/\D/g, '').slice(0, 11);
+                    if (!digits) return '';
+                    if (digits.length <= 3) return digits;
+                    if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+                    if (digits.length <= 9) return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+                    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+                },
+                onCpfInput(target, field) {
+                    if (!target || !field) return;
+                    target[field] = this.formatarCpfPadrao(target[field]);
+                },
                 romanoParaNumero(valor) {
                     if (valor === null || valor === undefined) return null;
                     const txt = String(valor).trim().toUpperCase();
@@ -4646,6 +4706,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                     this.filtros = {
                         nome: '',
                         telefone: '',
+                        cpf: '',
                         apelido: '',
                         email: '',
                         idadeMin: null,
@@ -4818,6 +4879,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                         nome_completo: '',
                         apelido: '',
                         telefone: '',
+                        cpf: '',
                         email: '',
                         data_nascimento: '',
                         numero_ejc_fez: '',
@@ -4866,6 +4928,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                             nome_completo: this.novoJovem.nome_completo,
                             apelido: this.novoJovem.apelido || null,
                             telefone: this.novoJovem.telefone,
+                            cpf: this.novoJovem.cpf || null,
                             email: this.novoJovem.email || null,
                             data_nascimento: this.novoJovem.data_nascimento || null,
                             numero_ejc_fez: this.novoJovem.origem_ejc_tipo === 'INCONFIDENTES' ? (this.novoJovem.numero_ejc_fez || null) : null,
@@ -4911,6 +4974,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                             if (res.status === 409 && erro && erro.campo) {
                                 const mensagens = {
                                     telefone: 'Telefone já cadastrado neste EJC.',
+                                    cpf: 'CPF já cadastrado neste EJC.',
                                     email: 'E-mail já cadastrado neste EJC.',
                                     instagram: 'Instagram já cadastrado neste EJC.'
                                 };
@@ -4966,6 +5030,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                             nome_completo: this.jovemEditando.nome_completo,
                             apelido: this.jovemEditando.apelido || null,
                             telefone: this.jovemEditando.telefone,
+                            cpf: this.jovemEditando.cpf || null,
                             email: this.jovemEditando.email || null,
                             sexo: this.jovemEditando.sexo || null,
                             data_nascimento: this.jovemEditando.data_nascimento || null,
@@ -5015,6 +5080,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                             if (res.status === 409 && resposta && resposta.campo) {
                                 const mensagens = {
                                     telefone: 'Telefone já cadastrado neste EJC.',
+                                    cpf: 'CPF já cadastrado neste EJC.',
                                     email: 'E-mail já cadastrado neste EJC.',
                                     instagram: 'Instagram já cadastrado neste EJC.'
                                 };

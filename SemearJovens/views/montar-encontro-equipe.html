@@ -296,6 +296,14 @@
                             </div>
                         </div>
                         <div class="cabecalho-equipe-acoes align-self-start">
+                            <a class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-2"
+                                :class="{ disabled: !formularioEquipeLink }"
+                                :href="formularioEquipeLink || '#'"
+                                target="_blank"
+                                rel="noopener">
+                                <i class="fas fa-link"></i>
+                                <span>Formulário</span>
+                            </a>
                             <button class="btn btn-sm btn-primary d-inline-flex align-items-center gap-2" @click="abrirModalAdicionarMembro">
                                 <i class="fas fa-user-plus"></i>
                                 <span>Adicionar membro</span>
@@ -320,14 +328,15 @@
                     <div class="table-responsive">
                         <table class="table table-sm table-hover align-middle table-fixed">
                             <colgroup>
-                                <col style="width: 19%;">
-                                <col style="width: 8%;">
+                                <col style="width: 17%;">
+                                <col style="width: 7%;">
+                                <col style="width: 10%;">
                                 <col style="width: 11%;">
-                                <col style="width: 12%;">
                                 <col style="width: 10%;">
-                                <col style="width: 16%;">
-                                <col style="width: 10%;">
+                                <col style="width: 9%;">
                                 <col style="width: 14%;">
+                                <col style="width: 9%;">
+                                <col style="width: 13%;">
                             </colgroup>
                             <thead>
                                 <tr>
@@ -336,6 +345,7 @@
                                     <th>Origem</th>
                                     <th>Telefone</th>
                                     <th>Subfunção</th>
+                                    <th>Atualizado</th>
                                     <th>Status</th>
                                     <th>Observação</th>
                                     <th></th>
@@ -385,6 +395,12 @@
                                                 <i class="fa-solid fa-pen-to-square"></i>
                                             </button>
                                         </div>
+                                    </td>
+                                    <td>
+                                        <span v-if="Number(m.jovem_id || 0)" class="badge" :class="m.atualizado_cadastro ? 'bg-success' : 'bg-light text-dark'">
+                                            {{ m.atualizado_cadastro ? 'Sim' : 'Não' }}
+                                        </span>
+                                        <span v-else class="text-muted">-</span>
                                     </td>
                                     <td class="ligacoes-cell-status">
                                         <span v-if="m.confirmado" class="ligacoes-status-badge">{{ labelStatusLigacao(m.status_ligacao) }}</span>
@@ -449,7 +465,7 @@
                                     </td>
                                 </tr>
                                 <tr v-if="!membros.length">
-                                    <td colspan="8" class="text-muted text-center py-3">Nenhum membro alocado.</td>
+                                    <td colspan="9" class="text-muted text-center py-3">Nenhum membro alocado.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -493,6 +509,57 @@
                 </div>
             </div>
         </main>
+
+        <div class="modal fade" id="modalFormularioEquipe" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title">Links de atualização - {{ (equipe && equipe.nome) || '-' }}</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="d-flex flex-wrap justify-content-between gap-2 mb-3">
+                            <div class="text-muted small">Copie o link individual e envie no WhatsApp privado do jovem.</div>
+                            <div class="fw-semibold">Atualizados: {{ formularioEquipeResumo.atualizados }}/{{ formularioEquipeResumo.total }} ({{ formularioEquipeResumo.percentual }}%)</div>
+                        </div>
+                        <div v-if="formularioEquipeLoading" class="text-center py-4">
+                            <div class="spinner-border text-primary"></div>
+                        </div>
+                        <div v-else class="table-responsive">
+                            <table class="table table-sm align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Jovem</th>
+                                        <th>Subfunção</th>
+                                        <th>Atualizado</th>
+                                        <th>Link único</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-if="!formularioEquipeLinks.length">
+                                        <td colspan="5" class="text-center text-muted py-3">Nenhum jovem com link encontrado nesta equipe.</td>
+                                    </tr>
+                                    <tr v-for="item in formularioEquipeLinks" :key="`link-${item.jovem_id}`">
+                                        <td class="fw-semibold nome-caixa-alta">{{ item.nome_completo }}</td>
+                                        <td>{{ item.subfuncao || '-' }}</td>
+                                        <td>
+                                            <span class="badge" :class="item.atualizado ? 'bg-success' : 'bg-light text-dark'">
+                                                {{ item.atualizado ? 'Sim' : 'Não' }}
+                                            </span>
+                                        </td>
+                                        <td><input class="form-control form-control-sm" :value="item.link" readonly></td>
+                                        <td>
+                                            <button class="btn btn-sm btn-outline-secondary" type="button" @click="copiarLinkAtualizacao(item.link)">Copiar</button>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <div class="modal fade" id="modalEditarFuncaoMembro" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
@@ -712,7 +779,11 @@
                     edicaoFuncao: { membroId: 0, funcaoId: 0, nome: '' },
                     observacaoMembroAbertoId: 0,
                     observacaoTexto: '',
-                    observacaoSalvando: false
+                    observacaoSalvando: false,
+                    formularioEquipeLink: '',
+                    formularioEquipeLinks: [],
+                    formularioEquipeResumo: { total: 0, atualizados: 0, percentual: 0 },
+                    formularioEquipeLoading: false
                 };
             },
             computed: {
@@ -792,6 +863,83 @@
                     const estrutura = res.ok ? await res.json() : [];
                     this.equipe = (estrutura || []).find(e => Number(e.id) === Number(this.equipeId)) || null;
                     this.funcoes = this.equipe ? (this.equipe.funcoes || []) : [];
+                    await this.carregarLinkFormularioEquipe();
+                },
+                async carregarLinkFormularioEquipe() {
+                    this.formularioEquipeLink = '';
+                    if (!this.montagemId || !this.equipeId) return;
+                    try {
+                        const params = new URLSearchParams({
+                            tipo: 'montagem',
+                            montagem_id: String(this.montagemId),
+                            equipe_id: String(this.equipeId)
+                        });
+                        const res = await fetch(`/api/atualizacoes-cadastro/equipe-link?${params.toString()}`);
+                        const data = await res.json().catch(() => ({}));
+                        this.formularioEquipeLink = res.ok && data.link ? data.link : '';
+                    } catch (err) {
+                        console.warn('Não foi possível gerar o link da equipe:', err);
+                        this.formularioEquipeLink = '';
+                    }
+                },
+                async carregarLinksFormularioEquipe() {
+                    if (!this.montagemId || !this.equipeId) return null;
+                    const params = new URLSearchParams({
+                        tipo: 'montagem',
+                        montagem_id: String(this.montagemId),
+                        equipe_id: String(this.equipeId)
+                    });
+                    const res = await fetch(`/api/atualizacoes-cadastro/equipe-links?${params.toString()}`);
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok) throw new Error(data.error || 'Erro ao carregar links.');
+                    return data;
+                },
+                async abrirFormularioEquipe() {
+                    this.formularioEquipeLinks = [];
+                    this.formularioEquipeResumo = { total: 0, atualizados: 0, percentual: 0 };
+                    this.formularioEquipeLoading = true;
+                    bootstrap.Modal.getOrCreateInstance(document.getElementById('modalFormularioEquipe')).show();
+                    try {
+                        const data = await this.carregarLinksFormularioEquipe();
+                        this.formularioEquipeLinks = data && Array.isArray(data.membros) ? data.membros : [];
+                        this.formularioEquipeResumo = {
+                            total: Number(data && data.total || 0),
+                            atualizados: Number(data && data.atualizados || 0),
+                            percentual: Number(data && data.percentual || 0)
+                        };
+                    } catch (err) {
+                        console.error(err);
+                        await uiAlert(err.message || 'Erro ao carregar links.');
+                    } finally {
+                        this.formularioEquipeLoading = false;
+                    }
+                },
+                async copiarLinkAtualizacao(link) {
+                    try {
+                        await navigator.clipboard.writeText(link);
+                    } catch (_) {
+                        window.prompt('Copie o link:', link);
+                    }
+                },
+                async enriquecerMembrosComStatusAtualizacao(lista) {
+                    const base = Array.isArray(lista) ? lista : [];
+                    try {
+                        const data = await this.carregarLinksFormularioEquipe();
+                        const porJovem = new Map((data && Array.isArray(data.membros) ? data.membros : []).map((item) => [
+                            Number(item.jovem_id),
+                            item
+                        ]));
+                        return base.map((membro) => {
+                            const info = porJovem.get(Number(membro && membro.jovem_id || 0));
+                            return {
+                                ...membro,
+                                atualizado_cadastro: info ? !!info.atualizado : false
+                            };
+                        });
+                    } catch (err) {
+                        console.warn('Não foi possível carregar status de atualização:', err);
+                        return base.map((membro) => ({ ...membro, atualizado_cadastro: false }));
+                    }
                 },
                 async carregarMembros() {
                     const [res, resCasaisFicha] = await Promise.all([
@@ -815,7 +963,7 @@
                         outro_ejc_paroquia: m.outro_ejc_paroquia || (fichaPorId.get(Number(m.tio_casal_id)) || {}).outro_ejc_paroquia || '',
                         confirmado: String(m.status_ligacao || '').toUpperCase() === 'ACEITOU'
                     })) : [];
-                    this.membros = this.ordenarMembrosEquipe(this.agruparCasaisJovensEquipe(membros));
+                    this.membros = this.ordenarMembrosEquipe(await this.enriquecerMembrosComStatusAtualizacao(this.agruparCasaisJovensEquipe(membros)));
                     this.recusas = this.ordenarMembrosEquipe(
                         (Array.isArray(data.recusas) ? data.recusas : [])
                             .filter(r => Number(r.equipe_id) === Number(this.equipeId))

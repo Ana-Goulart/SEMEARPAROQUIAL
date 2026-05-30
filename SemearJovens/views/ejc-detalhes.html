@@ -336,6 +336,10 @@
                                             <span class="btn-ejc-icon"><i class="fa-solid fa-eye"></i></span>
                                             <span class="btn-ejc-text">Ver equipe</span>
                                         </button>
+                                        <button v-if="detalhe && detalhe.isMontagem" type="button" class="btn btn-soft-primary btn-sm btn-ejc-action" @click="abrirFormularioEquipe(equipe)">
+                                            <span class="btn-ejc-icon"><i class="fa-solid fa-link"></i></span>
+                                            <span class="btn-ejc-text">Formulário</span>
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -411,17 +415,23 @@
                                         <th>Subfunção</th>
                                         <th>Origem</th>
                                         <th>Telefone</th>
+                                        <th>Atualizado</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     <tr v-if="!jovensEquipe.length">
-                                        <td colspan="4" class="text-muted text-center py-3">Nenhum integrante nessa equipe.</td>
+                                        <td colspan="5" class="text-muted text-center py-3">Nenhum integrante nessa equipe.</td>
                                     </tr>
                                     <tr v-for="jovem in jovensEquipe" :key="jovem.id">
                                         <td><strong>{{ jovem.nome_completo }}</strong></td>
                                         <td>{{ subfuncaoIntegrante(jovem) }}</td>
                                         <td>{{ formatarOrigemEquipe(jovem) }}</td>
                                         <td>{{ jovem.telefone || '-' }}</td>
+                                        <td>
+                                            <span class="badge" :class="jovem.atualizado_cadastro ? 'bg-success' : 'bg-light text-dark'">
+                                                {{ jovem.atualizado_cadastro ? 'Sim' : 'Não' }}
+                                            </span>
+                                        </td>
                                     </tr>
                                 </tbody>
                             </table>
@@ -431,6 +441,53 @@
                                 <span class="btn-ejc-icon"><i class="fa-solid fa-xmark icon-accent"></i></span>
                                 <span class="btn-ejc-text">Fechar</span>
                             </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" id="modalFormularioEquipe" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog modal-xl">
+                    <div class="modal-content border-0 shadow">
+                        <div class="modal-header bg-primary text-white">
+                            <h5 class="modal-title"><i class="fa-solid fa-link me-2"></i>Links de atualização - {{ nomeEquipeFormulario }}</h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="d-flex flex-wrap justify-content-between gap-2 mb-3">
+                                <div class="text-muted small">Envie cada link individualmente no WhatsApp privado do jovem.</div>
+                                <div class="fw-semibold">Atualizados: {{ formularioEquipeResumo.atualizados }}/{{ formularioEquipeResumo.total }} ({{ formularioEquipeResumo.percentual }}%)</div>
+                            </div>
+                            <div v-if="formularioEquipeLoading" class="text-center py-4">
+                                <div class="spinner-border text-primary"></div>
+                            </div>
+                            <div v-else class="table-responsive">
+                                <table class="table table-sm align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Jovem</th>
+                                            <th>Subfunção</th>
+                                            <th>Atualizado</th>
+                                            <th>Link único</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-if="!formularioEquipeLinks.length">
+                                            <td colspan="5" class="text-center text-muted py-3">Nenhum jovem encontrado nessa equipe.</td>
+                                        </tr>
+                                        <tr v-for="item in formularioEquipeLinks" :key="`link-${item.jovem_id}`">
+                                            <td class="fw-semibold">{{ item.nome_completo }}</td>
+                                            <td>{{ item.subfuncao || '-' }}</td>
+                                            <td>
+                                                <span class="badge" :class="item.atualizado ? 'bg-success' : 'bg-light text-dark'">{{ item.atualizado ? 'Sim' : 'Não' }}</span>
+                                            </td>
+                                            <td><input class="form-control form-control-sm" :value="item.link" readonly></td>
+                                            <td><button class="btn btn-outline-secondary btn-sm" @click="copiarLinkAtualizacao(item.link)">Copiar</button></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -527,6 +584,10 @@
                         homens: 0,
                         mulheres: 0
                     },
+                    nomeEquipeFormulario: '',
+                    formularioEquipeLinks: [],
+                    formularioEquipeLoading: false,
+                    formularioEquipeResumo: { total: 0, atualizados: 0, percentual: 0 },
                     formulario: {
                         id: null,
                         numero: null,
@@ -547,6 +608,65 @@
                         throw new Error((data && data.error) || `Erro ao acessar ${url}`);
                     }
                     return data;
+                },
+                async carregarLinksFormularioEquipe(equipe) {
+                    if (!this.detalhe || !equipe || !equipe.id) return null;
+                    const params = new URLSearchParams({
+                        tipo: this.detalhe.isMontagem ? 'montagem' : 'edicao',
+                        equipe_id: String(equipe.id)
+                    });
+                    if (this.detalhe.isMontagem) params.set('montagem_id', String(this.detalhe.id));
+                    else params.set('ejc_id', String(this.detalhe.id));
+                    return this.fetchJson(`/api/atualizacoes-cadastro/equipe-links?${params.toString()}`);
+                },
+                async carregarLinkPublicoFormularioEquipe(equipe) {
+                    if (!this.detalhe || !equipe || !equipe.id) return '';
+                    const params = new URLSearchParams({
+                        tipo: this.detalhe.isMontagem ? 'montagem' : 'edicao',
+                        equipe_id: String(equipe.id)
+                    });
+                    if (this.detalhe.isMontagem) params.set('montagem_id', String(this.detalhe.id));
+                    else params.set('ejc_id', String(this.detalhe.id));
+                    const data = await this.fetchJson(`/api/atualizacoes-cadastro/equipe-link?${params.toString()}`);
+                    return data && data.link ? data.link : '';
+                },
+                async abrirFormularioEquipe(equipe) {
+                    try {
+                        const link = await this.carregarLinkPublicoFormularioEquipe(equipe);
+                        if (!link) throw new Error('Link da equipe não foi gerado.');
+                        window.open(link, '_blank', 'noopener');
+                    } catch (err) {
+                        console.error(err);
+                        alert(err.message || 'Erro ao abrir link da equipe.');
+                    }
+                },
+                async copiarLinkAtualizacao(link) {
+                    try {
+                        await navigator.clipboard.writeText(link);
+                    } catch (_) {
+                        window.prompt('Copie o link:', link);
+                    }
+                },
+                async enriquecerComStatusAtualizacao(lista, equipe) {
+                    const base = Array.isArray(lista) ? lista : [];
+                    try {
+                        const data = await this.carregarLinksFormularioEquipe(equipe);
+                        const porJovem = new Map((data && Array.isArray(data.membros) ? data.membros : []).map((item) => [
+                            Number(item.jovem_id),
+                            item
+                        ]));
+                        return base.map((jovem) => {
+                            const id = Number(jovem && (jovem.jovem_id || jovem.id));
+                            const info = porJovem.get(id);
+                            return {
+                                ...jovem,
+                                atualizado_cadastro: info ? !!info.atualizado : false
+                            };
+                        });
+                    } catch (err) {
+                        console.warn('Não foi possível carregar status de atualização da equipe:', err);
+                        return base.map((jovem) => ({ ...jovem, atualizado_cadastro: false }));
+                    }
                 },
                 voltarParaLista() {
                     const destino = '/gestaodoencontro/ejc';
@@ -852,7 +972,7 @@
                         try {
                             const resOutro = await fetch('/api/lista-mestre/jovens-outro-ejc');
                             if (!resOutro.ok) {
-                                this.definirIntegrantesEquipe(Array.isArray(jovens) ? jovens : []);
+                                this.definirIntegrantesEquipe(await this.enriquecerComStatusAtualizacao(Array.isArray(jovens) ? jovens : [], equipe));
                                 return;
                             }
 
@@ -866,7 +986,7 @@
                                 if (nomeKey && telKey) indicePorNomeTel.set(`${nomeKey}|${telKey}`, item);
                             });
 
-                            this.definirIntegrantesEquipe((Array.isArray(jovens) ? jovens : []).map((jovem) => {
+                            const jovensComOrigem = (Array.isArray(jovens) ? jovens : []).map((jovem) => {
                                 if (possuiOrigemOutroEJC(jovem)) return jovem;
                                 const nomeKey = normalizarNome(jovem.nome_completo);
                                 const telKey = normalizarTelefone(jovem.telefone);
@@ -882,16 +1002,17 @@
                                     outro_ejc_paroquia: jovem.outro_ejc_paroquia || match.outro_ejc_paroquia || null,
                                     outro_ejc_numero: jovem.outro_ejc_numero || match.outro_ejc_numero || null
                                 };
-                            }));
+                            });
+                            this.definirIntegrantesEquipe(await this.enriquecerComStatusAtualizacao(jovensComOrigem, equipe));
                         } catch (_) {
-                            this.definirIntegrantesEquipe(Array.isArray(jovens) ? jovens : []);
+                            this.definirIntegrantesEquipe(await this.enriquecerComStatusAtualizacao(Array.isArray(jovens) ? jovens : [], equipe));
                         }
                     } catch (err) {
                         console.error(err);
                         alert('Erro de conexão ao buscar integrantes.');
                     }
                 },
-                abrirModalMontagem(equipe) {
+                async abrirModalMontagem(equipe) {
                     this.nomeEquipeSelecionada = equipe.nome;
                     this.nomeEJCSelecionado = `${this.rotuloNumeroEjc(this.detalhe.numero)} (Montagem)`;
                     this.definirIntegrantesEquipe([]);
@@ -912,7 +1033,7 @@
                             }
                         }
                     }
-                    this.definirIntegrantesEquipe(membrosFlat);
+                    this.definirIntegrantesEquipe(await this.enriquecerComStatusAtualizacao(membrosFlat, equipe));
 
                     const modalEl = document.getElementById('modalJovens');
                     const modal = bootstrap.Modal.getOrCreateInstance(modalEl);

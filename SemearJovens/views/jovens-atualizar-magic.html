@@ -1,0 +1,605 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atualização Cadastral - EJC</title>
+    <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/velzon-theme.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/termos-uso-lgpd.js" defer></script>
+    <style>
+        body {
+            min-height: 100vh;
+            background: linear-gradient(155deg, #fbf5e9 0%, #f3e6cc 48%, #eef4f8 100%);
+        }
+        .update-shell {
+            max-width: 960px;
+        }
+        .brand-logo {
+            width: 96px;
+            height: 96px;
+            object-fit: contain;
+        }
+        .section-title {
+            color: #8a6a36;
+            font-size: .82rem;
+            font-weight: 700;
+            letter-spacing: .05em;
+            text-transform: uppercase;
+        }
+    </style>
+</head>
+<body>
+    <div id="app" class="container py-4 update-shell">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4 p-md-5">
+                <div v-if="loading" class="text-center py-5">
+                    <div class="spinner-border text-primary"></div>
+                </div>
+                <div v-else-if="erro" class="text-center py-5">
+                    <img src="/assets/logo-oficial.png" alt="Semear Paroquial" class="brand-logo mb-3">
+                    <h1 class="h4">Link indisponível</h1>
+                    <p class="text-muted">{{ erro }}</p>
+                </div>
+                <div v-else-if="sucesso" class="text-center py-5">
+                    <img src="/assets/logo-oficial.png" alt="Semear Paroquial" class="brand-logo mb-3">
+                    <h1 class="h4">Cadastro atualizado</h1>
+                    <p class="text-muted">Obrigado por atualizar seus dados e aceitar os termos de uso.</p>
+                </div>
+                <template v-else>
+                    <div class="text-center mb-4">
+                        <img src="/assets/logo-oficial.png" alt="Semear Paroquial" class="brand-logo">
+                        <h1 class="h4 mt-3 mb-1">Oi {{ jovem.nome_completo }}, atualize seus dados:</h1>
+                        <p class="text-muted mb-0">Preencha as informações abaixo. O link será invalidado após o envio.</p>
+                    </div>
+
+                    <form @submit.prevent="enviar" class="row g-3">
+                        <div class="col-12"><div class="section-title">Identificação</div></div>
+                        <div class="col-md-8">
+                            <label class="form-label">Nome completo *</label>
+                            <input class="form-control" v-model.trim="form.nome_completo" required maxlength="180">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Apelido</label>
+                            <input class="form-control" v-model.trim="form.apelido" maxlength="120">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Telefone *</label>
+                            <input class="form-control" v-model="form.telefone" required maxlength="14" placeholder="(31)99999-9999" @input="form.telefone = formatarTelefone(form.telefone)">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">E-mail *</label>
+                            <input class="form-control" type="email" v-model.trim="form.email" required maxlength="180">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">CPF *</label>
+                            <input class="form-control" v-model="form.cpf" required maxlength="14" placeholder="000.000.000-00" @input="form.cpf = formatarCpf(form.cpf)">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Data de nascimento *</label>
+                            <input class="form-control" type="date" v-model="form.data_nascimento" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Sexo *</label>
+                            <select class="form-select" v-model="form.sexo" required>
+                                <option value="">Selecione</option>
+                                <option>Feminino</option>
+                                <option>Masculino</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Instagram</label>
+                            <input class="form-control" v-model.trim="form.instagram" maxlength="120" placeholder="@usuario">
+                        </div>
+
+                        <div class="col-12 pt-2"><div class="section-title">Endereço</div></div>
+                        <div class="col-md-3">
+                            <label class="form-label">CEP *</label>
+                            <input class="form-control" v-model.trim="form.endereco_cep" required maxlength="10" placeholder="00000-000" @input="onCepInput" @blur="buscarCep">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Estado *</label>
+                            <select class="form-select" v-model="form.endereco_estado" required @change="onEstadoChange">
+                                <option value="">Selecione</option>
+                                <option v-for="estado in estados" :key="estado.sigla" :value="estado.sigla">{{ estado.nome }} - {{ estado.sigla }}</option>
+                            </select>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label">Cidade *</label>
+                            <select class="form-select" v-model="form.endereco_cidade" required :disabled="!form.endereco_estado || carregandoCidades" @change="onCidadeChange">
+                                <option value="">{{ carregandoCidades ? 'Carregando...' : 'Selecione' }}</option>
+                                <option v-for="cidade in cidades" :key="cidade.id || cidade.nome" :value="cidade.nome">{{ cidade.nome }}</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Bairro *</label>
+                            <input class="form-control" list="bairros-sugeridos" v-model.trim="form.endereco_bairro" required maxlength="120" placeholder="Digite ou selecione">
+                            <datalist id="bairros-sugeridos">
+                                <option v-for="bairro in bairrosSugeridos" :key="bairro" :value="bairro"></option>
+                            </datalist>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label">Rua *</label>
+                            <input class="form-control" v-model.trim="form.endereco_rua" required maxlength="180">
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Número *</label>
+                            <input class="form-control" v-model.trim="form.endereco_numero" required maxlength="30">
+                        </div>
+
+                        <div class="col-12 pt-2"><div class="section-title">EJC e caminhada</div></div>
+                        <div class="col-md-4" v-if="!ehOutroEjc">
+                            <label class="form-label">Círculo *</label>
+                            <input v-if="!circulos.length" class="form-control" v-model.trim="form.circulo" required>
+                            <select v-else class="form-select" v-model="form.circulo" required>
+                                <option value="">Selecione</option>
+                                <option v-for="c in circulos" :key="c" :value="c">{{ c }}</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Estado civil *</label>
+                            <select class="form-select" v-model="form.estado_civil" required>
+                                <option value="">Selecione</option>
+                                <option>Solteiro</option>
+                                <option>Casado</option>
+                                <option>Amasiado</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Foto {{ form.foto_url ? '' : '*' }}</label>
+                            <input class="form-control" type="file" accept="image/png,image/jpeg,image/webp" :required="!form.foto_url" @change="onFotoChange">
+                            <a v-if="form.foto_url" class="small d-inline-block mt-1" :href="form.foto_url" target="_blank" rel="noopener">Ver foto atual</a>
+                            <div class="form-text">Envie uma imagem JPG, PNG ou WEBP com até 5 MB.</div>
+                        </div>
+                        <div class="col-12" v-if="!ehOutroEjc">
+                            <label class="form-label">Pastorais</label>
+                            <div class="border rounded p-2 bg-white d-flex flex-wrap gap-3">
+                                <div class="form-check" v-for="p in pastorais" :key="p.id">
+                                    <input class="form-check-input" type="checkbox" :id="`past-${p.id}`" :value="p.id" v-model="form.pastorais">
+                                    <label class="form-check-label" :for="`past-${p.id}`">{{ p.nome }}</label>
+                                </div>
+                                <span v-if="!pastorais.length" class="text-muted small">Nenhuma pastoral cadastrada.</span>
+                            </div>
+                        </div>
+
+                        <div class="col-12 pt-2"><div class="section-title">Saúde e habilidades</div></div>
+                        <div class="col-md-4">
+                            <label class="form-label">Faz parte da equipe de saúde?</label>
+                            <select class="form-select" v-model="form.equipe_saude">
+                                <option :value="false">Não</option>
+                                <option :value="true">Sim</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4" v-if="form.equipe_saude">
+                            <label class="form-label">Atuação</label>
+                            <select class="form-select" v-model="form.equipe_saude_tipo">
+                                <option value="">Selecione</option>
+                                <option>Médico</option>
+                                <option>Enfermeiro</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">É PCD?</label>
+                            <select class="form-select" v-model="form.deficiencia">
+                                <option :value="false">Não</option>
+                                <option :value="true">Sim</option>
+                            </select>
+                        </div>
+                        <div class="col-md-8" v-if="form.deficiencia">
+                            <label class="form-label">Especifique a deficiência</label>
+                            <input class="form-control" v-model.trim="form.qual_deficiencia" maxlength="255">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Restrição alimentar?</label>
+                            <select class="form-select" v-model="form.restricao_alimentar">
+                                <option :value="false">Não</option>
+                                <option :value="true">Sim</option>
+                            </select>
+                        </div>
+                        <div class="col-md-8" v-if="form.restricao_alimentar">
+                            <label class="form-label">Qual restrição?</label>
+                            <select class="form-select" v-model="form.detalhes_restricao" required>
+                                <option value="">Selecione</option>
+                                <option v-for="opcao in opcoesRestricaoAlimentar" :key="`restr-${opcao}`" :value="opcao">{{ opcao }}</option>
+                                <option v-if="form.detalhes_restricao && !opcoesRestricaoAlimentar.includes(form.detalhes_restricao)" :value="form.detalhes_restricao">{{ form.detalhes_restricao }}</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Possui habilidades musicais?</label>
+                            <select class="form-select" v-model="form.eh_musico">
+                                <option :value="false">Não</option>
+                                <option :value="true">Sim</option>
+                            </select>
+                        </div>
+                        <div class="col-md-8" v-if="form.eh_musico">
+                            <label class="form-label">Instrumentos</label>
+                            <div class="border rounded p-2 bg-white d-flex flex-wrap gap-3">
+                                <div class="form-check" v-for="ins in instrumentos" :key="ins">
+                                    <input class="form-check-input" type="checkbox" :id="`ins-${ins}`" :value="ins" v-model="form.instrumentos_musicais">
+                                    <label class="form-check-label" :for="`ins-${ins}`">{{ ins }}</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12 pt-2"><div class="section-title">Validação manual pela Dirigência</div></div>
+                        <template v-if="ehOutroEjc">
+                            <div class="col-md-6">
+                                <label class="form-label">Qual EJC? *</label>
+                                <select class="form-select" v-model="form.outro_ejc_id" required>
+                                    <option value="">Selecione</option>
+                                    <option v-for="o in outrosEjcs" :key="`validacao-outro-${o.id}`" :value="o.id">{{ rotuloOutroEjc(o) }}</option>
+                                </select>
+                            </div>
+                        </template>
+                        <template v-else>
+                        <div class="col-md-4">
+                            <label class="form-label">Você fez o {{ jovem.numero_ejc_atual || '' }} EJC?</label>
+                            <select class="form-select" v-model="form.confirmou_edicao">
+                                <option value="Sim">Sim</option>
+                                <option value="Nao">Não</option>
+                            </select>
+                        </div>
+                        <div class="col-md-8" v-if="form.confirmou_edicao === 'Nao'">
+                            <label class="form-label">Qual edição você fez?</label>
+                            <input class="form-control" v-model.trim="form.edicao_correta">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Você já foi Garçom?</label>
+                            <select class="form-select" v-model="form.ja_foi_garcom">
+                                <option :value="false">Não</option>
+                                <option :value="true">Sim</option>
+                            </select>
+                        </div>
+                        <template v-if="form.ja_foi_garcom">
+                            <div class="col-md-2"><label class="form-label">Nº EJC</label><input class="form-control" v-model.trim="form.garcom_numero_ejc"></div>
+                            <div class="col-md-4">
+                                <label class="form-label">De qual EJC?</label>
+                                <select class="form-select" v-model="form.garcom_ejc">
+                                    <option value="">Selecione</option>
+                                    <option v-for="o in outrosEjcs" :key="`garcom-outro-${o.id}`" :value="rotuloOutroEjc(o)">{{ rotuloOutroEjc(o) }}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2"><label class="form-label">Função</label><input class="form-control" v-model.trim="form.garcom_funcao"></div>
+                        </template>
+                        <div class="col-md-4">
+                            <label class="form-label">Você já foi Moita?</label>
+                            <select class="form-select" v-model="form.ja_foi_moita">
+                                <option :value="false">Não</option>
+                                <option :value="true">Sim</option>
+                            </select>
+                        </div>
+                        <template v-if="form.ja_foi_moita">
+                            <div class="col-md-2"><label class="form-label">Nº EJC</label><input class="form-control" v-model.trim="form.moita_numero_ejc"></div>
+                            <div class="col-md-4">
+                                <label class="form-label">De qual EJC?</label>
+                                <select class="form-select" v-model="form.moita_ejc">
+                                    <option value="">Selecione</option>
+                                    <option v-for="o in outrosEjcs" :key="`moita-outro-${o.id}`" :value="rotuloOutroEjc(o)">{{ rotuloOutroEjc(o) }}</option>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Papel</label>
+                                <input class="form-control" v-model.trim="form.moita_papel">
+                            </div>
+                        </template>
+                        </template>
+
+                        <div class="col-12">
+                            <label class="form-label">Informação adicional</label>
+                            <textarea class="form-control" rows="3" v-model.trim="form.informacao_adicional"></textarea>
+                        </div>
+                        <div class="col-12">
+                            <div class="p-3 border rounded bg-light">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="termos" v-model="form.aceite_termos" required>
+                                    <label class="form-check-label" for="termos">Li e concordo com os termos de uso *</label>
+                                </div>
+                                <button class="btn btn-link btn-sm px-0 mt-2" type="button" onclick="abrirTermosUsoSemear()">Ler mais</button>
+                            </div>
+                        </div>
+                        <div class="col-12 d-grid">
+                            <button class="btn btn-primary" :disabled="enviando">{{ enviando ? 'Salvando...' : 'Salvar atualização' }}</button>
+                        </div>
+                    </form>
+                </template>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+        createApp({
+            data() {
+                return {
+                    loading: true,
+                    enviando: false,
+                    erro: '',
+                    sucesso: false,
+                    token: window.location.pathname.split('/').filter(Boolean).pop() || '',
+                    jovem: {},
+                    pastorais: [],
+                    circulos: [],
+                    instrumentos: [],
+                    outrosEjcs: [],
+                    ejcs: [],
+                    estados: [],
+                    cidades: [],
+                    bairrosSugeridos: [],
+                    carregandoCidades: false,
+                    carregandoBairros: false,
+                    ultimoCepBuscado: '',
+                    opcoesRestricaoAlimentar: [
+                        'Alergia a amendoim',
+                        'Alergia a castanhas',
+                        'Alergia a frutos do mar',
+                        'APLV (Alergia à proteína do leite de vaca)',
+                        'Intolerante à lactose',
+                        'Intolerante a glúten (Celíaco)',
+                        'Não come carne vermelha',
+                        'Não come carne de porco',
+                        'Vegetariano',
+                        'Vegano',
+                        'Outras'
+                    ],
+                    foto: null,
+                    form: {
+                        nome_completo: '', apelido: '', telefone: '', email: '', cpf: '', data_nascimento: '', sexo: '',
+                        endereco_rua: '', endereco_numero: '', endereco_bairro: '', endereco_cidade: '', endereco_estado: '', endereco_cep: '',
+                        circulo: '', instagram: '', estado_civil: '', equipe_saude: false, equipe_saude_tipo: '',
+                        deficiencia: false, qual_deficiencia: '', restricao_alimentar: false, detalhes_restricao: '',
+                        informacao_adicional: '', pastorais: [], eh_musico: false, instrumentos_musicais: [],
+                        confirmou_edicao: 'Sim', edicao_correta: '', ja_foi_garcom: false, garcom_numero_ejc: '', garcom_ejc: '', garcom_funcao: '',
+                        ja_foi_moita: false, moita_numero_ejc: '', moita_ejc: '', moita_papel: '', aceite_termos: false, foto_url: ''
+                        , origem_ejc_tipo: '', outro_ejc_id: ''
+                    }
+                };
+            },
+            computed: {
+                ehOutroEjc() {
+                    return String(this.form.origem_ejc_tipo || '').toUpperCase() === 'OUTRO_EJC'
+                        || Number(this.form.outro_ejc_id || 0) > 0;
+                }
+            },
+            methods: {
+                digits(v) { return String(v || '').replace(/\D/g, ''); },
+                formatarCpf(v) {
+                    const d = this.digits(v).slice(0, 11);
+                    if (d.length <= 3) return d;
+                    if (d.length <= 6) return `${d.slice(0, 3)}.${d.slice(3)}`;
+                    if (d.length <= 9) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6)}`;
+                    return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
+                },
+                formatarTelefone(v) {
+                    const d = this.digits(v).slice(0, 11);
+                    if (d.length <= 2) return d ? `(${d}` : '';
+                    if (d.length <= 7) return `(${d.slice(0, 2)})${d.slice(2)}`;
+                    return `(${d.slice(0, 2)})${d.slice(2, 7)}-${d.slice(7)}`;
+                },
+                formatarCep(v) {
+                    const d = this.digits(v).slice(0, 8);
+                    if (d.length <= 5) return d;
+                    return `${d.slice(0, 5)}-${d.slice(5)}`;
+                },
+                rotuloOutroEjc(o) {
+                    return [o && o.paroquia, o && o.nome].filter(Boolean).join(' - ') || 'Outro EJC';
+                },
+                rotuloEjc(e) {
+                    const numero = e && e.numero ? `${e.numero}º EJC` : 'EJC';
+                    return [numero, e && e.paroquia].filter(Boolean).join(' - ');
+                },
+                onFotoChange(event) {
+                    const file = event.target.files && event.target.files[0] ? event.target.files[0] : null;
+                    if (file && file.size > 5 * 1024 * 1024) {
+                        alert('A foto é muito grande. Envie uma imagem com até 5 MB.');
+                        event.target.value = '';
+                        this.foto = null;
+                        return;
+                    }
+                    this.foto = file;
+                },
+                async carregarEstados() {
+                    try {
+                        const res = await fetch('https://servicodados.ibge.gov.br/api/v1/localidades/estados?orderBy=nome');
+                        const data = await res.json().catch(() => []);
+                        this.estados = Array.isArray(data)
+                            ? data.map((item) => ({ sigla: item.sigla, nome: item.nome })).filter((item) => item.sigla && item.nome)
+                            : [];
+                    } catch (err) {
+                        console.error('Erro ao carregar estados:', err);
+                        this.estados = [];
+                    }
+                },
+                async carregarCidades(uf, limparCidade = true) {
+                    const estado = String(uf || '').trim().toUpperCase();
+                    if (!estado) {
+                        this.cidades = [];
+                        if (limparCidade) this.form.endereco_cidade = '';
+                        return;
+                    }
+                    this.carregandoCidades = true;
+                    try {
+                        const res = await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${encodeURIComponent(estado)}/municipios?orderBy=nome`);
+                        const data = await res.json().catch(() => []);
+                        this.cidades = Array.isArray(data)
+                            ? data.map((item) => ({ id: item.id, nome: item.nome })).filter((item) => item.nome)
+                            : [];
+                        if (limparCidade) this.form.endereco_cidade = '';
+                    } catch (err) {
+                        console.error('Erro ao carregar cidades:', err);
+                        this.cidades = [];
+                    } finally {
+                        this.carregandoCidades = false;
+                    }
+                },
+                async carregarBairrosSugeridos() {
+                    const uf = String(this.form.endereco_estado || '').trim();
+                    const cidade = String(this.form.endereco_cidade || '').trim();
+                    if (!uf || !cidade) {
+                        this.bairrosSugeridos = [];
+                        return;
+                    }
+                    this.carregandoBairros = true;
+                    try {
+                        const params = new URLSearchParams({ uf, cidade });
+                        const res = await fetch(`/api/cep/bairros?${params.toString()}`);
+                        const data = await res.json().catch(() => ({}));
+                        this.bairrosSugeridos = Array.isArray(data.bairros) ? data.bairros : [];
+                    } catch (err) {
+                        console.error('Erro ao carregar bairros:', err);
+                        this.bairrosSugeridos = [];
+                    } finally {
+                        this.carregandoBairros = false;
+                    }
+                },
+                async onEstadoChange() {
+                    this.form.endereco_estado = String(this.form.endereco_estado || '').toUpperCase();
+                    this.form.endereco_bairro = '';
+                    await this.carregarCidades(this.form.endereco_estado, true);
+                    await this.carregarBairrosSugeridos();
+                },
+                async onCidadeChange() {
+                    this.form.endereco_bairro = '';
+                    await this.carregarBairrosSugeridos();
+                },
+                onCepInput() {
+                    this.form.endereco_cep = this.formatarCep(this.form.endereco_cep);
+                    const cep = this.digits(this.form.endereco_cep);
+                    if (cep.length === 8) this.buscarCep();
+                },
+                async buscarCep() {
+                    const cep = this.digits(this.form.endereco_cep);
+                    if (cep.length !== 8) return;
+                    if (cep === this.ultimoCepBuscado) return;
+                    this.ultimoCepBuscado = cep;
+                    try {
+                        const res = await fetch(`/api/cep/${cep}`);
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) return;
+                        this.form.endereco_cep = this.formatarCep(data.cep || cep);
+                        if (data.uf) {
+                            this.form.endereco_estado = String(data.uf || '').toUpperCase();
+                            await this.carregarCidades(this.form.endereco_estado, false);
+                        }
+                        if (data.localidade) this.form.endereco_cidade = data.localidade;
+                        if (data.bairro) this.form.endereco_bairro = data.bairro;
+                        if (data.logradouro) this.form.endereco_rua = data.logradouro;
+                        await this.carregarBairrosSugeridos();
+                    } catch (err) {
+                        console.error('Erro ao buscar CEP:', err);
+                    }
+                },
+                async carregar() {
+                    try {
+                        if (!this.estados.length) await this.carregarEstados();
+                        const res = await fetch(`/api/atualizacoes-cadastro-public/${encodeURIComponent(this.token)}`);
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) throw new Error(data.error || 'Link inválido.');
+                        this.jovem = data.jovem || {};
+                        this.pastorais = data.pastorais || [];
+                        this.circulos = data.circulos || [];
+                        this.instrumentos = data.instrumentos || [];
+                        this.outrosEjcs = data.outros_ejcs || [];
+                        this.ejcs = data.ejcs || [];
+                        if (data.dados && typeof data.dados === 'object') {
+                            Object.assign(this.form, {
+                                ...data.dados,
+                                cpf: this.formatarCpf(data.dados.cpf || ''),
+                                telefone: this.formatarTelefone(data.dados.telefone || ''),
+                                pastorais: Array.isArray(data.dados.pastorais) ? data.dados.pastorais : [],
+                                instrumentos_musicais: Array.isArray(data.dados.instrumentos_musicais) ? data.dados.instrumentos_musicais : [],
+                                equipe_saude: !!data.dados.equipe_saude,
+                                deficiencia: !!data.dados.deficiencia,
+                                restricao_alimentar: !!data.dados.restricao_alimentar,
+                                eh_musico: !!data.dados.eh_musico,
+                                confirmou_edicao: 'Sim',
+                                ja_foi_garcom: false,
+                                ja_foi_moita: false,
+                                aceite_termos: false
+                            });
+                            const estadoAtual = String(this.form.endereco_estado || '').trim().toUpperCase();
+                            if (estadoAtual.length > 2) {
+                                const estadoEncontrado = this.estados.find((estado) => String(estado.nome || '').toUpperCase() === estadoAtual);
+                                this.form.endereco_estado = estadoEncontrado ? estadoEncontrado.sigla : estadoAtual.slice(0, 2);
+                            } else {
+                                this.form.endereco_estado = estadoAtual;
+                            }
+                            this.form.endereco_cep = this.formatarCep(this.form.endereco_cep || '');
+                            if (this.form.endereco_estado) {
+                                const cidadeAtual = String(this.form.endereco_cidade || '').trim();
+                                await this.carregarCidades(this.form.endereco_estado, false);
+                                if (cidadeAtual) {
+                                    const cidadeEncontrada = this.cidades.find((cidade) => String(cidade.nome || '').toUpperCase() === cidadeAtual.toUpperCase());
+                                    if (cidadeEncontrada) this.form.endereco_cidade = cidadeEncontrada.nome;
+                                }
+                                await this.carregarBairrosSugeridos();
+                            }
+                        }
+                    } catch (err) {
+                        this.erro = err.message || 'Não foi possível abrir o formulário.';
+                    } finally {
+                        this.loading = false;
+                    }
+                },
+                async enviar() {
+                    if (this.digits(this.form.cpf).length !== 11) {
+                        alert('Informe um CPF com 11 dígitos.');
+                        return;
+                    }
+                    this.enviando = true;
+                    try {
+                        const fd = new FormData();
+                        Object.entries(this.form).forEach(([key, value]) => {
+                            if (Array.isArray(value)) fd.append(key, JSON.stringify(value));
+                            else fd.append(key, value === true ? '1' : value === false ? '0' : (value || ''));
+                        });
+                        if (this.foto) fd.append('foto', this.foto);
+                        const res = await fetch(`/api/atualizacoes-cadastro-public/${encodeURIComponent(this.token)}`, { method: 'POST', body: fd });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) throw new Error(data.error || 'Erro ao salvar atualização.');
+                        this.sucesso = true;
+                    } catch (err) {
+                        alert(err.message || 'Erro ao salvar atualização.');
+                    } finally {
+                        this.enviando = false;
+                    }
+                }
+            },
+            watch: {
+                'form.restricao_alimentar'(valor) {
+                    if (!valor) this.form.detalhes_restricao = '';
+                },
+                'form.ja_foi_garcom'(valor) {
+                    if (!valor) {
+                        this.form.garcom_numero_ejc = '';
+                        this.form.garcom_ejc = '';
+                        this.form.garcom_funcao = '';
+                    }
+                },
+                'form.ja_foi_moita'(valor) {
+                    if (!valor) {
+                        this.form.moita_numero_ejc = '';
+                        this.form.moita_ejc = '';
+                        this.form.moita_papel = '';
+                    }
+                },
+                ehOutroEjc(valor) {
+                    if (valor) {
+                        this.form.circulo = '';
+                        this.form.pastorais = [];
+                        this.form.confirmou_edicao = 'Sim';
+                        this.form.edicao_correta = '';
+                        this.form.ja_foi_garcom = false;
+                        this.form.ja_foi_moita = false;
+                    }
+                }
+            },
+            mounted() {
+                this.carregar();
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

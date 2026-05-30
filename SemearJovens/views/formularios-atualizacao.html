@@ -12,6 +12,18 @@
     <link rel="stylesheet" href="/css/style.css">
     <script src="/js/ui-kit.js"></script>
     <script src="/js/menu.js"></script>
+    <style>
+        .solicitacoes-scroll {
+            max-height: 360px;
+            overflow-y: auto;
+        }
+        .solicitacoes-scroll thead th {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            background: #fff;
+        }
+    </style>
 </head>
 <body>
     <div id="app">
@@ -19,47 +31,67 @@
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <div>
                     <h3 class="mb-1">Formulários</h3>
-                    <p class="text-muted mb-0">Formulários públicos para atualização de dados no sistema.</p>
-                </div>
-                <div class="d-flex gap-2">
-                    <a class="btn btn-primary" href="/jovens/atualizar-cadastro" target="_blank" rel="noopener">Lista Mestre</a>
-                    <a class="btn btn-outline-primary" href="/tios/atualizar-telefone" target="_blank" rel="noopener">Tios</a>
-                    <a class="btn btn-outline-primary" href="/jovens-outro-ejc/atualizar-cadastro" target="_blank" rel="noopener">Outro EJC</a>
+                    <p class="text-muted mb-0">Acompanhe as informações recebidas pelos formulários das equipes.</p>
                 </div>
             </div>
 
-            <div class="row g-3 mb-3">
-                <div class="col-md-4">
-                    <div class="card border-0 shadow-sm h-100">
-                        <div class="card-body">
-                            <h6 class="mb-1">Atualização Lista Mestre</h6>
-                            <p class="text-muted small mb-3">Jovens do EJC confirmam dados e atualizam o cadastro.</p>
-                            <a class="btn btn-soft-secondary d-flex align-items-center gap-1" href="/jovens/atualizar-cadastro" target="_blank" rel="noopener">Abrir formulário</a>
-                        </div>
-                    </div>
+            <div class="card border-0 shadow-sm mb-3">
+                <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">Informações para atualização</h6>
+                    <button class="btn btn-sm btn-outline-primary" type="button" @click="carregarSolicitacoes">Atualizar</button>
                 </div>
-                <div class="col-md-4">
-                    <div class="card border-0 shadow-sm h-100">
-                        <div class="card-body">
-                            <h6 class="mb-1">Atualização de Tios</h6>
-                            <p class="text-muted small mb-3">Casais de tios validam os dados e atualizam o telefone.</p>
-                            <a class="btn btn-soft-secondary d-flex align-items-center gap-1" href="/tios/atualizar-telefone" target="_blank" rel="noopener">Abrir formulário</a>
-                        </div>
+                <div class="card-body">
+                    <div v-if="solicitacoesLoading" class="text-center py-3">
+                        <div class="spinner-border spinner-border-sm text-primary me-2"></div>Carregando...
                     </div>
-                </div>
-                <div class="col-md-4">
-                    <div class="card border-0 shadow-sm h-100">
-                        <div class="card-body">
-                            <h6 class="mb-1">Atualização de Outro EJC</h6>
-                            <p class="text-muted small mb-3">Jovens e tios de outros EJCs confirmam dados e atualizam o cadastro.</p>
-                            <a class="btn btn-soft-secondary d-flex align-items-center gap-1" href="/jovens-outro-ejc/atualizar-cadastro" target="_blank" rel="noopener">Abrir formulário</a>
-                        </div>
+                    <div v-else-if="!solicitacoes.length" class="text-muted text-center py-3">Nenhuma solicitação pendente de validação.</div>
+                    <div v-else class="table-responsive solicitacoes-scroll">
+                        <table class="table table-sm table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Jovem</th>
+                                    <th>Tipo</th>
+                                    <th>Pergunta</th>
+                                    <th>Resposta</th>
+                                    <th>Detalhes</th>
+                                    <th>Status</th>
+                                    <th>Data</th>
+                                    <th class="text-end">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-for="s in solicitacoes" :key="`sol-${s.id}`">
+                                    <td class="fw-semibold">{{ s.nome_completo || '-' }}</td>
+                                    <td>{{ rotuloTipoSolicitacao(s.tipo) }}</td>
+                                    <td>{{ s.pergunta }}</td>
+                                    <td>{{ s.resposta }}</td>
+                                    <td class="small" style="min-width: 180px;">
+                                        <div v-for="linha in formatarDadosSolicitacao(s.dados)" :key="`${s.id}-${linha.chave}`">
+                                            <span class="text-muted">{{ linha.chave }}:</span> {{ linha.valor }}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge" :class="classeStatusSolicitacao(s.status)">
+                                            {{ rotuloStatusSolicitacao(s.status) }}
+                                        </span>
+                                    </td>
+                                    <td>{{ formatarDataHora(s.criado_em) }}</td>
+                                    <td class="text-end">
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-outline-success" type="button" @click="atualizarSolicitacaoStatus(s, 'aprovado')">Aprovar</button>
+                                            <button class="btn btn-outline-danger" type="button" @click="atualizarSolicitacaoStatus(s, 'rejeitado')">Rejeitar</button>
+                                            <button class="btn btn-outline-secondary" type="button" @click="atualizarSolicitacaoStatus(s, 'pendente')">Pendente</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>
 
             <div class="row g-3">
-                <div class="col-lg-6">
+                <div class="col-12">
                     <div class="card border-0 shadow-sm">
                         <div class="card-header bg-light">
                             <h6 class="mb-0">Comentários adicionais</h6>
@@ -82,44 +114,6 @@
                         </div>
                     </div>
                 </div>
-
-                <div class="col-lg-6">
-                    <div class="card border-0 shadow-sm">
-                        <div class="card-header bg-light">
-                            <h6 class="mb-0">Não encontrei meu registro</h6>
-                        </div>
-                        <div class="card-body">
-                            <div v-if="naoEncontradosLoading" class="text-center py-3">
-                                <div class="spinner-border spinner-border-sm text-primary me-2"></div>Carregando...
-                            </div>
-                            <div v-else-if="!naoEncontrados.length" class="text-muted text-center py-3">Nenhuma solicitação.</div>
-                            <div v-else class="table-responsive">
-                                <table class="table table-sm table-hover align-middle">
-                                    <thead>
-                                        <tr>
-                                            <th>Nome</th>
-                                            <th>Telefone</th>
-                                            <th>EJC que fez</th>
-                                            <th>Observações</th>
-                                            <th>Formulário</th>
-                                            <th>Data</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr v-for="n in naoEncontrados" :key="`ne-${n.id}`">
-                                            <td>{{ n.nome_completo }}</td>
-                                            <td>{{ n.telefone }}</td>
-                                            <td>{{ n.ejc_que_fez }}</td>
-                                            <td>{{ n.observacoes_adicionais || '-' }}</td>
-                                            <td>{{ n.origem_formulario || '-' }}</td>
-                                            <td>{{ formatarDataHora(n.created_at) }}</td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
         </main>
     </div>
@@ -135,9 +129,9 @@
             data() {
                 return {
                     comentarios: [],
-                    naoEncontrados: [],
+                    solicitacoes: [],
                     comentariosLoading: false,
-                    naoEncontradosLoading: false
+                    solicitacoesLoading: false
                 };
             },
             methods: {
@@ -146,23 +140,91 @@
                     const d = new Date(v);
                     return Number.isNaN(d.getTime()) ? v : d.toLocaleString('pt-BR');
                 },
+                rotuloTipoSolicitacao(tipo) {
+                    const mapa = {
+                        edicao: 'Edição',
+                        garcom: 'Garçom',
+                        moita: 'Moita'
+                    };
+                    return mapa[String(tipo || '').toLowerCase()] || tipo || '-';
+                },
+                rotuloStatusSolicitacao(status) {
+                    const mapa = {
+                        pendente: 'Pendente',
+                        aprovado: 'Aprovado',
+                        rejeitado: 'Rejeitado'
+                    };
+                    return mapa[String(status || '').toLowerCase()] || status || '-';
+                },
+                classeStatusSolicitacao(status) {
+                    const valor = String(status || '').toLowerCase();
+                    if (valor === 'aprovado') return 'bg-success';
+                    if (valor === 'rejeitado') return 'bg-danger';
+                    return 'bg-warning text-dark';
+                },
+                formatarDadosSolicitacao(dados) {
+                    const obj = dados && typeof dados === 'object' ? dados : {};
+                    const rotulos = {
+                        edicao_informada: 'Edição informada',
+                        numero_ejc: 'Número do EJC',
+                        ejc: 'De qual EJC',
+                        funcao: 'Função',
+                        papel: 'Papel'
+                    };
+                    return Object.keys(obj)
+                        .filter((chave) => obj[chave] !== null && obj[chave] !== undefined && String(obj[chave]).trim() !== '')
+                        .map((chave) => ({
+                            chave: rotulos[chave] || chave,
+                            valor: obj[chave]
+                        }));
+                },
+                async carregarSolicitacoes() {
+                    this.solicitacoesLoading = true;
+                    try {
+                        const res = await fetch('/api/atualizacoes-cadastro/solicitacoes');
+                        this.solicitacoes = res.ok ? await res.json() : [];
+                    } catch (err) {
+                        console.error(err);
+                        this.solicitacoes = [];
+                    } finally {
+                        this.solicitacoesLoading = false;
+                    }
+                },
+                async atualizarSolicitacaoStatus(solicitacao, status) {
+                    try {
+                        const res = await fetch(`/api/atualizacoes-cadastro/solicitacoes/${solicitacao.id}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ status })
+                        });
+                        if (!res.ok) {
+                            const erro = await res.json().catch(() => ({}));
+                            alert(erro.error || 'Erro ao atualizar solicitação.');
+                            return;
+                        }
+                        solicitacao.status = status;
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao atualizar solicitação.');
+                    }
+                },
                 async carregar() {
                     this.comentariosLoading = true;
-                    this.naoEncontradosLoading = true;
+                    this.solicitacoesLoading = true;
                     try {
-                        const [cRes, nRes] = await Promise.all([
+                        const [cRes, sRes] = await Promise.all([
                             fetch('/api/atualizacoes-cadastro/comentarios'),
-                            fetch('/api/atualizacoes-cadastro/nao-encontrados')
+                            fetch('/api/atualizacoes-cadastro/solicitacoes')
                         ]);
                         this.comentarios = cRes.ok ? await cRes.json() : [];
-                        this.naoEncontrados = nRes.ok ? await nRes.json() : [];
+                        this.solicitacoes = sRes.ok ? await sRes.json() : [];
                     } catch (err) {
                         console.error(err);
                         this.comentarios = [];
-                        this.naoEncontrados = [];
+                        this.solicitacoes = [];
                     } finally {
                         this.comentariosLoading = false;
-                        this.naoEncontradosLoading = false;
+                        this.solicitacoesLoading = false;
                     }
                 }
             },

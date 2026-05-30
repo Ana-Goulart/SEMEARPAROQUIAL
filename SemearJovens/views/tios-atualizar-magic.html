@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Atualização Cadastral - Tios</title>
+    <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/css/velzon-theme.css">
+    <script src="/js/termos-uso-lgpd.js" defer></script>
+    <style>
+        body { min-height: 100vh; background: #f7f2e8; }
+        .shell { max-width: 920px; }
+        .brand-logo { width: 84px; height: 84px; object-fit: contain; }
+        .section-title { color: #8a6a36; font-size: .82rem; font-weight: 700; text-transform: uppercase; }
+    </style>
+</head>
+<body>
+    <div id="app" class="container py-4 shell">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4 p-md-5">
+                <div v-if="loading" class="text-center py-5"><div class="spinner-border text-primary"></div></div>
+                <div v-else-if="erro" class="text-center py-5">
+                    <img src="/assets/logo-oficial.png" class="brand-logo mb-3" alt="Semear Paroquial">
+                    <h1 class="h4">Link indisponível</h1>
+                    <p class="text-muted">{{ erro }}</p>
+                </div>
+                <div v-else-if="sucesso" class="text-center py-5">
+                    <img src="/assets/logo-oficial.png" class="brand-logo mb-3" alt="Semear Paroquial">
+                    <h1 class="h4">Cadastro atualizado</h1>
+                    <p class="text-muted">Obrigado por atualizar os dados do casal.</p>
+                </div>
+                <template v-else>
+                    <div class="text-center mb-4">
+                        <img src="/assets/logo-oficial.png" class="brand-logo" alt="Semear Paroquial">
+                        <h1 class="h4 mt-3 mb-1">Atualização cadastral dos tios</h1>
+                        <p class="text-muted mb-0">{{ form.nome_tio || 'Tio' }} e {{ form.nome_tia || 'Tia' }}</p>
+                    </div>
+
+                    <form class="row g-3" @submit.prevent="enviar">
+                        <div class="col-12"><div class="section-title">Dados do tio</div></div>
+                        <div class="col-md-6"><label class="form-label">Nome completo *</label><input class="form-control" v-model.trim="form.nome_tio" required></div>
+                        <div class="col-md-3"><label class="form-label">Telefone *</label><input class="form-control" v-model="form.telefone_tio" @input="form.telefone_tio = formatarTelefone(form.telefone_tio)" required maxlength="14"></div>
+                        <div class="col-md-3"><label class="form-label">CPF *</label><input class="form-control" v-model="form.cpf_tio" @input="form.cpf_tio = formatarCpf(form.cpf_tio)" required maxlength="14"></div>
+                        <div class="col-md-4"><label class="form-label">Data de nascimento</label><input class="form-control" type="date" v-model="form.data_nascimento_tio"></div>
+                        <div class="col-md-4"><label class="form-label">Tem deficiência?</label><select class="form-select" v-model="form.deficiencia_tio"><option :value="false">Não</option><option :value="true">Sim</option></select></div>
+                        <div class="col-md-4" v-if="form.deficiencia_tio"><label class="form-label">Qual?</label><input class="form-control" v-model.trim="form.qual_deficiencia_tio"></div>
+                        <div class="col-md-4"><label class="form-label">Restrição alimentar?</label><select class="form-select" v-model="form.restricao_alimentar_tio"><option :value="false">Não</option><option :value="true">Sim</option></select></div>
+                        <div class="col-md-8" v-if="form.restricao_alimentar_tio">
+                            <label class="form-label">Qual restrição?</label>
+                            <select class="form-select" v-model="form.detalhes_restricao_tio" required>
+                                <option value="">Selecione</option>
+                                <option v-for="opcao in opcoesRestricaoAlimentar" :key="`restr-tio-${opcao}`" :value="opcao">{{ opcao }}</option>
+                                <option v-if="form.detalhes_restricao_tio && !opcoesRestricaoAlimentar.includes(form.detalhes_restricao_tio)" :value="form.detalhes_restricao_tio">{{ form.detalhes_restricao_tio }}</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12 pt-2"><div class="section-title">Dados da tia</div></div>
+                        <div class="col-md-6"><label class="form-label">Nome completo *</label><input class="form-control" v-model.trim="form.nome_tia" required></div>
+                        <div class="col-md-3"><label class="form-label">Telefone *</label><input class="form-control" v-model="form.telefone_tia" @input="form.telefone_tia = formatarTelefone(form.telefone_tia)" required maxlength="14"></div>
+                        <div class="col-md-3"><label class="form-label">CPF *</label><input class="form-control" v-model="form.cpf_tia" @input="form.cpf_tia = formatarCpf(form.cpf_tia)" required maxlength="14"></div>
+                        <div class="col-md-4"><label class="form-label">Data de nascimento</label><input class="form-control" type="date" v-model="form.data_nascimento_tia"></div>
+                        <div class="col-md-4"><label class="form-label">Tem deficiência?</label><select class="form-select" v-model="form.deficiencia_tia"><option :value="false">Não</option><option :value="true">Sim</option></select></div>
+                        <div class="col-md-4" v-if="form.deficiencia_tia"><label class="form-label">Qual?</label><input class="form-control" v-model.trim="form.qual_deficiencia_tia"></div>
+                        <div class="col-md-4"><label class="form-label">Restrição alimentar?</label><select class="form-select" v-model="form.restricao_alimentar_tia"><option :value="false">Não</option><option :value="true">Sim</option></select></div>
+                        <div class="col-md-8" v-if="form.restricao_alimentar_tia">
+                            <label class="form-label">Qual restrição?</label>
+                            <select class="form-select" v-model="form.detalhes_restricao_tia" required>
+                                <option value="">Selecione</option>
+                                <option v-for="opcao in opcoesRestricaoAlimentar" :key="`restr-tia-${opcao}`" :value="opcao">{{ opcao }}</option>
+                                <option v-if="form.detalhes_restricao_tia && !opcoesRestricaoAlimentar.includes(form.detalhes_restricao_tia)" :value="form.detalhes_restricao_tia">{{ form.detalhes_restricao_tia }}</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12 pt-2"><div class="section-title">Dados do casal</div></div>
+                        <div class="col-md-6" v-if="form.origem_tipo === 'OUTRO_EJC'">
+                            <label class="form-label">Encontro *</label>
+                            <select class="form-select" v-model="form.outro_ejc_id" required>
+                                <option value="">Selecione</option>
+                                <option v-for="o in outrosEjcs" :key="o.id" :value="o.id">{{ o.paroquia }}{{ o.nome ? ` - ${o.nome}` : '' }}</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6" v-else>
+                            <label class="form-label">Encontro *</label>
+                            <select class="form-select" v-model="form.encontro_tipo" required>
+                                <option value="">Selecione</option>
+                                <option value="ECC">ECC</option>
+                                <option value="ECNA">ECNA</option>
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <div class="p-3 border rounded bg-light">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="termos" v-model="form.aceite_termos" required>
+                                    <label class="form-check-label" for="termos">Li e concordo com os termos de uso *</label>
+                                </div>
+                                <button class="btn btn-link btn-sm px-0 mt-2" type="button" onclick="abrirTermosUsoSemear()">Ler mais</button>
+                            </div>
+                        </div>
+                        <div class="col-12 d-grid"><button class="btn btn-primary" :disabled="enviando">{{ enviando ? 'Salvando...' : 'Salvar atualização' }}</button></div>
+                    </form>
+                </template>
+            </div>
+        </div>
+    </div>
+    <script>
+        const { createApp } = Vue;
+        createApp({
+            data() {
+                return {
+                    loading: true,
+                    enviando: false,
+                    erro: '',
+                    sucesso: false,
+                    outrosEjcs: [],
+                    opcoesRestricaoAlimentar: [
+                        'Alergia a amendoim',
+                        'Alergia a castanhas',
+                        'Alergia a frutos do mar',
+                        'APLV (Alergia à proteína do leite de vaca)',
+                        'Intolerante à lactose',
+                        'Intolerante a glúten (Celíaco)',
+                        'Não come carne vermelha',
+                        'Não come carne de porco',
+                        'Vegetariano',
+                        'Vegano',
+                        'Outras'
+                    ],
+                    token: window.location.pathname.split('/').filter(Boolean).pop() || '',
+                    form: { aceite_termos: false }
+                };
+            },
+            methods: {
+                digits(v) { return String(v || '').replace(/\D/g, ''); },
+                formatarCpf(v) { const d = this.digits(v).slice(0, 11); if (d.length <= 3) return d; if (d.length <= 6) return `${d.slice(0,3)}.${d.slice(3)}`; if (d.length <= 9) return `${d.slice(0,3)}.${d.slice(3,6)}.${d.slice(6)}`; return `${d.slice(0,3)}.${d.slice(3,6)}.${d.slice(6,9)}-${d.slice(9)}`; },
+                formatarTelefone(v) { const d = this.digits(v).slice(0, 11); if (d.length <= 2) return d ? `(${d}` : ''; if (d.length <= 7) return `(${d.slice(0,2)})${d.slice(2)}`; return `(${d.slice(0,2)})${d.slice(2,7)}-${d.slice(7)}`; },
+                async carregar() {
+                    try {
+                        const res = await fetch(`/api/atualizacoes-cadastro-public/tios/${encodeURIComponent(this.token)}`);
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) throw new Error(data.error || 'Link inválido.');
+                        this.outrosEjcs = data.outros_ejcs || [];
+                        this.form = { ...(data.casal || {}), aceite_termos: false };
+                        this.form.telefone_tio = this.formatarTelefone(this.form.telefone_tio);
+                        this.form.telefone_tia = this.formatarTelefone(this.form.telefone_tia);
+                        this.form.cpf_tio = this.formatarCpf(this.form.cpf_tio);
+                        this.form.cpf_tia = this.formatarCpf(this.form.cpf_tia);
+                    } catch (err) { this.erro = err.message || 'Não foi possível abrir o formulário.'; }
+                    finally { this.loading = false; }
+                },
+                async enviar() {
+                    if (this.digits(this.form.cpf_tio).length !== 11 || this.digits(this.form.cpf_tia).length !== 11) { alert('Informe CPF com 11 dígitos para tio e tia.'); return; }
+                    this.enviando = true;
+                    try {
+                        const res = await fetch(`/api/atualizacoes-cadastro-public/tios/${encodeURIComponent(this.token)}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(this.form) });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) throw new Error(data.error || 'Erro ao salvar.');
+                        this.sucesso = true;
+                    } catch (err) { alert(err.message || 'Erro ao salvar.'); }
+                    finally { this.enviando = false; }
+                }
+            },
+            watch: {
+                'form.restricao_alimentar_tio'(valor) {
+                    if (!valor) this.form.detalhes_restricao_tio = '';
+                },
+                'form.restricao_alimentar_tia'(valor) {
+                    if (!valor) this.form.detalhes_restricao_tia = '';
+                }
+            },
+            mounted() { this.carregar(); }
+        }).mount('#app');
+    </script>
+</body>
+</html>

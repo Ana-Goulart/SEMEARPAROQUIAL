@@ -613,6 +613,15 @@ function normalizePhoneDigits(value) {
     return String(value || '').replace(/\D/g, '');
 }
 
+function normalizeCpfDigits(value) {
+    const digits = String(value || '').replace(/\D/g, '').slice(0, 11);
+    return digits.length === 11 ? digits : '';
+}
+
+function hasCpfValue(value) {
+    return String(value || '').trim() !== '';
+}
+
 function normalizeEmailValue(value) {
     return String(value || '').trim().toLowerCase();
 }
@@ -659,6 +668,26 @@ function phoneBlindIndex(value) {
     return normalized ? blindIndex(normalized, 'lista-mestre:telefone') : null;
 }
 
+function formatCpfDigits(value) {
+    const digits = normalizeCpfDigits(value);
+    if (!digits) return normalizeTrimmedText(value);
+    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+}
+
+function encryptListaMestreCpf(value) {
+    const normalized = formatCpfDigits(value);
+    return normalized ? encryptValue(normalized, 'lista-mestre:cpf') : null;
+}
+
+function decryptListaMestreCpf(value) {
+    return normalizeTrimmedText(decryptValue(value, 'lista-mestre:cpf'));
+}
+
+function cpfBlindIndex(value) {
+    const normalized = normalizeCpfDigits(value);
+    return normalized ? blindIndex(normalized, 'lista-mestre:cpf') : null;
+}
+
 function encryptListaMestreEmail(value) {
     const normalized = normalizeTrimmedText(value);
     return normalized ? encryptValue(normalized, 'lista-mestre:email') : null;
@@ -687,6 +716,9 @@ function decryptListaMestreRecord(record) {
     const item = { ...record };
     if (Object.prototype.hasOwnProperty.call(item, 'telefone')) {
         item.telefone = decryptListaMestrePhone(item.telefone);
+    }
+    if (Object.prototype.hasOwnProperty.call(item, 'cpf')) {
+        item.cpf = decryptListaMestreCpf(item.cpf);
     }
     if (Object.prototype.hasOwnProperty.call(item, 'email')) {
         item.email = decryptListaMestreEmail(item.email);
@@ -888,6 +920,7 @@ async function ensureListaMestreSensitiveColumns() {
 async function validarDuplicidadeJovemListaMestre({
     tenantId,
     telefone,
+    cpf,
     email,
     instagram,
     excludeId = null,
@@ -895,9 +928,11 @@ async function validarDuplicidadeJovemListaMestre({
 }) {
     await ensureListaMestreSensitiveColumns();
     const normalizedPhone = normalizePhoneDigits(telefone);
+    const normalizedCpf = normalizeCpfDigits(cpf);
     const normalizedEmail = normalizeEmailValue(email);
     const normalizedInstagram = normalizeInstagramValue(instagram);
     const phoneHash = phoneBlindIndex(telefone);
+    const cpfHash = cpfBlindIndex(cpf);
     const emailHash = emailBlindIndex(email);
 
     if (normalizedPhone) {
@@ -921,6 +956,31 @@ async function validarDuplicidadeJovemListaMestre({
             return {
                 campo: 'telefone',
                 error: `Já existe um jovem com este telefone neste EJC: ${rows[0].nome_completo || 'registro existente'}.`
+            };
+        }
+    }
+
+    if (normalizedCpf) {
+        const params = [tenantId, cpfHash || '', normalizedCpf];
+        let sql = `
+            SELECT id, nome_completo, cpf
+            FROM jovens
+            WHERE tenant_id = ?
+              AND (
+                    cpf_hash = ?
+                 OR REPLACE(REPLACE(REPLACE(TRIM(COALESCE(cpf, '')), '.', ''), '-', ''), ' ', '') = ?
+              )
+        `;
+        if (excludeId) {
+            sql += ' AND id <> ?';
+            params.push(Number(excludeId));
+        }
+        sql += ' LIMIT 1';
+        const [rows] = await connection.query(sql, params);
+        if (rows && rows.length) {
+            return {
+                campo: 'cpf',
+                error: `Já existe um jovem com este CPF neste EJC: ${rows[0].nome_completo || 'registro existente'}.`
             };
         }
     }
@@ -981,6 +1041,7 @@ router.post('/validar-duplicidade', async (req, res) => {
         const duplicidade = await validarDuplicidadeJovemListaMestre({
             tenantId,
             telefone: req.body && req.body.telefone,
+            cpf: req.body && req.body.cpf,
             email: req.body && req.body.email,
             instagram: req.body && req.body.instagram,
             excludeId: req.body && req.body.excludeId ? Number(req.body.excludeId) : null
@@ -2028,7 +2089,7 @@ router.post('/', async (req, res) => {
         await ensureEquipeSaudeColumn();
         await ensureNaoServeEjcColumns();
         const {
-            nome_completo, apelido, telefone, email, data_nascimento, numero_ejc_fez, instagram, estado_civil, data_casamento,
+            nome_completo, apelido, telefone, cpf, email, data_nascimento, numero_ejc_fez, instagram, estado_civil, data_casamento,
             circulo, deficiencia, qual_deficiencia, restricao_alimentar, detalhes_restricao, sexo,
             endereco_rua, endereco_numero, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, equipe_saude,
             origem_ejc_tipo, outro_ejc_id, outro_ejc_numero, ja_foi_moita_inconfidentes, moita_ejc_id, moita_funcao
@@ -2037,6 +2098,7 @@ router.post('/', async (req, res) => {
         const nomeCompletoNormalizado = normalizeUpperText(nome_completo);
         const apelidoNormalizado = normalizeUpperText(apelido);
         const telefoneNormalizado = normalizeTrimmedText(telefone);
+        const cpfNormalizado = formatCpfDigits(cpf);
         const emailNormalizado = normalizeTrimmedText(email);
         const qualDeficienciaNormalizada = normalizeTrimmedText(qual_deficiencia);
         const detalhesRestricaoNormalizados = normalizeTrimmedText(detalhes_restricao);
@@ -2047,6 +2109,9 @@ router.post('/', async (req, res) => {
 
         if (!nomeCompletoNormalizado) {
             return res.status(400).json({ error: "Nome completo é obrigatório" });
+        }
+        if (hasCpfValue(cpf) && !normalizeCpfDigits(cpf)) {
+            return res.status(400).json({ error: 'CPF deve conter 11 dígitos.' });
         }
 
         const comEhMusico = await hasEhMusicoColumn();
@@ -2067,6 +2132,7 @@ router.post('/', async (req, res) => {
         const duplicidade = await validarDuplicidadeJovemListaMestre({
             tenantId,
             telefone: telefoneNormalizado,
+            cpf: cpfNormalizado,
             email: emailNormalizado,
             instagram
         });
@@ -2080,6 +2146,8 @@ router.post('/', async (req, res) => {
             'apelido',
             'telefone',
             'telefone_hash',
+            'cpf',
+            'cpf_hash',
             'email',
             'email_hash',
             'data_nascimento',
@@ -2114,6 +2182,8 @@ router.post('/', async (req, res) => {
             apelidoNormalizado,
             encryptListaMestrePhone(telefoneNormalizado),
             phoneBlindIndex(telefoneNormalizado),
+            encryptListaMestreCpf(cpfNormalizado),
+            cpfBlindIndex(cpfNormalizado),
             encryptListaMestreEmail(emailNormalizado),
             emailBlindIndex(emailNormalizado),
             normalizeDate(data_nascimento),
@@ -2220,6 +2290,7 @@ router.put('/:id', async (req, res) => {
             nome_completo: req.body.nome_completo !== undefined ? req.body.nome_completo : atual.nome_completo,
             apelido: req.body.apelido !== undefined ? req.body.apelido : atual.apelido,
             telefone: req.body.telefone !== undefined ? req.body.telefone : atual.telefone,
+            cpf: req.body.cpf !== undefined ? req.body.cpf : atual.cpf,
             email: req.body.email !== undefined ? req.body.email : (atual.email === undefined ? null : atual.email),
             sexo: req.body.sexo !== undefined ? req.body.sexo : atual.sexo,
             data_nascimento: req.body.data_nascimento !== undefined ? normalizeDate(req.body.data_nascimento) : (atual.data_nascimento ? normalizeDate(atual.data_nascimento) : null),
@@ -2291,6 +2362,7 @@ router.put('/:id', async (req, res) => {
         merged.nome_completo = normalizeUpperText(merged.nome_completo);
         merged.apelido = normalizeUpperText(merged.apelido);
         merged.telefone = normalizeTrimmedText(merged.telefone);
+        merged.cpf = formatCpfDigits(merged.cpf);
         merged.email = normalizeTrimmedText(merged.email);
         merged.qual_deficiencia = normalizeTrimmedText(merged.qual_deficiencia);
         merged.detalhes_restricao = normalizeTrimmedText(merged.detalhes_restricao);
@@ -2303,6 +2375,9 @@ router.put('/:id', async (req, res) => {
 
         if (!merged.nome_completo) {
             return res.status(400).json({ error: 'Nome completo é obrigatório' });
+        }
+        if (hasCpfValue(req.body.cpf) && !normalizeCpfDigits(req.body.cpf)) {
+            return res.status(400).json({ error: 'CPF deve conter 11 dígitos.' });
         }
 
         if (!merged.eh_musico) {
@@ -2338,6 +2413,7 @@ router.put('/:id', async (req, res) => {
         const duplicidade = await validarDuplicidadeJovemListaMestre({
             tenantId,
             telefone: merged.telefone,
+            cpf: merged.cpf,
             email: merged.email,
             instagram: merged.instagram,
             excludeId: id
@@ -2362,6 +2438,8 @@ router.put('/:id', async (req, res) => {
             apelido: merged.apelido || null,
             telefone: encryptListaMestrePhone(merged.telefone),
             telefone_hash: phoneBlindIndex(merged.telefone),
+            cpf: encryptListaMestreCpf(merged.cpf),
+            cpf_hash: cpfBlindIndex(merged.cpf),
             email: encryptListaMestreEmail(merged.email),
             email_hash: emailBlindIndex(merged.email),
             data_nascimento: merged.data_nascimento,
@@ -2909,6 +2987,10 @@ router.post('/importacao', async (req, res) => {
             }
 
             j.apelido = normalizarTextoOuNull(j.apelido, 120);
+            if (hasCpfValue(j.cpf) && !normalizeCpfDigits(j.cpf)) {
+                throw new Error(`Campo cpf fora do padrão: "${j.cpf}". Padrão normal: 000.000.000-00.`);
+            }
+            j.cpf = formatCpfDigits(j.cpf);
             j.email = normalizarTextoOuNull(j.email, 180);
             j.instagram = normalizarTextoOuNull(j.instagram, 100);
             j.qual_deficiencia = normalizarTextoOuNull(j.qual_deficiencia, 150);
@@ -2953,6 +3035,7 @@ router.post('/importacao', async (req, res) => {
                 await normalizarJovemImportacao(j);
                 let jovemId = null;
                 const telefoneHash = phoneBlindIndex(j.telefone);
+                const cpfHash = cpfBlindIndex(j.cpf);
                 const emailHash = emailBlindIndex(j.email);
 
                 const [exists] = await connection.query(
@@ -2976,6 +3059,7 @@ router.post('/importacao', async (req, res) => {
                 const duplicidade = await validarDuplicidadeJovemListaMestre({
                     tenantId,
                     telefone: j.telefone,
+                    cpf: j.cpf,
                     email: j.email,
                     instagram: j.instagram,
                     excludeId: exists.length > 0 ? exists[0].id : null,
@@ -2991,6 +3075,8 @@ router.post('/importacao', async (req, res) => {
                         'nome_completo = COALESCE(?, nome_completo)',
                         'telefone = COALESCE(?, telefone)',
                         'telefone_hash = COALESCE(?, telefone_hash)',
+                        'cpf = COALESCE(?, cpf)',
+                        'cpf_hash = COALESCE(?, cpf_hash)',
                         'apelido = COALESCE(?, apelido)',
                         'email = COALESCE(?, email)',
                         'email_hash = COALESCE(?, email_hash)',
@@ -3020,6 +3106,8 @@ router.post('/importacao', async (req, res) => {
                         j.nome_completo,
                         encryptListaMestrePhone(j.telefone),
                         telefoneHash,
+                        encryptListaMestreCpf(j.cpf),
+                        cpfHash,
                         j.apelido,
                         encryptListaMestreEmail(j.email),
                         emailHash,
@@ -3063,8 +3151,8 @@ router.post('/importacao', async (req, res) => {
                     atualizados++;
                 } else {
                     const insertFields = [
-                        'tenant_id', 'nome_completo', 'telefone', 'apelido', 'email', 'data_nascimento',
-                        'telefone_hash', 'email_hash',
+                        'tenant_id', 'nome_completo', 'telefone', 'cpf', 'apelido', 'email', 'data_nascimento',
+                        'telefone_hash', 'cpf_hash', 'email_hash',
                         'numero_ejc_fez',
                         'deficiencia', 'qual_deficiencia', 'restricao_alimentar', 'detalhes_restricao',
                         'instagram', 'estado_civil', 'data_casamento', 'circulo',
@@ -3073,8 +3161,8 @@ router.post('/importacao', async (req, res) => {
                         'nao_serve_ejc', 'motivo_nao_serve_ejc', 'equipe_saude'
                     ];
                     const insertParams = [
-                        tenantId, j.nome_completo, encryptListaMestrePhone(j.telefone), j.apelido, encryptListaMestreEmail(j.email), j.data_nascimento,
-                        telefoneHash, emailHash,
+                        tenantId, j.nome_completo, encryptListaMestrePhone(j.telefone), encryptListaMestreCpf(j.cpf), j.apelido, encryptListaMestreEmail(j.email), j.data_nascimento,
+                        telefoneHash, cpfHash, emailHash,
                         j.numero_ejc_fez,
                         j.deficiencia ? 1 : 0, encryptListaMestreSensitiveText(j.qual_deficiencia, 'qual-deficiencia'), j.restricao_alimentar ? 1 : 0,
                         encryptListaMestreSensitiveText(j.detalhes_restricao, 'detalhes-restricao'), j.instagram, j.estado_civil, j.data_casamento, j.circulo,

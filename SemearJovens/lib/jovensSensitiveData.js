@@ -120,6 +120,7 @@ async function ensureJovensSensitiveColumns(pool) {
 
 module.exports = {
     decryptJovemRecord,
+    decryptJovemEmail,
     decryptJovemPhone,
     encryptJovemEmail,
     encryptJovemPhone,
