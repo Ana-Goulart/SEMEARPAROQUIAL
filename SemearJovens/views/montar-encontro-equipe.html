@@ -397,7 +397,7 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <span v-if="Number(m.jovem_id || 0)" class="badge" :class="m.atualizado_cadastro ? 'bg-success' : 'bg-light text-dark'">
+                                        <span v-if="m.exibe_status_atualizacao !== false" class="badge" :class="m.atualizado_cadastro ? 'bg-success' : 'bg-light text-dark'">
                                             {{ m.atualizado_cadastro ? 'Sim' : 'Não' }}
                                         </span>
                                         <span v-else class="text-muted">-</span>
@@ -931,14 +931,23 @@
                         ]));
                         return base.map((membro) => {
                             const info = porJovem.get(Number(membro && membro.jovem_id || 0));
+                            const ehTio = Number(membro && membro.tio_casal_id || 0) > 0 && !Number(membro && membro.jovem_id || 0);
                             return {
                                 ...membro,
-                                atualizado_cadastro: info ? !!info.atualizado : false
+                                atualizado_cadastro: info ? !!info.atualizado : !!(ehTio && membro && membro.atualizado_cadastro),
+                                exibe_status_atualizacao: !!info || ehTio
                             };
                         });
                     } catch (err) {
                         console.warn('Não foi possível carregar status de atualização:', err);
-                        return base.map((membro) => ({ ...membro, atualizado_cadastro: false }));
+                        return base.map((membro) => {
+                            const ehTio = Number(membro && membro.tio_casal_id || 0) > 0 && !Number(membro && membro.jovem_id || 0);
+                            return {
+                                ...membro,
+                                atualizado_cadastro: !!(ehTio && membro && membro.atualizado_cadastro),
+                                exibe_status_atualizacao: ehTio
+                            };
+                        });
                     }
                 },
                 async carregarMembros() {
@@ -961,6 +970,7 @@
                         ecc_tipo: m.ecc_tipo || (fichaPorId.get(Number(m.tio_casal_id)) || {}).ecc_tipo || '',
                         outro_ejc_nome: m.outro_ejc_nome || (fichaPorId.get(Number(m.tio_casal_id)) || {}).outro_ejc_nome || '',
                         outro_ejc_paroquia: m.outro_ejc_paroquia || (fichaPorId.get(Number(m.tio_casal_id)) || {}).outro_ejc_paroquia || '',
+                        atualizado_cadastro: !!(Number(m.tio_casal_id || 0) > 0 && (m.termos_aceitos_em || (fichaPorId.get(Number(m.tio_casal_id)) || {}).termos_aceitos_em)),
                         confirmado: String(m.status_ligacao || '').toUpperCase() === 'ACEITOU'
                     })) : [];
                     this.membros = this.ordenarMembrosEquipe(await this.enriquecerMembrosComStatusAtualizacao(this.agruparCasaisJovensEquipe(membros)));

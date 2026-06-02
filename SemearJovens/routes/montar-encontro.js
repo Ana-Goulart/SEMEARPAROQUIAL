@@ -4830,6 +4830,7 @@ router.get('/:id/equipes/:equipeId/detalhes', async (req, res) => {
                    ef.nome AS funcao_nome, COALESCE(ef.papel_base, 'Membro') AS papel_base,
                    j.nome_completo AS jovem_nome, j.telefone AS jovem_telefone,
                    tc.id AS tio_casal_id, tc.nome_tio, tc.nome_tia, tc.telefone_tio, tc.telefone_tia,
+                   tc.termos_aceitos_em,
                    tc.encontro_tipo, COALESCE(tc.encontro_tipo, tecc.tipo) AS ecc_tipo
             FROM montagem_membros mm
             JOIN equipes_funcoes ef ON ef.id = mm.funcao_id
@@ -5208,6 +5209,7 @@ router.get('/:id/ligacoes', async (req, res) => {
                    mm.status_ligacao, mm.motivo_recusa, mm.eh_substituicao,
                    mm.nome_externo, mm.telefone_externo,
                    tc.id AS tio_casal_id, tc.nome_tio, tc.nome_tia, tc.telefone_tio, tc.telefone_tia,
+                   tc.termos_aceitos_em,
                    tc.encontro_tipo, COALESCE(tc.encontro_tipo, tecc.tipo) AS ecc_tipo
             FROM montagem_membros mm
             JOIN equipes e ON e.id = mm.equipe_id
@@ -5267,6 +5269,7 @@ router.get('/:id/ligacoes', async (req, res) => {
                 nome_tia: row.nome_tia,
                 telefone_tio: row.telefone_tio,
                 telefone_tia: row.telefone_tia,
+                termos_aceitos_em: row.termos_aceitos_em,
                 encontro_tipo: row.encontro_tipo,
                 ecc_tipo: row.ecc_tipo,
                 status_ligacao: row.status_ligacao,
