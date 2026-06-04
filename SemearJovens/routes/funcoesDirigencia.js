@@ -2,6 +2,11 @@ const express = require('express');
 const router = express.Router();
 const { pool } = require('../database');
 const { getTenantId, ensureTenantIsolation } = require('../lib/tenantIsolation');
+const {
+    MENU_ACCESS_OPTIONS,
+    normalizarAcessoMenus,
+    carregarAcessosUsuario
+} = require('../lib/menuAccess');
 
 let estruturaGarantida = false;
 
@@ -58,6 +63,21 @@ async function garantirEstrutura() {
         )
     `);
 
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS funcoes_dirigencia_menus (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            tenant_id INT NOT NULL,
+            funcao_id INT NOT NULL,
+            menu_key VARCHAR(40) NOT NULL,
+            access_level ENUM('view', 'edit') NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE KEY uniq_fd_menu_access (tenant_id, funcao_id, menu_key),
+            KEY idx_fd_menu_access_tenant_menu (tenant_id, menu_key),
+            CONSTRAINT fk_fd_menu_access_funcao FOREIGN KEY (funcao_id) REFERENCES funcoes_dirigencia(id) ON DELETE CASCADE
+        )
+    `);
+
     if (!(await hasColumn('funcoes_dirigencia', 'tenant_id'))) {
         await pool.query('ALTER TABLE funcoes_dirigencia ADD COLUMN tenant_id INT NULL AFTER id');
     }
@@ -98,6 +118,37 @@ function toIntArray(value) {
     return [...new Set(value.map(v => Number(v)).filter(v => Number.isInteger(v) && v > 0))];
 }
 
+async function sincronizarMenus(connection, tenantId, funcaoId, menus) {
+    const acessos = normalizarAcessoMenus(menus);
+    await connection.query(
+        `DELETE FROM funcoes_dirigencia_menus WHERE tenant_id = ? AND funcao_id = ?`,
+        [tenantId, funcaoId]
+    );
+    for (const acesso of acessos) {
+        await connection.query(
+            `INSERT INTO funcoes_dirigencia_menus (tenant_id, funcao_id, menu_key, access_level)
+             VALUES (?, ?, ?, ?)`,
+            [tenantId, funcaoId, acesso.menu_key, acesso.access_level]
+        );
+    }
+}
+
+router.get('/menus-opcoes', async (_req, res) => {
+    res.json(MENU_ACCESS_OPTIONS);
+});
+
+router.get('/meus-acessos', async (req, res) => {
+    try {
+        await garantirEstrutura();
+        const tenantId = getTenantId(req);
+        const access = await carregarAcessosUsuario(tenantId, req.user && req.user.id);
+        res.json({ menus: MENU_ACCESS_OPTIONS, access });
+    } catch (err) {
+        console.error('Erro ao listar acessos da dirigência:', err);
+        res.status(500).json({ error: 'Erro ao listar acessos da dirigência' });
+    }
+});
+
 router.get('/', async (req, res) => {
     const tenantId = getTenantId(req);
     try {
@@ -127,9 +178,27 @@ router.get('/', async (req, res) => {
             usuariosPorFuncao[v.funcao_id].push(v);
         });
 
+        const [menusRows] = await pool.query(`
+            SELECT funcao_id, menu_key, access_level
+            FROM funcoes_dirigencia_menus
+            WHERE tenant_id = ?
+              AND funcao_id IN (?)
+            ORDER BY menu_key ASC
+        `, [tenantId, ids]);
+
+        const menusPorFuncao = {};
+        menusRows.forEach((row) => {
+            if (!menusPorFuncao[row.funcao_id]) menusPorFuncao[row.funcao_id] = [];
+            menusPorFuncao[row.funcao_id].push({
+                menu_key: row.menu_key,
+                access_level: row.access_level
+            });
+        });
+
         const result = funcoes.map(f => ({
             ...f,
-            usuarios: usuariosPorFuncao[f.id] || []
+            usuarios: usuariosPorFuncao[f.id] || [],
+            menus: menusPorFuncao[f.id] || []
         }));
         res.json(result);
     } catch (err) {
@@ -143,6 +212,7 @@ router.post('/', async (req, res) => {
     const nome = String(req.body.nome || '').trim();
     const descricao = String(req.body.descricao || '').trim() || null;
     const usuarios = toIntArray(req.body.usuarios);
+    const menus = normalizarAcessoMenus(req.body.menus);
 
     if (!nome) return res.status(400).json({ error: 'Nome da função é obrigatório.' });
     if (!usuarios.length) return res.status(400).json({ error: 'Selecione ao menos um usuário.' });
@@ -182,6 +252,7 @@ router.post('/', async (req, res) => {
                 [tenantId, funcaoId, usuarioId]
             );
         }
+        await sincronizarMenus(connection, tenantId, funcaoId, menus);
 
         await connection.commit();
         res.status(201).json({ id: funcaoId, message: 'Função criada com sucesso.' });
@@ -202,6 +273,7 @@ router.put('/:id', async (req, res) => {
     const nome = String(req.body.nome || '').trim();
     const descricao = String(req.body.descricao || '').trim() || null;
     const usuarios = toIntArray(req.body.usuarios);
+    const menus = normalizarAcessoMenus(req.body.menus);
 
     if (!nome) return res.status(400).json({ error: 'Nome da função é obrigatório.' });
     if (!usuarios.length) return res.status(400).json({ error: 'Selecione ao menos um usuário.' });
@@ -248,6 +320,7 @@ router.put('/:id', async (req, res) => {
                 [tenantId, id, usuarioId]
             );
         }
+        await sincronizarMenus(connection, tenantId, id, menus);
 
         await connection.commit();
         res.json({ message: 'Função atualizada com sucesso.' });

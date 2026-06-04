@@ -213,8 +213,10 @@
                                 <th>Telefone</th>
                                 <th>EJC de Origem</th>
                                 <th>Nº EJC</th>
+                                <th>Período</th>
                                 <th>EJC</th>
                                 <th>Função</th>
+                                <th>Ações</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -223,8 +225,15 @@
                                 <td>{{ r.telefone || '-' }}</td>
                                 <td>{{ formatarEjcOrigem(r) }}</td>
                                 <td>{{ r.ejc_numero ? (r.ejc_numero + 'º EJC') : '-' }}</td>
+                                <td>{{ formatarPeriodoMoita(r) }}</td>
                                 <td>{{ nomeOutroEjc(r) }}</td>
                                 <td>{{ r.funcao_moita || '-' }}</td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-soft-secondary btn-ejc-action" @click="abrirModalEditarMoita(r)" title="Editar" aria-label="Editar">
+                                        <span class="btn-ejc-icon"><i class="fa-solid fa-pen-to-square icon-accent"></i></span>
+                                        <span class="btn-ejc-text">Editar</span>
+                                    </button>
+                                </td>
                             </tr>
                         </tbody>
                     </table>
@@ -238,12 +247,12 @@
                     <div class="modal-header modal-funcao-moita-header">
                         <h5 class="modal-title">
                             <i class="fa-solid fa-plus icon-accent"></i>
-                            {{ reservaPromocaoMoitaId ? 'Cadastrar Moita da Reserva' : 'Adicionar Moita' }}
+                            {{ tituloModalCadastroMoita }}
                         </h5>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
-                        <div v-if="!reservaPromocaoMoitaId" class="mb-3 position-relative">
+                        <div v-if="!reservaPromocaoMoitaId && !editandoMoitaId" class="mb-3 position-relative">
                             <label class="form-label">Buscar jovem da Lista Mestre *</label>
                             <input
                                 type="text"
@@ -274,7 +283,7 @@
                                     <div class="small text-muted">{{ resumoNascimento(jovemSelecionadoMoita) }}</div>
                                     <div class="small text-muted">{{ jovemSelecionadoMoita.telefone || 'Telefone não informado' }}</div>
                                 </div>
-                                <button v-if="!reservaPromocaoMoitaId" type="button" class="btn btn-sm btn-outline-secondary" @click="limparJovemCadastroMoita">Alterar</button>
+                                <button v-if="!reservaPromocaoMoitaId && !editandoMoitaId" type="button" class="btn btn-sm btn-outline-secondary" @click="limparJovemCadastroMoita">Alterar</button>
                             </div>
                         </div>
 
@@ -286,6 +295,25 @@
                                 class="form-control"
                                 v-model.number="formCadastroMoita.ejc_numero"
                                 placeholder="Ex: 2">
+                        </div>
+
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Data de início do encontro</label>
+                                <input
+                                    type="text"
+                                    class="form-control date-br"
+                                    v-model="formCadastroMoita.data_inicio"
+                                    placeholder="dd/mm/aaaa">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Data de fim do encontro</label>
+                                <input
+                                    type="text"
+                                    class="form-control date-br"
+                                    v-model="formCadastroMoita.data_fim"
+                                    placeholder="dd/mm/aaaa">
+                            </div>
                         </div>
 
                         <div class="mb-3">
@@ -548,9 +576,12 @@
                         jovem_id: null,
                         ejc_numero: null,
                         outro_ejc_id: null,
+                        data_inicio: '',
+                        data_fim: '',
                         funcao_moita: ''
                     },
                     reservaPromocaoMoitaId: null,
+                    editandoMoitaId: null,
                     jovemSelecionadoMoita: null,
                     searchQueryCadastroMoita: '',
                     searchResultsCadastroMoita: [],
@@ -569,6 +600,10 @@
                     return this.listaVisualizacao === 'HOMENS'
                         ? 'Lista de Reserva - Homens'
                         : 'Lista de Reserva - Mulheres';
+                },
+                tituloModalCadastroMoita() {
+                    if (this.editandoMoitaId) return 'Editar Moita';
+                    return this.reservaPromocaoMoitaId ? 'Cadastrar Moita da Reserva' : 'Adicionar Moita';
                 },
                 registrosFiltrados() {
                     const termos = this.normalizarTextoBusca(this.pesquisaRapida).split(' ').filter(Boolean);
@@ -599,6 +634,7 @@
                         ejcOrigem,
                         this.apenasDigitos(ejcOrigem),
                         registro?.ejc_numero,
+                        this.formatarPeriodoMoita(registro),
                         this.nomeOutroEjc(registro),
                         registro?.funcao_moita
                     ];
@@ -620,6 +656,7 @@
                         Telefone: r.telefone || '',
                         EjcOrigem: this.formatarEjcOrigem(r),
                         NumeroEJC: r.ejc_numero ? `${r.ejc_numero}º EJC` : '',
+                        Periodo: this.formatarPeriodoMoita(r),
                         EJC: this.nomeOutroEjc(r),
                         Funcao: r.funcao_moita || ''
                     }));
@@ -712,9 +749,12 @@
                         jovem_id: null,
                         ejc_numero: null,
                         outro_ejc_id: null,
+                        data_inicio: '',
+                        data_fim: '',
                         funcao_moita: ''
                     };
                     this.reservaPromocaoMoitaId = null;
+                    this.editandoMoitaId = null;
                     this.jovemSelecionadoMoita = null;
                     this.searchQueryCadastroMoita = '';
                     this.searchResultsCadastroMoita = [];
@@ -728,6 +768,36 @@
                         this.carregarFuncoes(),
                         this.carregarOutrosEjcs()
                     ]);
+                    if (!this.modalCadastroMoita) this.modalCadastroMoita = new bootstrap.Modal(document.getElementById('modalCadastroMoita'));
+                    this.modalCadastroMoita.show();
+                },
+                async abrirModalEditarMoita(registro) {
+                    if (!registro || !registro.id || !registro.jovem_id) {
+                        alert('Registro inválido.');
+                        return;
+                    }
+
+                    this.resetarCadastroMoita();
+                    this.editandoMoitaId = Number(registro.id);
+                    this.jovemSelecionadoMoita = {
+                        ...registro,
+                        id: Number(registro.jovem_id)
+                    };
+                    this.formCadastroMoita = {
+                        jovem_id: Number(registro.jovem_id),
+                        ejc_numero: registro.ejc_numero ? Number(registro.ejc_numero) : null,
+                        outro_ejc_id: registro.outro_ejc_id ? Number(registro.outro_ejc_id) : null,
+                        data_inicio: this.formatarDataCampo(registro.data_inicio),
+                        data_fim: this.formatarDataCampo(registro.data_fim),
+                        funcao_moita: registro.funcao_moita && registro.funcao_moita !== '-' ? String(registro.funcao_moita) : ''
+                    };
+                    this.searchQueryCadastroMoita = registro.nome_completo || '';
+
+                    await Promise.all([
+                        this.carregarFuncoes(),
+                        this.carregarOutrosEjcs()
+                    ]);
+
                     if (!this.modalCadastroMoita) this.modalCadastroMoita = new bootstrap.Modal(document.getElementById('modalCadastroMoita'));
                     this.modalCadastroMoita.show();
                 },
@@ -819,9 +889,47 @@
                 },
                 formatarData(dataIso) {
                     if (!dataIso) return '-';
+                    const isoDate = String(dataIso).match(/^(\d{4})-(\d{2})-(\d{2})/);
+                    if (isoDate) return `${isoDate[3]}/${isoDate[2]}/${isoDate[1]}`;
                     const data = new Date(dataIso);
                     if (Number.isNaN(data.getTime())) return '-';
                     return data.toLocaleDateString('pt-BR');
+                },
+                normalizarDataEnvio(valor) {
+                    const raw = String(valor || '').trim();
+                    if (!raw) return null;
+                    const br = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+                    if (br) {
+                        const [, dia, mes, ano] = br;
+                        const data = new Date(Number(ano), Number(mes) - 1, Number(dia));
+                        if (
+                            data.getFullYear() !== Number(ano)
+                            || data.getMonth() !== Number(mes) - 1
+                            || data.getDate() !== Number(dia)
+                        ) return null;
+                        return `${ano}-${mes}-${dia}`;
+                    }
+                    const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+                    if (!iso) return null;
+                    const [, ano, mes, dia] = iso;
+                    const data = new Date(Number(ano), Number(mes) - 1, Number(dia));
+                    return (
+                        data.getFullYear() === Number(ano)
+                        && data.getMonth() === Number(mes) - 1
+                        && data.getDate() === Number(dia)
+                    ) ? raw : null;
+                },
+                formatarPeriodoMoita(item) {
+                    const inicio = this.formatarData(item?.data_inicio);
+                    const fim = this.formatarData(item?.data_fim);
+                    if (inicio === '-' && fim === '-') return '-';
+                    if (inicio !== '-' && fim !== '-') return `${inicio} a ${fim}`;
+                    if (inicio !== '-') return `A partir de ${inicio}`;
+                    return `Até ${fim}`;
+                },
+                formatarDataCampo(dataIso) {
+                    const data = this.formatarData(dataIso);
+                    return data === '-' ? '' : data;
                 },
                 calcularIdade(dataIso) {
                     if (!dataIso) return null;
@@ -901,18 +1009,37 @@
                         alert('Selecione o jovem e preencha número do EJC e outro EJC.');
                         return;
                     }
+                    const dataInicio = this.normalizarDataEnvio(this.formCadastroMoita.data_inicio);
+                    const dataFim = this.normalizarDataEnvio(this.formCadastroMoita.data_fim);
+                    if (String(this.formCadastroMoita.data_inicio || '').trim() && !dataInicio) {
+                        alert('Informe a data de início no formato dd/mm/aaaa.');
+                        return;
+                    }
+                    if (String(this.formCadastroMoita.data_fim || '').trim() && !dataFim) {
+                        alert('Informe a data de fim no formato dd/mm/aaaa.');
+                        return;
+                    }
+                    if (dataInicio && dataFim && dataFim < dataInicio) {
+                        alert('A data de fim não pode ser anterior à data de início.');
+                        return;
+                    }
 
                     this.salvandoCadastroMoita = true;
                     try {
                         const promovendoReserva = !!this.reservaPromocaoMoitaId;
-                        const endpoint = promovendoReserva
+                        const editandoRegistro = !!this.editandoMoitaId;
+                        const endpoint = editandoRegistro
+                            ? `/api/moita/registros/${this.editandoMoitaId}`
+                            : promovendoReserva
                             ? `/api/moita/reservas/${this.reservaPromocaoMoitaId}/titular`
                             : '/api/lista-mestre/comissoes';
                         const funcaoMoita = String(this.formCadastroMoita.funcao_moita || '').trim();
-                        const payload = promovendoReserva
+                        const payload = (promovendoReserva || editandoRegistro)
                             ? {
                                 ejc_numero: this.formCadastroMoita.ejc_numero,
                                 outro_ejc_id: this.formCadastroMoita.outro_ejc_id,
+                                data_inicio: dataInicio,
+                                data_fim: dataFim,
                                 funcao_moita: funcaoMoita
                             }
                             : {
@@ -920,10 +1047,12 @@
                                 tipo: 'MOITA_OUTRO',
                                 ejc_numero: this.formCadastroMoita.ejc_numero,
                                 outro_ejc_id: this.formCadastroMoita.outro_ejc_id,
+                                data_inicio: dataInicio,
+                                data_fim: dataFim,
                                 funcao_garcom: funcaoMoita
                             };
                         const res = await fetch(endpoint, {
-                            method: 'POST',
+                            method: editandoRegistro ? 'PUT' : 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify(payload)
                         });
@@ -940,9 +1069,9 @@
                         await this.fecharModalAntesDoAlerta('modalCadastroMoita', this.modalCadastroMoita);
                         this.resetarCadastroMoita();
                         if (window.showFloatingAlert) {
-                            await window.showFloatingAlert(promovendoReserva ? 'jovem promovido para titular com sucesso.' : 'jovem adicionado com sucesso.', 'Sucesso');
+                            await window.showFloatingAlert(editandoRegistro ? 'registro atualizado com sucesso.' : promovendoReserva ? 'jovem promovido para titular com sucesso.' : 'jovem adicionado com sucesso.', 'Sucesso');
                         } else {
-                            alert(promovendoReserva ? 'jovem promovido para titular com sucesso.' : 'jovem adicionado com sucesso.');
+                            alert(editandoRegistro ? 'registro atualizado com sucesso.' : promovendoReserva ? 'jovem promovido para titular com sucesso.' : 'jovem adicionado com sucesso.');
                         }
                     } catch (err) {
                         alert('Erro ao adicionar moita.');

@@ -459,20 +459,14 @@
                                         <tr>
                                             <th>Nome completo</th>
                                             <th>Telefone</th>
-                                            <th>E-mail</th>
                                             <th>Data de nascimento</th>
-                                            <th>Idade que faz</th>
-                                            <th>Instagram</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <tr v-for="jovem in aniversariantes.jovens" :key="'aniv-jovem-'+jovem.id">
                                             <td class="fw-semibold">{{ jovem.nome_completo || '-' }}</td>
                                             <td>{{ jovem.telefone || '-' }}</td>
-                                            <td>{{ jovem.email || '-' }}</td>
                                             <td>{{ formatarData(jovem.data_nascimento) }}</td>
-                                            <td>{{ jovem.idade_que_faz || '-' }}</td>
-                                            <td>{{ jovem.instagram || '-' }}</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -488,21 +482,15 @@
                                     <thead>
                                         <tr>
                                             <th>Nome completo</th>
-                                            <th>Cônjuge</th>
                                             <th>Telefone</th>
                                             <th>Data de nascimento</th>
-                                            <th>Idade que faz</th>
-                                            <th>Tipo</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         <tr v-for="tio in aniversariantes.tios" :key="'aniv-tio-'+tio.tipo+'-'+tio.nome_completo+'-'+tio.data_nascimento">
                                             <td class="fw-semibold">{{ tio.nome_completo || '-' }}</td>
-                                            <td>{{ tio.conjuge || '-' }}</td>
                                             <td>{{ tio.telefone || '-' }}</td>
                                             <td>{{ formatarData(tio.data_nascimento) }}</td>
-                                            <td>{{ tio.idade_que_faz || '-' }}</td>
-                                            <td>{{ tio.tipo || '-' }}</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -766,21 +754,15 @@
                                     rows: (this.aniversariantes.jovens || []).map((jovem) => ({
                                         'Nome completo': jovem.nome_completo || '',
                                         'Telefone': jovem.telefone || '',
-                                        'E-mail': jovem.email || '',
-                                        'Data de nascimento': this.formatarData(jovem.data_nascimento),
-                                        'Idade que faz': jovem.idade_que_faz || '',
-                                        'Instagram': jovem.instagram || ''
+                                        'Data de nascimento': this.formatarData(jovem.data_nascimento)
                                     }))
                                 },
                                 {
                                     name: 'Tios',
                                     rows: (this.aniversariantes.tios || []).map((tio) => ({
                                         'Nome completo': tio.nome_completo || '',
-                                        'Conjuge': tio.conjuge || '',
                                         'Telefone': tio.telefone || '',
-                                        'Data de nascimento': this.formatarData(tio.data_nascimento),
-                                        'Idade que faz': tio.idade_que_faz || '',
-                                        'Tipo': tio.tipo || ''
+                                        'Data de nascimento': this.formatarData(tio.data_nascimento)
                                     }))
                                 }
                             ]

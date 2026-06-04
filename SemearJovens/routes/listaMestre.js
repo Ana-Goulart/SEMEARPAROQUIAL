@@ -1618,6 +1618,9 @@ router.get('/moita/registros', async (req, res) => {
                 j.numero_ejc_fez,
                 eorig.numero AS ejc_origem_numero,
                 jc.ejc_numero,
+                jc.data_inicio,
+                jc.data_fim,
+                jc.outro_ejc_id,
                 ${selectParoquia},
                 ${selectFuncao}
             FROM jovens_comissoes jc

@@ -421,9 +421,11 @@ async function ensureStructure() {
                 nome_tio VARCHAR(180) NOT NULL,
                 telefone_tio TEXT NULL,
                 data_nascimento_tio DATE NULL,
+                tio_viuvo TINYINT(1) NOT NULL DEFAULT 0,
                 nome_tia VARCHAR(180) NOT NULL,
                 telefone_tia TEXT NULL,
                 data_nascimento_tia DATE NULL,
+                tia_viuva TINYINT(1) NOT NULL DEFAULT 0,
                 restricao_alimentar TINYINT(1) NOT NULL DEFAULT 0,
                 deficiencia TINYINT(1) NOT NULL DEFAULT 0,
                 restricao_alimentar_tio TINYINT(1) NOT NULL DEFAULT 0,
@@ -459,6 +461,12 @@ async function ensureStructure() {
         } catch (e) { }
         try {
             await pool.query("ALTER TABLE tios_casais ADD COLUMN outro_ejc_id INT NULL AFTER origem_tipo");
+        } catch (e) { }
+        try {
+            await pool.query("ALTER TABLE tios_casais ADD COLUMN tio_viuvo TINYINT(1) NOT NULL DEFAULT 0 AFTER data_nascimento_tio");
+        } catch (e) { }
+        try {
+            await pool.query("ALTER TABLE tios_casais ADD COLUMN tia_viuva TINYINT(1) NOT NULL DEFAULT 0 AFTER data_nascimento_tia");
         } catch (e) { }
         try {
             await pool.query("ALTER TABLE tios_casais ADD COLUMN restricao_alimentar TINYINT(1) NOT NULL DEFAULT 0 AFTER data_nascimento_tia");
@@ -1242,14 +1250,18 @@ router.get('/casais', async (req, res) => {
         await ensureStructure();
         const tenantId = getTenantId(req);
         const tipo = String(req.query.tipo || '').trim().toUpperCase();
+        const resumo = String(req.query.resumo || '') === '1';
+        const casalIdFiltro = Number(req.query.id || 0);
         const whereTipo = tipo === 'OUTRO_EJC'
             ? "AND c.origem_tipo = 'OUTRO_EJC'"
             : tipo === 'EJC'
                 ? "AND COALESCE(c.origem_tipo, 'EJC') = 'EJC'"
                 : '';
+        const whereId = casalIdFiltro > 0 ? 'AND c.id = ?' : '';
+        const params = casalIdFiltro > 0 ? [tenantId, casalIdFiltro] : [tenantId];
         const [casais] = await pool.query(
-            `SELECT c.id, c.ecc_id, c.encontro_tipo, c.origem_tipo, c.outro_ejc_id, c.nome_tio, c.telefone_tio, c.cpf_tio, c.data_nascimento_tio,
-                    c.nome_tia, c.telefone_tia, c.cpf_tia, c.data_nascimento_tia, c.restricao_alimentar, c.deficiencia,
+            `SELECT c.id, c.ecc_id, c.encontro_tipo, c.origem_tipo, c.outro_ejc_id, c.nome_tio, c.telefone_tio, c.cpf_tio, c.data_nascimento_tio, c.tio_viuvo,
+                    c.nome_tia, c.telefone_tia, c.cpf_tia, c.data_nascimento_tia, c.tia_viuva, c.restricao_alimentar, c.deficiencia,
                     c.restricao_alimentar_tio, c.detalhes_restricao_tio, c.deficiencia_tio, c.qual_deficiencia_tio,
                     c.restricao_alimentar_tia, c.detalhes_restricao_tia, c.deficiencia_tia, c.qual_deficiencia_tia,
                     c.observacoes, c.termos_aceitos_em, c.foto_url,
@@ -1260,12 +1272,13 @@ router.get('/casais', async (req, res) => {
              LEFT JOIN outros_ejcs oe ON oe.id = c.outro_ejc_id AND oe.tenant_id = c.tenant_id
              WHERE c.tenant_id = ?
              ${whereTipo}
+             ${whereId}
              ORDER BY c.nome_tio ASC, c.nome_tia ASC`,
-            [tenantId]
+            params
         );
         const casalIds = (casais || []).map((c) => c.id).filter(Boolean);
         let servicosRows = [];
-        if (casalIds.length) {
+        if (!resumo && casalIds.length) {
             const [rows] = await pool.query(
                 `SELECT cs.casal_id, cs.equipe_id, cs.ejc_id, cs.papel, cs.subfuncao, eq.nome AS equipe_nome,
                         COALESCE(e.numero, m.numero_ejc) AS ejc_numero,
@@ -1282,7 +1295,8 @@ router.get('/casais', async (req, res) => {
         }
         const subfuncaoPorServico = new Map();
         if (
-            casalIds.length
+            !resumo
+            && casalIds.length
             && await hasTable('montagem_membros')
             && await hasTable('equipes_funcoes')
             && await hasTable('montagens')
@@ -1394,7 +1408,8 @@ router.get('/casais', async (req, res) => {
                 equipes: Array.from(
                     new Map(servicos.map((s) => [s.equipe_id, { id: s.equipe_id, nome: s.equipe_nome }])).values()
                 ),
-                equipe_ids: Array.from(new Set(servicos.map((s) => s.equipe_id)))
+                equipe_ids: Array.from(new Set(servicos.map((s) => s.equipe_id))),
+                detalhado: !resumo
             };
         });
         return res.json(payload);
@@ -1695,10 +1710,12 @@ router.post('/casais', async (req, res) => {
         const telefoneTio = normalizeTrimmedText(req.body.telefone_tio);
         const cpfTio = normalizeTrimmedText(req.body.cpf_tio);
         const dataNascimentoTio = normalizeDate(req.body.data_nascimento_tio);
+        const tioViuvo = parseBool(req.body.tio_viuvo);
         const nomeTia = normalizeUpperText(req.body.nome_tia);
         const telefoneTia = normalizeTrimmedText(req.body.telefone_tia);
         const cpfTia = normalizeTrimmedText(req.body.cpf_tia);
         const dataNascimentoTia = normalizeDate(req.body.data_nascimento_tia);
+        const tiaViuva = parseBool(req.body.tia_viuva);
         const restricaoAlimentarTio = parseBool(req.body.restricao_alimentar_tio);
         const detalhesRestricaoTio = restricaoAlimentarTio ? (String(req.body.detalhes_restricao_tio || '').trim() || null) : null;
         const deficienciaTio = parseBool(req.body.deficiencia_tio);
@@ -1718,8 +1735,11 @@ router.post('/casais', async (req, res) => {
         const equipeIds = Array.from(new Set(servicos.map((s) => s.equipe_id)));
         const ejcIds = Array.from(new Set(servicos.map((s) => s.ejc_id).filter((id) => Number.isInteger(id) && id > 0)));
 
-        if (!nomeTio || !nomeTia) {
-            return res.status(400).json({ error: 'Dados obrigatórios: nome do tio e nome da tia.' });
+        if (tioViuvo && tiaViuva) {
+            return res.status(400).json({ error: 'Marque apenas tio viúvo ou tia viúva.' });
+        }
+        if (tioViuvo ? !nomeTio : (tiaViuva ? !nomeTia : (!nomeTio || !nomeTia))) {
+            return res.status(400).json({ error: tioViuvo ? 'Informe o nome do tio viúvo.' : (tiaViuva ? 'Informe o nome da tia viúva.' : 'Dados obrigatórios: nome do tio e nome da tia.') });
         }
 
         const duplicidade = await validarDuplicidadeTelefoneCasal({
@@ -1763,16 +1783,16 @@ router.post('/casais', async (req, res) => {
 
         const [result] = await pool.query(
             `INSERT INTO tios_casais
-                (tenant_id, ecc_id, encontro_tipo, origem_tipo, outro_ejc_id, nome_tio, telefone_tio, cpf_tio, cpf_tio_hash, data_nascimento_tio, nome_tia, telefone_tia, cpf_tia, cpf_tia_hash, data_nascimento_tia,
+                (tenant_id, ecc_id, encontro_tipo, origem_tipo, outro_ejc_id, nome_tio, telefone_tio, cpf_tio, cpf_tio_hash, data_nascimento_tio, tio_viuvo, nome_tia, telefone_tia, cpf_tia, cpf_tia_hash, data_nascimento_tia, tia_viuva,
                  telefone_tio_hash, telefone_tia_hash,
                  restricao_alimentar, deficiencia,
                  restricao_alimentar_tio, detalhes_restricao_tio, deficiencia_tio, qual_deficiencia_tio,
                  restricao_alimentar_tia, detalhes_restricao_tia, deficiencia_tia, qual_deficiencia_tia, observacoes)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 tenantId, null, origemTipo === 'EJC' ? encontroTipo : null, origemTipo, origemTipo === 'OUTRO_EJC' ? outroEjcId : null,
-                nomeTio, encryptTioPhone(telefoneTio), encryptTioCpf(cpfTio), tioCpfHash(cpfTio), dataNascimentoTio,
-                nomeTia, encryptTioPhone(telefoneTia), encryptTioCpf(cpfTia), tioCpfHash(cpfTia), dataNascimentoTia,
+                nomeTio, encryptTioPhone(telefoneTio), encryptTioCpf(cpfTio), tioCpfHash(cpfTio), dataNascimentoTio, tioViuvo ? 1 : 0,
+                nomeTia, encryptTioPhone(telefoneTia), encryptTioCpf(cpfTia), tioCpfHash(cpfTia), dataNascimentoTia, tiaViuva ? 1 : 0,
                 tioPhoneHash(telefoneTio), tioPhoneHash(telefoneTia),
                 restricaoAlimentar ? 1 : 0, deficiencia ? 1 : 0,
                 restricaoAlimentarTio ? 1 : 0, encryptTioSensitiveText(detalhesRestricaoTio, 'detalhes-restricao-tio'), deficienciaTio ? 1 : 0, encryptTioSensitiveText(qualDeficienciaTio, 'qual-deficiencia-tio'),
@@ -1844,10 +1864,12 @@ router.put('/casais/:id', async (req, res) => {
         const telefoneTio = normalizeTrimmedText(req.body.telefone_tio);
         const cpfTio = normalizeTrimmedText(req.body.cpf_tio);
         const dataNascimentoTio = normalizeDate(req.body.data_nascimento_tio);
+        const tioViuvo = parseBool(req.body.tio_viuvo);
         const nomeTia = normalizeUpperText(req.body.nome_tia);
         const telefoneTia = normalizeTrimmedText(req.body.telefone_tia);
         const cpfTia = normalizeTrimmedText(req.body.cpf_tia);
         const dataNascimentoTia = normalizeDate(req.body.data_nascimento_tia);
+        const tiaViuva = parseBool(req.body.tia_viuva);
         const restricaoAlimentarTio = parseBool(req.body.restricao_alimentar_tio);
         const detalhesRestricaoTio = restricaoAlimentarTio ? (String(req.body.detalhes_restricao_tio || '').trim() || null) : null;
         const deficienciaTio = parseBool(req.body.deficiencia_tio);
@@ -1867,8 +1889,11 @@ router.put('/casais/:id', async (req, res) => {
         const equipeIds = Array.from(new Set(servicos.map((s) => s.equipe_id)));
         const ejcIds = Array.from(new Set(servicos.map((s) => s.ejc_id).filter((id) => Number.isInteger(id) && id > 0)));
 
-        if (!nomeTio || !nomeTia) {
-            return res.status(400).json({ error: 'Dados obrigatórios: nome do tio e nome da tia.' });
+        if (tioViuvo && tiaViuva) {
+            return res.status(400).json({ error: 'Marque apenas tio viúvo ou tia viúva.' });
+        }
+        if (tioViuvo ? !nomeTio : (tiaViuva ? !nomeTia : (!nomeTio || !nomeTia))) {
+            return res.status(400).json({ error: tioViuvo ? 'Informe o nome do tio viúvo.' : (tiaViuva ? 'Informe o nome da tia viúva.' : 'Dados obrigatórios: nome do tio e nome da tia.') });
         }
 
         const duplicidade = await validarDuplicidadeTelefoneCasal({
@@ -1914,7 +1939,7 @@ router.put('/casais/:id', async (req, res) => {
         const [result] = await pool.query(
             `UPDATE tios_casais
              SET ecc_id = ?, encontro_tipo = ?, origem_tipo = ?, outro_ejc_id = ?, nome_tio = ?, telefone_tio = ?, cpf_tio = ?, cpf_tio_hash = ?, data_nascimento_tio = ?,
-                 nome_tia = ?, telefone_tia = ?, cpf_tia = ?, cpf_tia_hash = ?, data_nascimento_tia = ?, telefone_tio_hash = ?, telefone_tia_hash = ?,
+                 tio_viuvo = ?, nome_tia = ?, telefone_tia = ?, cpf_tia = ?, cpf_tia_hash = ?, data_nascimento_tia = ?, tia_viuva = ?, telefone_tio_hash = ?, telefone_tia_hash = ?,
                  restricao_alimentar = ?, deficiencia = ?,
                  restricao_alimentar_tio = ?, detalhes_restricao_tio = ?, deficiencia_tio = ?, qual_deficiencia_tio = ?,
                  restricao_alimentar_tia = ?, detalhes_restricao_tia = ?, deficiencia_tia = ?, qual_deficiencia_tia = ?,
@@ -1923,7 +1948,7 @@ router.put('/casais/:id', async (req, res) => {
             [
                 null, origemTipo === 'EJC' ? encontroTipo : null, origemTipo, origemTipo === 'OUTRO_EJC' ? outroEjcId : null,
                 nomeTio, encryptTioPhone(telefoneTio), encryptTioCpf(cpfTio), tioCpfHash(cpfTio), dataNascimentoTio,
-                nomeTia, encryptTioPhone(telefoneTia), encryptTioCpf(cpfTia), tioCpfHash(cpfTia), dataNascimentoTia,
+                tioViuvo ? 1 : 0, nomeTia, encryptTioPhone(telefoneTia), encryptTioCpf(cpfTia), tioCpfHash(cpfTia), dataNascimentoTia, tiaViuva ? 1 : 0,
                 tioPhoneHash(telefoneTio), tioPhoneHash(telefoneTia),
                 restricaoAlimentar ? 1 : 0, deficiencia ? 1 : 0,
                 restricaoAlimentarTio ? 1 : 0, encryptTioSensitiveText(detalhesRestricaoTio, 'detalhes-restricao-tio'), deficienciaTio ? 1 : 0, encryptTioSensitiveText(qualDeficienciaTio, 'qual-deficiencia-tio'),

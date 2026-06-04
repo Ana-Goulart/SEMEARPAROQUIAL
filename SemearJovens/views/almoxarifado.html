@@ -85,25 +85,31 @@
             </div>
 
             <div class="row g-3 mb-3">
-                <div class="col-md-3">
+                <div class="col-12 col-sm-6 col-xl">
                     <div class="kpi-card">
                         <div class="kpi-label">Itens cadastrados</div>
                         <div class="kpi-value">{{ resumo.total_itens }}</div>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-12 col-sm-6 col-xl">
                     <div class="kpi-card">
                         <div class="kpi-label">Categorias ativas</div>
                         <div class="kpi-value">{{ resumo.total_categorias }}</div>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-12 col-sm-6 col-xl">
                     <div class="kpi-card">
                         <div class="kpi-label">Itens com baixo estoque</div>
                         <div class="kpi-value text-danger">{{ resumo.total_baixo_estoque }}</div>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-12 col-sm-6 col-xl">
+                    <div class="kpi-card">
+                        <div class="kpi-label">Itens em empréstimo</div>
+                        <div class="kpi-value text-warning">{{ resumo.total_itens_emprestados }}</div>
+                    </div>
+                </div>
+                <div class="col-12 col-sm-6 col-xl">
                     <div class="kpi-card">
                         <div class="kpi-label">Total de unidades</div>
                         <div class="kpi-value">{{ formatarQtd(resumo.total_unidades) }}</div>
@@ -140,10 +146,16 @@
                                 <option value="INATIVO">Inativo</option>
                             </select>
                         </div>
-                        <div class="col-md-2 d-flex align-items-end">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="filtroBaixo" v-model="filtros.baixo_estoque">
-                                <label class="form-check-label" for="filtroBaixo">Só baixo estoque</label>
+                        <div class="col-12 d-flex align-items-end">
+                            <div class="d-flex flex-wrap gap-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="filtroBaixo" v-model="filtros.baixo_estoque">
+                                    <label class="form-check-label" for="filtroBaixo">Só baixo estoque</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="filtroEmprestados" v-model="filtros.emprestados">
+                                    <label class="form-check-label" for="filtroEmprestados">Com empréstimo</label>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -162,7 +174,7 @@
                                 <th>Unidade</th>
                                 <th>Local</th>
                                 <th>Status</th>
-                                <th style="width: 280px;">Ações</th>
+                                <th class="text-end" style="min-width: 560px;">Ações</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -173,7 +185,16 @@
                             </tr>
                             <tr v-for="i in itens" :key="`item-${i.id}`">
                                 <td>
-                                    <div class="fw-semibold">{{ i.nome }}</div>
+                                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                                        <span class="fw-semibold">{{ i.nome }}</span>
+                                        <span
+                                            v-if="itemTemEmprestimo(i)"
+                                            class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle"
+                                            :title="`${formatarQtd(i.quantidade_emprestada)} ${i.unidade || 'UN'} em empréstimo`"
+                                        >
+                                            Emprestado: {{ formatarQtd(i.quantidade_emprestada) }} {{ i.unidade || 'UN' }}
+                                        </span>
+                                    </div>
                                     <div class="small text-muted">{{ i.descricao || '-' }}</div>
                                 </td>
                                 <td>{{ i.categoria_nome || '-' }}</td>
@@ -187,9 +208,15 @@
                                     </span>
                                 </td>
                                 <td>
-                                    <div class="d-flex gap-2">
+                                    <div class="d-flex justify-content-end gap-2 flex-nowrap">
                                         <button class="btn btn-edit-standard btn-sm" @click="abrirModalItem(i)">Editar</button>
-                                        <button class="btn btn-soft-secondary d-flex align-items-center gap-1" @click="abrirModalItem(i, 'movimentacao')">Empréstimo/Doação</button>
+                                        <button
+                                            v-if="permiteEmprestimoDoacao(i)"
+                                            class="btn btn-soft-secondary d-flex align-items-center gap-1"
+                                            @click="abrirModalItem(i, 'movimentacao')"
+                                        >
+                                            Empréstimo/Doação
+                                        </button>
                                         <button class="btn btn-sm btn-danger" @click="excluirItem(i)">Excluir</button>
                                     </div>
                                 </td>
@@ -214,7 +241,7 @@
                                 <th>Nome</th>
                                 <th>Descrição</th>
                                 <th>Status</th>
-                                <th style="width: 180px;">Ações</th>
+                                <th class="text-end" style="width: 180px;">Ações</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -227,7 +254,7 @@
                                     </span>
                                 </td>
                                 <td>
-                                    <div class="d-flex gap-2">
+                                    <div class="d-flex justify-content-end gap-2 flex-nowrap">
                                         <button class="btn btn-edit-standard btn-sm" @click="abrirModalCategoria(c)">Editar</button>
                                         <button class="btn btn-sm btn-danger" @click="excluirCategoria(c)">Excluir</button>
                                     </div>
@@ -253,7 +280,7 @@
                                 <th>Nome</th>
                                 <th>Descrição</th>
                                 <th>Status</th>
-                                <th style="width: 180px;">Ações</th>
+                                <th class="text-end" style="width: 180px;">Ações</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -266,7 +293,7 @@
                                     </span>
                                 </td>
                                 <td>
-                                    <div class="d-flex gap-2">
+                                    <div class="d-flex justify-content-end gap-2 flex-nowrap">
                                         <button class="btn btn-edit-standard btn-sm" @click="abrirModalLocal(l)">Editar</button>
                                         <button class="btn btn-sm btn-danger" @click="excluirLocal(l)">Excluir</button>
                                     </div>
@@ -291,7 +318,16 @@
                     <div class="modal-body">
                         <div class="mb-3 d-flex align-items-center border-bottom">
                             <button type="button" class="tab-link" :class="{ active: abaItem === 'dados' }" @click="abaItem = 'dados'">Dados</button>
-                            <button type="button" class="tab-link" :class="{ active: abaItem === 'movimentacao' }" :disabled="!formItem.id" @click="abaItem = 'movimentacao'">Empréstimo/Doação</button>
+                            <button
+                                v-if="formItemPermiteEmprestimoDoacao"
+                                type="button"
+                                class="tab-link"
+                                :class="{ active: abaItem === 'movimentacao' }"
+                                :disabled="!formItem.id"
+                                @click="abaItem = 'movimentacao'"
+                            >
+                                Empréstimo/Doação
+                            </button>
                         </div>
 
                         <div v-if="abaItem === 'dados'">
@@ -338,6 +374,19 @@
                                     <option value="INATIVO">Inativo</option>
                                 </select>
                             </div>
+                            <div class="form-check mt-3">
+                                <input
+                                    id="itemNaoEmprestavelDoado"
+                                    class="form-check-input"
+                                    type="checkbox"
+                                    :checked="!formItemPermiteEmprestimoDoacao"
+                                    @change="formItem.permite_emprestimo_doacao = $event.target.checked ? 0 : 1"
+                                >
+                                <label class="form-check-label" for="itemNaoEmprestavelDoado">
+                                    Item não emprestável/doado
+                                </label>
+                                <div class="form-text">Quando marcado, este item não terá a aba de empréstimo/doação.</div>
+                            </div>
                         </div>
 
                         <div v-else>
@@ -345,25 +394,29 @@
                                 <div><strong>Item:</strong> {{ formItem.nome }}</div>
                                 <div><strong>Estoque atual:</strong> {{ formatarQtd(formItem.quantidade_atual) }} {{ formItem.unidade || 'UN' }}</div>
                             </div>
-                            <div class="row g-2">
-                                <div class="col-md-4">
+                            <div class="row g-3">
+                                <div class="col-12 col-sm-6">
                                     <label class="form-label">Tipo</label>
                                     <select class="form-select" v-model="formMovimento.tipo">
                                         <option value="EMPRESTIMO">Empréstimo</option>
                                         <option value="DOACAO">Doação</option>
                                     </select>
                                 </div>
-                                <div class="col-md-8">
+                                <div class="col-12 col-sm-6">
+                                    <label class="form-label">Quantidade *</label>
+                                    <input type="number" min="0.01" step="0.01" class="form-control" v-model.number="formMovimento.quantidade">
+                                </div>
+                                <div class="col-12 col-md-8">
                                     <label class="form-label">Nome de quem está recebendo *</label>
                                     <input class="form-control" v-model.trim="formMovimento.nome_responsavel" maxlength="180">
                                 </div>
-                                <div class="col-md-8">
+                                <div class="col-12 col-md-4">
+                                    <label class="form-label">Número da pessoa</label>
+                                    <input class="form-control" v-model.trim="formMovimento.telefone_responsavel" maxlength="40" placeholder="Telefone">
+                                </div>
+                                <div class="col-12">
                                     <label class="form-label">Movimento/Pastoral *</label>
                                     <input class="form-control" v-model.trim="formMovimento.movimento_pastoral" maxlength="180">
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label">Quantidade *</label>
-                                    <input type="number" min="0.01" step="0.01" class="form-control" v-model.number="formMovimento.quantidade">
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label">Observação</label>
@@ -385,6 +438,7 @@
                                         <tr>
                                             <th>Tipo</th>
                                             <th>Quem recebeu</th>
+                                            <th>Número</th>
                                             <th>Movimento/Pastoral</th>
                                             <th>Qtd.</th>
                                             <th>Data</th>
@@ -399,6 +453,7 @@
                                                 </span>
                                             </td>
                                             <td>{{ m.nome_responsavel }}</td>
+                                            <td>{{ m.telefone_responsavel || '-' }}</td>
                                             <td>{{ m.movimento_pastoral }}</td>
                                             <td>{{ formatarQtd(m.quantidade) }} {{ formItem.unidade || 'UN' }}</td>
                                             <td>{{ formatarDataHora(m.created_at) }}</td>
@@ -517,6 +572,7 @@
                         total_categorias: 0,
                         total_itens: 0,
                         total_baixo_estoque: 0,
+                        total_itens_emprestados: 0,
                         total_unidades: 0
                     },
                     filtros: {
@@ -524,7 +580,8 @@
                         categoria_id: 0,
                         local_id: 0,
                         status: '',
-                        baixo_estoque: false
+                        baixo_estoque: false,
+                        emprestados: false
                     },
                     formItem: {
                         id: null,
@@ -536,6 +593,7 @@
                         quantidade_atual: 0,
                         quantidade_minima: 0,
                         localizacao: '',
+                        permite_emprestimo_doacao: 1,
                         status: 'ATIVO'
                     },
                     abaItem: 'dados',
@@ -545,6 +603,7 @@
                     formMovimento: {
                         tipo: 'EMPRESTIMO',
                         nome_responsavel: '',
+                        telefone_responsavel: '',
                         movimento_pastoral: '',
                         quantidade: 1,
                         observacao: ''
@@ -572,6 +631,9 @@
                 },
                 locaisAtivos() {
                     return (this.locais || []).filter((l) => Number(l.ativo) === 1);
+                },
+                formItemPermiteEmprestimoDoacao() {
+                    return this.permiteEmprestimoDoacao(this.formItem);
                 },
                 devolvidoPorEmprestimo() {
                     const mapa = {};
@@ -608,6 +670,64 @@
                     const devolvido = Number(this.devolvidoPorEmprestimo[Number(mov.id)] || 0);
                     return Number(Math.max(0, emprestado - devolvido).toFixed(2));
                 },
+                permiteEmprestimoDoacao(item) {
+                    return Number(item && item.permite_emprestimo_doacao) !== 0;
+                },
+                itemTemEmprestimo(item) {
+                    return Number(item && item.quantidade_emprestada) > 0;
+                },
+                confirmarDevolucaoCompleta(mensagem) {
+                    if (!window.bootstrap || !document.body) {
+                        return Promise.resolve(window.confirm(mensagem) ? 'total' : null);
+                    }
+
+                    return new Promise((resolve) => {
+                        let resolvido = false;
+                        const wrapper = document.createElement('div');
+                        wrapper.innerHTML = `
+                            <div class="modal fade" tabindex="-1" aria-hidden="true">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content border-0 shadow">
+                                        <div class="modal-header bg-light">
+                                            <h5 class="modal-title">Confirmação</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <p class="mb-0"></p>
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-outline-secondary" data-resposta="cancelar" data-ui-skip-standardize>Cancelar</button>
+                                            <button type="button" class="btn btn-soft-secondary" data-resposta="parcial" data-ui-skip-standardize>Não</button>
+                                            <button type="button" class="btn btn-primary" data-resposta="total" data-ui-skip-standardize>Sim</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        const modalEl = wrapper.firstElementChild;
+                        modalEl.querySelector('.modal-body p').textContent = mensagem;
+                        document.body.appendChild(modalEl);
+
+                        const modal = new bootstrap.Modal(modalEl, { backdrop: 'static' });
+                        const finalizar = (valor) => {
+                            if (resolvido) return;
+                            resolvido = true;
+                            resolve(valor);
+                            modal.hide();
+                        };
+
+                        modalEl.querySelector('[data-resposta="cancelar"]').addEventListener('click', () => finalizar(null));
+                        modalEl.querySelector('[data-resposta="parcial"]').addEventListener('click', () => finalizar('parcial'));
+                        modalEl.querySelector('[data-resposta="total"]').addEventListener('click', () => finalizar('total'));
+                        modalEl.addEventListener('hidden.bs.modal', () => {
+                            if (!resolvido) resolve(null);
+                            modal.dispose();
+                            modalEl.remove();
+                        }, { once: true });
+
+                        modal.show();
+                    });
+                },
                 async carregarResumo() {
                     const res = await fetch('/api/almoxarifado/resumo');
                     const data = await res.json().catch(() => ({}));
@@ -616,6 +736,7 @@
                         total_categorias: Number(data.total_categorias || 0),
                         total_itens: Number(data.total_itens || 0),
                         total_baixo_estoque: Number(data.total_baixo_estoque || 0),
+                        total_itens_emprestados: Number(data.total_itens_emprestados || 0),
                         total_unidades: Number(data.total_unidades || 0)
                     };
                 },
@@ -638,6 +759,7 @@
                         if (this.filtros.local_id) params.set('local_id', String(this.filtros.local_id));
                         if (this.filtros.status) params.set('status', this.filtros.status);
                         if (this.filtros.baixo_estoque) params.set('baixo_estoque', '1');
+                        if (this.filtros.emprestados) params.set('emprestados', '1');
                         const res = await fetch(`/api/almoxarifado/itens?${params.toString()}`);
                         const data = await res.json().catch(() => ([]));
                         this.itens = res.ok && Array.isArray(data) ? data : [];
@@ -661,6 +783,7 @@
                         quantidade_atual: Number(item.quantidade_atual || 0),
                         quantidade_minima: Number(item.quantidade_minima || 0),
                         localizacao: item.localizacao || '',
+                        permite_emprestimo_doacao: this.permiteEmprestimoDoacao(item) ? 1 : 0,
                         status: item.status || 'ATIVO'
                     } : {
                         id: null,
@@ -672,13 +795,15 @@
                         quantidade_atual: 0,
                         quantidade_minima: 0,
                         localizacao: '',
+                        permite_emprestimo_doacao: 1,
                         status: 'ATIVO'
                     };
-                    this.abaItem = aba === 'movimentacao' && this.formItem.id ? 'movimentacao' : 'dados';
+                    this.abaItem = aba === 'movimentacao' && this.formItem.id && this.formItemPermiteEmprestimoDoacao ? 'movimentacao' : 'dados';
                     this.movimentacoes = [];
                     this.formMovimento = {
                         tipo: 'EMPRESTIMO',
                         nome_responsavel: '',
+                        telefone_responsavel: '',
                         movimento_pastoral: '',
                         quantidade: 1,
                         observacao: ''
@@ -875,6 +1000,7 @@
                     this.formMovimento.quantidade = 1;
                     this.formMovimento.observacao = '';
                     this.formMovimento.nome_responsavel = '';
+                    this.formMovimento.telefone_responsavel = '';
                     this.formMovimento.movimento_pastoral = '';
                     await Promise.all([this.carregarMovimentacoes(this.formItem.id), this.carregarTudo()]);
                     await uiAlert(data.message || 'Movimentação registrada com sucesso.');
@@ -887,11 +1013,11 @@
                     }
 
                     const unidade = this.formItem.unidade || 'UN';
-                    const mesmaQuantidade = await uiConfirm(`Devolveu a mesma quantidade? (${this.formatarQtd(saldo)} ${unidade})`);
-                    if (mesmaQuantidade === null) return;
+                    const tipoDevolucao = await this.confirmarDevolucaoCompleta(`Devolveu a quantidade total em aberto? (${this.formatarQtd(saldo)} ${unidade})`);
+                    if (!tipoDevolucao) return;
 
                     let quantidadeDevolvida = saldo;
-                    if (!mesmaQuantidade) {
+                    if (tipoDevolucao === 'parcial') {
                         const valor = await uiPrompt('Informe a quantidade devolvida:', {
                             title: 'Devolução parcial',
                             defaultValue: String(saldo).replace('.', ',')
@@ -900,6 +1026,10 @@
                         quantidadeDevolvida = Number(String(valor).replace(',', '.'));
                         if (!Number.isFinite(quantidadeDevolvida) || quantidadeDevolvida <= 0) {
                             await uiAlert('Quantidade inválida.');
+                            return;
+                        }
+                        if (quantidadeDevolvida > saldo) {
+                            await uiAlert('A quantidade devolvida não pode ser maior que a quantidade em aberto.');
                             return;
                         }
                     }
@@ -914,6 +1044,7 @@
                                 referencia_emprestimo_id: emprestimo.id,
                                 quantidade: quantidadeDevolvida,
                                 nome_responsavel: emprestimo.nome_responsavel,
+                                telefone_responsavel: emprestimo.telefone_responsavel,
                                 movimento_pastoral: emprestimo.movimento_pastoral
                             })
                         });

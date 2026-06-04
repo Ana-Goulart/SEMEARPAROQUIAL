@@ -9,6 +9,21 @@ function getTenantId(req) {
     return Number(req.user?.tenant_id || 0);
 }
 
+function normalizarData(value) {
+    const raw = String(value || '').trim();
+    if (!raw) return null;
+    const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) return null;
+    const [, ano, mes, dia] = match;
+    const data = new Date(Number(ano), Number(mes) - 1, Number(dia));
+    if (
+        data.getFullYear() !== Number(ano)
+        || data.getMonth() !== Number(mes) - 1
+        || data.getDate() !== Number(dia)
+    ) return null;
+    return raw;
+}
+
 async function hasColumn(tableName, columnName) {
     const [rows] = await pool.query(`
         SELECT COUNT(*) AS cnt
@@ -248,9 +263,20 @@ router.post('/reservas/:id/titular', async (req, res) => {
     const ejcNumero = Number(req.body.ejc_numero);
     const outroEjcId = Number(req.body.outro_ejc_id);
     const funcaoMoita = String(req.body.funcao_moita || '').trim();
+    const dataInicio = normalizarData(req.body.data_inicio);
+    const dataFim = normalizarData(req.body.data_fim);
 
     if (!reservaId || !Number.isInteger(ejcNumero) || ejcNumero <= 0 || !outroEjcId) {
         return res.status(400).json({ error: 'Informe número do EJC e outro EJC.' });
+    }
+    if (req.body.data_inicio && !dataInicio) {
+        return res.status(400).json({ error: 'Data de início inválida.' });
+    }
+    if (req.body.data_fim && !dataFim) {
+        return res.status(400).json({ error: 'Data de fim inválida.' });
+    }
+    if (dataInicio && dataFim && dataFim < dataInicio) {
+        return res.status(400).json({ error: 'A data de fim não pode ser anterior à data de início.' });
     }
 
     const connection = await pool.getConnection();
@@ -287,9 +313,9 @@ router.post('/reservas/:id/titular', async (req, res) => {
 
         const [comissaoResult] = await connection.query(
             `INSERT INTO jovens_comissoes
-                (tenant_id, jovem_id, tipo, ejc_numero, funcao_garcom, outro_ejc_id)
-             VALUES (?, ?, 'MOITA_OUTRO', ?, ?, ?)`,
-            [tenantId, reserva.jovem_id, ejcNumero, funcaoMoita, outroEjcId]
+                (tenant_id, jovem_id, tipo, ejc_numero, data_inicio, data_fim, funcao_garcom, outro_ejc_id)
+             VALUES (?, ?, 'MOITA_OUTRO', ?, ?, ?, ?, ?)`,
+            [tenantId, reserva.jovem_id, ejcNumero, dataInicio, dataFim, funcaoMoita, outroEjcId]
         );
 
         await connection.query(
@@ -399,6 +425,9 @@ router.get('/registros', async (req, res) => {
                 j.numero_ejc_fez,
                 eorig.numero AS ejc_origem_numero,
                 jc.ejc_numero,
+                jc.data_inicio,
+                jc.data_fim,
+                jc.outro_ejc_id,
                 oe.nome AS outro_ejc_nome,
                 oe.paroquia AS outro_ejc_paroquia,
                 ${selectFuncao}
@@ -414,6 +443,71 @@ router.get('/registros', async (req, res) => {
     } catch (err) {
         console.error('Erro ao listar registros de moita:', err);
         res.status(500).json({ error: 'Erro ao listar registros de moita' });
+    }
+});
+
+router.put('/registros/:id', async (req, res) => {
+    const tenantId = getTenantId(req);
+    if (!tenantId) return res.status(401).json({ error: 'Tenant não identificado.' });
+
+    const id = Number(req.params.id);
+    const ejcNumero = Number(req.body.ejc_numero);
+    const outroEjcId = Number(req.body.outro_ejc_id);
+    const funcaoMoita = String(req.body.funcao_moita || '').trim() || null;
+    const dataInicio = normalizarData(req.body.data_inicio);
+    const dataFim = normalizarData(req.body.data_fim);
+
+    if (!id) return res.status(400).json({ error: 'ID inválido.' });
+    if (!Number.isInteger(ejcNumero) || ejcNumero <= 0 || !outroEjcId) {
+        return res.status(400).json({ error: 'Informe número do EJC e outro EJC.' });
+    }
+    if (req.body.data_inicio && !dataInicio) {
+        return res.status(400).json({ error: 'Data de início inválida.' });
+    }
+    if (req.body.data_fim && !dataFim) {
+        return res.status(400).json({ error: 'Data de fim inválida.' });
+    }
+    if (dataInicio && dataFim && dataFim < dataInicio) {
+        return res.status(400).json({ error: 'A data de fim não pode ser anterior à data de início.' });
+    }
+
+    try {
+        await garantirEstrutura();
+
+        const [[registro]] = await pool.query(
+            `SELECT id
+             FROM jovens_comissoes
+             WHERE id = ?
+               AND tenant_id = ?
+               AND tipo = 'MOITA_OUTRO'
+             LIMIT 1`,
+            [id, tenantId]
+        );
+        if (!registro) return res.status(404).json({ error: 'Registro de moita não encontrado.' });
+
+        const [outroRows] = await pool.query(
+            'SELECT id FROM outros_ejcs WHERE id = ? AND tenant_id = ? LIMIT 1',
+            [outroEjcId, tenantId]
+        );
+        if (!outroRows.length) return res.status(404).json({ error: 'Outro EJC não encontrado.' });
+
+        await pool.query(
+            `UPDATE jovens_comissoes
+             SET ejc_numero = ?,
+                 data_inicio = ?,
+                 data_fim = ?,
+                 funcao_garcom = ?,
+                 outro_ejc_id = ?
+             WHERE id = ?
+               AND tenant_id = ?
+               AND tipo = 'MOITA_OUTRO'`,
+            [ejcNumero, dataInicio, dataFim, funcaoMoita, outroEjcId, id, tenantId]
+        );
+
+        res.json({ message: 'Registro de moita atualizado com sucesso.' });
+    } catch (err) {
+        console.error('Erro ao atualizar registro de moita:', err);
+        res.status(500).json({ error: 'Erro ao atualizar registro de moita' });
     }
 });
 

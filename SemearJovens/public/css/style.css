@@ -185,6 +185,10 @@ h1, h2, h3, h4, h5, h6, .brand-name {
     display: none;
 }
 
+[data-menu-access-hidden="true"] {
+    display: none !important;
+}
+
 @media (max-width: 767.98px) {
     .btn-ejc-action {
         min-width: 42px;

@@ -50,6 +50,7 @@ async function garantirEstrutura() {
                 quantidade_atual DECIMAL(12,2) NOT NULL DEFAULT 0,
                 quantidade_minima DECIMAL(12,2) NOT NULL DEFAULT 0,
                 localizacao VARCHAR(180) NULL,
+                permite_emprestimo_doacao TINYINT(1) NOT NULL DEFAULT 1,
                 status ENUM('ATIVO','INATIVO') NOT NULL DEFAULT 'ATIVO',
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -71,6 +72,9 @@ async function garantirEstrutura() {
             await pool.query('ALTER TABLE almoxarifado_itens ADD COLUMN local_id INT NULL AFTER categoria_id');
             await pool.query('ALTER TABLE almoxarifado_itens ADD KEY idx_almox_itens_local (local_id)');
         }
+        if (!nomesColunasItens.has('permite_emprestimo_doacao')) {
+            await pool.query('ALTER TABLE almoxarifado_itens ADD COLUMN permite_emprestimo_doacao TINYINT(1) NOT NULL DEFAULT 1 AFTER localizacao');
+        }
 
         await pool.query(`
             CREATE TABLE IF NOT EXISTS almoxarifado_movimentacoes (
@@ -79,6 +83,7 @@ async function garantirEstrutura() {
                 item_id INT NOT NULL,
                 tipo ENUM('EMPRESTIMO','DOACAO','DEVOLUCAO') NOT NULL,
                 nome_responsavel VARCHAR(180) NOT NULL,
+                telefone_responsavel VARCHAR(40) NULL,
                 movimento_pastoral VARCHAR(180) NOT NULL,
                 quantidade DECIMAL(12,2) NOT NULL,
                 referencia_emprestimo_id INT NULL,
@@ -98,6 +103,9 @@ async function garantirEstrutura() {
         if (!nomesColunas.has('referencia_emprestimo_id')) {
             await pool.query('ALTER TABLE almoxarifado_movimentacoes ADD COLUMN referencia_emprestimo_id INT NULL AFTER quantidade');
             await pool.query('ALTER TABLE almoxarifado_movimentacoes ADD KEY idx_almox_mov_ref_emprestimo (referencia_emprestimo_id)');
+        }
+        if (!nomesColunas.has('telefone_responsavel')) {
+            await pool.query('ALTER TABLE almoxarifado_movimentacoes ADD COLUMN telefone_responsavel VARCHAR(40) NULL AFTER nome_responsavel');
         }
         const colunaTipo = (colunasMov || []).find((c) => String(c.Field || '').toLowerCase() === 'tipo');
         const tipoDef = String(colunaTipo && colunaTipo.Type ? colunaTipo.Type : '').toUpperCase();
@@ -131,6 +139,10 @@ function validarTipoMovimentacao(valor) {
     return '';
 }
 
+function normalizarFlagPermiteEmprestimoDoacao(valor) {
+    return valor === false || valor === 0 || String(valor) === '0' ? 0 : 1;
+}
+
 router.get('/resumo', async (req, res) => {
     const tenantId = getTenantId(req);
     if (!tenantId) return res.status(400).json({ error: 'Tenant inválido.' });
@@ -141,15 +153,35 @@ router.get('/resumo', async (req, res) => {
                 (SELECT COUNT(*) FROM almoxarifado_categorias WHERE tenant_id = ? AND ativo = 1) AS total_categorias,
                 (SELECT COUNT(*) FROM almoxarifado_itens WHERE tenant_id = ?) AS total_itens,
                 (SELECT COUNT(*) FROM almoxarifado_itens WHERE tenant_id = ? AND quantidade_atual <= quantidade_minima) AS total_baixo_estoque,
-                (SELECT COALESCE(SUM(quantidade_atual), 0) FROM almoxarifado_itens WHERE tenant_id = ?) AS total_unidades
+                (SELECT COALESCE(SUM(quantidade_atual), 0) FROM almoxarifado_itens WHERE tenant_id = ?) AS total_unidades,
+                (
+                    SELECT COUNT(*)
+                    FROM (
+                        SELECT emp.item_id
+                        FROM (
+                            SELECT tenant_id, item_id, SUM(quantidade) AS total_emprestado
+                            FROM almoxarifado_movimentacoes
+                            WHERE tenant_id = ? AND tipo = 'EMPRESTIMO'
+                            GROUP BY tenant_id, item_id
+                        ) emp
+                        LEFT JOIN (
+                            SELECT tenant_id, item_id, SUM(quantidade) AS total_devolvido
+                            FROM almoxarifado_movimentacoes
+                            WHERE tenant_id = ? AND tipo = 'DEVOLUCAO'
+                            GROUP BY tenant_id, item_id
+                        ) dev ON dev.tenant_id = emp.tenant_id AND dev.item_id = emp.item_id
+                        WHERE COALESCE(emp.total_emprestado, 0) - COALESCE(dev.total_devolvido, 0) > 0
+                    ) itens_emprestados
+                ) AS total_itens_emprestados
             `,
-            [tenantId, tenantId, tenantId, tenantId]
+            [tenantId, tenantId, tenantId, tenantId, tenantId, tenantId]
         );
         return res.json({
             total_categorias: Number(resumo.total_categorias || 0),
             total_itens: Number(resumo.total_itens || 0),
             total_baixo_estoque: Number(resumo.total_baixo_estoque || 0),
-            total_unidades: Number(resumo.total_unidades || 0)
+            total_unidades: Number(resumo.total_unidades || 0),
+            total_itens_emprestados: Number(resumo.total_itens_emprestados || 0)
         });
     } catch (err) {
         console.error('Erro ao carregar resumo do almoxarifado:', err);
@@ -355,6 +387,7 @@ router.get('/itens', async (req, res) => {
     const localId = Number(req.query.local_id || 0);
     const status = validarTexto(req.query.status, 10).toUpperCase();
     const baixoEstoque = String(req.query.baixo_estoque || '') === '1';
+    const somenteEmprestados = String(req.query.emprestados || '') === '1';
     try {
         await garantirEstrutura();
         const filtros = ['i.tenant_id = ?'];
@@ -383,13 +416,27 @@ router.get('/itens', async (req, res) => {
 
         const [rows] = await pool.query(
             `SELECT i.id, i.categoria_id, i.local_id, i.nome, i.descricao, i.unidade, i.quantidade_atual,
-                    i.quantidade_minima, i.localizacao, i.status, i.created_at, i.updated_at,
+                    i.quantidade_minima, i.localizacao, i.permite_emprestimo_doacao, i.status, i.created_at, i.updated_at,
                     c.nome AS categoria_nome,
-                    l.nome AS local_nome
+                    l.nome AS local_nome,
+                    COALESCE(emp.total_emprestado, 0) - COALESCE(dev.total_devolvido, 0) AS quantidade_emprestada
              FROM almoxarifado_itens i
              LEFT JOIN almoxarifado_categorias c ON c.id = i.categoria_id AND c.tenant_id = i.tenant_id
              LEFT JOIN almoxarifado_locais l ON l.id = i.local_id AND l.tenant_id = i.tenant_id
+             LEFT JOIN (
+                SELECT tenant_id, item_id, SUM(quantidade) AS total_emprestado
+                FROM almoxarifado_movimentacoes
+                WHERE tipo = 'EMPRESTIMO'
+                GROUP BY tenant_id, item_id
+             ) emp ON emp.tenant_id = i.tenant_id AND emp.item_id = i.id
+             LEFT JOIN (
+                SELECT tenant_id, item_id, SUM(quantidade) AS total_devolvido
+                FROM almoxarifado_movimentacoes
+                WHERE tipo = 'DEVOLUCAO'
+                GROUP BY tenant_id, item_id
+             ) dev ON dev.tenant_id = i.tenant_id AND dev.item_id = i.id
              WHERE ${filtros.join(' AND ')}
+             ${somenteEmprestados ? 'HAVING quantidade_emprestada > 0' : ''}
              ORDER BY i.status DESC, i.nome ASC`,
             params
         );
@@ -411,6 +458,7 @@ router.post('/itens', async (req, res) => {
     const quantidadeAtual = Number(req.body.quantidade_atual || 0);
     const quantidadeMinima = Number(req.body.quantidade_minima || 0);
     const localizacao = validarTexto(req.body.localizacao, 180) || null;
+    const permiteEmprestimoDoacao = normalizarFlagPermiteEmprestimoDoacao(req.body.permite_emprestimo_doacao);
     const status = validarTexto(req.body.status, 10).toUpperCase() === 'INATIVO' ? 'INATIVO' : 'ATIVO';
 
     if (!nome) return res.status(400).json({ error: 'Informe o nome do item.' });
@@ -437,9 +485,9 @@ router.post('/itens', async (req, res) => {
 
         const [result] = await pool.query(
             `INSERT INTO almoxarifado_itens
-                (tenant_id, categoria_id, local_id, nome, descricao, unidade, quantidade_atual, quantidade_minima, localizacao, status)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [tenantId, categoriaId, localId, nome, descricao, unidade, Number(quantidadeAtual.toFixed(2)), Number(quantidadeMinima.toFixed(2)), localizacao, status]
+                (tenant_id, categoria_id, local_id, nome, descricao, unidade, quantidade_atual, quantidade_minima, localizacao, permite_emprestimo_doacao, status)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [tenantId, categoriaId, localId, nome, descricao, unidade, Number(quantidadeAtual.toFixed(2)), Number(quantidadeMinima.toFixed(2)), localizacao, permiteEmprestimoDoacao, status]
         );
         return res.status(201).json({ id: result.insertId, message: 'Item cadastrado com sucesso.' });
     } catch (err) {
@@ -460,6 +508,7 @@ router.put('/itens/:id', async (req, res) => {
     const quantidadeAtual = Number(req.body.quantidade_atual || 0);
     const quantidadeMinima = Number(req.body.quantidade_minima || 0);
     const localizacao = validarTexto(req.body.localizacao, 180) || null;
+    const permiteEmprestimoDoacao = normalizarFlagPermiteEmprestimoDoacao(req.body.permite_emprestimo_doacao);
     const status = validarTexto(req.body.status, 10).toUpperCase() === 'INATIVO' ? 'INATIVO' : 'ATIVO';
 
     if (!nome) return res.status(400).json({ error: 'Informe o nome do item.' });
@@ -486,9 +535,9 @@ router.put('/itens/:id', async (req, res) => {
 
         const [result] = await pool.query(
             `UPDATE almoxarifado_itens
-             SET categoria_id = ?, local_id = ?, nome = ?, descricao = ?, unidade = ?, quantidade_atual = ?, quantidade_minima = ?, localizacao = ?, status = ?
+             SET categoria_id = ?, local_id = ?, nome = ?, descricao = ?, unidade = ?, quantidade_atual = ?, quantidade_minima = ?, localizacao = ?, permite_emprestimo_doacao = ?, status = ?
              WHERE id = ? AND tenant_id = ?`,
-            [categoriaId, localId, nome, descricao, unidade, Number(quantidadeAtual.toFixed(2)), Number(quantidadeMinima.toFixed(2)), localizacao, status, id, tenantId]
+            [categoriaId, localId, nome, descricao, unidade, Number(quantidadeAtual.toFixed(2)), Number(quantidadeMinima.toFixed(2)), localizacao, permiteEmprestimoDoacao, status, id, tenantId]
         );
         if (!result.affectedRows) return res.status(404).json({ error: 'Item não encontrado.' });
         return res.json({ message: 'Item atualizado com sucesso.' });
@@ -528,7 +577,7 @@ router.get('/itens/:id/movimentacoes', async (req, res) => {
             [tenantId]
         );
         const [[item]] = await pool.query(
-            `SELECT id, nome, unidade, quantidade_atual, quantidade_minima
+            `SELECT id, nome, unidade, quantidade_atual, quantidade_minima, permite_emprestimo_doacao
              FROM almoxarifado_itens
              WHERE id = ? AND tenant_id = ?
              LIMIT 1`,
@@ -537,7 +586,7 @@ router.get('/itens/:id/movimentacoes', async (req, res) => {
         if (!item) return res.status(404).json({ error: 'Item não encontrado.' });
 
         const [movimentacoes] = await pool.query(
-            `SELECT id, item_id, tipo, nome_responsavel, movimento_pastoral, quantidade, referencia_emprestimo_id, observacao, created_at
+            `SELECT id, item_id, tipo, nome_responsavel, telefone_responsavel, movimento_pastoral, quantidade, referencia_emprestimo_id, observacao, created_at
              FROM almoxarifado_movimentacoes
              WHERE tenant_id = ? AND item_id = ?
              ORDER BY created_at DESC, id DESC
@@ -559,6 +608,7 @@ router.post('/itens/:id/movimentacoes', async (req, res) => {
 
     const tipo = validarTipoMovimentacao(req.body.tipo);
     let nomeResponsavel = validarTexto(req.body.nome_responsavel, 180);
+    let telefoneResponsavel = validarTexto(req.body.telefone_responsavel, 40);
     let movimentoPastoral = validarTexto(req.body.movimento_pastoral, 180);
     const observacao = String(req.body.observacao || '').trim() || null;
     const quantidade = Number(req.body.quantidade || 0);
@@ -580,7 +630,7 @@ router.post('/itens/:id/movimentacoes', async (req, res) => {
         await conn.beginTransaction();
 
         const [[item]] = await conn.query(
-            `SELECT id, nome, unidade, quantidade_atual
+            `SELECT id, nome, unidade, quantidade_atual, permite_emprestimo_doacao
              FROM almoxarifado_itens
              WHERE id = ? AND tenant_id = ?
              LIMIT 1
@@ -599,7 +649,7 @@ router.post('/itens/:id/movimentacoes', async (req, res) => {
 
         if (tipo === 'DEVOLUCAO') {
             const [[emprestimo]] = await conn.query(
-                `SELECT id, nome_responsavel, movimento_pastoral, quantidade
+                `SELECT id, nome_responsavel, telefone_responsavel, movimento_pastoral, quantidade
                  FROM almoxarifado_movimentacoes
                  WHERE id = ? AND tenant_id = ? AND item_id = ? AND tipo = 'EMPRESTIMO'
                  LIMIT 1
@@ -627,14 +677,15 @@ router.post('/itens/:id/movimentacoes', async (req, res) => {
             }
 
             nomeResponsavel = nomeResponsavel || String(emprestimo.nome_responsavel || '');
+            telefoneResponsavel = telefoneResponsavel || String(emprestimo.telefone_responsavel || '');
             movimentoPastoral = movimentoPastoral || String(emprestimo.movimento_pastoral || '');
             novaQuantidade = Number((quantidadeAtual + quantidade).toFixed(2));
 
             await conn.query(
                 `INSERT INTO almoxarifado_movimentacoes
-                    (tenant_id, item_id, tipo, nome_responsavel, movimento_pastoral, quantidade, referencia_emprestimo_id, observacao)
-                 VALUES (?, ?, 'DEVOLUCAO', ?, ?, ?, ?, ?)`,
-                [tenantId, itemId, nomeResponsavel, movimentoPastoral, Number(quantidade.toFixed(2)), referenciaEmprestimoId, observacao]
+                    (tenant_id, item_id, tipo, nome_responsavel, telefone_responsavel, movimento_pastoral, quantidade, referencia_emprestimo_id, observacao)
+                 VALUES (?, ?, 'DEVOLUCAO', ?, ?, ?, ?, ?, ?)`,
+                [tenantId, itemId, nomeResponsavel, telefoneResponsavel || null, movimentoPastoral, Number(quantidade.toFixed(2)), referenciaEmprestimoId, observacao]
             );
             await conn.query(
                 `UPDATE almoxarifado_itens
@@ -644,6 +695,10 @@ router.post('/itens/:id/movimentacoes', async (req, res) => {
             );
             mensagem = 'Devolução registrada com sucesso.';
         } else {
+            if (Number(item.permite_emprestimo_doacao) !== 1) {
+                await conn.rollback();
+                return res.status(400).json({ error: 'Este item não permite empréstimo/doação.' });
+            }
             if (quantidade > quantidadeAtual) {
                 await conn.rollback();
                 return res.status(400).json({ error: 'Quantidade maior que o estoque disponível.' });
@@ -651,9 +706,9 @@ router.post('/itens/:id/movimentacoes', async (req, res) => {
             novaQuantidade = Number((quantidadeAtual - quantidade).toFixed(2));
             await conn.query(
                 `INSERT INTO almoxarifado_movimentacoes
-                    (tenant_id, item_id, tipo, nome_responsavel, movimento_pastoral, quantidade, referencia_emprestimo_id, observacao)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-                [tenantId, itemId, tipo, nomeResponsavel, movimentoPastoral, Number(quantidade.toFixed(2)), null, observacao]
+                    (tenant_id, item_id, tipo, nome_responsavel, telefone_responsavel, movimento_pastoral, quantidade, referencia_emprestimo_id, observacao)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [tenantId, itemId, tipo, nomeResponsavel, telefoneResponsavel || null, movimentoPastoral, Number(quantidade.toFixed(2)), null, observacao]
             );
 
             if (tipo === 'DOACAO' && novaQuantidade <= 0) {

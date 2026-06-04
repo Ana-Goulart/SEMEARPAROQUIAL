@@ -16,7 +16,7 @@ const menuTemplate = `
                 <span class="menu-link-icon"><i class="fa-solid fa-chart-line"></i></span><span class="link-text">Dashboard</span>
             </a>
 
-            <div class="menu-group" data-group="gestao">
+            <div class="menu-group d-none" data-group="gestao">
                 <button type="button" class="menu-group-toggle" data-group-toggle="gestao">
                     <span class="group-title"><span class="menu-group-icon"><i class="fa-solid fa-calendar-check"></i></span><span>GERENCIA</span></span>
                     <span class="menu-chevron">▸</span>
@@ -46,7 +46,7 @@ const menuTemplate = `
                 </div>
             </div>
 
-            <div class="menu-group" data-group="encontros">
+            <div class="menu-group d-none" data-group="encontros">
                 <button type="button" class="menu-group-toggle" data-group-toggle="encontros">
                     <span class="group-title"><span class="menu-group-icon"><i class="fa-solid fa-bullseye"></i></span><span>ENCONTROS</span></span>
                     <span class="menu-chevron">▸</span>
@@ -61,7 +61,7 @@ const menuTemplate = `
                 </div>
             </div>
 
-            <div class="menu-group" data-group="outros-ejcs">
+            <div class="menu-group d-none" data-group="outros-ejcs">
                 <button type="button" class="menu-group-toggle" data-group-toggle="outros-ejcs">
                     <span class="group-title"><span class="menu-group-icon"><i class="fa-solid fa-globe"></i></span><span>OUTROS EJCs</span></span>
                     <span class="menu-chevron">▸</span>
@@ -73,7 +73,7 @@ const menuTemplate = `
                 </div>
             </div>
 
-            <div class="menu-group" data-group="planejamento">
+            <div class="menu-group d-none" data-group="planejamento">
                 <button type="button" class="menu-group-toggle" data-group-toggle="planejamento">
                     <span class="group-title"><span class="menu-group-icon"><i class="fa-solid fa-calendar-days"></i></span><span>PLANEJAMENTO</span></span>
                     <span class="menu-chevron">▸</span>
@@ -85,7 +85,7 @@ const menuTemplate = `
                 </div>
             </div>
 
-            <div class="menu-group" data-group="secretaria">
+            <div class="menu-group d-none" data-group="secretaria">
                 <button type="button" class="menu-group-toggle" data-group-toggle="secretaria">
                     <span class="group-title"><span class="menu-group-icon"><i class="fa-solid fa-clipboard"></i></span><span>SECRETARIA</span></span>
                     <span class="menu-chevron">▸</span>
@@ -97,7 +97,7 @@ const menuTemplate = `
                 </div>
             </div>
 
-            <div class="menu-group" data-group="financeiro">
+            <div class="menu-group d-none" data-group="financeiro">
                 <button type="button" class="menu-group-toggle" data-group-toggle="financeiro">
                     <span class="group-title"><span class="menu-group-icon"><i class="fa-solid fa-wallet"></i></span><span>FINANCEIRO</span></span>
                     <span class="menu-chevron">▸</span>
@@ -109,7 +109,7 @@ const menuTemplate = `
                 </div>
             </div>
 
-            <div class="menu-group" data-group="minha-igreja">
+            <div class="menu-group d-none" data-group="minha-igreja">
                 <button type="button" class="menu-group-toggle" data-group-toggle="minha-igreja">
                     <span class="group-title"><span class="menu-group-icon"><i class="fa-solid fa-church"></i></span><span>MINHA IGREJA</span></span>
                     <span class="menu-chevron">▸</span>
@@ -329,6 +329,184 @@ async function carregarUsuarioDoTopo() {
         if (data && data.logged && data.user) {
             aplicarUsuarioNoTopo(data.user);
         }
+    } catch (_) { }
+}
+
+const MENU_ACCESS_GROUPS = {
+    gerencia: 'gestao',
+    encontros: 'encontros',
+    'outros-ejcs': 'outros-ejcs',
+    planejamento: 'planejamento',
+    secretaria: 'secretaria',
+    financeiro: 'financeiro',
+    'minha-igreja': 'minha-igreja'
+};
+
+const MENU_ACCESS_ROUTE_PREFIXES = [
+    { key: 'gerencia', prefixes: ['/gestaodoencontro/listamestre', '/gestaodoencontro/tios', '/tios', '/gestaodoencontro/formularios-atualizacao', '/gestaodoencontro/missaoexterna', '/gestaodoencontro/moita', '/gestaodoencontro/garcons', '/garcons', '/moita', '/configuracoes/coordenacoes', '/coordenadores', '/configuracoes/circulos', '/configuracoes/meuejc', '/meu-ejc'] },
+    { key: 'encontros', prefixes: ['/gestaodoencontro/equipes', '/equipes', '/gestaodoencontro/ejc', '/historico-equipes', '/ejc/detalhes', '/historico-equipes/detalhes', '/gestaodoencontro/ejc/detalhes', '/gestaodoencontro/montarencontro', '/montar-encontro', '/gestaodoencontro/votacao', '/votacao'] },
+    { key: 'outros-ejcs', prefixes: ['/gestaodoencontro/outrosejcs', '/gestaodoencontro/jovensoutroejc', '/outros-ejcs'] },
+    { key: 'planejamento', prefixes: ['/planejamento/calendario', '/calendario', '/planejamento/eventos', '/eventos', '/planejamento/inscricoes', '/inscricoes'] },
+    { key: 'secretaria', prefixes: ['/planejamento/atasdereuniao', '/ata-reunioes'] },
+    { key: 'financeiro', prefixes: ['/administrativo/financeiro', '/financeiro'] },
+    { key: 'minha-igreja', prefixes: ['/administrativo/contatos', '/contatos', '/planejamento/espacos', '/administrativo/almoxarifado'] }
+];
+
+const MENU_VIEW_ONLY_MUTATING_TERMS = [
+    'adicionar',
+    'alterar',
+    'apagar',
+    'atualizar cadastro',
+    'cadastrar',
+    'criar',
+    'deletar',
+    'editar',
+    'enviar',
+    'excluir',
+    'gravar',
+    'importar',
+    'inserir',
+    'novo',
+    'nova',
+    'remover',
+    'salvar'
+];
+
+const MENU_VIEW_ONLY_SAFE_TERMS = [
+    'baixar',
+    'buscar',
+    'coluna',
+    'configurar',
+    'detalhes',
+    'download',
+    'exportar',
+    'filtrar',
+    'filtro',
+    'limpar',
+    'pesquisa',
+    'pesquisar',
+    'preferencia',
+    'preferencias',
+    'visualizar'
+];
+
+let menuAccessMutationObserver = null;
+let menuAccessApplyScheduled = false;
+
+function normalizarTextoAcessoMenu(valor) {
+    return String(valor || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+function matchMenuAccessRoute(pathname) {
+    const path = String(pathname || '').split('?')[0].replace(/\/+$/, '') || '/';
+    for (const item of MENU_ACCESS_ROUTE_PREFIXES) {
+        if ((item.prefixes || []).some((prefix) => path === prefix || path.startsWith(`${prefix}/`))) {
+            return item.key;
+        }
+    }
+    return null;
+}
+
+function textoAcaoElemento(el) {
+    if (!el) return '';
+    const clone = el.cloneNode(true);
+    clone.querySelectorAll('input, i, svg, .btn-ejc-icon').forEach((node) => node.remove());
+    return [
+        clone.textContent,
+        el.getAttribute('title'),
+        el.getAttribute('aria-label'),
+        el.getAttribute('data-action')
+    ].filter(Boolean).join(' ');
+}
+
+function isComandoMutavelViewOnly(el) {
+    if (!(el instanceof HTMLElement)) return false;
+    if (el.closest('#sidebar, #page-topbar, .modal-backdrop, .toast, [data-menu-access-ignore]')) return false;
+    if (el.matches('.btn-close, .nav-link, .dropdown-toggle, [data-menu-access-ignore]')) return false;
+    const texto = normalizarTextoAcessoMenu(textoAcaoElemento(el));
+    if (!texto) return false;
+    if (MENU_VIEW_ONLY_SAFE_TERMS.some((term) => texto.includes(term))) return false;
+    return MENU_VIEW_ONLY_MUTATING_TERMS.some((term) => texto.includes(term));
+}
+
+function aplicarPermissaoViewOnlyNaTela() {
+    menuAccessApplyScheduled = false;
+    const menuKey = window.__SEMEAR_CURRENT_MENU_ACCESS_KEY || null;
+    const access = window.__SEMEAR_MENU_ACCESS || {};
+    const nivel = menuKey ? access[menuKey] : null;
+    const viewOnly = !!menuKey && nivel === 'view';
+
+    document.body.classList.toggle('menu-access-view-only', viewOnly);
+    document.body.dataset.menuAccessCurrent = menuKey || '';
+    document.body.dataset.menuAccessLevel = nivel || '';
+    window.__SEMEAR_CAN_EDIT_CURRENT_MENU = !menuKey || nivel === 'edit';
+
+    document.querySelectorAll('[data-menu-access-hidden="true"]').forEach((el) => {
+        el.removeAttribute('data-menu-access-hidden');
+        el.removeAttribute('aria-hidden');
+        if (el.dataset.menuAccessPreviousTabindex !== undefined) {
+            const previous = el.dataset.menuAccessPreviousTabindex;
+            if (previous) el.setAttribute('tabindex', previous);
+            else el.removeAttribute('tabindex');
+            delete el.dataset.menuAccessPreviousTabindex;
+        }
+    });
+
+    if (!viewOnly) return;
+
+    document.querySelectorAll('button, a.btn, label.btn, .btn-ejc-action').forEach((el) => {
+        if (!isComandoMutavelViewOnly(el)) return;
+        el.setAttribute('data-menu-access-hidden', 'true');
+        el.setAttribute('aria-hidden', 'true');
+        el.dataset.menuAccessPreviousTabindex = el.getAttribute('tabindex') || '';
+        el.setAttribute('tabindex', '-1');
+    });
+}
+
+function agendarAplicacaoPermissaoViewOnly() {
+    if (menuAccessApplyScheduled) return;
+    menuAccessApplyScheduled = true;
+    window.requestAnimationFrame(aplicarPermissaoViewOnlyNaTela);
+}
+
+function observarComandosPermissaoMenu() {
+    if (menuAccessMutationObserver || !document.body) return;
+    menuAccessMutationObserver = new MutationObserver(() => agendarAplicacaoPermissaoViewOnly());
+    menuAccessMutationObserver.observe(document.body, {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['class', 'title', 'aria-label', 'data-action']
+    });
+}
+
+function aplicarAcessosMenuLateral(access) {
+    const acessos = access && typeof access === 'object' ? access : {};
+    Object.keys(MENU_ACCESS_GROUPS).forEach((menuKey) => {
+        const groupKey = MENU_ACCESS_GROUPS[menuKey];
+        const groupEl = document.querySelector(`#sidebar .menu-group[data-group="${groupKey}"]`);
+        if (!groupEl) return;
+        const permitido = !!acessos[menuKey];
+        groupEl.classList.toggle('d-none', !permitido);
+        groupEl.setAttribute('aria-hidden', permitido ? 'false' : 'true');
+    });
+}
+
+async function carregarAcessosMenuLateral() {
+    try {
+        const res = await fetch('/api/funcoes-dirigencia/meus-acessos', { cache: 'no-store' });
+        if (!res.ok) return;
+        const data = await res.json().catch(() => ({}));
+        aplicarAcessosMenuLateral(data && data.access);
+        window.__SEMEAR_MENU_ACCESS = data && data.access ? data.access : {};
+        window.__SEMEAR_CURRENT_MENU_ACCESS_KEY = matchMenuAccessRoute(window.location.pathname);
+        observarComandosPermissaoMenu();
+        agendarAplicacaoPermissaoViewOnly();
     } catch (_) { }
 }
 
@@ -762,6 +940,7 @@ function injetarMenu(selector = '#app', position = 'prepend') {
 
     carregarNomeMeuEJC();
     carregarUsuarioDoTopo();
+    carregarAcessosMenuLateral();
     inicializarMascaraTelefoneGlobal();
     garantirUxUi();
     window.requestAnimationFrame(() => ocultarTituloDoMenuAtivo(window.location.pathname));

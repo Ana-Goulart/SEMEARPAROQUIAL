@@ -143,7 +143,7 @@
                                     cellspacing="0">
                                     <thead class="table-light">
                                         <tr>
-                                            <th><span class="sort-button">Nome do EJC</span></th>
+                                            <th><span class="sort-button">Nome do Movimento</span></th>
                                             <th><span class="sort-button">Paróquia</span></th>
                                             <th><span class="sort-button">Bairro</span></th>
                                             <th style="width: 150px;"><span class="sort-button">Ações</span></th>
@@ -230,7 +230,7 @@ Liturgia (Coordenador - Música)</div>
                             <input type="hidden" id="recordId">
 
                             <div class="mb-3">
-                                <label for="nome" class="form-label">Nome do EJC <span
+                                <label for="nome" class="form-label">Nome do Movimento <span
                                         class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="nome" required
                                     placeholder="Ex: 1º EJC de São Paulo">
@@ -269,7 +269,7 @@ Liturgia (Coordenador - Música)</div>
                             <h6 class="text-muted mb-3">Informações básicas</h6>
                             <div class="row g-3">
                                 <div class="col-md-4">
-                                    <label class="form-label">Nome do EJC</label>
+                                    <label class="form-label">Nome do Movimento</label>
                                     <input type="text" id="detailNome" class="form-control" maxlength="160">
                                 </div>
                                 <div class="col-md-4">
@@ -844,7 +844,7 @@ Liturgia (Coordenador - Música)</div>
                 const paroquia = document.getElementById('detailParoquia').value.trim();
                 const bairro = document.getElementById('detailBairro').value.trim();
                 if (!nome) {
-                    Swal.fire('Atenção', 'O nome do EJC é obrigatório.', 'warning');
+                    Swal.fire('Atenção', 'O nome do Movimento é obrigatório.', 'warning');
                     return;
                 }
 
