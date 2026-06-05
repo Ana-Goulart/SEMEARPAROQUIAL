@@ -12,16 +12,38 @@ function getTenantId(req) {
 function normalizarData(value) {
     const raw = String(value || '').trim();
     if (!raw) return null;
-    const match = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    const meses = {
+        jan: '01', janeiro: '01',
+        fev: '02', fevereiro: '02',
+        mar: '03', marco: '03', março: '03',
+        abr: '04', abril: '04',
+        mai: '05', maio: '05',
+        jun: '06', junho: '06',
+        jul: '07', julho: '07',
+        ago: '08', agosto: '08',
+        set: '09', setembro: '09',
+        out: '10', outubro: '10',
+        nov: '11', novembro: '11',
+        dez: '12', dezembro: '12'
+    };
+    const mesPorExtenso = raw.match(/^(\d{2})\/([a-zçãéíóú]+)\/(\d{4})$/i);
+    const br = raw.match(/^(\d{2})[/-](\d{2})[/-](\d{4})$/);
+    const iso = raw.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    const match = mesPorExtenso || br || iso;
     if (!match) return null;
-    const [, ano, mes, dia] = match;
+    const dia = iso ? match[3] : match[1];
+    const mes = mesPorExtenso
+        ? meses[match[2].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')]
+        : match[2];
+    const ano = iso ? match[1] : match[3];
+    if (!mes) return null;
     const data = new Date(Number(ano), Number(mes) - 1, Number(dia));
     if (
         data.getFullYear() !== Number(ano)
         || data.getMonth() !== Number(mes) - 1
         || data.getDate() !== Number(dia)
     ) return null;
-    return raw;
+    return `${ano}-${mes}-${dia}`;
 }
 
 async function hasColumn(tableName, columnName) {
