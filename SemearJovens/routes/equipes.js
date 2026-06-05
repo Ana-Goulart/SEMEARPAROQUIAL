@@ -18,6 +18,15 @@ let hasCorIconeColumnCache = null;
 let hasMembrosOutroEjcColumnCache = null;
 let hasEquipeAtivaColumnCache = null;
 
+function normalizarNomeEquipe(nome) {
+    return String(nome || '')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toLowerCase();
+}
+
 async function hasPapelBaseColumn() {
     if (hasPapelBaseColumnCache !== null) return hasPapelBaseColumnCache;
     const [rows] = await pool.query(`
@@ -295,12 +304,13 @@ router.get('/por-ejc/:ejcId', async (req, res) => {
               AND eq.tenant_id = ?
         `, [req.params.ejcId, tenantId, tenantId]);
         const [rows] = await pool.query(`
-            SELECT id, nome, descricao
+            SELECT id, nome, descricao, origem_prioridade
             FROM (
-                SELECT DISTINCT
+                SELECT
                     eq.id,
                     eq.nome,
-                    eq.descricao
+                    eq.descricao,
+                    1 AS origem_prioridade
                 FROM equipes eq
                 JOIN equipes_ejc ee
                   ON eq.id = ee.equipe_id
@@ -308,12 +318,13 @@ router.get('/por-ejc/:ejcId', async (req, res) => {
                 WHERE ee.ejc_id = ?
                   AND ee.tenant_id = ?
 
-                UNION
+                UNION ALL
 
-                SELECT DISTINCT
+                SELECT
                     MIN(eq2.id) AS id,
                     he.equipe AS nome,
-                    COALESCE(MIN(eq2.descricao), 'Equipe preservada no histórico do EJC') AS descricao
+                    COALESCE(MIN(eq2.descricao), 'Equipe preservada no histórico do EJC') AS descricao,
+                    2 AS origem_prioridade
                 FROM historico_equipes he
                 LEFT JOIN equipes eq2
                   ON eq2.nome = he.equipe
@@ -323,9 +334,19 @@ router.get('/por-ejc/:ejcId', async (req, res) => {
                   AND COALESCE(he.equipe, '') <> ''
                 GROUP BY he.equipe
             ) equipes_base
-            ORDER BY nome ASC
+            ORDER BY nome ASC, origem_prioridade ASC
         `, [req.params.ejcId, tenantId, req.params.ejcId, tenantId]);
-        res.json(rows.map((row, idx) => ({
+        const equipesUnicas = new Map();
+        (rows || []).forEach((row) => {
+            const chave = normalizarNomeEquipe(row.nome);
+            if (!chave) return;
+            const atual = equipesUnicas.get(chave);
+            if (atual && Number(atual.origem_prioridade || 99) <= Number(row.origem_prioridade || 99)) return;
+            equipesUnicas.set(chave, row);
+        });
+        const equipesOrdenadas = Array.from(equipesUnicas.values())
+            .sort((a, b) => String(a.nome || '').localeCompare(String(b.nome || ''), 'pt-BR'));
+        res.json(equipesOrdenadas.map((row, idx) => ({
             id: row.id || encodeURIComponent(String(row.nome || '').trim()) || `historico-${idx}`,
             nome: row.nome,
             descricao: row.descricao
