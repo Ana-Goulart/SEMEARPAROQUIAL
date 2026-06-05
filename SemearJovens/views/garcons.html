@@ -1025,6 +1025,10 @@
                                 data_fim: equipe.data_fim
                             })))
                         .sort((a, b) => {
+                            const data = this.timestampOrdenacaoData(b?.data_inicio) - this.timestampOrdenacaoData(a?.data_inicio);
+                            if (data !== 0) return data;
+                            const id = Number(b?.equipe_id || 0) - Number(a?.equipe_id || 0);
+                            if (id !== 0) return id;
                             const nome = String(a?.nome_completo || '').localeCompare(String(b?.nome_completo || ''), 'pt-BR');
                             if (nome !== 0) return nome;
                             return Number(b?.ejc_numero || 0) - Number(a?.ejc_numero || 0);
@@ -1295,6 +1299,14 @@
                     const dt = new Date(d);
                     if (Number.isNaN(dt.getTime())) return '';
                     return dt.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
+                },
+                timestampOrdenacaoData(data) {
+                    if (!data) return 0;
+                    const iso = String(data).match(/^(\d{4})-(\d{2})-(\d{2})/);
+                    const dt = iso
+                        ? new Date(Date.UTC(Number(iso[1]), Number(iso[2]) - 1, Number(iso[3])))
+                        : new Date(data);
+                    return Number.isNaN(dt.getTime()) ? 0 : dt.getTime();
                 },
                 calcularIdade(dataIso) {
                     if (!dataIso) return null;

@@ -459,7 +459,7 @@ router.get('/registros', async (req, res) => {
             LEFT JOIN outros_ejcs oe ON oe.id = jc.outro_ejc_id
             WHERE jc.tipo = 'MOITA_OUTRO'
               AND jc.tenant_id = ?
-            ORDER BY jc.id DESC
+            ORDER BY COALESCE(jc.data_inicio, '1000-01-01') DESC, jc.id DESC
         `, [tenantId]);
         res.json((rows || []).map((item) => decryptJovemRecord(item)));
     } catch (err) {

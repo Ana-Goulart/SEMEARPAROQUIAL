@@ -280,7 +280,7 @@ router.get('/equipes', async (req, res) => {
                    oe.nome AS outro_ejc_nome, oe.paroquia AS outro_ejc_paroquia, oe.bairro AS outro_ejc_bairro
             FROM garcons_equipes ge
             JOIN outros_ejcs oe ON oe.id = ge.outro_ejc_id
-            ORDER BY ge.created_at DESC, ge.id DESC
+            ORDER BY COALESCE(ge.data_inicio, '1000-01-01') DESC, ge.created_at DESC, ge.id DESC
         `);
 
         const [membros] = await pool.query(`
