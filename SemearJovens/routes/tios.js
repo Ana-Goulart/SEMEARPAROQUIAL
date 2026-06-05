@@ -1741,6 +1741,8 @@ router.post('/casais', async (req, res) => {
         if (tioViuvo ? !nomeTio : (tiaViuva ? !nomeTia : (!nomeTio || !nomeTia))) {
             return res.status(400).json({ error: tioViuvo ? 'Informe o nome do tio viúvo.' : (tiaViuva ? 'Informe o nome da tia viúva.' : 'Dados obrigatórios: nome do tio e nome da tia.') });
         }
+        const nomeTioDb = nomeTio || '';
+        const nomeTiaDb = nomeTia || '';
 
         const duplicidade = await validarDuplicidadeTelefoneCasal({
             tenantId,
@@ -1791,8 +1793,8 @@ router.post('/casais', async (req, res) => {
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 tenantId, null, origemTipo === 'EJC' ? encontroTipo : null, origemTipo, origemTipo === 'OUTRO_EJC' ? outroEjcId : null,
-                nomeTio, encryptTioPhone(telefoneTio), encryptTioCpf(cpfTio), tioCpfHash(cpfTio), dataNascimentoTio, tioViuvo ? 1 : 0,
-                nomeTia, encryptTioPhone(telefoneTia), encryptTioCpf(cpfTia), tioCpfHash(cpfTia), dataNascimentoTia, tiaViuva ? 1 : 0,
+                nomeTioDb, encryptTioPhone(telefoneTio), encryptTioCpf(cpfTio), tioCpfHash(cpfTio), dataNascimentoTio, tioViuvo ? 1 : 0,
+                nomeTiaDb, encryptTioPhone(telefoneTia), encryptTioCpf(cpfTia), tioCpfHash(cpfTia), dataNascimentoTia, tiaViuva ? 1 : 0,
                 tioPhoneHash(telefoneTio), tioPhoneHash(telefoneTia),
                 restricaoAlimentar ? 1 : 0, deficiencia ? 1 : 0,
                 restricaoAlimentarTio ? 1 : 0, encryptTioSensitiveText(detalhesRestricaoTio, 'detalhes-restricao-tio'), deficienciaTio ? 1 : 0, encryptTioSensitiveText(qualDeficienciaTio, 'qual-deficiencia-tio'),
@@ -1814,7 +1816,7 @@ router.post('/casais', async (req, res) => {
                 `INSERT IGNORE INTO tios_casal_servicos
                     (tenant_id, casal_id, equipe_id, ejc_id, papel, subfuncao, nome_tio_snapshot, telefone_tio_snapshot, nome_tia_snapshot, telefone_tia_snapshot)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [tenantId, casalId, servico.equipe_id, servico.ejc_id, servico.papel, servico.subfuncao, nomeTio, telefoneTio, nomeTia, telefoneTia]
+                [tenantId, casalId, servico.equipe_id, servico.ejc_id, servico.papel, servico.subfuncao, nomeTioDb, telefoneTio, nomeTiaDb, telefoneTia]
             );
         }
 
@@ -1822,9 +1824,9 @@ router.post('/casais', async (req, res) => {
             await sincronizarCasalComListaMestre({
                 tenantId,
                 casalId,
-                nomeTio,
+                nomeTio: nomeTioDb,
                 telefoneTio,
-                nomeTia,
+                nomeTia: nomeTiaDb,
                 telefoneTia
             });
         }
@@ -1832,9 +1834,9 @@ router.post('/casais', async (req, res) => {
         await sincronizarServicosCasalComMontagem({
             tenantId,
             casalId,
-            nomeTio,
+            nomeTio: nomeTioDb,
             telefoneTio,
-            nomeTia,
+            nomeTia: nomeTiaDb,
             telefoneTia
         });
 
@@ -1895,6 +1897,8 @@ router.put('/casais/:id', async (req, res) => {
         if (tioViuvo ? !nomeTio : (tiaViuva ? !nomeTia : (!nomeTio || !nomeTia))) {
             return res.status(400).json({ error: tioViuvo ? 'Informe o nome do tio viúvo.' : (tiaViuva ? 'Informe o nome da tia viúva.' : 'Dados obrigatórios: nome do tio e nome da tia.') });
         }
+        const nomeTioDb = nomeTio || '';
+        const nomeTiaDb = nomeTia || '';
 
         const duplicidade = await validarDuplicidadeTelefoneCasal({
             tenantId,
@@ -1947,8 +1951,8 @@ router.put('/casais/:id', async (req, res) => {
              WHERE id = ? AND tenant_id = ?`,
             [
                 null, origemTipo === 'EJC' ? encontroTipo : null, origemTipo, origemTipo === 'OUTRO_EJC' ? outroEjcId : null,
-                nomeTio, encryptTioPhone(telefoneTio), encryptTioCpf(cpfTio), tioCpfHash(cpfTio), dataNascimentoTio,
-                tioViuvo ? 1 : 0, nomeTia, encryptTioPhone(telefoneTia), encryptTioCpf(cpfTia), tioCpfHash(cpfTia), dataNascimentoTia, tiaViuva ? 1 : 0,
+                nomeTioDb, encryptTioPhone(telefoneTio), encryptTioCpf(cpfTio), tioCpfHash(cpfTio), dataNascimentoTio,
+                tioViuvo ? 1 : 0, nomeTiaDb, encryptTioPhone(telefoneTia), encryptTioCpf(cpfTia), tioCpfHash(cpfTia), dataNascimentoTia, tiaViuva ? 1 : 0,
                 tioPhoneHash(telefoneTio), tioPhoneHash(telefoneTia),
                 restricaoAlimentar ? 1 : 0, deficiencia ? 1 : 0,
                 restricaoAlimentarTio ? 1 : 0, encryptTioSensitiveText(detalhesRestricaoTio, 'detalhes-restricao-tio'), deficienciaTio ? 1 : 0, encryptTioSensitiveText(qualDeficienciaTio, 'qual-deficiencia-tio'),
@@ -1966,7 +1970,7 @@ router.put('/casais/:id', async (req, res) => {
                  telefone_tia_snapshot = ?
              WHERE casal_id = ?
                AND tenant_id = ?`,
-            [nomeTio, telefoneTio, nomeTia, telefoneTia, casalId, tenantId]
+            [nomeTioDb, telefoneTio, nomeTiaDb, telefoneTia, casalId, tenantId]
         );
 
         await pool.query('DELETE FROM tios_casal_equipes WHERE casal_id = ? AND tenant_id = ?', [casalId, tenantId]);
@@ -1984,7 +1988,7 @@ router.put('/casais/:id', async (req, res) => {
                 `INSERT IGNORE INTO tios_casal_servicos
                     (tenant_id, casal_id, equipe_id, ejc_id, papel, subfuncao, nome_tio_snapshot, telefone_tio_snapshot, nome_tia_snapshot, telefone_tia_snapshot)
                  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [tenantId, casalId, servico.equipe_id, servico.ejc_id, servico.papel, servico.subfuncao, nomeTio, telefoneTio, nomeTia, telefoneTia]
+                [tenantId, casalId, servico.equipe_id, servico.ejc_id, servico.papel, servico.subfuncao, nomeTioDb, telefoneTio, nomeTiaDb, telefoneTia]
             );
         }
 
@@ -1992,9 +1996,9 @@ router.put('/casais/:id', async (req, res) => {
             await sincronizarCasalComListaMestre({
                 tenantId,
                 casalId,
-                nomeTio,
+                nomeTio: nomeTioDb,
                 telefoneTio,
-                nomeTia,
+                nomeTia: nomeTiaDb,
                 telefoneTia
             });
         }
@@ -2002,9 +2006,9 @@ router.put('/casais/:id', async (req, res) => {
         await sincronizarServicosCasalComMontagem({
             tenantId,
             casalId,
-            nomeTio,
+            nomeTio: nomeTioDb,
             telefoneTio,
-            nomeTia,
+            nomeTia: nomeTiaDb,
             telefoneTia,
             aliasesNomes: [nomeCasalAnterior]
         });

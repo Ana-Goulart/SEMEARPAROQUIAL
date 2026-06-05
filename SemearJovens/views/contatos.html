@@ -40,13 +40,21 @@
             <div v-if="aba === 'contatos'" class="card border-0 shadow-sm mb-3">
                 <div class="card-body">
                     <div class="row g-2">
-                        <div class="col-md-6">
+                        <div class="col-12 col-md-4">
                             <label class="form-label small text-muted">Nome</label>
                             <input v-model.trim="filtroNome" class="form-control" placeholder="Buscar por nome">
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-12 col-md-4">
                             <label class="form-label small text-muted">Telefone</label>
                             <input v-model.trim="filtroTelefone" class="form-control" placeholder="Buscar por telefone">
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <label class="form-label small text-muted">Pastoral</label>
+                            <select v-model="filtroPastoral" class="form-select">
+                                <option value="">Todas as pastorais</option>
+                                <option value="__sem__">Sem pastoral</option>
+                                <option v-for="p in pastorais" :key="`filtro-pastoral-${p.id}`" :value="String(p.id)">{{ p.nome }}</option>
+                            </select>
                         </div>
                     </div>
                 </div>
@@ -249,6 +257,7 @@
                     contatos: [],
                     filtroNome: '',
                     filtroTelefone: '',
+                    filtroPastoral: '',
                     modal: null,
                     form: { id: null, nome: '', telefone: '', descricao: '', pastoral_id: null },
                     pastorais: [],
@@ -267,10 +276,14 @@
                 contatosFiltrados() {
                     const nome = String(this.filtroNome || '').trim().toLowerCase();
                     const tel = String(this.filtroTelefone || '').trim().toLowerCase();
+                    const pastoral = String(this.filtroPastoral || '').trim();
                     return (this.contatos || []).filter((c) => {
                         const okNome = !nome || String(c.nome || '').toLowerCase().includes(nome);
                         const okTel = !tel || String(c.telefone || '').toLowerCase().includes(tel);
-                        return okNome && okTel;
+                        const pastoralId = c.pastoral_id === undefined || c.pastoral_id === null ? '' : String(c.pastoral_id);
+                        const okPastoral = !pastoral
+                            || (pastoral === '__sem__' ? !pastoralId : pastoralId === pastoral);
+                        return okNome && okTel && okPastoral;
                     });
                 }
             },

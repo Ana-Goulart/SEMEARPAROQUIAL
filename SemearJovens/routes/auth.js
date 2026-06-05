@@ -9,6 +9,23 @@ const { ensureTenantStructure } = require('../lib/tenantSetup');
 const router = express.Router();
 
 const BCRYPT_ROUNDS = Number(process.env.BCRYPT_ROUNDS || 12);
+const CURRENT_RELEASE_NOTICE_VERSION = '1.1.0';
+
+async function ensureReleaseNoticeTable() {
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS usuario_release_notices (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            tenant_id INT NOT NULL,
+            usuario_id INT NOT NULL,
+            release_version VARCHAR(30) NOT NULL,
+            acknowledged_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            UNIQUE KEY uniq_usuario_release_notice (tenant_id, usuario_id, release_version),
+            KEY idx_usuario_release_notices_usuario (tenant_id, usuario_id),
+            KEY idx_usuario_release_notices_version (release_version)
+        )
+    `);
+}
 
 function hashLegacyPassword(password) {
     return crypto.createHash('sha256').update(String(password || '')).digest('hex');
@@ -49,6 +66,67 @@ router.get('/me', async (req, res) => {
     } catch (err) {
         console.error('Erro ao obter sessão:', err);
         return res.status(500).json({ error: 'Erro ao obter sessão.' });
+    }
+});
+
+router.get('/release-notice', async (req, res) => {
+    try {
+        if (!req.user || !req.user.id) return res.status(401).json({ error: 'Não autenticado.' });
+        await ensureTenantStructure();
+        await ensureReleaseNoticeTable();
+
+        const [userRows] = await pool.query(
+            'SELECT id, tenant_id FROM usuarios WHERE id = ? LIMIT 1',
+            [req.user.id]
+        );
+        if (!userRows.length) return res.status(401).json({ error: 'Não autenticado.' });
+
+        const user = userRows[0];
+        const [rows] = await pool.query(
+            `SELECT id
+             FROM usuario_release_notices
+             WHERE tenant_id = ?
+               AND usuario_id = ?
+               AND release_version = ?
+             LIMIT 1`,
+            [user.tenant_id, user.id, CURRENT_RELEASE_NOTICE_VERSION]
+        );
+
+        return res.json({
+            version: CURRENT_RELEASE_NOTICE_VERSION,
+            show: !rows.length
+        });
+    } catch (err) {
+        console.error('Erro ao consultar aviso de versão:', err);
+        return res.status(500).json({ error: 'Erro ao consultar aviso de versão.' });
+    }
+});
+
+router.post('/release-notice/ack', async (req, res) => {
+    try {
+        if (!req.user || !req.user.id) return res.status(401).json({ error: 'Não autenticado.' });
+        await ensureTenantStructure();
+        await ensureReleaseNoticeTable();
+
+        const version = String((req.body && req.body.version) || CURRENT_RELEASE_NOTICE_VERSION).trim() || CURRENT_RELEASE_NOTICE_VERSION;
+        const [userRows] = await pool.query(
+            'SELECT id, tenant_id FROM usuarios WHERE id = ? LIMIT 1',
+            [req.user.id]
+        );
+        if (!userRows.length) return res.status(401).json({ error: 'Não autenticado.' });
+
+        const user = userRows[0];
+        await pool.query(
+            `INSERT INTO usuario_release_notices (tenant_id, usuario_id, release_version)
+             VALUES (?, ?, ?)
+             ON DUPLICATE KEY UPDATE acknowledged_at = acknowledged_at`,
+            [user.tenant_id, user.id, version]
+        );
+
+        return res.json({ message: 'Aviso confirmado.' });
+    } catch (err) {
+        console.error('Erro ao confirmar aviso de versão:', err);
+        return res.status(500).json({ error: 'Erro ao confirmar aviso de versão.' });
     }
 });
 

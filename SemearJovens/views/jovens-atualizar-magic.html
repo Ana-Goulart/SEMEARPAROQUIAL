@@ -257,12 +257,17 @@
                             <div class="col-md-2"><label class="form-label">Nº EJC</label><input class="form-control" v-model.trim="form.garcom_numero_ejc"></div>
                             <div class="col-md-4">
                                 <label class="form-label">De qual EJC?</label>
-                                <select class="form-select" v-model="form.garcom_ejc">
+                                <input class="form-control" v-model.trim="form.garcom_ejc" placeholder="Digite o EJC">
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Função</label>
+                                <select class="form-select" v-model="form.garcom_funcao">
                                     <option value="">Selecione</option>
-                                    <option v-for="o in outrosEjcs" :key="`garcom-outro-${o.id}`" :value="rotuloOutroEjc(o)">{{ rotuloOutroEjc(o) }}</option>
+                                    <option value="Membro">Membro</option>
+                                    <option value="Coordenador">Coordenador</option>
+                                    <option value="Tio">Tio</option>
                                 </select>
                             </div>
-                            <div class="col-md-2"><label class="form-label">Função</label><input class="form-control" v-model.trim="form.garcom_funcao"></div>
                         </template>
                         <div class="col-md-4">
                             <label class="form-label">Você já foi Moita?</label>
@@ -275,10 +280,7 @@
                             <div class="col-md-2"><label class="form-label">Nº EJC</label><input class="form-control" v-model.trim="form.moita_numero_ejc"></div>
                             <div class="col-md-4">
                                 <label class="form-label">De qual EJC?</label>
-                                <select class="form-select" v-model="form.moita_ejc">
-                                    <option value="">Selecione</option>
-                                    <option v-for="o in outrosEjcs" :key="`moita-outro-${o.id}`" :value="rotuloOutroEjc(o)">{{ rotuloOutroEjc(o) }}</option>
-                                </select>
+                                <input class="form-control" v-model.trim="form.moita_ejc" placeholder="Digite o EJC">
                             </div>
                             <div class="col-md-2">
                                 <label class="form-label">Papel</label>

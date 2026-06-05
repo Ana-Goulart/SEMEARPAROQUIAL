@@ -258,6 +258,42 @@
             text-align: center;
         }
 
+        .release-notice-modal .modal-content {
+            border-radius: 18px;
+            overflow: hidden;
+        }
+
+        .release-notice-header {
+            background: linear-gradient(135deg, rgba(217, 166, 80, 0.2), rgba(255, 249, 239, 0.96));
+            border-bottom: 1px solid rgba(184, 135, 50, 0.16);
+        }
+
+        .release-notice-title {
+            color: #352512;
+            font-weight: 800;
+            margin: 0;
+        }
+
+        .release-notice-list {
+            display: grid;
+            gap: 0.85rem;
+            margin: 1.1rem 0;
+        }
+
+        .release-notice-item {
+            border: 1px solid rgba(184, 135, 50, 0.14);
+            border-radius: 14px;
+            background: rgba(255, 253, 248, 0.9);
+            padding: 0.95rem 1rem;
+            color: #4d3a21;
+        }
+
+        .release-notice-footer-text {
+            border-top: 1px solid rgba(184, 135, 50, 0.14);
+            padding-top: 1rem;
+            color: #6e5734;
+        }
+
         :root[data-theme="dark"] .hero-card,
         :root[data-theme="dark"] .panel-card,
         :root[data-theme="dark"] .quick-card,
@@ -309,6 +345,21 @@
         :root[data-theme="dark"] .birthday-empty {
             background: rgba(200, 161, 90, 0.08);
             border-color: rgba(210, 184, 136, 0.16);
+        }
+
+        :root[data-theme="dark"] .release-notice-header,
+        :root[data-theme="dark"] .release-notice-item {
+            background: linear-gradient(180deg, rgba(36, 29, 21, 0.98), rgba(29, 24, 18, 0.96));
+            border-color: rgba(210, 184, 136, 0.16);
+        }
+
+        :root[data-theme="dark"] .release-notice-title {
+            color: #f2e7d1;
+        }
+
+        :root[data-theme="dark"] .release-notice-item,
+        :root[data-theme="dark"] .release-notice-footer-text {
+            color: #bca37a;
         }
 
         @media (max-width: 1199.98px) {
@@ -503,6 +554,37 @@
                 </div>
             </div>
         </div>
+
+        <div class="modal fade release-notice-modal" id="modalReleaseNotice" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+            <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header release-notice-header">
+                        <div>
+                            <h5 class="modal-title release-notice-title">🎉 O Semear Paroquial está de cara nova! (Versão 1.1.0)</h5>
+                            <div class="text-muted small mt-1">Atualizações importantes da plataforma</div>
+                        </div>
+                    </div>
+                    <div class="modal-body">
+                        <p>Olá! Preparamos atualizações e melhorias importantes para facilitar a gestão da nossa paróquia e tornar o seu dia a dia mais ágil e seguro. Confira tudo o que mudou na nossa plataforma:</p>
+
+                        <div class="release-notice-list">
+                            <div class="release-notice-item">🔒 Controle de Permissões por Grupo: Agora, nas configurações de funções, você pode definir exatamente quais menus cada usuário terá acesso, permitindo escolher entre o modo de Apenas Visualização ou Apenas Edição.</div>
+                            <div class="release-notice-item">📞 Melhorias no Almoxarifado: Adicionamos uma trava de segurança que bloqueia o empréstimo de itens específicos que não podem sair da paróquia. Além disso, agora é obrigatório preencher o Telefone da pessoa para quem o item está sendo emprestado.</div>
+                            <div class="release-notice-item">📋 Cadastro de Tios/Tias: Adicionamos a opção de marcar o estado civil de Viuvez. Ao selecionar essa opção, o sistema permite avançar e salvar o cadastro deixando os dados do cônjuge em branco, sem travar o formulário.</div>
+                            <div class="release-notice-item">🌲 Missão Externa (Moita): Para um melhor controle cronológico das nossas atividades, adicionamos o campo oficial de Data em todas as missões externas.</div>
+                            <div class="release-notice-item">🔍 Busca Rápida por Pastoral: Encontrar contatos ficou mais simples! Adicionamos um campo de pesquisa por Pastoral diretamente dentro do menu de Contatos.</div>
+                        </div>
+
+                        <p class="release-notice-footer-text mb-0">O sistema já está atualizado e pronto para uso. Caso tenha alguma dúvida, procure a equipe de suporte de TI.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-primary" @click="confirmarReleaseNotice" :disabled="salvandoReleaseNotice">
+                            {{ salvandoReleaseNotice ? 'Confirmando...' : 'Entendi, ir para o Painel' }}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -519,6 +601,9 @@
                         limiteGb: 50,
                         nomeMeuEJC: '',
                         modalAniversariantes: null,
+                        modalReleaseNotice: null,
+                        releaseNoticeVersion: '1.1.0',
+                        salvandoReleaseNotice: false,
                         aniversariantesMes: 0,
                         aniversariantesAba: 'jovens',
                         carregandoAniversariantes: false,
@@ -707,6 +792,41 @@
                             this.loading = false;
                         }
                     },
+                    async consultarReleaseNotice() {
+                        try {
+                            const res = await fetch('/api/auth/release-notice', { cache: 'no-store' });
+                            const data = await res.json().catch(() => ({}));
+                            if (!res.ok || !data || !data.show) return;
+                            this.releaseNoticeVersion = data.version || this.releaseNoticeVersion;
+                            const el = document.getElementById('modalReleaseNotice');
+                            if (!el) return;
+                            this.modalReleaseNotice = bootstrap.Modal.getOrCreateInstance(el, {
+                                backdrop: 'static',
+                                keyboard: false
+                            });
+                            this.modalReleaseNotice.show();
+                        } catch (err) {
+                            console.error('Erro ao consultar aviso de versão:', err);
+                        }
+                    },
+                    async confirmarReleaseNotice() {
+                        this.salvandoReleaseNotice = true;
+                        try {
+                            const res = await fetch('/api/auth/release-notice/ack', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ version: this.releaseNoticeVersion })
+                            });
+                            const data = await res.json().catch(() => ({}));
+                            if (!res.ok) throw new Error(data.error || 'Não foi possível confirmar o aviso.');
+                            if (this.modalReleaseNotice) this.modalReleaseNotice.hide();
+                        } catch (err) {
+                            console.error(err);
+                            if (window.uiAlert) window.uiAlert(err.message || 'Não foi possível confirmar o aviso.');
+                        } finally {
+                            this.salvandoReleaseNotice = false;
+                        }
+                    },
                     abrirModalAniversariantes() {
                         if (!this.modalAniversariantes) {
                             const el = document.getElementById('modalAniversariantes');
@@ -772,6 +892,7 @@
                 mounted() {
                     this.carregarMeuEjc();
                     this.carregarResumo();
+                    this.consultarReleaseNotice();
                 }
             }).mount('#app');
         });

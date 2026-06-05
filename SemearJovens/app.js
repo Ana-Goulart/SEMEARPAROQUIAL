@@ -328,7 +328,14 @@ app.get('/inscricoes', acessoPlanejamento, (req, res) => res.sendFile(path.join(
 app.get('/meu-ejc', acessoGerencia, (req, res) => res.sendFile(path.join(__dirname, 'views', 'meu-ejc.html')));
 app.get('/visitantes', requireLoginView, (req, res) => res.sendFile(path.join(__dirname, 'views', 'visitantes.html')));
 app.get('/contatos', acessoMinhaIgreja, (req, res) => res.sendFile(path.join(__dirname, 'views', 'contatos.html')));
-app.get('/tios', acessoGerencia, (req, res) => res.sendFile(path.join(__dirname, 'views', 'tios.html')));
+function sendNoStoreHtml(res, fileName) {
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
+    return res.sendFile(path.join(__dirname, 'views', fileName));
+}
+
+app.get('/tios', acessoGerencia, (req, res) => sendNoStoreHtml(res, 'tios.html'));
 
 // --- ROTAS NOVAS DE NAVEGAÇÃO AGRUPADA ---
 app.get('/gestaodoencontro/listamestre', acessoGerencia, (req, res) => {
@@ -365,7 +372,9 @@ app.get('/gestaodoencontro/jovensoutroejc', acessoOutrosEjcs, (req, res) => {
     return res.redirect(`/gestaodoencontro/outrosejcs?${params.toString()}`);
 });
 app.get('/gestaodoencontro/visitantes', requireLoginView, (req, res) => res.sendFile(path.join(__dirname, 'views', 'visitantes.html')));
-app.get('/gestaodoencontro/tios', acessoGerencia, (req, res) => res.sendFile(path.join(__dirname, 'views', 'tios.html')));
+app.get('/gestaodoencontro/tios', acessoGerencia, (req, res) => {
+    return sendNoStoreHtml(res, 'tios.html');
+});
 app.get('/gestaodoencontro/montarencontro', acessoEncontros, (req, res) => res.sendFile(path.join(__dirname, 'views', 'montar-encontro.html')));
 app.get('/gestaodoencontro/regras', acessoEncontros, (_req, res) => res.redirect('/gestaodoencontro/ejc'));
 app.get('/gestaodoencontro/missaoexterna', acessoGerencia, (req, res) => res.sendFile(path.join(__dirname, 'views', 'missao-externa.html')));
