@@ -4,8 +4,10 @@ const db = require('../database');
 const { getTenantId } = require('../lib/tenantIsolation');
 const {
     decryptJovemRecord,
+    encryptJovemCpf,
     encryptJovemPhone,
     ensureJovensSensitiveColumns,
+    jovemCpfHash,
     jovemPhoneHash
 } = require('../lib/jovensSensitiveData');
 
@@ -382,7 +384,12 @@ router.post('/importar-jovens', async (req, res) => {
                 .map((row) => [Number(row.numero), row])
         );
 
-        const estadosCivisValidos = new Set(['Solteiro', 'Casado', 'Amasiado']);
+        const estadosCivisValidos = new Map([
+            ['solteiro', 'Solteiro'],
+            ['noivo', 'Noivo'],
+            ['casado', 'Casado'],
+            ['amasiado', 'Amasiado']
+        ]);
         const sexosValidos = new Set(['Feminino', 'Masculino']);
 
         await connection.beginTransaction();
@@ -412,9 +419,10 @@ router.post('/importar-jovens', async (req, res) => {
                     }
                 }
 
-                const estadoCivil = normalizarTextoOuNull(jovem.estado_civil, 30) || 'Solteiro';
-                if (!estadosCivisValidos.has(estadoCivil)) {
-                    throw new Error(`Campo estado_civil fora do padrão: "${estadoCivil}". Use Solteiro, Casado ou Amasiado.`);
+                const estadoCivilTexto = normalizarTextoOuNull(jovem.estado_civil, 30) || 'Solteiro';
+                const estadoCivil = estadosCivisValidos.get(estadoCivilTexto.toLocaleLowerCase('pt-BR'));
+                if (!estadoCivil) {
+                    throw new Error(`Campo estado_civil fora do padrão: "${estadoCivilTexto}". Use Solteiro, Noivo, Casado ou Amasiado.`);
                 }
                 const sexo = normalizarTextoOuNull(jovem.sexo, 20);
                 if (sexo && !sexosValidos.has(sexo)) {
@@ -427,6 +435,13 @@ router.post('/importar-jovens', async (req, res) => {
                 const outroNumero = normalizarNumeroEjc(jovem.outro_ejc_numero);
 
                 const telefoneHash = jovemPhoneHash(telefoneTexto);
+                const cpfTexto = normalizarTextoOuNull(jovem.cpf, 30);
+                if (cpfTexto) {
+                    const digitos = cpfTexto.replace(/\D/g, '');
+                    if (digitos.length !== 11) {
+                        throw new Error(`Campo cpf fora do padrão: "${cpfTexto}". Use 11 dígitos.`);
+                    }
+                }
                 const [exists] = await connection.query(
                     `SELECT id
                      FROM jovens
@@ -455,6 +470,12 @@ router.post('/importar-jovens', async (req, res) => {
                     data_nascimento: dataNascimento || null,
                     circulo: normalizarTextoOuNull(jovem.circulo, 80)
                 };
+                const apelido = normalizarTextoOuNull(jovem.apelido, 120);
+                if (apelido) dadosJovem.apelido = apelido.toLocaleUpperCase('pt-BR');
+                if (cpfTexto) {
+                    dadosJovem.cpf = encryptJovemCpf(cpfTexto);
+                    dadosJovem.cpf_hash = jovemCpfHash(cpfTexto);
+                }
 
                 if (jovemId) {
                     await connection.query('UPDATE jovens SET ? WHERE id = ? AND tenant_id = ?', [dadosJovem, jovemId, tenantId]);

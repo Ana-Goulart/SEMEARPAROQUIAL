@@ -762,7 +762,7 @@
                     abaLigacoes: 'ativas',
                     outrosEjcs: [],
                     outroEjcSelecionado: 0,
-                    nomeMeuEJC: (window.__NOME_EJC_ATUAL && String(window.__NOME_EJC_ATUAL).trim()) || 'Inconfidentes',
+                    nomeMeuEJC: (window.__NOME_EJC_ATUAL && String(window.__NOME_EJC_ATUAL).trim()) || '',
                     searchQuery: '',
                     searchResults: [],
                     searchTimer: null,
@@ -771,6 +771,7 @@
                     modalAdicionarMembroInstance: null,
                     modalPuxarReservaInstance: null,
                     modalBuscaInstance: null,
+                    onMeuEjcAtualizadoHandler: null,
                     fonteSelecionada: 'LISTA_MESTRE',
                     modalPuxarReserva: { lista: 'jovens', criterioSexo: 'primeiro', funcaoId: 0 },
                     modalPuxarReservaNomeAdicionado: '',
@@ -986,6 +987,18 @@
                             }))
                     );
                 },
+                async carregarNomeMeuEJC() {
+                    try {
+                        const res = await fetch('/api/meu-ejc');
+                        if (!res.ok) return;
+                        const data = await res.json().catch(() => ({}));
+                        const nome = data && data.nome ? String(data.nome).trim() : '';
+                        if (nome) {
+                            this.nomeMeuEJC = nome;
+                            window.__NOME_EJC_ATUAL = nome;
+                        }
+                    } catch (_) { }
+                },
                 async carregarOutrosEjcs() {
                     const res = await fetch('/api/outros-ejcs');
                     this.outrosEjcs = res.ok ? await res.json() : [];
@@ -1088,6 +1101,20 @@
                 ordenarMembrosEquipe(lista) {
                     return (Array.isArray(lista) ? lista.slice() : []).sort((a, b) => this.compararMembrosEquipe(a, b));
                 },
+                limparPrefixoEjc(valor) {
+                    return String(valor || '')
+                        .trim()
+                        .replace(/^(?:\s*(?:EJC|ECJ)\s+)+/i, '')
+                        .replace(/\s{2,}/g, ' ')
+                        .trim();
+                },
+                nomeEjcLocalExibicao() {
+                    return this.limparPrefixoEjc(this.nomeMeuEJC || window.__NOME_EJC_ATUAL || '');
+                },
+                nomeOutroEjcExibicao(membro) {
+                    const nome = this.limparPrefixoEjc(membro && (membro.outro_ejc_nome || membro.outro_ejc_paroquia));
+                    return nome ? `EJC ${nome}` : 'EJC';
+                },
                 origemExibicao(membro) {
                     if (!membro) return '-';
                     const origem = String(membro.origem_ejc_tipo || 'INCONFIDENTES').trim().toUpperCase();
@@ -1103,22 +1130,31 @@
                         }
                         return `${movimento} ${this.nomeMeuEJC || ''}`.trim();
                     }
-                    if (origem === 'OUTRO_EJC') {
-                        const nomeOutroEjc = String(membro.outro_ejc_nome || membro.outro_ejc_paroquia || '').trim();
-                        return `EJC${nomeOutroEjc ? ' ' + nomeOutroEjc : ''}`.trim();
+                    const ehOutroEjc = origem === 'OUTRO_EJC'
+                        || !!Number(membro.outro_ejc_id || 0)
+                        || !!String(membro.outro_ejc_nome || membro.outro_ejc_paroquia || '').trim();
+                    if (ehOutroEjc) {
+                        return this.nomeOutroEjcExibicao(membro);
                     }
                     const numero = this.formatarNumeroOrigemEjc(membro.ejc_numero_fez || membro.numero_ejc_fez);
+                    const nomeLocal = this.nomeEjcLocalExibicao();
                     if (numero) {
-                        return `${numero} EJC ${this.nomeMeuEJC || ''}`.trim();
+                        return `${numero} EJC${nomeLocal ? ' ' + nomeLocal : ''}`.trim();
                     }
-                    return `EJC ${this.nomeMeuEJC || ''}`.trim();
+                    return `EJC${nomeLocal ? ' ' + nomeLocal : ''}`.trim();
+                },
+                normalizarNomeMovimentoTio(nome, fallback = '') {
+                    const limpar = (valor) => String(valor || '').trim().replace(/\s+/g, ' ')
+                        .replace(/^(EJC|ECC|ECNA)\b\s*/i, '')
+                        .replace(/^Par[oó]quia\b\s*/i, '')
+                        .trim()
+                        .toUpperCase();
+                    return limpar(nome) || limpar(fallback);
                 },
                 movimentoMembroTio(membro) {
                     if (String(membro && membro.origem_ejc_tipo || '').trim().toUpperCase() === 'OUTRO_EJC' || membro && membro.outro_ejc_id) {
-                        return [membro && membro.outro_ejc_nome, membro && membro.outro_ejc_paroquia]
-                            .map((valor) => String(valor || '').trim())
-                            .filter(Boolean)
-                            .join(' ');
+                        const nomeMovimento = this.normalizarNomeMovimentoTio(membro && membro.outro_ejc_nome, membro && membro.outro_ejc_paroquia);
+                        return nomeMovimento ? `ECC ${nomeMovimento}` : 'ECC';
                     }
                     return String((membro && (membro.encontro_tipo || membro.ecc_tipo)) || '').trim().toUpperCase();
                 },
@@ -1874,10 +1910,23 @@
             },
             beforeUnmount() {
                 document.removeEventListener('click', this.fecharObservacaoAoClicarFora);
+                if (this.onMeuEjcAtualizadoHandler) {
+                    window.removeEventListener('meu-ejc-atualizado', this.onMeuEjcAtualizadoHandler);
+                    this.onMeuEjcAtualizadoHandler = null;
+                }
             },
             async mounted() {
                 document.addEventListener('click', this.fecharObservacaoAoClicarFora);
+                this.onMeuEjcAtualizadoHandler = (event) => {
+                    const nome = event && event.detail ? String(event.detail.nome || '').trim() : '';
+                    if (nome) this.nomeMeuEJC = nome;
+                };
+                window.addEventListener('meu-ejc-atualizado', this.onMeuEjcAtualizadoHandler);
+                if (window.__NOME_EJC_ATUAL) {
+                    this.nomeMeuEJC = String(window.__NOME_EJC_ATUAL || '').trim();
+                }
                 this.initParams();
+                await this.carregarNomeMeuEJC();
                 await this.carregarOutrosEjcs();
                 await this.carregarMontagem();
                 await this.carregarEstruturaEquipe();

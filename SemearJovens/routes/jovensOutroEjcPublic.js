@@ -109,10 +109,12 @@ async function ensureEstrutura() {
                     detalhes_restricao_tio VARCHAR(255) NULL,
                     deficiencia_tio TINYINT(1) NOT NULL DEFAULT 0,
                     qual_deficiencia_tio VARCHAR(255) NULL,
+                    possui_carro_tio TINYINT(1) NOT NULL DEFAULT 0,
                     restricao_alimentar_tia TINYINT(1) NOT NULL DEFAULT 0,
                     detalhes_restricao_tia VARCHAR(255) NULL,
                     deficiencia_tia TINYINT(1) NOT NULL DEFAULT 0,
                     qual_deficiencia_tia VARCHAR(255) NULL,
+                    possui_carro_tia TINYINT(1) NOT NULL DEFAULT 0,
                     observacoes VARCHAR(255) NULL,
                     termos_aceitos_em DATETIME NULL,
                     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -133,10 +135,12 @@ async function ensureEstrutura() {
             ['detalhes_restricao_tio', 'ALTER TABLE tios_casais ADD COLUMN detalhes_restricao_tio VARCHAR(255) NULL AFTER restricao_alimentar_tio'],
             ['deficiencia_tio', 'ALTER TABLE tios_casais ADD COLUMN deficiencia_tio TINYINT(1) NOT NULL DEFAULT 0 AFTER detalhes_restricao_tio'],
             ['qual_deficiencia_tio', 'ALTER TABLE tios_casais ADD COLUMN qual_deficiencia_tio VARCHAR(255) NULL AFTER deficiencia_tio'],
+            ['possui_carro_tio', 'ALTER TABLE tios_casais ADD COLUMN possui_carro_tio TINYINT(1) NOT NULL DEFAULT 0 AFTER qual_deficiencia_tio'],
             ['restricao_alimentar_tia', 'ALTER TABLE tios_casais ADD COLUMN restricao_alimentar_tia TINYINT(1) NOT NULL DEFAULT 0 AFTER qual_deficiencia_tio'],
             ['detalhes_restricao_tia', 'ALTER TABLE tios_casais ADD COLUMN detalhes_restricao_tia VARCHAR(255) NULL AFTER restricao_alimentar_tia'],
             ['deficiencia_tia', 'ALTER TABLE tios_casais ADD COLUMN deficiencia_tia TINYINT(1) NOT NULL DEFAULT 0 AFTER detalhes_restricao_tia'],
             ['qual_deficiencia_tia', 'ALTER TABLE tios_casais ADD COLUMN qual_deficiencia_tia VARCHAR(255) NULL AFTER deficiencia_tia'],
+            ['possui_carro_tia', 'ALTER TABLE tios_casais ADD COLUMN possui_carro_tia TINYINT(1) NOT NULL DEFAULT 0 AFTER qual_deficiencia_tia'],
             ['termos_aceitos_em', 'ALTER TABLE tios_casais ADD COLUMN termos_aceitos_em DATETIME NULL AFTER observacoes']
         ];
         for (const [columnName, sql] of colunasTios) {
@@ -415,9 +419,9 @@ router.post('/validar-tio', async (req, res) => {
             SELECT id, tenant_id, nome_tio, telefone_tio, data_nascimento_tio,
                    nome_tia, telefone_tia, data_nascimento_tia,
                    restricao_alimentar_tio, detalhes_restricao_tio,
-                   deficiencia_tio, qual_deficiencia_tio,
+                   deficiencia_tio, qual_deficiencia_tio, possui_carro_tio,
                    restricao_alimentar_tia, detalhes_restricao_tia,
-                   deficiencia_tia, qual_deficiencia_tia,
+                   deficiencia_tia, qual_deficiencia_tia, possui_carro_tia,
                    termos_aceitos_em
             FROM tios_casais
             WHERE id = ?
@@ -456,10 +460,12 @@ router.post('/validar-tio', async (req, res) => {
                 detalhes_restricao_tio: casal.detalhes_restricao_tio || '',
                 deficiencia_tio: !!casal.deficiencia_tio,
                 qual_deficiencia_tio: casal.qual_deficiencia_tio || '',
+                possui_carro_tio: !!casal.possui_carro_tio,
                 restricao_alimentar_tia: !!casal.restricao_alimentar_tia,
                 detalhes_restricao_tia: casal.detalhes_restricao_tia || '',
                 deficiencia_tia: !!casal.deficiencia_tia,
                 qual_deficiencia_tia: casal.qual_deficiencia_tia || '',
+                possui_carro_tia: !!casal.possui_carro_tia,
                 termos_aceitos_em: casal.termos_aceitos_em || null
             }
         });
@@ -486,10 +492,12 @@ router.post('/atualizar-tio', async (req, res) => {
         const detalhesRestricaoTio = restricaoAlimentarTio ? (String(req.body.detalhes_restricao_tio || '').trim() || null) : null;
         const deficienciaTio = parseBool(req.body.deficiencia_tio);
         const qualDeficienciaTio = deficienciaTio ? (String(req.body.qual_deficiencia_tio || '').trim() || null) : null;
+        const possuiCarroTio = parseBool(req.body.possui_carro_tio);
         const restricaoAlimentarTia = parseBool(req.body.restricao_alimentar_tia);
         const detalhesRestricaoTia = restricaoAlimentarTia ? (String(req.body.detalhes_restricao_tia || '').trim() || null) : null;
         const deficienciaTia = parseBool(req.body.deficiencia_tia);
         const qualDeficienciaTia = deficienciaTia ? (String(req.body.qual_deficiencia_tia || '').trim() || null) : null;
+        const possuiCarroTia = parseBool(req.body.possui_carro_tia);
 
         if (!telefoneTio || !telefoneTia) {
             return res.status(400).json({ error: 'Informe os telefones do tio e da tia.' });
@@ -519,10 +527,12 @@ router.post('/atualizar-tio', async (req, res) => {
                    detalhes_restricao_tio = ?,
                    deficiencia_tio = ?,
                    qual_deficiencia_tio = ?,
+                   possui_carro_tio = ?,
                    restricao_alimentar_tia = ?,
                    detalhes_restricao_tia = ?,
                    deficiencia_tia = ?,
                    qual_deficiencia_tia = ?,
+                   possui_carro_tia = ?,
                    termos_aceitos_em = CURRENT_TIMESTAMP,
                    updated_at = CURRENT_TIMESTAMP
              WHERE id = ?
@@ -539,10 +549,12 @@ router.post('/atualizar-tio', async (req, res) => {
             encryptTioSensitiveText(detalhesRestricaoTio, 'detalhes-restricao-tio'),
             deficienciaTio ? 1 : 0,
             encryptTioSensitiveText(qualDeficienciaTio, 'qual-deficiencia-tio'),
+            possuiCarroTio ? 1 : 0,
             restricaoAlimentarTia ? 1 : 0,
             encryptTioSensitiveText(detalhesRestricaoTia, 'detalhes-restricao-tia'),
             deficienciaTia ? 1 : 0,
             encryptTioSensitiveText(qualDeficienciaTia, 'qual-deficiencia-tia'),
+            possuiCarroTia ? 1 : 0,
             payload.cadastro_id,
             payload.tenant_id
         ]);

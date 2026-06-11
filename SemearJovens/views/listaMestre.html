@@ -897,6 +897,7 @@
                         <select v-model="filtros.estadoCivil" class="form-select">
                             <option value="">Todos</option>
                             <option value="Solteiro">Solteiro</option>
+                            <option value="Noivo">Noivo</option>
                             <option value="Casado">Casado</option>
                             <option value="Amasiado">Amasiado</option>
                         </select>
@@ -1410,6 +1411,7 @@
                                         <select v-else v-model="jovemEditando.estado_civil"
                                             @change="onEstadoCivilChange" class="form-select">
                                             <option value="Solteiro">Solteiro</option>
+                                            <option value="Noivo">Noivo</option>
                                             <option value="Casado">Casado</option>
                                             <option value="Amasiado">Amasiado</option>
                                         </select>
@@ -2156,6 +2158,7 @@
                                             <label class="text-muted small">Estado Civil</label>
                                             <select v-model="novoJovem.estado_civil" class="form-select">
                                                 <option value="Solteiro">Solteiro</option>
+                                                <option value="Noivo">Noivo</option>
                                                 <option value="Casado">Casado</option>
                                                 <option value="Amasiado">Amasiado</option>
                                             </select>
@@ -2430,7 +2433,7 @@
             <div class="modal-dialog modal-lg">
                 <div class="modal-content border-0 shadow">
                     <div class="modal-header bg-soft-primary">
-                        <h5 class="modal-title">Importar CSV (Modelo esperado)</h5>
+                        <h5 class="modal-title">Importar Excel ou CSV (Modelo esperado)</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" :disabled="importandoDados"></button>
                     </div>
                     <div class="modal-body">
@@ -2441,7 +2444,7 @@
                                 <div class="small">Aguarde enquanto os registros são criados ou atualizados.</div>
                             </div>
                         </div>
-                        <p class="mb-2"><strong>1) Cabeçalho recomendado da planilha</strong></p>
+                        <p class="mb-2"><strong>1) Cabeçalho recomendado do arquivo</strong></p>
                         <div class="border rounded p-2 bg-light small" style="white-space: pre-wrap;">nome_completo, telefone, apelido, email, termos_aceitos_em, termos_aceitos_email, sexo, data_nascimento, estado_civil, data_casamento, circulo, num_ejc, instagram, nao_serve_ejc, motivo_nao_serve_ejc, eh_musico, instrumentos_musicais, equipe_saude, deficiencia, qual_deficiencia, restricao_alimentar, detalhes_restricao, endereco_rua, endereco_numero, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep, conjuge_nome
 
 Exemplo: num_ejc = 11
@@ -2469,7 +2472,7 @@ Com papel + subfunção:
 Liturgia (Coordenador - Música)</div>
 
                         <p class="mt-3 mb-2"><strong>4) Padrões obrigatórios (validação rígida)</strong></p>
-                        <div class="border rounded p-2 bg-light small" style="white-space: pre-wrap;">estado_civil: Solteiro, Casado ou Amasiado (exato)
+                        <div class="border rounded p-2 bg-light small" style="white-space: pre-wrap;">estado_civil: Solteiro, Noivo, Casado ou Amasiado (exato)
 sexo: Feminino ou Masculino (exato)
 circulo: {{ textoCirculosImportacao }} (exato)
 telefone: opcional; quando informado, use 10 ou 11 dígitos
@@ -2479,17 +2482,20 @@ num_ejc: deve existir no cadastro de EJC
 campos booleanos: use Sim/Não, True/False, 1/0
 
 Exemplo de erro mostrado na importação:
-Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado ou Amasiado.</div>
+Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo, Casado ou Amasiado.</div>
 
                         <p class="text-muted small mt-2 mb-2">Também aceitamos aliases antigos, como `Nome`, `Phone`, `BirthDate`, `EJCNumber`, `numero_ejc` e `Team_XIEJC`.</p>
-                        <p class="text-muted small mt-0 mb-2">Importante: use arquivo CSV (.csv).</p>
-                        <div class="mb-3">
+                        <p class="text-muted small mt-0 mb-2">Importante: use arquivo Excel (.xlsx) ou CSV (.csv).</p>
+                        <div class="mb-3 d-flex flex-wrap gap-2">
+                            <button type="button" class="btn btn-outline-primary" @click="baixarModeloImportacaoExcel" :disabled="importandoDados">
+                                Baixar modelo Excel
+                            </button>
                             <button type="button" class="btn btn-outline-primary" @click="baixarModeloImportacaoCSV" :disabled="importandoDados">
                                 Baixar modelo CSV
                             </button>
                         </div>
-                        <label class="form-label">Selecione o arquivo CSV</label>
-                        <input id="importExcelInput" type="file" class="form-control" accept=".csv" @change="onImportFileChange" :disabled="importandoDados">
+                        <label class="form-label">Selecione o arquivo Excel ou CSV</label>
+                        <input id="importCsvInput" type="file" class="form-control" accept=".xlsx,.csv,text/csv" @change="onImportFileChange" :disabled="importandoDados">
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-soft-secondary" data-bs-dismiss="modal" :disabled="importandoDados">Cancelar</button>
@@ -4072,9 +4078,9 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                         return;
                     }
                     const nome = String(file.name || '').toLowerCase();
-                    if (!nome.endsWith('.csv')) {
+                    if (!nome.endsWith('.xlsx') && !nome.endsWith('.csv')) {
                         this.importFile = null;
-                        alert('Selecione um arquivo CSV (.csv).');
+                        alert('Selecione um arquivo Excel (.xlsx) ou CSV (.csv).');
                         event.target.value = '';
                         return;
                     }
@@ -4082,16 +4088,15 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                 },
                 async confirmarImportacao() {
                     if (!this.importFile) {
-                        alert('Selecione um arquivo CSV.');
+                        alert('Selecione um arquivo Excel ou CSV.');
                         return;
                     }
                     if (this.importandoDados) return;
                     this.importandoDados = true;
                     try {
-                        const texto = await this.importFile.text();
-                        await this.importarTextoCSV(texto);
+                        await this.importarArquivoListaMestre(this.importFile);
                         this.importFile = null;
-                        const input = document.getElementById('importExcelInput');
+                        const input = document.getElementById('importCsvInput');
                         if (input) input.value = '';
                         if (this.modalImportacao) this.modalImportacao.hide();
                     } catch (err) {
@@ -4101,7 +4106,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                         this.importandoDados = false;
                     }
                 },
-                async baixarModeloImportacaoCSV() {
+                async gerarModeloImportacaoListaMestre() {
                     if (!this.ejcsList.length) await this.carregarEjcs();
                     const cabecalhoBase = [
                         'nome_completo',
@@ -4135,26 +4140,35 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                         'endereco_cep',
                         'conjuge_nome'
                     ];
-                    const colunasEquipe = [...this.ejcsList]
-                        .filter((ejc) => Number.isFinite(Number(ejc.numero)))
-                        .sort((a, b) => Number(a.numero) - Number(b.numero))
-                        .map((ejc) => `${this.numeroParaRomano(ejc.numero)} EJC`);
+                    const edicoesModelo = [...(this.ejcsList || []), ...(this.ejcsFeitosList || [])]
+                        .map((ejc) => Number(ejc && ejc.numero))
+                        .filter((numero) => Number.isFinite(numero) && numero > 0);
+                    const numerosModelo = [
+                        ...new Set([
+                            ...Array.from({ length: 11 }, (_, index) => index + 1),
+                            ...edicoesModelo
+                        ])
+                    ].sort((a, b) => a - b);
+                    const colunasEquipe = numerosModelo
+                        .filter((numero) => Number.isFinite(Number(numero)))
+                        .sort((a, b) => Number(a) - Number(b))
+                        .map((numero) => `${this.numeroParaRomano(numero)} EJC`);
                     const cabecalho = [...cabecalhoBase, ...colunasEquipe];
                     const exemplo = [
-                        'Ana Clara Goulart Claudino',
-                        '(31)98575-1945',
-                        '123.456.789-09',
-                        'Ana',
-                        'ana@email.com',
+                        'Jovem Exemplo',
+                        '(11) 99999-0000',
+                        '000.000.000-00',
+                        'Exemplo',
+                        'jovem.exemplo@exemplo.com',
                         '2026-03-26 18:00:00',
-                        'ana@email.com',
+                        'jovem.exemplo@exemplo.com',
                         'Feminino',
                         '2004-06-14',
-                        'Solteiro',
+                        'Noivo',
                         '',
                         this.cores[0] || '',
                         '11',
-                        '@ana.clara',
+                        '@jovem.exemplo',
                         'Não',
                         '',
                         'Sim',
@@ -4164,20 +4178,49 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                         '',
                         'Sim',
                         'Alergia a amendoim',
-                        'Rua Exemplo',
-                        '123',
-                        'Centro',
-                        'Inconfidentes',
-                        '37576-000',
+                        'Rua Ficticia',
+                        '100',
+                        'Bairro Exemplo',
+                        'Cidade Exemplo',
+                        'SP',
+                        '00000-000',
                         ''
                     ];
                     while (exemplo.length < cabecalho.length) exemplo.push('');
+                    if (cabecalho.includes('I EJC')) {
+                        exemplo[cabecalho.indexOf('I EJC')] = 'Acolhida';
+                    }
+                    if (cabecalho.includes('V EJC')) {
+                        exemplo[cabecalho.indexOf('V EJC')] = 'Canto (Membro)';
+                    }
                     if (cabecalho.includes('XI EJC')) {
                         exemplo[cabecalho.indexOf('XI EJC')] = 'Liturgia (Coordenador)';
                     }
-                    const wsModelo = XLSX.utils.aoa_to_sheet([cabecalho, exemplo]);
-                    const csv = XLSX.utils.sheet_to_csv(wsModelo);
-                    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                    return { cabecalho, exemplo };
+                },
+                async baixarModeloImportacaoExcel() {
+                    const { cabecalho, exemplo } = await this.gerarModeloImportacaoListaMestre();
+                    const wb = XLSX.utils.book_new();
+                    const ws = XLSX.utils.aoa_to_sheet([cabecalho, exemplo]);
+                    const instrucoes = [
+                        ['Coluna', 'Como preencher'],
+                        ['num_ejc', 'Numero do EJC ja cadastrado no sistema'],
+                        ['I EJC / II EJC / ...', 'Opcional: nome da equipe em que o jovem serviu naquela edicao'],
+                        ['estado_civil', 'Use exatamente Solteiro, Noivo, Casado ou Amasiado'],
+                        ['equipe com papel', 'Use Liturgia (Tio), Liturgia (Coordenador) ou Liturgia (Coordenador - Musica)'],
+                        ['booleanos', 'Use Sim/Nao, True/False ou 1/0'],
+                        ['datas', 'Use AAAA-MM-DD']
+                    ];
+                    XLSX.utils.book_append_sheet(wb, ws, 'Modelo importacao');
+                    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(instrucoes), 'Instrucoes');
+                    XLSX.writeFile(wb, 'modelo_importacao_lista_mestre.xlsx');
+                },
+                async baixarModeloImportacaoCSV() {
+                    const { cabecalho, exemplo } = await this.gerarModeloImportacaoListaMestre();
+                    const csv = [cabecalho, exemplo]
+                        .map((linha) => linha.map((valor) => this.csvEscape(valor)).join(';'))
+                        .join('\r\n');
+                    const blob = new Blob([`\uFEFF${csv}\r\n`], { type: 'text/csv;charset=utf-8;' });
                     const link = document.createElement('a');
                     link.href = URL.createObjectURL(blob);
                     link.download = 'modelo_importacao_lista_mestre.csv';
@@ -4389,10 +4432,45 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                     const taxaSubstituicoes = substituicoes / total;
                     return taxaControles > 0.01 || taxaSubstituicoes > 0.02;
                 },
+                async importarArquivoListaMestre(file) {
+                    if (!file) return;
+                    const nomeArquivo = String(file.name || '').toLowerCase();
+                    const isCsv = nomeArquivo.endsWith('.csv');
+                    const isXlsx = nomeArquivo.endsWith('.xlsx');
+                    if (!isCsv && !isXlsx) {
+                        throw new Error('Selecione um arquivo Excel (.xlsx) ou CSV (.csv).');
+                    }
+                    if (isCsv) {
+                        await this.importarTextoCSV(await file.text());
+                        return;
+                    }
+                    const rows = await ExcelUtils.readXlsxFile(file);
+                    if (!rows.length) {
+                        alert('Arquivo vazio.');
+                        return;
+                    }
+                    const headers = [];
+                    rows.forEach((row) => {
+                        Object.keys(row || {}).forEach((key) => {
+                            if (!headers.includes(key)) headers.push(key);
+                        });
+                    });
+                    if (!headers.length) {
+                        alert('Arquivo inválido ou vazio.');
+                        return;
+                    }
+                    const textoCsv = [
+                        headers,
+                        ...rows.map((row) => headers.map((header) => row && row[header] !== undefined ? row[header] : ''))
+                    ]
+                        .map((linha) => linha.map((valor) => this.csvEscape(valor)).join(';'))
+                        .join('\r\n');
+                    await this.importarTextoCSV(textoCsv);
+                },
                 async importarTextoCSV(textoOriginal) {
                     const text = String(textoOriginal || '').replace(/^\uFEFF/, '');
                     if (this.pareceArquivoBinario(text)) {
-                        throw new Error('O arquivo selecionado parece ser Excel/binário. Salve como CSV UTF-8 e importe novamente.');
+                        throw new Error('O arquivo selecionado parece ser binário. Use um arquivo Excel (.xlsx) ou CSV (.csv).');
                     }
                     const linhas = text.split(/\r?\n/).filter(l => l.trim() !== '');
                     if (linhas.length < 2) {
@@ -4419,11 +4497,25 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                     if (!this.ejcsList.length) await this.carregarEjcs();
 
                     const boolFromText = (valor) => ['YES', 'SIM', 'TRUE', '1', 'ACEITO'].includes(String(valor || '').trim().toUpperCase());
+                    const excelSerialToDate = (valor, comHora = false) => {
+                        const textoOriginal = String(valor || '').trim().replace(',', '.');
+                        if (!/^\d+(\.\d+)?$/.test(textoOriginal)) return null;
+                        const numero = Number(textoOriginal);
+                        if (!Number.isFinite(numero) || numero < 20000 || numero > 80000 || !window.XLSX || !XLSX.SSF) return null;
+                        const partes = XLSX.SSF.parse_date_code(numero);
+                        if (!partes) return null;
+                        const data = `${partes.y}-${String(partes.m).padStart(2, '0')}-${String(partes.d).padStart(2, '0')}`;
+                        if (!comHora) return data;
+                        const hora = `${String(partes.H || 0).padStart(2, '0')}:${String(partes.M || 0).padStart(2, '0')}:${String(Math.floor(partes.S || 0)).padStart(2, '0')}`;
+                        return `${data} ${hora}`;
+                    };
                     const normalizarDataPlanilha = (valor) => {
                         const txt = String(valor || '').trim();
                         if (!txt) return null;
                         if (/^\d{4}-\d{2}-\d{2}$/.test(txt)) return txt;
                         if (/^\d{2}\/\d{2}\/\d{4}$/.test(txt)) return txt.split('/').reverse().join('-');
+                        const dataSerial = excelSerialToDate(valor);
+                        if (dataSerial) return dataSerial;
                         return txt;
                     };
                     const normalizarDataHoraPlanilha = (valor) => {
@@ -4435,6 +4527,8 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                         }
                         if (/^\d{4}-\d{2}-\d{2}$/.test(txt)) return `${txt} 00:00:00`;
                         if (/^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}$/.test(txt)) return `${txt}:00`;
+                        const dataSerial = excelSerialToDate(valor, true);
+                        if (dataSerial) return dataSerial;
                         return txt;
                     };
                     const dadosParaEnviar = [];
@@ -4465,6 +4559,9 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                             const normalizado = normalizarHeader(nome);
                             return mapHeaders[nome] !== undefined || mapHeaders[normalizado] !== undefined;
                         });
+                        const getValOuFallback = (nomes, indiceLegado) => {
+                            return hasHeader(...nomes) ? getVal(...nomes) : valorColuna(indiceLegado);
+                        };
                         const getBool = (...nomes) => {
                             if (!hasHeader(...nomes)) return null;
                             const valor = getVal(...nomes);
@@ -4490,17 +4587,17 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                             return digitos ? Number(digitos[0]) : (Number(semEjc) || null);
                         };
 
-                        const dataNasc = getVal("BirthDate", "Data Nascimento", "data_nascimento", "data nascimento");
+                        const dataNasc = getVal("BirthDate", "Data Nascimento", "data_nascimento", "data nascimento", "aniversario", "aniversário");
                         const dataCasamento = getVal("MarriageDate", "Data Casamento", "data_casamento", "data casamento");
-                        const nomeCsv = getVal("FullName", "Nome", "nome", "nome_completo", "full_name") || valorColuna(0);
-                        const telefoneCsv = getVal("Phone", "Telefone", "telefone", "celular") || valorColuna(1);
+                        const nomeCsv = getValOuFallback(["FullName", "Nome", "nome", "nome_completo", "full_name"], 0);
+                        const telefoneCsv = getValOuFallback(["Phone", "Telefone", "telefone", "celular"], 1);
                         const cpfCsv = getVal("CPF", "Cpf", "cpf");
-                        const sexoCsv = getVal("Gender", "Sexo", "sexo") || valorColuna(3);
-                        const estadoCivilCsv = getVal("CivilStatus", "Estado Civil", "estado_civil", "estado civil") || valorColuna(4);
-                        const circuloCsv = getVal("Circle", "Círculo", "circulo") || valorColuna(5);
-                        const deficienciaCsv = getVal("HasDisability", "Deficiência", "deficiencia") || valorColuna(6);
-                        const restricaoCsv = getVal("HasFoodRestriction", "Restrição Alimentar", "restricao_alimentar", "restricao alimentar") || valorColuna(7);
-                        const numeroEjcCsv = getVal("EJCNumber", "Numero EJC", "numero_ejc", "numero ejc", "num_ejc", "num ejc") || valorColuna(8);
+                        const sexoCsv = getValOuFallback(["Gender", "Sexo", "sexo"], 3);
+                        const estadoCivilCsv = getValOuFallback(["CivilStatus", "Estado Civil", "estado_civil", "estado civil"], 4);
+                        const circuloCsv = getValOuFallback(["Circle", "Círculo", "circulo"], 5);
+                        const deficienciaCsv = getValOuFallback(["HasDisability", "Deficiência", "deficiencia"], 6);
+                        const restricaoCsv = getValOuFallback(["HasFoodRestriction", "Restrição Alimentar", "restricao_alimentar", "restricao alimentar"], 7);
+                        const numeroEjcCsv = getValOuFallback(["EJCNumber", "Numero EJC", "numero_ejc", "numero ejc", "num_ejc", "num ejc"], 8);
 
                         const jovem = {
                             nome_completo: nomeCsv,
@@ -4626,23 +4723,15 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                     }
 
                     this.importandoDados = true;
-                    const reader = new FileReader();
-                    reader.onload = async (e) => {
-                        try {
-                            await this.importarTextoCSV(e.target.result);
-                            event.target.value = '';
-                        } catch (err) {
-                            console.error(err);
-                            alert(err && err.message ? err.message : "Erro ao enviar dados de importação.");
-                        } finally {
-                            this.importandoDados = false;
-                        }
-                    };
-                    reader.onerror = () => {
+                    try {
+                        await this.importarArquivoListaMestre(file);
+                        event.target.value = '';
+                    } catch (err) {
+                        console.error(err);
+                        alert(err && err.message ? err.message : "Erro ao enviar dados de importação.");
+                    } finally {
                         this.importandoDados = false;
-                        alert('Erro ao ler o arquivo de importação.');
-                    };
-                    reader.readAsText(file);
+                    }
                 },
                 calcularIdade(d) {
                     if (!d) return '--';
@@ -5221,14 +5310,33 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Casado
                     new bootstrap.Modal(document.getElementById('modalEditar')).show();
                 },
                 async deletarJovemModal() {
-                    if (!(await window.showFloatingConfirm(`Tem certeza que deseja deletar ${this.jovemEditando.nome_completo}? Esta ação não pode ser desfeita.`))) return;
-
                     try {
-                        const res = await fetch(`/api/lista-mestre/${this.jovemEditando.id}`, { method: 'DELETE' });
+                        let queryHistorico = '';
+                        let temVinculosEdicoes = Array.isArray(this.jovemHistoricoEquipes) && this.jovemHistoricoEquipes.length > 0;
+                        if (temVinculosEdicoes) {
+                            const removerHistorico = await window.showFloatingConfirm(
+                                'Esse jovem está vinculado a equipes/edições.\n\nOK: exclui a ficha e remove o nome das equipes/edições.\nCancelar: exclui apenas a ficha e mantém o nome nas equipes/edições.',
+                                'Histórico em edições'
+                            );
+                            queryHistorico = `?preservar_historico=${removerHistorico ? 0 : 1}`;
+                        } else if (!(await window.showFloatingConfirm(`Tem certeza que deseja deletar ${this.jovemEditando.nome_completo}? Esta ação não pode ser desfeita.`))) {
+                            return;
+                        }
+
+                        let res = await fetch(`/api/lista-mestre/${this.jovemEditando.id}${queryHistorico}`, { method: 'DELETE' });
+                        let data = await res.json().catch(() => ({}));
+
+                        if (res.status === 409 && data && data.requiresHistoryChoice) {
+                            const removerHistorico = await window.showFloatingConfirm(
+                                'Esse jovem está vinculado a equipes/edições.\n\nOK: exclui a ficha e remove o nome das equipes/edições.\nCancelar: exclui apenas a ficha e mantém o nome nas equipes/edições.',
+                                'Histórico em edições'
+                            );
+                            res = await fetch(`/api/lista-mestre/${this.jovemEditando.id}?preservar_historico=${removerHistorico ? 0 : 1}`, { method: 'DELETE' });
+                            data = await res.json().catch(() => ({}));
+                        }
 
                         if (!res.ok) {
-                            const erro = await res.json();
-                            alert(erro.error || "Erro ao deletar jovem");
+                            alert(data.error || "Erro ao deletar jovem");
                             return;
                         }
 

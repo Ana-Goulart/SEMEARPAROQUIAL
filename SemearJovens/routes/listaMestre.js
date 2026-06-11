@@ -91,6 +91,72 @@ function montarEtiquetaEdicao(numeroEjc) {
     return `${numeroEjc}º EJC (Montagem)`;
 }
 
+function lerOpcaoPreservarHistorico(req) {
+    const valor = req.query.preservar_historico ?? req.query.preservarHistorico ?? req.body?.preservar_historico ?? req.body?.preservarHistorico;
+    if (valor === undefined || valor === null || valor === '') return null;
+    return ['1', 'true', 'sim', 's', 'yes'].includes(String(valor).trim().toLowerCase());
+}
+
+async function contarVinculosJovemEmEdicoes({ tenantId, jovemId }) {
+    const total = {
+        historico_equipes: 0,
+        montagem_membros: 0,
+        ejc_encontristas_historico: 0
+    };
+    if (await hasTable('historico_equipes')) {
+        const [[row]] = await pool.query(
+            'SELECT COUNT(*) AS total FROM historico_equipes WHERE tenant_id = ? AND jovem_id = ?',
+            [tenantId, jovemId]
+        );
+        total.historico_equipes = Number(row && row.total || 0);
+    }
+    if (await hasTable('montagem_membros') && await hasColumn('montagem_membros', 'jovem_id')) {
+        const [[row]] = await pool.query(
+            'SELECT COUNT(*) AS total FROM montagem_membros WHERE tenant_id = ? AND jovem_id = ?',
+            [tenantId, jovemId]
+        );
+        total.montagem_membros = Number(row && row.total || 0);
+    }
+    if (await hasTable('ejc_encontristas_historico')) {
+        const [[row]] = await pool.query(
+            'SELECT COUNT(*) AS total FROM ejc_encontristas_historico WHERE tenant_id = ? AND jovem_id = ?',
+            [tenantId, jovemId]
+        );
+        total.ejc_encontristas_historico = Number(row && row.total || 0);
+    }
+    total.total = total.historico_equipes + total.montagem_membros + total.ejc_encontristas_historico;
+    return total;
+}
+
+async function limparVinculosJovemEmEdicoes({ tenantId, jovemId }) {
+    if (await hasTable('historico_equipes')) {
+        await pool.query('DELETE FROM historico_equipes WHERE tenant_id = ? AND jovem_id = ?', [tenantId, jovemId]);
+    }
+    if (await hasTable('montagem_membros') && await hasColumn('montagem_membros', 'jovem_id')) {
+        await pool.query('DELETE FROM montagem_membros WHERE tenant_id = ? AND jovem_id = ?', [tenantId, jovemId]);
+    }
+    if (await hasTable('ejc_encontristas_historico')) {
+        await pool.query('DELETE FROM ejc_encontristas_historico WHERE tenant_id = ? AND jovem_id = ?', [tenantId, jovemId]);
+    }
+}
+
+async function preservarVinculosJovemEmEdicoes({ tenantId, jovem }) {
+    const jovemId = Number(jovem && jovem.id);
+    if (!jovemId) return;
+    if (await hasTable('historico_equipes')) {
+        await pool.query('UPDATE historico_equipes SET jovem_id = NULL WHERE tenant_id = ? AND jovem_id = ?', [tenantId, jovemId]);
+    }
+    if (await hasTable('montagem_membros') && await hasColumn('montagem_membros', 'jovem_id')) {
+        const updateData = { jovem_id: null };
+        if (await hasColumn('montagem_membros', 'nome_externo')) updateData.nome_externo = jovem.nome_completo || null;
+        if (await hasColumn('montagem_membros', 'telefone_externo')) updateData.telefone_externo = jovem.telefone || null;
+        await pool.query('UPDATE montagem_membros SET ? WHERE tenant_id = ? AND jovem_id = ?', [updateData, tenantId, jovemId]);
+    }
+    if (await hasTable('ejc_encontristas_historico')) {
+        await pool.query('UPDATE ejc_encontristas_historico SET jovem_id = NULL WHERE tenant_id = ? AND jovem_id = ?', [tenantId, jovemId]);
+    }
+}
+
 function normalizarChaveEquipe(valor) {
     return String(valor || '')
         .normalize('NFD')
@@ -2027,6 +2093,26 @@ router.get('/ejcs-opcoes', async (req, res) => {
     }
 });
 
+router.get('/:id/vinculos-edicoes', async (req, res) => {
+    const { id } = req.params;
+    try {
+        const tenantId = getTenantId(req);
+        const jovemId = Number(id);
+        if (!jovemId) return res.status(400).json({ error: 'ID inválido.' });
+        await ensureHistoricoEquipesSnapshots();
+        await ensureHistoricoEquipesYoungFkPreserved();
+        await ensureEjcEncontristasHistoricoTable();
+        await backfillHistoricoEquipesSnapshots({ tenantId, jovemId });
+        const [rows] = await pool.query('SELECT id FROM jovens WHERE id = ? AND tenant_id = ? LIMIT 1', [jovemId, tenantId]);
+        if (!rows.length) return res.status(404).json({ error: 'Jovem não encontrado.' });
+        const vinculosEdicoes = await contarVinculosJovemEmEdicoes({ tenantId, jovemId });
+        return res.json({ vinculosEdicoes, total: Number(vinculosEdicoes.total || 0) });
+    } catch (err) {
+        console.error('Erro ao verificar vínculos do jovem:', err);
+        return res.status(500).json({ error: 'Erro ao verificar vínculos do jovem.' });
+    }
+});
+
 // GET - Buscar um jovem por id
 router.get('/:id', async (req, res) => {
     try {
@@ -2755,10 +2841,38 @@ router.delete('/:id', async (req, res) => {
         await ensureEjcEncontristasHistoricoTable();
         await backfillHistoricoEquipesSnapshots({ tenantId, jovemId: id });
 
+        const [rows] = await pool.query('SELECT id, nome_completo, telefone, foto_url FROM jovens WHERE id = ? AND tenant_id = ?', [id, tenantId]);
+        if (!rows.length) {
+            return res.status(404).json({ error: "Jovem não encontrado" });
+        }
+
+        const jovem = rows[0];
+        const vinculosEdicoes = await contarVinculosJovemEmEdicoes({ tenantId, jovemId: Number(id) });
+        const preservarHistorico = lerOpcaoPreservarHistorico(req);
+        if (vinculosEdicoes.total > 0 && preservarHistorico === null) {
+            return res.status(409).json({
+                requiresHistoryChoice: true,
+                vinculosEdicoes,
+                message: 'Esse jovem está contido em informações nas edições do EJC.'
+            });
+        }
+
+        if (preservarHistorico === false) {
+            await limparVinculosJovemEmEdicoes({ tenantId, jovemId: Number(id) });
+        } else {
+            await preservarVinculosJovemEmEdicoes({
+                tenantId,
+                jovem: {
+                    id: Number(id),
+                    nome_completo: jovem.nome_completo,
+                    telefone: decryptListaMestrePhone(jovem.telefone)
+                }
+            });
+        }
+
         // Deletar a imagem caso exista
-        const [rows] = await pool.query('SELECT foto_url FROM jovens WHERE id = ? AND tenant_id = ?', [id, tenantId]);
-        if (rows.length > 0 && rows[0].foto_url) {
-            const filepath = path.join(__dirname, '..', 'public', rows[0].foto_url);
+        if (jovem.foto_url) {
+            const filepath = path.join(__dirname, '..', 'public', jovem.foto_url);
             if (fs.existsSync(filepath)) {
                 fs.unlinkSync(filepath);
             }
@@ -2854,7 +2968,12 @@ router.post('/importacao', async (req, res) => {
         const comSexo = await hasSexoColumn();
         const comEhMusico = await hasEhMusicoColumn();
         const comInstrumentos = await hasInstrumentosMusicaisColumn();
-        const estadosCivisValidos = new Set(['Solteiro', 'Casado', 'Amasiado']);
+        const estadosCivisValidos = new Map([
+            ['solteiro', 'Solteiro'],
+            ['noivo', 'Noivo'],
+            ['casado', 'Casado'],
+            ['amasiado', 'Amasiado']
+        ]);
         const sexosValidos = new Set(['Feminino', 'Masculino']);
         let circulosValidos = new Set();
         try {
@@ -2922,10 +3041,12 @@ router.post('/importacao', async (req, res) => {
             if (j.estado_civil === undefined || j.estado_civil === null || String(j.estado_civil).trim() === '') {
                 j.estado_civil = 'Solteiro';
             } else {
-                j.estado_civil = String(j.estado_civil).trim();
-                if (!estadosCivisValidos.has(j.estado_civil)) {
-                    throw new Error(`Campo estado_civil fora do padrão: "${j.estado_civil}". Padrão normal: Solteiro, Casado ou Amasiado.`);
+                const estadoCivilTexto = String(j.estado_civil).trim();
+                const estadoCivilCanonico = estadosCivisValidos.get(estadoCivilTexto.toLocaleLowerCase('pt-BR'));
+                if (!estadoCivilCanonico) {
+                    throw new Error(`Campo estado_civil fora do padrão: "${j.estado_civil}". Padrão normal: Solteiro, Noivo, Casado ou Amasiado.`);
                 }
+                j.estado_civil = estadoCivilCanonico;
             }
 
             if (j.sexo === undefined || j.sexo === null || String(j.sexo).trim() === '') {

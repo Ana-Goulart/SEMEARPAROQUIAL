@@ -172,8 +172,8 @@ async function getTiosTokenContext(token) {
         `SELECT tok.*, c.origem_tipo, c.outro_ejc_id, c.encontro_tipo,
                 c.nome_tio, c.telefone_tio, c.cpf_tio, c.data_nascimento_tio,
                 c.nome_tia, c.telefone_tia, c.cpf_tia, c.data_nascimento_tia,
-                c.deficiencia_tio, c.qual_deficiencia_tio, c.restricao_alimentar_tio, c.detalhes_restricao_tio,
-                c.deficiencia_tia, c.qual_deficiencia_tia, c.restricao_alimentar_tia, c.detalhes_restricao_tia
+                c.deficiencia_tio, c.qual_deficiencia_tio, c.restricao_alimentar_tio, c.detalhes_restricao_tio, c.possui_carro_tio,
+                c.deficiencia_tia, c.qual_deficiencia_tia, c.restricao_alimentar_tia, c.detalhes_restricao_tia, c.possui_carro_tia
          FROM tios_atualizacao_tokens tok
          JOIN tios_casais c ON c.id = tok.casal_id AND c.tenant_id = tok.tenant_id
          WHERE tok.token = ?
@@ -441,6 +441,7 @@ router.get('/tios/:token', async (req, res) => {
                 qual_deficiencia_tio: decryptValue(ctx.qual_deficiencia_tio, 'tios:qual-deficiencia-tio') || ctx.qual_deficiencia_tio || '',
                 restricao_alimentar_tio: Number(ctx.restricao_alimentar_tio || 0) === 1,
                 detalhes_restricao_tio: decryptValue(ctx.detalhes_restricao_tio, 'tios:detalhes-restricao-tio') || ctx.detalhes_restricao_tio || '',
+                possui_carro_tio: Number(ctx.possui_carro_tio || 0) === 1,
                 nome_tia: ctx.nome_tia || '',
                 telefone_tia: decryptTioPhone(ctx.telefone_tia) || '',
                 cpf_tia: decryptTioCpf(ctx.cpf_tia) || '',
@@ -448,7 +449,8 @@ router.get('/tios/:token', async (req, res) => {
                 deficiencia_tia: Number(ctx.deficiencia_tia || 0) === 1,
                 qual_deficiencia_tia: decryptValue(ctx.qual_deficiencia_tia, 'tios:qual-deficiencia-tia') || ctx.qual_deficiencia_tia || '',
                 restricao_alimentar_tia: Number(ctx.restricao_alimentar_tia || 0) === 1,
-                detalhes_restricao_tia: decryptValue(ctx.detalhes_restricao_tia, 'tios:detalhes-restricao-tia') || ctx.detalhes_restricao_tia || ''
+                detalhes_restricao_tia: decryptValue(ctx.detalhes_restricao_tia, 'tios:detalhes-restricao-tia') || ctx.detalhes_restricao_tia || '',
+                possui_carro_tia: Number(ctx.possui_carro_tia || 0) === 1
             },
             outros_ejcs: outrosEjcs || []
         });
@@ -485,23 +487,25 @@ router.post('/tios/:token', express.json(), async (req, res) => {
 
         const defTio = boolValue(req.body.deficiencia_tio);
         const restTio = boolValue(req.body.restricao_alimentar_tio);
+        const carroTio = boolValue(req.body.possui_carro_tio);
         const defTia = boolValue(req.body.deficiencia_tia);
         const restTia = boolValue(req.body.restricao_alimentar_tia);
+        const carroTia = boolValue(req.body.possui_carro_tia);
         await pool.query(
             `UPDATE tios_casais
              SET nome_tio = ?, telefone_tio = ?, telefone_tio_hash = ?, cpf_tio = ?, cpf_tio_hash = ?, data_nascimento_tio = ?,
-                 deficiencia_tio = ?, qual_deficiencia_tio = ?, restricao_alimentar_tio = ?, detalhes_restricao_tio = ?,
+                 deficiencia_tio = ?, qual_deficiencia_tio = ?, restricao_alimentar_tio = ?, detalhes_restricao_tio = ?, possui_carro_tio = ?,
                  nome_tia = ?, telefone_tia = ?, telefone_tia_hash = ?, cpf_tia = ?, cpf_tia_hash = ?, data_nascimento_tia = ?,
-                 deficiencia_tia = ?, qual_deficiencia_tia = ?, restricao_alimentar_tia = ?, detalhes_restricao_tia = ?,
+                 deficiencia_tia = ?, qual_deficiencia_tia = ?, restricao_alimentar_tia = ?, detalhes_restricao_tia = ?, possui_carro_tia = ?,
                  deficiencia = ?, restricao_alimentar = ?, encontro_tipo = ?, outro_ejc_id = ?, termos_aceitos_em = CURRENT_TIMESTAMP
              WHERE id = ? AND tenant_id = ?`,
             [
                 nomeTio, encryptTioPhone(telefoneTio), tioPhoneHash(telefoneTio), encryptTioCpf(cpfTio), tioCpfHash(cpfTio), normalizeDate(req.body.data_nascimento_tio),
                 defTio ? 1 : 0, defTio ? encryptTioSensitiveText(req.body.qual_deficiencia_tio, 'qual-deficiencia-tio') : null,
-                restTio ? 1 : 0, restTio ? encryptTioSensitiveText(req.body.detalhes_restricao_tio, 'detalhes-restricao-tio') : null,
+                restTio ? 1 : 0, restTio ? encryptTioSensitiveText(req.body.detalhes_restricao_tio, 'detalhes-restricao-tio') : null, carroTio ? 1 : 0,
                 nomeTia, encryptTioPhone(telefoneTia), tioPhoneHash(telefoneTia), encryptTioCpf(cpfTia), tioCpfHash(cpfTia), normalizeDate(req.body.data_nascimento_tia),
                 defTia ? 1 : 0, defTia ? encryptTioSensitiveText(req.body.qual_deficiencia_tia, 'qual-deficiencia-tia') : null,
-                restTia ? 1 : 0, restTia ? encryptTioSensitiveText(req.body.detalhes_restricao_tia, 'detalhes-restricao-tia') : null,
+                restTia ? 1 : 0, restTia ? encryptTioSensitiveText(req.body.detalhes_restricao_tia, 'detalhes-restricao-tia') : null, carroTia ? 1 : 0,
                 (defTio || defTia) ? 1 : 0, (restTio || restTia) ? 1 : 0,
                 origemTipo === 'EJC' ? encontroTipo : null, origemTipo === 'OUTRO_EJC' ? outroEjcId : null,
                 ctx.casal_id, ctx.tenant_id

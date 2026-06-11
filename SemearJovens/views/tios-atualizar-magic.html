@@ -47,6 +47,7 @@
                         <div class="col-md-4"><label class="form-label">Tem deficiência?</label><select class="form-select" v-model="form.deficiencia_tio"><option :value="false">Não</option><option :value="true">Sim</option></select></div>
                         <div class="col-md-4" v-if="form.deficiencia_tio"><label class="form-label">Qual?</label><input class="form-control" v-model.trim="form.qual_deficiencia_tio"></div>
                         <div class="col-md-4"><label class="form-label">Restrição alimentar?</label><select class="form-select" v-model="form.restricao_alimentar_tio"><option :value="false">Não</option><option :value="true">Sim</option></select></div>
+                        <div class="col-md-4"><label class="form-label">Possui carro?</label><select class="form-select" v-model="form.possui_carro_tio"><option :value="false">Não</option><option :value="true">Sim</option></select></div>
                         <div class="col-md-8" v-if="form.restricao_alimentar_tio">
                             <label class="form-label">Qual restrição?</label>
                             <select class="form-select" v-model="form.detalhes_restricao_tio" required>
@@ -64,6 +65,7 @@
                         <div class="col-md-4"><label class="form-label">Tem deficiência?</label><select class="form-select" v-model="form.deficiencia_tia"><option :value="false">Não</option><option :value="true">Sim</option></select></div>
                         <div class="col-md-4" v-if="form.deficiencia_tia"><label class="form-label">Qual?</label><input class="form-control" v-model.trim="form.qual_deficiencia_tia"></div>
                         <div class="col-md-4"><label class="form-label">Restrição alimentar?</label><select class="form-select" v-model="form.restricao_alimentar_tia"><option :value="false">Não</option><option :value="true">Sim</option></select></div>
+                        <div class="col-md-4"><label class="form-label">Possui carro?</label><select class="form-select" v-model="form.possui_carro_tia"><option :value="false">Não</option><option :value="true">Sim</option></select></div>
                         <div class="col-md-8" v-if="form.restricao_alimentar_tia">
                             <label class="form-label">Qual restrição?</label>
                             <select class="form-select" v-model="form.detalhes_restricao_tia" required>
@@ -146,6 +148,8 @@
                         this.form.telefone_tia = this.formatarTelefone(this.form.telefone_tia);
                         this.form.cpf_tio = this.formatarCpf(this.form.cpf_tio);
                         this.form.cpf_tia = this.formatarCpf(this.form.cpf_tia);
+                        this.form.possui_carro_tio = !!this.form.possui_carro_tio;
+                        this.form.possui_carro_tia = !!this.form.possui_carro_tia;
                     } catch (err) { this.erro = err.message || 'Não foi possível abrir o formulário.'; }
                     finally { this.loading = false; }
                 },

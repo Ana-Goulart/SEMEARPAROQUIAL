@@ -320,9 +320,9 @@ router.post('/', async (req, res) => {
 
         // Ao criar um novo EJC, vincula automaticamente todas as equipes já cadastradas.
         await pool.query(
-            `INSERT IGNORE INTO equipes_ejc (ejc_id, equipe_id)
-             SELECT ?, id FROM equipes WHERE tenant_id = ?`,
-            [result.insertId, tenantId]
+            `INSERT IGNORE INTO equipes_ejc (tenant_id, ejc_id, equipe_id)
+             SELECT ?, ?, id FROM equipes WHERE tenant_id = ?`,
+            [tenantId, result.insertId, tenantId]
         );
 
         await registrarLog('sistema', 'CREATE', `EJC ${numero} criado`);

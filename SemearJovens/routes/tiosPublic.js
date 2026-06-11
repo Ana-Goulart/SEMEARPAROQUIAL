@@ -66,10 +66,12 @@ async function ensureEstrutura() {
                 detalhes_restricao_tio VARCHAR(255) NULL,
                 deficiencia_tio TINYINT(1) NOT NULL DEFAULT 0,
                 qual_deficiencia_tio VARCHAR(255) NULL,
+                possui_carro_tio TINYINT(1) NOT NULL DEFAULT 0,
                 restricao_alimentar_tia TINYINT(1) NOT NULL DEFAULT 0,
                 detalhes_restricao_tia VARCHAR(255) NULL,
                 deficiencia_tia TINYINT(1) NOT NULL DEFAULT 0,
                 qual_deficiencia_tia VARCHAR(255) NULL,
+                possui_carro_tia TINYINT(1) NOT NULL DEFAULT 0,
                 observacoes VARCHAR(255) NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -90,10 +92,12 @@ async function ensureEstrutura() {
             ["detalhes_restricao_tio", "ALTER TABLE tios_casais ADD COLUMN detalhes_restricao_tio VARCHAR(255) NULL AFTER restricao_alimentar_tio"],
             ["deficiencia_tio", "ALTER TABLE tios_casais ADD COLUMN deficiencia_tio TINYINT(1) NOT NULL DEFAULT 0 AFTER detalhes_restricao_tio"],
             ["qual_deficiencia_tio", "ALTER TABLE tios_casais ADD COLUMN qual_deficiencia_tio VARCHAR(255) NULL AFTER deficiencia_tio"],
+            ["possui_carro_tio", "ALTER TABLE tios_casais ADD COLUMN possui_carro_tio TINYINT(1) NOT NULL DEFAULT 0 AFTER qual_deficiencia_tio"],
             ["restricao_alimentar_tia", "ALTER TABLE tios_casais ADD COLUMN restricao_alimentar_tia TINYINT(1) NOT NULL DEFAULT 0 AFTER qual_deficiencia_tio"],
             ["detalhes_restricao_tia", "ALTER TABLE tios_casais ADD COLUMN detalhes_restricao_tia VARCHAR(255) NULL AFTER restricao_alimentar_tia"],
             ["deficiencia_tia", "ALTER TABLE tios_casais ADD COLUMN deficiencia_tia TINYINT(1) NOT NULL DEFAULT 0 AFTER detalhes_restricao_tia"],
             ["qual_deficiencia_tia", "ALTER TABLE tios_casais ADD COLUMN qual_deficiencia_tia VARCHAR(255) NULL AFTER deficiencia_tia"],
+            ["possui_carro_tia", "ALTER TABLE tios_casais ADD COLUMN possui_carro_tia TINYINT(1) NOT NULL DEFAULT 0 AFTER qual_deficiencia_tia"],
             ["termos_aceitos_em", "ALTER TABLE tios_casais ADD COLUMN termos_aceitos_em DATETIME NULL AFTER observacoes"]
         ];
         for (const [coluna, sql] of colunasExtras) {
@@ -198,8 +202,8 @@ router.post('/validar', async (req, res) => {
 
         const [rows] = await pool.query(
             `SELECT id, tenant_id, telefone_tio, telefone_tia, restricao_alimentar, deficiencia,
-                    restricao_alimentar_tio, detalhes_restricao_tio, deficiencia_tio, qual_deficiencia_tio,
-                    restricao_alimentar_tia, detalhes_restricao_tia, deficiencia_tia, qual_deficiencia_tia
+                    restricao_alimentar_tio, detalhes_restricao_tio, deficiencia_tio, qual_deficiencia_tio, possui_carro_tio,
+                    restricao_alimentar_tia, detalhes_restricao_tia, deficiencia_tia, qual_deficiencia_tia, possui_carro_tia
              FROM tios_casais
              WHERE ecc_id = ?
                AND LOWER(TRIM(nome_tio)) = LOWER(TRIM(?))
@@ -237,10 +241,12 @@ router.post('/validar', async (req, res) => {
                 detalhes_restricao_tio: casal.detalhes_restricao_tio || '',
                 deficiencia_tio: !!casal.deficiencia_tio,
                 qual_deficiencia_tio: casal.qual_deficiencia_tio || '',
+                possui_carro_tio: !!casal.possui_carro_tio,
                 restricao_alimentar_tia: !!casal.restricao_alimentar_tia,
                 detalhes_restricao_tia: casal.detalhes_restricao_tia || '',
                 deficiencia_tia: !!casal.deficiencia_tia,
-                qual_deficiencia_tia: casal.qual_deficiencia_tia || ''
+                qual_deficiencia_tia: casal.qual_deficiencia_tia || '',
+                possui_carro_tia: !!casal.possui_carro_tia
             }
         });
     } catch (err) {
@@ -263,10 +269,12 @@ router.post('/atualizar', async (req, res) => {
         const detalhesRestricaoTio = restricaoAlimentarTio ? (String(req.body.detalhes_restricao_tio || '').trim() || null) : null;
         const deficienciaTio = req.body.deficiencia_tio !== undefined ? parseBool(req.body.deficiencia_tio) : parseBool(req.body.deficiencia);
         const qualDeficienciaTio = deficienciaTio ? (String(req.body.qual_deficiencia_tio || '').trim() || null) : null;
+        const possuiCarroTio = parseBool(req.body.possui_carro_tio);
         const restricaoAlimentarTia = req.body.restricao_alimentar_tia !== undefined ? parseBool(req.body.restricao_alimentar_tia) : parseBool(req.body.restricao_alimentar);
         const detalhesRestricaoTia = restricaoAlimentarTia ? (String(req.body.detalhes_restricao_tia || '').trim() || null) : null;
         const deficienciaTia = req.body.deficiencia_tia !== undefined ? parseBool(req.body.deficiencia_tia) : parseBool(req.body.deficiencia);
         const qualDeficienciaTia = deficienciaTia ? (String(req.body.qual_deficiencia_tia || '').trim() || null) : null;
+        const possuiCarroTia = parseBool(req.body.possui_carro_tia);
         const restricaoAlimentar = restricaoAlimentarTio || restricaoAlimentarTia;
         const deficiencia = deficienciaTio || deficienciaTia;
         const observacoesAdicionais = String(req.body.observacoes_adicionais || '').trim() || null;
@@ -281,15 +289,15 @@ router.post('/atualizar', async (req, res) => {
             `UPDATE tios_casais
              SET telefone_tio = ?, telefone_tia = ?, restricao_alimentar = ?, deficiencia = ?,
                  telefone_tio_hash = ?, telefone_tia_hash = ?,
-                 restricao_alimentar_tio = ?, detalhes_restricao_tio = ?, deficiencia_tio = ?, qual_deficiencia_tio = ?,
-                 restricao_alimentar_tia = ?, detalhes_restricao_tia = ?, deficiencia_tia = ?, qual_deficiencia_tia = ?,
+                 restricao_alimentar_tio = ?, detalhes_restricao_tio = ?, deficiencia_tio = ?, qual_deficiencia_tio = ?, possui_carro_tio = ?,
+                 restricao_alimentar_tia = ?, detalhes_restricao_tia = ?, deficiencia_tia = ?, qual_deficiencia_tia = ?, possui_carro_tia = ?,
                  observacoes = COALESCE(?, observacoes), termos_aceitos_em = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
              WHERE id = ? AND tenant_id = ?`,
             [
                 encryptTioPhone(telefoneTio), encryptTioPhone(telefoneTia), restricaoAlimentar ? 1 : 0, deficiencia ? 1 : 0,
                 tioPhoneHash(telefoneTio), tioPhoneHash(telefoneTia),
-                restricaoAlimentarTio ? 1 : 0, encryptTioSensitiveText(detalhesRestricaoTio, 'detalhes-restricao-tio'), deficienciaTio ? 1 : 0, encryptTioSensitiveText(qualDeficienciaTio, 'qual-deficiencia-tio'),
-                restricaoAlimentarTia ? 1 : 0, encryptTioSensitiveText(detalhesRestricaoTia, 'detalhes-restricao-tia'), deficienciaTia ? 1 : 0, encryptTioSensitiveText(qualDeficienciaTia, 'qual-deficiencia-tia'),
+                restricaoAlimentarTio ? 1 : 0, encryptTioSensitiveText(detalhesRestricaoTio, 'detalhes-restricao-tio'), deficienciaTio ? 1 : 0, encryptTioSensitiveText(qualDeficienciaTio, 'qual-deficiencia-tio'), possuiCarroTio ? 1 : 0,
+                restricaoAlimentarTia ? 1 : 0, encryptTioSensitiveText(detalhesRestricaoTia, 'detalhes-restricao-tia'), deficienciaTia ? 1 : 0, encryptTioSensitiveText(qualDeficienciaTia, 'qual-deficiencia-tia'), possuiCarroTia ? 1 : 0,
                 observacoesAdicionais, payload.casal_id, payload.tenant_id
             ]
         );
@@ -320,10 +328,12 @@ router.post('/criar', async (req, res) => {
         const detalhesRestricaoTio = restricaoAlimentarTio ? (String(req.body.detalhes_restricao_tio || '').trim() || null) : null;
         const deficienciaTio = req.body.deficiencia_tio !== undefined ? parseBool(req.body.deficiencia_tio) : parseBool(req.body.deficiencia);
         const qualDeficienciaTio = deficienciaTio ? (String(req.body.qual_deficiencia_tio || '').trim() || null) : null;
+        const possuiCarroTio = parseBool(req.body.possui_carro_tio);
         const restricaoAlimentarTia = req.body.restricao_alimentar_tia !== undefined ? parseBool(req.body.restricao_alimentar_tia) : parseBool(req.body.restricao_alimentar);
         const detalhesRestricaoTia = restricaoAlimentarTia ? (String(req.body.detalhes_restricao_tia || '').trim() || null) : null;
         const deficienciaTia = req.body.deficiencia_tia !== undefined ? parseBool(req.body.deficiencia_tia) : parseBool(req.body.deficiencia);
         const qualDeficienciaTia = deficienciaTia ? (String(req.body.qual_deficiencia_tia || '').trim() || null) : null;
+        const possuiCarroTia = parseBool(req.body.possui_carro_tia);
         const restricaoAlimentar = restricaoAlimentarTio || restricaoAlimentarTia;
         const deficiencia = deficienciaTio || deficienciaTia;
         const observacoes = String(req.body.observacoes || '').trim() || null;
@@ -347,9 +357,9 @@ router.post('/criar', async (req, res) => {
              (tenant_id, ecc_id, nome_tio, telefone_tio, data_nascimento_tio, nome_tia, telefone_tia, data_nascimento_tia,
               telefone_tio_hash, telefone_tia_hash,
               restricao_alimentar, deficiencia,
-              restricao_alimentar_tio, detalhes_restricao_tio, deficiencia_tio, qual_deficiencia_tio,
-              restricao_alimentar_tia, detalhes_restricao_tia, deficiencia_tia, qual_deficiencia_tia, observacoes, termos_aceitos_em)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+              restricao_alimentar_tio, detalhes_restricao_tio, deficiencia_tio, qual_deficiencia_tio, possui_carro_tio,
+              restricao_alimentar_tia, detalhes_restricao_tia, deficiencia_tia, qual_deficiencia_tia, possui_carro_tia, observacoes, termos_aceitos_em)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 tenantId,
                 eccId,
@@ -367,10 +377,12 @@ router.post('/criar', async (req, res) => {
                 encryptTioSensitiveText(detalhesRestricaoTio, 'detalhes-restricao-tio'),
                 deficienciaTio ? 1 : 0,
                 encryptTioSensitiveText(qualDeficienciaTio, 'qual-deficiencia-tio'),
+                possuiCarroTio ? 1 : 0,
                 restricaoAlimentarTia ? 1 : 0,
                 encryptTioSensitiveText(detalhesRestricaoTia, 'detalhes-restricao-tia'),
                 deficienciaTia ? 1 : 0,
                 encryptTioSensitiveText(qualDeficienciaTia, 'qual-deficiencia-tia'),
+                possuiCarroTia ? 1 : 0,
                 observacoes,
                 new Date()
             ]

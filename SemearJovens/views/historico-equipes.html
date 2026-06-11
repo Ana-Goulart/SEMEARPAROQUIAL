@@ -1753,14 +1753,31 @@
                         return result;
                     },
                     formatarOrigemEquipe(jovem) {
+                        const prefixarOrigemSeNecessario = (prefixo, nome) => {
+                            const prefixoLimpo = String(prefixo || '').trim();
+                            const nomeLimpo = String(nome || '').trim();
+                            if (!nomeLimpo) return prefixoLimpo;
+                            const regexPrefixo = new RegExp(`^${prefixoLimpo}\\b`, 'i');
+                            if (regexPrefixo.test(nomeLimpo)) return nomeLimpo;
+                            return `${prefixoLimpo} ${nomeLimpo}`.trim();
+                        };
+                        const normalizarNomeMovimentoTio = (nome, fallback = '') => {
+                            const limpar = (valor) => String(valor || '').trim().replace(/\s+/g, ' ')
+                                .replace(/^(EJC|ECC|ECNA)\b\s*/i, '')
+                                .replace(/^Par[oó]quia\b\s*/i, '')
+                                .trim()
+                                .toUpperCase();
+                            return limpar(nome) || limpar(fallback);
+                        };
+
                         if (String(jovem?.papel || '').toUpperCase() === 'TIOS') {
                             const ehOutroTio = String(jovem?.origem_ejc_tipo || 'EJC').toUpperCase() === 'OUTRO_EJC'
                                 || !!jovem?.outro_ejc_id
                                 || !!jovem?.outro_ejc_nome
                                 || !!jovem?.outro_ejc_paroquia;
                             if (ehOutroTio) {
-                                const paroquia = String(jovem?.outro_ejc_paroquia || jovem?.outro_ejc_nome || '').trim();
-                                return `ECC${paroquia ? ' ' + paroquia : ''}`.trim();
+                                const nomeMovimento = normalizarNomeMovimentoTio(jovem?.outro_ejc_nome, jovem?.outro_ejc_paroquia);
+                                return prefixarOrigemSeNecessario('ECC', nomeMovimento);
                             }
                             return `ECC ${this.nomeMeuEJC || ''}`.trim();
                         }
@@ -1771,7 +1788,7 @@
                             || !!jovem?.outro_ejc_numero;
                         if (ehOutro) {
                             const nomeOutroEjc = String(jovem?.outro_ejc_nome || jovem?.outro_ejc_paroquia || '').trim();
-                            return `EJC${nomeOutroEjc ? ' ' + nomeOutroEjc : ''}`.trim();
+                            return prefixarOrigemSeNecessario('EJC', nomeOutroEjc);
                         }
                         const numeroProprio = jovem?.numero_ejc_fez ? this.numeroParaRomano(jovem.numero_ejc_fez) : '';
                         if (numeroProprio) {

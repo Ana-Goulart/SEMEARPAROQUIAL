@@ -25,6 +25,10 @@ function normalizePhoneDigits(value) {
     return String(value || '').replace(/\D/g, '');
 }
 
+function normalizeCpfDigits(value) {
+    return String(value || '').replace(/\D/g, '').slice(0, 11);
+}
+
 function normalizeEmailValue(value) {
     return String(value || '').trim().toLowerCase();
 }
@@ -41,6 +45,27 @@ function decryptJovemPhone(value) {
 function jovemPhoneHash(value) {
     const normalized = normalizePhoneDigits(value);
     return normalized ? blindIndex(normalized, 'lista-mestre:telefone') : null;
+}
+
+function formatCpfDigits(value) {
+    const digits = normalizeCpfDigits(value);
+    if (!digits) return null;
+    if (digits.length !== 11) return digits;
+    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+}
+
+function encryptJovemCpf(value) {
+    const formatted = formatCpfDigits(value);
+    return formatted && normalizeCpfDigits(formatted).length === 11 ? encryptValue(formatted, 'lista-mestre:cpf') : null;
+}
+
+function decryptJovemCpf(value) {
+    return normalizeTrimmedText(decryptValue(value, 'lista-mestre:cpf'));
+}
+
+function jovemCpfHash(value) {
+    const normalized = normalizeCpfDigits(value);
+    return normalized.length === 11 ? blindIndex(normalized, 'lista-mestre:cpf') : null;
 }
 
 function encryptJovemEmail(value) {
@@ -70,6 +95,7 @@ function decryptJovemRecord(record) {
     if (!record || typeof record !== 'object') return record;
     const item = { ...record };
     if (Object.prototype.hasOwnProperty.call(item, 'telefone')) item.telefone = decryptJovemPhone(item.telefone);
+    if (Object.prototype.hasOwnProperty.call(item, 'cpf')) item.cpf = decryptJovemCpf(item.cpf);
     if (Object.prototype.hasOwnProperty.call(item, 'email')) item.email = decryptJovemEmail(item.email);
     if (Object.prototype.hasOwnProperty.call(item, 'conjuge_telefone')) item.conjuge_telefone = decryptJovemPhone(item.conjuge_telefone);
     if (Object.prototype.hasOwnProperty.call(item, 'qual_deficiencia')) item.qual_deficiencia = decryptJovemSensitiveText(item.qual_deficiencia, 'qual-deficiencia');
@@ -86,6 +112,7 @@ async function ensureJovensSensitiveColumns(pool) {
 
     const alterStatements = [
         'ALTER TABLE jovens MODIFY COLUMN telefone TEXT NULL',
+        'ALTER TABLE jovens MODIFY COLUMN cpf TEXT NULL',
         'ALTER TABLE jovens MODIFY COLUMN email TEXT NULL',
         'ALTER TABLE jovens MODIFY COLUMN qual_deficiencia TEXT NULL',
         'ALTER TABLE jovens MODIFY COLUMN detalhes_restricao TEXT NULL'
@@ -101,8 +128,11 @@ async function ensureJovensSensitiveColumns(pool) {
 
     const statements = [
         'ALTER TABLE jovens ADD COLUMN telefone_hash CHAR(64) NULL AFTER telefone',
+        'ALTER TABLE jovens ADD COLUMN cpf TEXT NULL AFTER telefone_hash',
+        'ALTER TABLE jovens ADD COLUMN cpf_hash CHAR(64) NULL AFTER cpf',
         'ALTER TABLE jovens ADD COLUMN email_hash CHAR(64) NULL AFTER email',
         'ALTER TABLE jovens ADD KEY idx_jovens_tenant_telefone_hash (tenant_id, telefone_hash)',
+        'ALTER TABLE jovens ADD KEY idx_jovens_tenant_cpf_hash (tenant_id, cpf_hash)',
         'ALTER TABLE jovens ADD KEY idx_jovens_tenant_email_hash (tenant_id, email_hash)'
     ];
     if (await hasColumn(pool, 'jovens', 'conjuge_telefone')) {
@@ -120,13 +150,18 @@ async function ensureJovensSensitiveColumns(pool) {
 
 module.exports = {
     decryptJovemRecord,
+    decryptJovemCpf,
     decryptJovemEmail,
     decryptJovemPhone,
+    encryptJovemCpf,
     encryptJovemEmail,
     encryptJovemPhone,
     encryptJovemSensitiveText,
     ensureJovensSensitiveColumns,
+    formatCpfDigits,
+    jovemCpfHash,
     jovemEmailHash,
     jovemPhoneHash,
+    normalizeCpfDigits,
     normalizePhoneDigits
 };

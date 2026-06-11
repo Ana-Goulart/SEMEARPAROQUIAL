@@ -114,6 +114,13 @@
                                 <input class="form-control" v-model.trim="atualizacao.qual_deficiencia_tio" maxlength="255">
                             </div>
                             <div class="col-md-6">
+                                <label class="form-label">Tio possui carro?</label>
+                                <select class="form-select" v-model="atualizacao.possui_carro_tio" :disabled="!cadastroValidado">
+                                    <option :value="false">Não</option>
+                                    <option :value="true">Sim</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
                                 <label class="form-label">Tia possui restrição alimentar?</label>
                                 <select class="form-select" v-model="atualizacao.restricao_alimentar_tia" :disabled="!cadastroValidado">
                                     <option :value="false">Não</option>
@@ -139,6 +146,13 @@
                             <div class="col-md-6" v-if="atualizacao.deficiencia_tia && cadastroValidado">
                                 <label class="form-label">Qual deficiência da tia?</label>
                                 <input class="form-control" v-model.trim="atualizacao.qual_deficiencia_tia" maxlength="255">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Tia possui carro?</label>
+                                <select class="form-select" v-model="atualizacao.possui_carro_tia" :disabled="!cadastroValidado">
+                                    <option :value="false">Não</option>
+                                    <option :value="true">Sim</option>
+                                </select>
                             </div>
                             <div class="col-12">
                                 <label class="form-label">Observações adicionais</label>
@@ -221,6 +235,20 @@
                             <div class="col-md-6">
                                 <label class="form-label">Data de nascimento da tia *</label>
                                 <input type="text" class="form-control date-br" v-model.trim="novo.data_nascimento_tia" placeholder="dd/mm/aaaa" inputmode="numeric">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Tio possui carro?</label>
+                                <select class="form-select" v-model="novo.possui_carro_tio">
+                                    <option :value="false">Não</option>
+                                    <option :value="true">Sim</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Tia possui carro?</label>
+                                <select class="form-select" v-model="novo.possui_carro_tia">
+                                    <option :value="false">Não</option>
+                                    <option :value="true">Sim</option>
+                                </select>
                             </div>
                             <div class="col-md-12">
                                 <label class="form-label">Qual ECC/ECNA fez *</label>
@@ -308,11 +336,13 @@
                         outra_restricao_tio: '',
                         deficiencia_tio: false,
                         qual_deficiencia_tio: '',
+                        possui_carro_tio: false,
                         restricao_alimentar_tia: false,
                         detalhes_restricao_tia: '',
                         outra_restricao_tia: '',
                         deficiencia_tia: false,
                         qual_deficiencia_tia: '',
+                        possui_carro_tia: false,
                         observacoes_adicionais: ''
                     },
                     novo: {
@@ -323,6 +353,8 @@
                         data_nascimento_tio: '',
                         data_nascimento_tia: '',
                         ecc_id: 0,
+                        possui_carro_tio: false,
+                        possui_carro_tia: false,
                         observacoes: ''
                     },
                     naoEncontradoForm: {
@@ -393,11 +425,13 @@
                         this.atualizacao.outra_restricao_tio = '';
                         this.atualizacao.deficiencia_tio = !!(data.casal && data.casal.deficiencia_tio);
                         this.atualizacao.qual_deficiencia_tio = (data.casal && data.casal.qual_deficiencia_tio) || '';
+                        this.atualizacao.possui_carro_tio = !!(data.casal && data.casal.possui_carro_tio);
                         this.atualizacao.restricao_alimentar_tia = !!(data.casal && data.casal.restricao_alimentar_tia);
                         this.atualizacao.detalhes_restricao_tia = (data.casal && data.casal.detalhes_restricao_tia) || '';
                         this.atualizacao.outra_restricao_tia = '';
                         this.atualizacao.deficiencia_tia = !!(data.casal && data.casal.deficiencia_tia);
                         this.atualizacao.qual_deficiencia_tia = (data.casal && data.casal.qual_deficiencia_tia) || '';
+                        this.atualizacao.possui_carro_tia = !!(data.casal && data.casal.possui_carro_tia);
                         this.mensagem = data.message || 'Cadastro confirmado.';
                     } catch (e) {
                         this.cadastroValidado = false;
@@ -457,10 +491,12 @@
                                 detalhes_restricao_tio: detalhesRestricaoTio,
                                 deficiencia_tio: this.atualizacao.deficiencia_tio ? 1 : 0,
                                 qual_deficiencia_tio: this.atualizacao.deficiencia_tio ? (this.atualizacao.qual_deficiencia_tio || null) : null,
+                                possui_carro_tio: this.atualizacao.possui_carro_tio ? 1 : 0,
                                 restricao_alimentar_tia: this.atualizacao.restricao_alimentar_tia ? 1 : 0,
                                 detalhes_restricao_tia: detalhesRestricaoTia,
                                 deficiencia_tia: this.atualizacao.deficiencia_tia ? 1 : 0,
                                 qual_deficiencia_tia: this.atualizacao.deficiencia_tia ? (this.atualizacao.qual_deficiencia_tia || null) : null,
+                                possui_carro_tia: this.atualizacao.possui_carro_tia ? 1 : 0,
                                 observacoes_adicionais: this.atualizacao.observacoes_adicionais || null
                             })
                         });
@@ -491,6 +527,8 @@
                             data_nascimento_tio: this.novo.data_nascimento_tio,
                             data_nascimento_tia: this.novo.data_nascimento_tia,
                             ecc_id: this.novo.ecc_id,
+                            possui_carro_tio: this.novo.possui_carro_tio ? 1 : 0,
+                            possui_carro_tia: this.novo.possui_carro_tia ? 1 : 0,
                             observacoes: this.novo.observacoes || null
                         };
                         const res = await fetch('/api/tios-public/criar', {

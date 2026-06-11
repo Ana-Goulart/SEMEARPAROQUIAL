@@ -28,6 +28,8 @@ Padrao obrigatorio para menus e permissoes:
 - Sempre que for criado um menu novo na raiz/navegacao do sistema, adicione esse menu tambem em `SemearJovens/views/funcoes-dirigencia.html`
 - O menu novo deve aparecer dentro da configuracao de cada funcao da dirigencia, permitindo escolher se os usuarios vinculados poderao apenas visualizar ou tambem editar esse menu
 - Ao adicionar o menu na configuracao de funcoes, mantenha a mesma chave/identificador usada pela navegacao para que as permissoes funcionem de forma consistente
+- Todo menu novo e todas as APIs/dados carregados por ele devem respeitar isolamento multi-tenant: consultas, inserts, updates, deletes, joins, iframes, cards, listas, filtros e buscas precisam usar o `tenant_id` do usuario autenticado, sem exibir ou permitir alterar dados de outro EJC/tenant
+- Se o menu novo criar ou consumir tabelas proprias, essas tabelas devem ter `tenant_id`, indices por tenant e migrations correspondentes; tabelas relacionadas por join tambem devem validar que o registro relacionado pertence ao mesmo tenant
 
 Padrao obrigatorio para banco de dados:
 

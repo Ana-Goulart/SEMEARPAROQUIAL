@@ -143,6 +143,33 @@
             border-bottom: 0;
         }
 
+        .lista-mestre-import-loading {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            border: 1px solid rgba(217, 166, 80, 0.35);
+            border-radius: 8px;
+            background: #fff8ee;
+            color: #7a5012;
+            padding: 0.85rem 1rem;
+        }
+
+        .lista-mestre-import-loading i {
+            color: #b88732;
+            font-size: 1.1rem;
+        }
+
+        .importacao-tios-footer-status {
+            flex: 1 1 260px;
+            min-width: 0;
+            color: #6c757d;
+            font-size: 0.9rem;
+            text-align: left;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
         #modalCasal .list-group-item-action {
             cursor: pointer;
         }
@@ -865,11 +892,21 @@
                 <div class="modal-content border-0 shadow">
                     <div class="modal-header bg-light border-bottom">
                         <h5 class="modal-title">Importar Excel ou CSV (Modelo esperado)</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" :disabled="importandoTios"></button>
                     </div>
                     <div class="modal-body">
+                        <div v-if="importandoTios" class="lista-mestre-import-loading mb-3" role="status" aria-live="polite">
+                            <i class="fa-solid fa-circle-notch fa-spin"></i>
+                            <div>
+                                <div class="fw-semibold">Importando dados...</div>
+                                <div class="small">{{ mensagemImportacaoTios || 'Aguarde enquanto os registros são criados ou atualizados.' }}</div>
+                            </div>
+                        </div>
+                        <div v-else-if="mensagemImportacaoTios" class="alert mb-3" :class="classeMensagemImportacaoTios" style="white-space: pre-wrap;">
+                            {{ mensagemImportacaoTios }}
+                        </div>
                         <p class="mb-2"><strong>1) Cabeçalho recomendado da planilha</strong></p>
-                        <div class="border rounded p-2 bg-light small" style="white-space: pre-wrap;">nome_tio, telefone_tio, data_nascimento_tio, restricao_alimentar_tio, detalhes_restricao_tio, deficiencia_tio, qual_deficiencia_tio, nome_tia, telefone_tia, data_nascimento_tia, restricao_alimentar_tia, detalhes_restricao_tia, deficiencia_tia, qual_deficiencia_tia, origem_tipo, encontro, outro_ejc_paroquia, outro_ejc_nome, observacoes
+                        <div class="border rounded p-2 bg-light small" style="white-space: pre-wrap;">nome_tio, telefone_tio, data_nascimento_tio, restricao_alimentar_tio, detalhes_restricao_tio, deficiencia_tio, qual_deficiencia_tio, possui_carro_tio, nome_tia, telefone_tia, data_nascimento_tia, restricao_alimentar_tia, detalhes_restricao_tia, deficiencia_tia, qual_deficiencia_tia, possui_carro_tia, origem_tipo, encontro, outro_ejc_paroquia, outro_ejc_nome, observacoes
 
 Use origem_tipo como:
 EJC ou OUTRO_EJC
@@ -899,6 +936,8 @@ data_nascimento_tio/data_nascimento_tia: AAAA-MM-DD
 origem_tipo: EJC ou OUTRO_EJC
 restricao_alimentar_tio, restricao_alimentar_tia, deficiencia_tio, deficiencia_tia:
 use Sim/Não, True/False ou 1/0
+possui_carro_tio, possui_carro_tia:
+use Sim/Não, True/False ou 1/0
 
 Se origem_tipo = EJC:
 preencha encontro com ECC ou ECNA
@@ -921,12 +960,17 @@ preencha outro_ejc_paroquia</div>
                                 <label class="form-check-label" for="importHistoricoEquipesTios">Importar equipes por edição do EJC</label>
                             </div>
                             <label class="form-label">Selecione o arquivo Excel ou CSV</label>
-                            <input id="importExcelInputTios" type="file" class="form-control" accept=".xlsx,.csv,text/csv" @change="onImportFileChangeTios">
+                            <input id="importExcelInputTios" type="file" class="form-control" accept=".xlsx,.csv,text/csv" @change="onImportFileChangeTios" :disabled="importandoTios">
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-soft-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-success" @click="confirmarImportacaoTios">Importar</button>
+                        <div v-if="mensagemImportacaoTios" class="importacao-tios-footer-status" :title="mensagemImportacaoTios">
+                            <i v-if="importandoTios" class="fa-solid fa-circle-notch fa-spin me-1"></i>{{ mensagemImportacaoTios }}
+                        </div>
+                        <button type="button" class="btn btn-soft-secondary" data-bs-dismiss="modal" :disabled="importandoTios">Cancelar</button>
+                        <button type="button" class="btn btn-success" @click="confirmarImportacaoTios" :disabled="importandoTios">
+                            <i v-if="importandoTios" class="fa-solid fa-circle-notch fa-spin me-1"></i>{{ importandoTios ? 'Importando...' : 'Importar' }}
+                        </button>
                     </div>
                 </div>
             </div>
@@ -1011,6 +1055,13 @@ preencha outro_ejc_paroquia</div>
                                                     <label class="text-muted small">Nascimento</label>
                                                     <input type="date" class="form-control" v-model="formCasal.data_nascimento_tio" lang="pt-BR">
                                                 </div>
+                                                <div class="col-md-6">
+                                                    <label class="text-muted small">Possui carro?</label>
+                                                    <select class="form-select" v-model="formCasal.possui_carro_tio">
+                                                        <option :value="false">Não</option>
+                                                        <option :value="true">Sim</option>
+                                                    </select>
+                                                </div>
                                             </div>
                                         </div>
                                         <div class="col-12">
@@ -1046,6 +1097,13 @@ preencha outro_ejc_paroquia</div>
                                                 <div class="col-lg-3">
                                                     <label class="text-muted small">Nascimento</label>
                                                     <input type="date" class="form-control" v-model="formCasal.data_nascimento_tia" lang="pt-BR">
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <label class="text-muted small">Possui carro?</label>
+                                                    <select class="form-select" v-model="formCasal.possui_carro_tia">
+                                                        <option :value="false">Não</option>
+                                                        <option :value="true">Sim</option>
+                                                    </select>
                                                 </div>
                                             </div>
                                         </div>
@@ -1218,20 +1276,20 @@ preencha outro_ejc_paroquia</div>
                                                 <div class="history-add-row" v-if="isEditingCasal">
                                                     <small class="text-muted d-block mb-1">Adicionar Equipe:</small>
                                                     <div class="history-add-grid">
-                                                        <select v-model="novoServicoCasal.ejc_id" class="form-select form-select-sm">
+                                                        <select v-model="novoServicoCasal.ejc_id" class="form-select form-select-sm" @change="onEjcServicoCasalChange">
                                                             <option :value="null">EJC...</option>
                                                             <option v-for="ejc in ejcs" :key="`ejc-casal-add-${ejc.id}`" :value="ejc.id">{{ formatarEjcOption(ejc) }}</option>
                                                         </select>
-                                                        <select v-model="novoServicoCasal.equipe_id" class="form-select form-select-sm" @change="onEquipeServicoCasalChange">
+                                                        <select v-model="novoServicoCasal.equipe_id" class="form-select form-select-sm" :disabled="!novoServicoCasal.ejc_id" @change="onEquipeServicoCasalChange">
                                                             <option :value="null">Equipe...</option>
-                                                            <option v-for="eq in equipes" :key="`eq-casal-add-${eq.id}`" :value="eq.id">{{ eq.nome }}</option>
+                                                            <option v-for="eq in equipesServicoCasalDisponiveis()" :key="`eq-casal-add-${eq.id}`" :value="eq.id">{{ eq.nome }}</option>
                                                         </select>
-                                                        <select v-model="novoServicoCasal.papel" class="form-select form-select-sm" style="width: 110px;" @change="onPapelServicoCasalChange">
+                                                        <select v-model="novoServicoCasal.papel" class="form-select form-select-sm" @change="onPapelServicoCasalChange">
                                                             <option v-for="p in papeisEquipeDisponiveis" :key="`papel-casal-add-${p.id}`" :value="p.nome">{{ p.nome }}</option>
                                                         </select>
-                                                        <select v-model="novoServicoCasal.subfuncao" class="form-select form-select-sm" style="max-width: 220px;" :disabled="!novoServicoCasal.equipe_id">
+                                                        <select v-model="novoServicoCasal.subfuncao" class="form-select form-select-sm" :disabled="!novoServicoCasal.equipe_id">
                                                             <option value="">Subfunção...</option>
-                                                            <option v-for="f in subfuncoesServicoCasalDisponiveis" :key="`subfuncao-casal-add-${f.id}`" :value="f.nome">{{ f.nome }}</option>
+                                                            <option v-for="f in subfuncoesServicoCasalDisponiveis()" :key="`subfuncao-casal-add-${f.id}`" :value="f.nome">{{ f.nome }}</option>
                                                         </select>
                                                         <button type="button" class="btn btn-success btn-sm" @click="adicionarServicoCasal" :disabled="!novoServicoCasal.equipe_id || !novoServicoCasal.ejc_id" title="Adicionar equipe"><i class="fa-solid fa-plus icon-accent"></i></button>
                                                     </div>
@@ -1333,6 +1391,13 @@ preencha outro_ejc_paroquia</div>
                                                 </div>
                                             </div>
                                         </div>
+                                        <div class="col-md-12">
+                                            <label class="form-label d-block">Possui carro?</label>
+                                            <select class="form-select" v-model="formCasal.possui_carro_tio">
+                                                <option :value="false">Não</option>
+                                                <option :value="true">Sim</option>
+                                            </select>
+                                        </div>
                                         <div class="col-12 pt-2"><h6 class="tios-section-heading">Saúde da Tia</h6></div>
                                         <div class="col-md-12">
                                             <label class="form-label d-block">Pessoa com Deficiência(PcD)?</label>
@@ -1360,6 +1425,13 @@ preencha outro_ejc_paroquia</div>
                                                     </select>
                                                 </div>
                                             </div>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <label class="form-label d-block">Possui carro?</label>
+                                            <select class="form-select" v-model="formCasal.possui_carro_tia">
+                                                <option :value="false">Não</option>
+                                                <option :value="true">Sim</option>
+                                            </select>
                                         </div>
                                     </div>
                                 </div>
@@ -1658,6 +1730,9 @@ preencha outro_ejc_paroquia</div>
                     modalPresencas: null,
                     modalImportacaoTios: null,
                     importFileTios: null,
+                    importandoTios: false,
+                    mensagemImportacaoTios: '',
+                    tipoMensagemImportacaoTios: 'info',
                     importHistoricoEquipesTios: true,
                     presencasCasal: [],
                     comissoesCasal: [],
@@ -1711,10 +1786,12 @@ preencha outro_ejc_paroquia</div>
                         detalhes_restricao_tio: '',
                         deficiencia_tio: false,
                         qual_deficiencia_tio: '',
+                        possui_carro_tio: false,
                         restricao_alimentar_tia: false,
                         detalhes_restricao_tia: '',
                         deficiencia_tia: false,
                         qual_deficiencia_tia: '',
+                        possui_carro_tia: false,
                         observacoes: '',
                         termos_aceitos_em: null
                     },
@@ -1725,6 +1802,7 @@ preencha outro_ejc_paroquia</div>
                         { id: 2, nome: 'Tio' },
                         { id: 3, nome: 'Coordenador' }
                     ],
+                    equipesPorEjcServico: {},
                     funcoesPorEquipeServico: {},
                     novoServicoCasal: { equipe_id: null, ejc_id: null, papel: 'Tio', subfuncao: '' },
                     formEcc: { id: null, numero: '', tipo: 'ECC', descricao: '' }
@@ -1740,6 +1818,12 @@ preencha outro_ejc_paroquia</div>
                 },
                 filtrosAvancadosAbertosTios() {
                     return this.aba === 'ecc' ? this.mostrarFiltrosEcc : this.mostrarFiltrosCasais;
+                },
+                classeMensagemImportacaoTios() {
+                    if (this.tipoMensagemImportacaoTios === 'success') return 'alert-success';
+                    if (this.tipoMensagemImportacaoTios === 'danger') return 'alert-danger';
+                    if (this.tipoMensagemImportacaoTios === 'warning') return 'alert-warning';
+                    return 'alert-info';
                 },
                 casaisLocais() {
                     return (this.casais || []).filter((c) => String(c.origem_tipo || 'EJC').toUpperCase() !== 'OUTRO_EJC');
@@ -2298,14 +2382,14 @@ preencha outro_ejc_paroquia</div>
                     localStorage.removeItem(this.getChavePreferenciasColunasTios());
                 },
                 async carregarTudo() {
-                    await this.carregarCasais();
-                    Promise.all([
+                    await Promise.all([
                         this.carregarEccs(),
                         this.carregarEquipes(),
                         this.carregarEjcs(),
                         this.carregarPapeisEquipe(),
                         this.carregarOutrosEjcs()
                     ]).catch((err) => console.error(err));
+                    await this.carregarCasais();
                 },
                 async carregarCasais() {
                     this.loadingCasais = true;
@@ -2366,9 +2450,17 @@ preencha outro_ejc_paroquia</div>
                 },
                 async carregarEquipes() {
                     try {
-                        const res = await fetch('/api/tios/equipes');
+                        const res = await fetch('/api/todas-equipes');
                         const data = await res.json().catch(() => ([]));
-                        this.equipes = res.ok && Array.isArray(data) ? data : [];
+                        const lista = Array.isArray(data)
+                            ? data
+                            : (Array.isArray(data.equipes) ? data.equipes : []);
+                        this.equipes = res.ok
+                            ? lista
+                                .filter((item) => item && Number(item.id) > 0)
+                                .map((item) => ({ ...item, nome: item.nome || item.equipe || item.nome_equipe || '' }))
+                                .filter((item) => item.nome)
+                            : [];
                     } catch (err) {
                         console.error(err);
                         this.equipes = [];
@@ -2402,6 +2494,18 @@ preencha outro_ejc_paroquia</div>
                     } catch (err) {
                         console.error(err);
                         this.funcoesPorEquipeServico[equipeId] = [];
+                    }
+                },
+                async carregarEquipesPorEjcServico(ejcId) {
+                    if (!ejcId || this.equipesPorEjcServico[ejcId]) return;
+                    try {
+                        const res = await fetch(`/api/equipes/por-ejc/${encodeURIComponent(ejcId)}`);
+                        const data = await res.json().catch(() => ([]));
+                        const porEjc = res.ok && Array.isArray(data) ? data.filter((item) => item && Number(item.id) > 0) : [];
+                        this.equipesPorEjcServico[ejcId] = porEjc.length ? porEjc : (this.equipes || []).filter((item) => item && Number(item.id) > 0);
+                    } catch (err) {
+                        console.error(err);
+                        this.equipesPorEjcServico[ejcId] = (this.equipes || []).filter((item) => item && Number(item.id) > 0);
                     }
                 },
                 async carregarEjcs() {
@@ -2531,11 +2635,17 @@ preencha outro_ejc_paroquia</div>
                         DataNascimentoTio: c.data_nascimento_tio ? String(c.data_nascimento_tio).split('T')[0] : '',
                         RestricaoAlimentarTio: c.restricao_alimentar_tio ? 'Sim' : 'Nao',
                         DetalhesRestricaoTio: c.detalhes_restricao_tio || '',
+                        DeficienciaTio: c.deficiencia_tio ? 'Sim' : 'Nao',
+                        QualDeficienciaTio: c.qual_deficiencia_tio || '',
+                        PossuiCarroTio: c.possui_carro_tio ? 'Sim' : 'Nao',
                         NomeTia: c.nome_tia || '',
                         TelefoneTia: c.telefone_tia || '',
                         DataNascimentoTia: c.data_nascimento_tia ? String(c.data_nascimento_tia).split('T')[0] : '',
                         RestricaoAlimentarTia: c.restricao_alimentar_tia ? 'Sim' : 'Nao',
                         DetalhesRestricaoTia: c.detalhes_restricao_tia || '',
+                        DeficienciaTia: c.deficiencia_tia ? 'Sim' : 'Nao',
+                        QualDeficienciaTia: c.qual_deficiencia_tia || '',
+                        PossuiCarroTia: c.possui_carro_tia ? 'Sim' : 'Nao',
                         OrigemTipo: c.origem_tipo || 'EJC',
                         Encontro: c.encontro_tipo || c.ecc_tipo || '',
                         OutroEjcParoquia: c.outro_ejc_paroquia || '',
@@ -2591,18 +2701,26 @@ preencha outro_ejc_paroquia</div>
                 },
                 abrirModalImportacaoTios() {
                     if (!this.modalImportacaoTios) this.modalImportacaoTios = new bootstrap.Modal(document.getElementById('modalImportacaoTios'));
+                    this.definirMensagemImportacaoTios('', '');
                     this.modalImportacaoTios.show();
+                },
+                definirMensagemImportacaoTios(tipo, mensagem) {
+                    this.tipoMensagemImportacaoTios = tipo || 'info';
+                    this.mensagemImportacaoTios = mensagem || '';
                 },
                 onImportFileChangeTios(event) {
                     const file = event.target.files && event.target.files[0] ? event.target.files[0] : null;
+                    this.definirMensagemImportacaoTios('', '');
                     if (!file) {
                         this.importFileTios = null;
                         return;
                     }
                     const nome = String(file.name || '').toLowerCase();
                     if (!nome.endsWith('.xlsx') && !nome.endsWith('.csv')) {
+                        const msg = 'Selecione um arquivo Excel (.xlsx) ou CSV (.csv).';
                         this.importFileTios = null;
-                        alert('Selecione um arquivo Excel (.xlsx) ou CSV (.csv).');
+                        this.definirMensagemImportacaoTios('warning', msg);
+                        alert(msg);
                         event.target.value = '';
                         return;
                     }
@@ -2610,15 +2728,32 @@ preencha outro_ejc_paroquia</div>
                 },
                 async confirmarImportacaoTios() {
                     if (!this.importFileTios) {
-                        alert('Selecione um arquivo Excel ou CSV.');
+                        const msg = 'Selecione um arquivo Excel ou CSV.';
+                        this.definirMensagemImportacaoTios('warning', msg);
+                        alert(msg);
                         return;
                     }
-                    const importou = await this.importarArquivoTios(this.importFileTios);
-                    if (!importou) return;
-                    this.importFileTios = null;
-                    const input = document.getElementById('importExcelInputTios');
-                    if (input) input.value = '';
-                    if (this.modalImportacaoTios) this.modalImportacaoTios.hide();
+                    this.importandoTios = true;
+                    this.definirMensagemImportacaoTios('info', 'Importando arquivo... aguarde.');
+                    try {
+                        const importou = await this.importarArquivoTios(this.importFileTios);
+                        if (!importou) {
+                            if (!this.mensagemImportacaoTios || this.tipoMensagemImportacaoTios === 'info') {
+                                this.definirMensagemImportacaoTios('warning', 'A importação não foi concluída. Verifique o arquivo e tente novamente.');
+                            }
+                            return;
+                        }
+                        this.importFileTios = null;
+                        const input = document.getElementById('importExcelInputTios');
+                        if (input) input.value = '';
+                    } catch (err) {
+                        console.error(err);
+                        const msg = err && err.message ? err.message : 'Erro ao importar arquivo.';
+                        this.definirMensagemImportacaoTios('danger', msg);
+                        alert(msg);
+                    } finally {
+                        this.importandoTios = false;
+                    }
                 },
                 async baixarModeloImportacaoExcelTios() {
                     if (!this.ejcs.length) await this.carregarEjcs();
@@ -2630,6 +2765,7 @@ preencha outro_ejc_paroquia</div>
                         'detalhes_restricao_tio',
                         'deficiencia_tio',
                         'qual_deficiencia_tio',
+                        'possui_carro_tio',
                         'nome_tia',
                         'telefone_tia',
                         'data_nascimento_tia',
@@ -2637,6 +2773,7 @@ preencha outro_ejc_paroquia</div>
                         'detalhes_restricao_tia',
                         'deficiencia_tia',
                         'qual_deficiencia_tia',
+                        'possui_carro_tia',
                         'origem_tipo',
                         'encontro',
                         'outro_ejc_paroquia',
@@ -2658,6 +2795,7 @@ preencha outro_ejc_paroquia</div>
                         '',
                         'Nao',
                         '',
+                        'Nao',
                         'Maria',
                         '(31)99999-2222',
                         '1982-08-20',
@@ -2665,6 +2803,7 @@ preencha outro_ejc_paroquia</div>
                         'Alergia a amendoim',
                         'Nao',
                         '',
+                        'Nao',
                         'EJC',
                         'ECC',
                         '',
@@ -2702,6 +2841,7 @@ preencha outro_ejc_paroquia</div>
                         'detalhes_restricao_tio',
                         'deficiencia_tio',
                         'qual_deficiencia_tio',
+                        'possui_carro_tio',
                         'nome_tia',
                         'telefone_tia',
                         'data_nascimento_tia',
@@ -2709,6 +2849,7 @@ preencha outro_ejc_paroquia</div>
                         'detalhes_restricao_tia',
                         'deficiencia_tia',
                         'qual_deficiencia_tia',
+                        'possui_carro_tia',
                         'origem_tipo',
                         'encontro',
                         'outro_ejc_paroquia',
@@ -2730,6 +2871,7 @@ preencha outro_ejc_paroquia</div>
                         '',
                         'Nao',
                         '',
+                        'Nao',
                         'Maria',
                         '(31)99999-2222',
                         '1982-08-20',
@@ -2737,6 +2879,7 @@ preencha outro_ejc_paroquia</div>
                         'Alergia a amendoim',
                         'Nao',
                         '',
+                        'Nao',
                         'EJC',
                         'ECC',
                         '',
@@ -2811,19 +2954,90 @@ preencha outro_ejc_paroquia</div>
                 async importarArquivoTios(file) {
                     return this.importarExcelArquivo(file);
                 },
+                async importarCasaisTiosEmLotes(casaisImportacao, ignorados) {
+                    const tamanhoLote = 10;
+                    const totalLotes = Math.ceil(casaisImportacao.length / tamanhoLote);
+                    const erros = [];
+                    let criados = 0;
+                    let atualizados = 0;
+
+                    for (let inicio = 0; inicio < casaisImportacao.length; inicio += tamanhoLote) {
+                        const loteNumero = Math.floor(inicio / tamanhoLote) + 1;
+                        const lote = casaisImportacao.slice(inicio, inicio + tamanhoLote);
+                        this.definirMensagemImportacaoTios(
+                            'info',
+                            `Importando lote ${loteNumero} de ${totalLotes}... Aguarde.`
+                        );
+
+                        const response = await fetch('/api/tios/casais/bulk-replace', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ casais: lote })
+                        });
+                        const respostaTexto = await response.text().catch(() => '');
+                        let resultado = {};
+                        try {
+                            resultado = respostaTexto ? JSON.parse(respostaTexto) : {};
+                        } catch (parseErr) {
+                            resultado = {};
+                        }
+
+                        if (!response.ok) {
+                            const errosServidor = Array.isArray(resultado.erros)
+                                ? resultado.erros.map((erro) => `${erro.linha ? `Linha ${erro.linha}: ` : ''}${erro.error || 'Erro na importação.'}`)
+                                : [];
+                            const detalhes = errosServidor.length ? `\n\n${errosServidor.slice(0, 5).join('\n')}` : '';
+                            const mensagemTimeout = response.status === 504
+                                ? 'A importação demorou mais do que o servidor permitiu. Tente novamente com menos linhas ou sem o histórico de equipes por edição.'
+                                : '';
+                            const msg = `${resultado.error || mensagemTimeout || 'Erro ao importar casais em lote.'}${detalhes}`;
+                            this.definirMensagemImportacaoTios('danger', msg);
+                            alert(msg);
+                            return false;
+                        }
+
+                        criados += Number(resultado.criados || 0);
+                        atualizados += Number(resultado.atualizados || 0);
+                        if (Array.isArray(resultado.erros)) {
+                            erros.push(...resultado.erros.map((erro) => `${erro.linha ? `Linha ${erro.linha}: ` : ''}${erro.error || 'Erro na importação.'}`));
+                        }
+                    }
+
+                    await this.carregarCasais();
+
+                    if (!criados && !atualizados) {
+                        const detalhes = erros.length ? `\n\n${erros.slice(0, 5).join('\n')}` : '';
+                        const msg = `Nenhum casal foi importado. Verifique se o arquivo possui as colunas nome_tio e nome_tia.${detalhes}`;
+                        this.definirMensagemImportacaoTios('warning', msg);
+                        alert(msg);
+                        return false;
+                    }
+
+                    let mensagem = this.aba === 'casais' ? 'Importação de casais concluída.' : 'Importação de tios de outro EJC concluída.';
+                    mensagem += `\nCriados: ${criados}\nAtualizados: ${atualizados}`;
+                    if (ignorados) mensagem += `\nLinhas ignoradas: ${ignorados}`;
+                    if (erros.length) mensagem += `\nErros: ${erros.length}\n${erros.slice(0, 5).join('\n')}`;
+                    this.definirMensagemImportacaoTios(erros.length ? 'warning' : 'success', mensagem);
+                    alert(mensagem);
+                    return true;
+                },
                 async importarExcelArquivo(file) {
                     if (!file) return false;
                     const nomeArquivo = String(file.name || '').toLowerCase();
                     const isCsv = nomeArquivo.endsWith('.csv');
                     const isXlsx = nomeArquivo.endsWith('.xlsx');
                     if (!isXlsx && !isCsv) {
-                        alert('Selecione um arquivo Excel (.xlsx) ou CSV (.csv).');
+                        const msg = 'Selecione um arquivo Excel (.xlsx) ou CSV (.csv).';
+                        this.definirMensagemImportacaoTios('warning', msg);
+                        alert(msg);
                         return false;
                     }
                     try {
                         const rows = isCsv ? await this.lerCsvArquivoTios(file) : await ExcelUtils.readXlsxFile(file);
                         if (!rows.length) {
-                            alert('Arquivo vazio.');
+                            const msg = 'Arquivo vazio.';
+                            this.definirMensagemImportacaoTios('warning', msg);
+                            alert(msg);
                             return false;
                         }
                         const normalizarChaveImportacao = (valor) => String(valor || '')
@@ -2943,6 +3157,7 @@ preencha outro_ejc_paroquia</div>
                                     detalhes_restricao_tio: getImportOptional(r, ['DetalhesRestricaoTio', 'detalhes_restricao_tio', 'Detalhes Restricao Tio', 'Detalhes Restrição Tio']),
                                     deficiencia_tio: parseBoolImport(getImportValue(r, ['DeficienciaTio', 'deficiencia_tio', 'Deficiência Tio', 'Deficiencia Tio'])),
                                     qual_deficiencia_tio: getImportOptional(r, ['QualDeficienciaTio', 'qual_deficiencia_tio', 'Qual Deficiencia Tio', 'Qual Deficiência Tio']),
+                                    possui_carro_tio: parseBoolImport(getImportValue(r, ['PossuiCarroTio', 'possui_carro_tio', 'Possui Carro Tio', 'Carro Tio'])),
                                     nome_tia: nomeTia,
                                     telefone_tia: telefoneTia,
                                     data_nascimento_tia: getImportOptional(r, ['DataNascimentoTia', 'data_nascimento_tia', 'Data Nascimento Tia']),
@@ -2950,6 +3165,7 @@ preencha outro_ejc_paroquia</div>
                                     detalhes_restricao_tia: getImportOptional(r, ['DetalhesRestricaoTia', 'detalhes_restricao_tia', 'Detalhes Restricao Tia', 'Detalhes Restrição Tia']),
                                     deficiencia_tia: parseBoolImport(getImportValue(r, ['DeficienciaTia', 'deficiencia_tia', 'Deficiência Tia', 'Deficiencia Tia'])),
                                     qual_deficiencia_tia: getImportOptional(r, ['QualDeficienciaTia', 'qual_deficiencia_tia', 'Qual Deficiencia Tia', 'Qual Deficiência Tia']),
+                                    possui_carro_tia: parseBoolImport(getImportValue(r, ['PossuiCarroTia', 'possui_carro_tia', 'Possui Carro Tia', 'Carro Tia'])),
                                     encontro_tipo: origemTipo === 'EJC' ? encontroTipo : null,
                                     ecc_id: null,
                                     outro_ejc_id: origemTipo === 'OUTRO_EJC' ? (outroEjc ? outroEjc.id : null) : null,
@@ -2959,40 +3175,12 @@ preencha outro_ejc_paroquia</div>
                                 casaisImportacao.push(payload);
                             }
                             if (!casaisImportacao.length) {
-                                alert('Nenhum casal foi importado. Verifique se o arquivo possui as colunas nome_tio e nome_tia.');
+                                const msg = 'Nenhum casal foi importado. Verifique se o arquivo possui as colunas nome_tio e nome_tia.';
+                                this.definirMensagemImportacaoTios('warning', msg);
+                                alert(msg);
                                 return false;
                             }
-                            const response = await fetch('/api/tios/casais/bulk-replace', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ casais: casaisImportacao })
-                            });
-                            const resultado = await response.json().catch(() => ({}));
-                            if (!response.ok) {
-                                const errosServidor = Array.isArray(resultado.erros)
-                                    ? resultado.erros.map((erro) => `${erro.linha ? `Linha ${erro.linha}: ` : ''}${erro.error || 'Erro na importação.'}`)
-                                    : [];
-                                const detalhes = errosServidor.length ? `\n\n${errosServidor.slice(0, 5).join('\n')}` : '';
-                                alert(`${resultado.error || 'Erro ao importar casais em lote.'}${detalhes}`);
-                                return false;
-                            }
-                            await this.carregarCasais();
-                            const criados = Number(resultado.criados || 0);
-                            const atualizados = Number(resultado.atualizados || 0);
-                            const erros = Array.isArray(resultado.erros)
-                                ? resultado.erros.map((erro) => `${erro.linha ? `Linha ${erro.linha}: ` : ''}${erro.error || 'Erro na importação.'}`)
-                                : [];
-                            if (!criados && !atualizados) {
-                                const detalhes = erros.length ? `\n\n${erros.slice(0, 5).join('\n')}` : '';
-                                alert(`Nenhum casal foi importado. Verifique se o arquivo possui as colunas nome_tio e nome_tia.${detalhes}`);
-                                return false;
-                            }
-                            let mensagem = this.aba === 'casais' ? 'Importação de casais concluída.' : 'Importação de tios de outro EJC concluída.';
-                            mensagem += `\nCriados: ${criados}\nAtualizados: ${atualizados}`;
-                            if (ignorados) mensagem += `\nLinhas ignoradas: ${ignorados}`;
-                            if (erros.length) mensagem += `\nErros: ${erros.length}\n${erros.slice(0, 5).join('\n')}`;
-                            alert(mensagem);
-                            return true;
+                            return await this.importarCasaisTiosEmLotes(casaisImportacao, ignorados);
                         }
 
                         await this.carregarEccs();
@@ -3013,7 +3201,9 @@ preencha outro_ejc_paroquia</div>
                             encontrosImportacao.push({ __linha: linha, numero, tipo, descricao });
                         }
                         if (!encontrosImportacao.length) {
-                            alert('Nenhum encontro foi importado. Verifique se o arquivo possui a coluna numero.');
+                            const msg = 'Nenhum encontro foi importado. Verifique se o arquivo possui a coluna numero.';
+                            this.definirMensagemImportacaoTios('warning', msg);
+                            alert(msg);
                             return false;
                         }
                         const response = await fetch('/api/tios/ecc/bulk-replace', {
@@ -3027,7 +3217,9 @@ preencha outro_ejc_paroquia</div>
                                 ? resultado.erros.map((erro) => `${erro.linha ? `Linha ${erro.linha}: ` : ''}${erro.error || 'Erro na importação.'}`)
                                 : [];
                             const detalhes = errosServidor.length ? `\n\n${errosServidor.slice(0, 5).join('\n')}` : '';
-                            alert(`${resultado.error || 'Erro ao importar encontros em lote.'}${detalhes}`);
+                            const msg = `${resultado.error || 'Erro ao importar encontros em lote.'}${detalhes}`;
+                            this.definirMensagemImportacaoTios('danger', msg);
+                            alert(msg);
                             return false;
                         }
                         await this.carregarEccs();
@@ -3038,17 +3230,22 @@ preencha outro_ejc_paroquia</div>
                             : [];
                         if (!criados && !atualizados) {
                             const detalhes = erros.length ? `\n\n${erros.slice(0, 5).join('\n')}` : '';
-                            alert(`Nenhum encontro foi importado. Verifique se o arquivo possui a coluna numero.${detalhes}`);
+                            const msg = `Nenhum encontro foi importado. Verifique se o arquivo possui a coluna numero.${detalhes}`;
+                            this.definirMensagemImportacaoTios('warning', msg);
+                            alert(msg);
                             return false;
                         }
                         let mensagem = `Importação de encontros concluída.\nCriados: ${criados}\nAtualizados: ${atualizados}`;
                         if (ignorados) mensagem += `\nLinhas ignoradas: ${ignorados}`;
                         if (erros.length) mensagem += `\nErros: ${erros.length}\n${erros.slice(0, 5).join('\n')}`;
+                        this.definirMensagemImportacaoTios(erros.length ? 'warning' : 'success', mensagem);
                         alert(mensagem);
                         return true;
                     } catch (err) {
                         console.error(err);
-                        alert('Erro ao importar arquivo.');
+                        const msg = err && err.message ? err.message : 'Erro ao importar arquivo.';
+                        this.definirMensagemImportacaoTios('danger', msg);
+                        alert(msg);
                         return false;
                     }
                 },
@@ -3059,17 +3256,13 @@ preencha outro_ejc_paroquia</div>
                 },
                 formatarEjcOption(ejc) {
                     if (!ejc) return '-';
-                    const numero = ejc.numero ? `${this.numeroParaRomano(ejc.numero)} EJC` : 'EJC';
-                    const local = [this.nomeMeuEJC || ejc.paroquia, ejc.ano].filter(Boolean).join(' - ');
-                    return [numero, local].filter(Boolean).join(' | ');
+                    return ejc.numero ? this.numeroParaRomano(ejc.numero) : 'EJC';
                 },
                 formatarServicoLabel(srv) {
                     if (!srv) return '-';
                     const equipe = this.obterNomeEquipeServico(srv);
                     if (srv.ejc_numero) {
-                        const numero = `${this.numeroParaRomano(srv.ejc_numero)} EJC`;
-                        const local = this.nomeMeuEJC ? ` ${this.nomeMeuEJC}` : (srv.ejc_paroquia ? ` ${srv.ejc_paroquia}` : '');
-                        return `${equipe} - ${numero}${local}`;
+                        return `${equipe} - ${this.numeroParaRomano(srv.ejc_numero)} EJC`;
                     }
                     return `${equipe} - edição não informada`;
                 },
@@ -3077,7 +3270,7 @@ preencha outro_ejc_paroquia</div>
                     if (!srv) return '-';
                     const numero = Number(srv.ejc_numero || 0);
                     const edicao = Number.isInteger(numero) && numero > 0
-                        ? `${this.numeroParaRomano(numero)} EJC ${this.nomeMeuEJC || srv.ejc_paroquia || ''}`.trim()
+                        ? `${this.numeroParaRomano(numero)} EJC`
                         : (srv.edicao_ejc || 'Edição não informada');
                     const equipe = String(srv.equipe || srv.equipe_nome || '').trim() || 'Equipe';
                     const papel = String(srv.papel || '').trim();
@@ -3099,12 +3292,12 @@ preencha outro_ejc_paroquia</div>
                     if (!srv) return 'Edição não informada';
                     const numeroBruto = Number(srv.ejc_numero || 0);
                     if (Number.isInteger(numeroBruto) && numeroBruto > 0) {
-                        return `${this.numeroParaRomano(numeroBruto)} EJC ${this.nomeMeuEJC || srv.ejc_paroquia || ''}`.trim();
+                        return `${this.numeroParaRomano(numeroBruto)} EJC`;
                     }
                     const ejcId = Number(srv.ejc_id || 0);
                     const ejc = (this.ejcs || []).find((e) => Number(e.id) === ejcId);
                     if (ejc && ejc.numero) {
-                        return `${this.numeroParaRomano(ejc.numero)} EJC ${this.nomeMeuEJC || ejc.paroquia || ''}`.trim();
+                        return `${this.numeroParaRomano(ejc.numero)} EJC`;
                     }
                     return 'Edição não informada';
                 },
@@ -3116,9 +3309,7 @@ preencha outro_ejc_paroquia</div>
                     const ejc = (this.ejcs || []).find((e) => Number(e.id) === ejcId);
                     const nomeEquipe = equipe && equipe.nome ? equipe.nome : 'Equipe não informada';
                     if (ejc && ejc.numero) {
-                        const numero = `${this.numeroParaRomano(ejc.numero)} EJC`;
-                        const local = this.nomeMeuEJC ? ` ${this.nomeMeuEJC}` : (ejc.paroquia ? ` ${ejc.paroquia}` : '');
-                        return `${nomeEquipe} - ${numero}${local}`;
+                        return `${nomeEquipe} - ${this.numeroParaRomano(ejc.numero)} EJC`;
                     }
                     return `${nomeEquipe} - edição não informada`;
                 },
@@ -3139,7 +3330,11 @@ preencha outro_ejc_paroquia</div>
                     if (!equipeId) return [];
                     const funcoes = this.funcoesPorEquipeServico[equipeId] || [];
                     const papelSelecionado = (this.novoServicoCasal && this.novoServicoCasal.papel) || 'Tio';
-                    return funcoes.filter((f) => (f.papel_base || 'Membro') === papelSelecionado);
+                    const papelNormalizado = String(papelSelecionado || '').trim().toLowerCase();
+                    return funcoes.filter((f) => String(f.papel_base || 'Membro').trim().toLowerCase() === papelNormalizado);
+                },
+                equipesServicoCasalDisponiveis() {
+                    return (this.equipes || []).filter((item) => item && Number(item.id) > 0);
                 },
                 obterNumeroEdicaoServico(srv) {
                     if (!srv) return 0;
@@ -3423,10 +3618,12 @@ preencha outro_ejc_paroquia</div>
                         detalhes_restricao_tio: '',
                         deficiencia_tio: false,
                         qual_deficiencia_tio: '',
+                        possui_carro_tio: false,
                         restricao_alimentar_tia: false,
                         detalhes_restricao_tia: '',
                         deficiencia_tia: false,
                         qual_deficiencia_tia: '',
+                        possui_carro_tia: false,
                         observacoes: '',
                         termos_aceitos_em: null
                     };
@@ -3493,10 +3690,12 @@ preencha outro_ejc_paroquia</div>
                         detalhes_restricao_tio: item.detalhes_restricao_tio || '',
                         deficiencia_tio: !!item.deficiencia_tio,
                         qual_deficiencia_tio: item.qual_deficiencia_tio || '',
+                        possui_carro_tio: !!item.possui_carro_tio,
                         restricao_alimentar_tia: !!item.restricao_alimentar_tia,
                         detalhes_restricao_tia: item.detalhes_restricao_tia || '',
                         deficiencia_tia: !!item.deficiencia_tia,
                         qual_deficiencia_tia: item.qual_deficiencia_tia || '',
+                        possui_carro_tia: !!item.possui_carro_tia,
                         observacoes: item.observacoes || '',
                         termos_aceitos_em: item.termos_aceitos_em || null
                     };
@@ -3522,6 +3721,11 @@ preencha outro_ejc_paroquia</div>
                     this.novoServicoCasal.subfuncao = '';
                     this.carregarFuncoesEquipeServico(this.novoServicoCasal.equipe_id);
                 },
+                async onEjcServicoCasalChange() {
+                    this.novoServicoCasal.equipe_id = null;
+                    this.novoServicoCasal.subfuncao = '';
+                    if (!this.equipes.length) await this.carregarEquipes();
+                },
                 onPapelServicoCasalChange() {
                     this.novoServicoCasal.subfuncao = '';
                 },
@@ -3530,7 +3734,7 @@ preencha outro_ejc_paroquia</div>
                     const equipeId = this.novoServicoCasal && this.novoServicoCasal.equipe_id ? Number(this.novoServicoCasal.equipe_id) : null;
                     const ejcId = this.novoServicoCasal && this.novoServicoCasal.ejc_id ? Number(this.novoServicoCasal.ejc_id) : null;
                     if (!equipeId || !ejcId) return;
-                    if (this.subfuncoesServicoCasalDisponiveis.length > 0 && !this.novoServicoCasal.subfuncao) {
+                    if (this.subfuncoesServicoCasalDisponiveis().length > 0 && !this.novoServicoCasal.subfuncao) {
                         alert("Selecione uma subfunção cadastrada para este papel.");
                         return;
                     }
@@ -3645,14 +3849,36 @@ preencha outro_ejc_paroquia</div>
                 },
                 async excluirCasal(item) {
                     const nomeCasal = [item?.nome_tio, item?.nome_tia].filter(Boolean).join(' e ') || 'este casal de tios';
-                    const confirmar = await window.uiConfirm(
-                        `Tem certeza que deseja deletar ${nomeCasal}? Esta ação não pode ser desfeita.`,
-                        { title: 'Confirmação' }
-                    );
-                    if (!confirmar) return;
                     try {
-                        const res = await fetch(`/api/tios/casais/${item.id}`, { method: 'DELETE' });
-                        const data = await res.json().catch(() => ({}));
+                        let queryHistorico = '';
+                        let temVinculosEdicoes = Array.isArray(item && item.servicos) && item.servicos.length > 0;
+                        if (!temVinculosEdicoes && this.formCasal && Number(this.formCasal.id) === Number(item && item.id)) {
+                            temVinculosEdicoes = this.servicosRegistradosCasalComIndice().length > 0;
+                        }
+                        if (temVinculosEdicoes) {
+                            const removerHistorico = await window.uiConfirm(
+                                'Esse tio/casal está vinculado a equipes/edições.\n\nOK: exclui a ficha e remove o nome das equipes/edições.\nCancelar: exclui apenas a ficha e mantém o nome nas equipes/edições.',
+                                { title: 'Histórico em edições' }
+                            );
+                            queryHistorico = `?preservar_historico=${removerHistorico ? 0 : 1}`;
+                        } else {
+                            const confirmar = await window.uiConfirm(
+                                `Tem certeza que deseja deletar ${nomeCasal}? Esta ação não pode ser desfeita.`,
+                                { title: 'Confirmação' }
+                            );
+                            if (!confirmar) return;
+                        }
+
+                        let res = await fetch(`/api/tios/casais/${item.id}${queryHistorico}`, { method: 'DELETE' });
+                        let data = await res.json().catch(() => ({}));
+                        if (res.status === 409 && data && data.requiresHistoryChoice) {
+                            const removerHistorico = await window.uiConfirm(
+                                'Esse tio/casal está vinculado a equipes/edições.\n\nOK: exclui a ficha e remove o nome das equipes/edições.\nCancelar: exclui apenas a ficha e mantém o nome nas equipes/edições.',
+                                { title: 'Histórico em edições' }
+                            );
+                            res = await fetch(`/api/tios/casais/${item.id}?preservar_historico=${removerHistorico ? 0 : 1}`, { method: 'DELETE' });
+                            data = await res.json().catch(() => ({}));
+                        }
                         if (!res.ok) {
                             alert(data.error || 'Erro ao excluir casal.');
                             return;

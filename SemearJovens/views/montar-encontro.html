@@ -1040,6 +1040,10 @@
                                 <input class="form-control form-control-sm" v-model="encontristaEditando.telefone_referencia">
                             </div>
                             <div class="col-12 col-md-6">
+                                <label class="form-label small text-muted mb-1">CPF</label>
+                                <input class="form-control form-control-sm" v-model="encontristaEditando.cpf" maxlength="14" placeholder="000.000.000-00">
+                            </div>
+                            <div class="col-12 col-md-6">
                                 <label class="form-label small text-muted mb-1">Círculo</label>
                                 <select class="form-select form-select-sm" v-model="encontristaEditando.circulo">
                                     <option value="">Sem círculo</option>
@@ -1707,7 +1711,7 @@
                     abaInfoMontagem: 'datas',
                     equipesFinalizadas: false,
                     // ligações agora ficam na página da equipe
-                    nomeMeuEJC: (window.__NOME_EJC_ATUAL && String(window.__NOME_EJC_ATUAL).trim()) || 'Inconfidentes',
+                    nomeMeuEJC: (window.__NOME_EJC_ATUAL && String(window.__NOME_EJC_ATUAL).trim()) || '',
 
                     formMontagem: { numero_ejc: '', data_inicio_encontro: '', data_fim_encontro: '', data_tarde_revelacao: '', data_inicio_reunioes: '', data_fim_reunioes: '', dia_semana_reunioes: 0 },
                     formEditarMontagem: { numero_ejc: '', data_inicio_encontro: '', data_fim_encontro: '', data_tarde_revelacao: '', data_inicio_reunioes: '', data_fim_reunioes: '', dia_semana_reunioes: 0, descricao: '', musica_tema: '' },
@@ -2222,12 +2226,18 @@
                         .filter(Boolean);
                     return lista.length ? Array.from(new Set(lista)).join(' / ') : '-';
                 },
+                normalizarNomeMovimentoTio(nome, fallback = '') {
+                    const limpar = (valor) => String(valor || '').trim().replace(/\s+/g, ' ')
+                        .replace(/^(EJC|ECC|ECNA)\b\s*/i, '')
+                        .replace(/^Par[oó]quia\b\s*/i, '')
+                        .trim()
+                        .toUpperCase();
+                    return limpar(nome) || limpar(fallback);
+                },
                 movimentoCasalTio(item) {
                     if (String(item && item.origem_tipo || '').trim().toUpperCase() === 'OUTRO_EJC' || item && item.outro_ejc_id) {
-                        return [item && item.outro_ejc_nome, item && item.outro_ejc_paroquia]
-                            .map((valor) => String(valor || '').trim())
-                            .filter(Boolean)
-                            .join(' ');
+                        const nomeMovimento = this.normalizarNomeMovimentoTio(item && item.outro_ejc_nome, item && item.outro_ejc_paroquia);
+                        return nomeMovimento ? `ECC ${nomeMovimento}` : 'ECC';
                     }
                     return String((item && (item.encontro_tipo || item.ecc_tipo)) || '').trim().toUpperCase();
                 },
@@ -2785,6 +2795,7 @@
                         ...resp,
                         nome_referencia: edit && Object.prototype.hasOwnProperty.call(edit, 'nome_referencia') ? edit.nome_referencia : resp.nome_referencia,
                         telefone_referencia: edit && Object.prototype.hasOwnProperty.call(edit, 'telefone_referencia') ? edit.telefone_referencia : resp.telefone_referencia,
+                        cpf: edit && Object.prototype.hasOwnProperty.call(edit, 'cpf') ? edit.cpf : resp.cpf,
                         resposta: respostaOriginal ? { ...(resp.resposta || {}), campos: respostaEditada } : resp.resposta
                     };
                 },
@@ -3499,6 +3510,7 @@
                         id,
                         nome_referencia: String(edit.nome_referencia || resp.nome_referencia || '').trim(),
                         telefone_referencia: String(edit.telefone_referencia || resp.telefone_referencia || '').trim(),
+                        cpf: String(edit.cpf || resp.cpf || this.valorCampoResumo(resp, ['cpf']) || '').trim(),
                         circulo: this.corCirculoEncontrista(id) || '',
                         cep: String(edit.cep || this.valorCampoResumo(resp, ['cep']) || '').trim(),
                         endereco: String(edit.endereco || this.valorCampoResumo(resp, ['endereço', 'endereco', 'rua', 'logradouro']) || '').trim(),
@@ -3530,6 +3542,7 @@
                             ...atualResumo,
                             nome_referencia: String(form.nome_referencia || '').trim(),
                             telefone_referencia: String(form.telefone_referencia || '').trim(),
+                            cpf: String(form.cpf || '').trim(),
                             cep: String(form.cep || '').trim(),
                             endereco: String(form.endereco || '').trim(),
                             numero: String(form.numero || '').trim(),
@@ -3558,6 +3571,7 @@
                             id,
                             nome_referencia: form.nome_referencia || '',
                             telefone_referencia: form.telefone_referencia || '',
+                            cpf: form.cpf || '',
                             circulo: form.circulo || null,
                             cep: form.cep || null,
                             endereco: form.endereco || null,
@@ -3593,6 +3607,7 @@
                     return {
                         nome: edit.nome_referencia || resp.nome_referencia || this.valorCampoResumo(resp, ['nome']) || '',
                         telefone: edit.telefone_referencia || resp.telefone_referencia || this.valorCampoResumo(resp, ['telefone', 'celular', 'whatsapp']) || '',
+                        cpf: edit.cpf || resp.cpf || this.valorCampoResumo(resp, ['cpf']) || '',
                         idade: this.valorCampoResumo(resp, ['idade']) || '',
                         sexo: this.valorCampoResumo(resp, ['sexo', 'gênero', 'genero']) || ''
                     };
@@ -3637,6 +3652,7 @@
                                     ...atual,
                                     nome_referencia: String(row.nome_editado || row.nome_referencia || atual.nome_referencia || '').trim(),
                                     telefone_referencia: String(row.telefone_editado || row.telefone_referencia || atual.telefone_referencia || '').trim(),
+                                    cpf: String(row.cpf || atual.cpf || '').trim(),
                                     cep: String(row.cep || atual.cep || '').trim(),
                                     endereco: String(row.endereco || atual.endereco || '').trim(),
                                     numero: String(row.numero || atual.numero || '').trim(),
@@ -3727,6 +3743,7 @@
                         body: JSON.stringify({
                             nome_referencia: item.nome_referencia || '',
                             telefone_referencia: item.telefone_referencia || '',
+                            cpf: item.cpf || '',
                             circulo: item.circulo || null,
                             cep: item.cep || null,
                             endereco: item.endereco || null,
@@ -4826,6 +4843,7 @@
                             id: resp.id,
                             nome_referencia: resp.nome_referencia || '',
                             telefone_referencia: resp.telefone_referencia || '',
+                            cpf: ((this.edicoesEncontristas || {})[String(resp.id)] || {}).cpf || resp.cpf || '',
                             circulo: this.corCirculoEncontrista(resp.id) || null,
                             cep: ((this.edicoesEncontristas || {})[String(resp.id)] || {}).cep || null,
                             endereco: ((this.edicoesEncontristas || {})[String(resp.id)] || {}).endereco || null,
@@ -5381,17 +5399,15 @@
                         return `${movimento} ${this.nomeMeuEJC || ''}`.trim();
                     }
                     if (ehOutro) {
-                        const numero = this.formatarNumeroEjcFez(item.outro_ejc_numero);
-                        const partes = [item.outro_ejc_paroquia, item.outro_ejc_nome]
-                            .map((v) => String(v || '').trim())
-                            .filter(Boolean);
-                        return [numero !== '-' ? numero : '', partes.join(' - ')].filter(Boolean).join(' ') || 'Outro EJC';
+                        const nomeOutro = this.limparPrefixoEjc(item.outro_ejc_nome || item.outro_ejc_paroquia);
+                        return nomeOutro ? `EJC ${nomeOutro}` : 'EJC';
                     }
                     const numeroLocal = item.ejc_numero_fez || item.ejc_origem_numero || item.numero_ejc_fez;
+                    const nomeLocal = this.limparPrefixoEjc(this.nomeMeuEJC);
                     if (numeroLocal) {
-                        return `${this.formatarNumeroEjcFez(numeroLocal)} ${this.nomeMeuEJC || ''}`.trim();
+                        return `${this.formatarNumeroEjcFez(numeroLocal)}${nomeLocal ? ' ' + nomeLocal : ''}`.trim();
                     }
-                    return this.nomeMeuEJC || '-';
+                    return nomeLocal ? `EJC ${nomeLocal}` : '-';
                 },
                 async exportarDadosEquipesExcel() {
                     if (!this.montagemAtiva || !this.montagemAtiva.id) return;
@@ -5505,24 +5521,37 @@
                     const txt = String(valor).trim();
                     if (!txt) return '-';
                     const num = Number(txt);
-                    if (Number.isFinite(num) && num > 0) return `${Math.trunc(num)}º EJC`;
-                    return txt;
+                    if (Number.isFinite(num) && num > 0) return `${this.numeroParaRomano(Math.trunc(num)) || Math.trunc(num)} EJC`;
+                    const limpo = txt.replace(/\s{2,}/g, ' ').trim();
+                    return /\bEJC\b/i.test(limpo) ? limpo : `${limpo} EJC`;
+                },
+                limparPrefixoEjc(valor) {
+                    return String(valor || '')
+                        .trim()
+                        .replace(/^(?:\s*(?:EJC|ECJ)\s+)+/i, '')
+                        .replace(/\s{2,}/g, ' ')
+                        .trim();
                 },
                 formatarEjcFezNaSeparacao(jovem) {
                     if (!jovem || typeof jovem !== 'object') return '-';
                     const origem = String(jovem.origem_ejc_tipo || 'INCONFIDENTES').toUpperCase();
-                    if (origem === 'OUTRO_EJC') {
-                        return this.formatarNumeroEjcFez(jovem.outro_ejc_numero);
+                    const ehOutro = origem === 'OUTRO_EJC'
+                        || !!Number(jovem.outro_ejc_id || 0)
+                        || !!String(jovem.outro_ejc_nome || jovem.outro_ejc_paroquia || '').trim();
+                    if (ehOutro) {
+                        const nomeOutro = this.limparPrefixoEjc(jovem.outro_ejc_nome || jovem.outro_ejc_paroquia);
+                        return nomeOutro ? `EJC ${nomeOutro}` : 'EJC';
                     }
+                    const nomeLocal = this.limparPrefixoEjc(this.nomeMeuEJC);
                     if (jovem.ejc_numero_fez) {
                         const numero = this.numeroParaRomano(jovem.ejc_numero_fez) || this.formatarNumeroEjcFez(jovem.ejc_numero_fez);
-                        const paroquia = jovem.ejc_paroquia_fez || this.nomeMeuEJC || '';
+                        const paroquia = this.limparPrefixoEjc(jovem.ejc_paroquia_fez || nomeLocal);
                         return `${numero} EJC${paroquia ? ' ' + paroquia : ''}`;
                     }
                     if (jovem.numero_ejc_fez) {
-                        return `${this.formatarNumeroEjcFez(jovem.numero_ejc_fez)} ${this.nomeMeuEJC || ''}`.trim();
+                        return `${this.formatarNumeroEjcFez(jovem.numero_ejc_fez)}${nomeLocal ? ' ' + nomeLocal : ''}`.trim();
                     }
-                    return this.nomeMeuEJC || '-';
+                    return nomeLocal ? `EJC ${nomeLocal}` : '-';
                 },
 
                 numeroParaRomano(num) {

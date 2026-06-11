@@ -63,12 +63,12 @@ const menuTemplate = `
 
             <div class="menu-group d-none" data-group="outros-ejcs">
                 <button type="button" class="menu-group-toggle" data-group-toggle="outros-ejcs">
-                    <span class="group-title"><span class="menu-group-icon"><i class="fa-solid fa-globe"></i></span><span>OUTROS EJCs</span></span>
+                    <span class="group-title"><span class="menu-group-icon"><i class="fa-solid fa-globe"></i></span><span>EXTERNOS</span></span>
                     <span class="menu-chevron">▸</span>
                 </button>
                 <div class="menu-group-links" data-group-links="outros-ejcs">
-                    <a href="/gestaodoencontro/outrosejcs" class="nav-link" title="Outros EJCs">
-                        <span class="menu-link-icon"><i class="fa-solid fa-globe"></i></span><span class="link-text">Outros EJCs</span>
+                    <a href="/gestaodoencontro/outrosejcs" class="nav-link" title="Outras paróquias/movimentos">
+                        <span class="menu-link-icon"><i class="fa-solid fa-globe"></i></span><span class="link-text">Outras paróquias/movimentos</span>
                     </a>
                 </div>
             </div>

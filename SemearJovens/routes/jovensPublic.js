@@ -1079,9 +1079,13 @@ router.post('/criar-cadastro', async (req, res) => {
         }
         const tenantId = await resolveTenantIdPublico(req, montagemEjcId);
         const sexo = ['Feminino', 'Masculino'].includes(String(req.body.sexo || '').trim()) ? String(req.body.sexo || '').trim() : null;
-        const estadoCivil = ['Solteiro', 'Casado', 'Amasiado'].includes(String(req.body.estado_civil || '').trim())
-            ? String(req.body.estado_civil || '').trim()
-            : 'Solteiro';
+        const estadosCivisValidos = new Map([
+            ['solteiro', 'Solteiro'],
+            ['noivo', 'Noivo'],
+            ['casado', 'Casado'],
+            ['amasiado', 'Amasiado']
+        ]);
+        const estadoCivil = estadosCivisValidos.get(String(req.body.estado_civil || '').trim().toLocaleLowerCase('pt-BR')) || 'Solteiro';
         const dataCasamento = ['Casado', 'Amasiado'].includes(estadoCivil) ? normalizeDate(req.body.data_casamento) : null;
         const circulo = String(req.body.circulo || '').trim() || null;
         const enderecoCep = String(req.body.endereco_cep || '').trim() || null;

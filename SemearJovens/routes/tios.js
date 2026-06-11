@@ -122,6 +122,156 @@ function montarNomeCasal(nomeTio, nomeTia) {
     return [String(nomeTio || '').trim(), String(nomeTia || '').trim()].filter(Boolean).join(' e ').trim();
 }
 
+function lerOpcaoPreservarHistorico(req) {
+    const valor = req.query.preservar_historico ?? req.query.preservarHistorico ?? req.body?.preservar_historico ?? req.body?.preservarHistorico;
+    if (valor === undefined || valor === null || valor === '') return null;
+    return ['1', 'true', 'sim', 's', 'yes'].includes(String(valor).trim().toLowerCase());
+}
+
+async function contarVinculosCasalEmEdicoes({ tenantId, casalId }) {
+    const total = {
+        tios_casal_servicos: 0,
+        tios_casal_servicos_historico: 0,
+        montagem_membros: 0
+    };
+    if (await hasTable('tios_casal_servicos')) {
+        const [[row]] = await pool.query(
+            'SELECT COUNT(*) AS total FROM tios_casal_servicos WHERE tenant_id = ? AND casal_id = ?',
+            [tenantId, casalId]
+        );
+        total.tios_casal_servicos = Number(row && row.total || 0);
+    }
+    if (await hasTable('tios_casal_servicos_historico')) {
+        const [[row]] = await pool.query(
+            'SELECT COUNT(*) AS total FROM tios_casal_servicos_historico WHERE tenant_id = ? AND casal_id = ?',
+            [tenantId, casalId]
+        );
+        total.tios_casal_servicos_historico = Number(row && row.total || 0);
+    }
+    if (await hasTable('montagem_membros') && await hasColumn('montagem_membros', 'tio_casal_id')) {
+        let nomeCasal = '';
+        if (await hasColumn('montagem_membros', 'nome_externo')) {
+            const [casalRows] = await pool.query(
+                'SELECT nome_tio, nome_tia FROM tios_casais WHERE tenant_id = ? AND id = ? LIMIT 1',
+                [tenantId, casalId]
+            );
+            nomeCasal = montarNomeCasal(casalRows?.[0]?.nome_tio, casalRows?.[0]?.nome_tia);
+        }
+        const params = [tenantId, casalId];
+        let filtroNomeExterno = '';
+        if (nomeCasal) {
+            filtroNomeExterno = " OR (tio_casal_id IS NULL AND LOWER(TRIM(COALESCE(nome_externo, ''))) = LOWER(TRIM(?)))";
+            params.push(nomeCasal);
+        }
+        const [[row]] = await pool.query(
+            `SELECT COUNT(*) AS total
+             FROM montagem_membros
+             WHERE tenant_id = ?
+               AND (tio_casal_id = ?${filtroNomeExterno})`,
+            params
+        );
+        total.montagem_membros = Number(row && row.total || 0);
+    }
+    total.total = total.tios_casal_servicos + total.tios_casal_servicos_historico + total.montagem_membros;
+    return total;
+}
+
+async function limparVinculosCasalEmEdicoes({ tenantId, casalId }) {
+    if (await hasTable('montagem_membros') && await hasColumn('montagem_membros', 'tio_casal_id')) {
+        let nomeCasal = '';
+        if (await hasColumn('montagem_membros', 'nome_externo')) {
+            const [casalRows] = await pool.query(
+                'SELECT nome_tio, nome_tia FROM tios_casais WHERE tenant_id = ? AND id = ? LIMIT 1',
+                [tenantId, casalId]
+            );
+            nomeCasal = montarNomeCasal(casalRows?.[0]?.nome_tio, casalRows?.[0]?.nome_tia);
+        }
+        const params = [tenantId, casalId];
+        let filtroNomeExterno = '';
+        if (nomeCasal) {
+            filtroNomeExterno = " OR (tio_casal_id IS NULL AND LOWER(TRIM(COALESCE(nome_externo, ''))) = LOWER(TRIM(?)))";
+            params.push(nomeCasal);
+        }
+        await pool.query(
+            `DELETE FROM montagem_membros
+             WHERE tenant_id = ?
+               AND (tio_casal_id = ?${filtroNomeExterno})`,
+            params
+        );
+    }
+    if (await hasTable('tios_casal_servicos')) {
+        await pool.query('DELETE FROM tios_casal_servicos WHERE tenant_id = ? AND casal_id = ?', [tenantId, casalId]);
+    }
+    if (await hasTable('tios_casal_equipes')) {
+        await pool.query('DELETE FROM tios_casal_equipes WHERE tenant_id = ? AND casal_id = ?', [tenantId, casalId]);
+    }
+    if (await hasTable('tios_casal_servicos_historico')) {
+        await pool.query('DELETE FROM tios_casal_servicos_historico WHERE tenant_id = ? AND casal_id = ?', [tenantId, casalId]);
+    }
+}
+
+async function preservarVinculosCasalEmEdicoes({ tenantId, casalId, casal }) {
+    if (!casalId) return;
+    if (await hasTable('tios_casal_servicos') && await hasTable('tios_casal_servicos_historico')) {
+        await pool.query(
+            `INSERT INTO tios_casal_servicos_historico
+                (tenant_id, casal_id, equipe_id, ejc_id, papel, subfuncao, nome_tio_snapshot, telefone_tio_snapshot, nome_tia_snapshot, telefone_tia_snapshot)
+             SELECT
+                ts.tenant_id,
+                NULL,
+                ts.equipe_id,
+                ts.ejc_id,
+                ts.papel,
+                ts.subfuncao,
+                COALESCE(ts.nome_tio_snapshot, ?),
+                COALESCE(ts.telefone_tio_snapshot, ?),
+                COALESCE(ts.nome_tia_snapshot, ?),
+                COALESCE(ts.telefone_tia_snapshot, ?)
+             FROM tios_casal_servicos ts
+             WHERE ts.casal_id = ?
+               AND ts.tenant_id = ?`,
+            [
+                casal.nome_tio || null,
+                casal.telefone_tio || null,
+                casal.nome_tia || null,
+                casal.telefone_tia || null,
+                casalId,
+                tenantId
+            ]
+        );
+        await pool.query('DELETE FROM tios_casal_servicos WHERE tenant_id = ? AND casal_id = ?', [tenantId, casalId]);
+    }
+    if (await hasTable('tios_casal_servicos_historico')) {
+        await pool.query(
+            `UPDATE tios_casal_servicos_historico
+             SET casal_id = NULL,
+                 nome_tio_snapshot = COALESCE(nome_tio_snapshot, ?),
+                 telefone_tio_snapshot = COALESCE(telefone_tio_snapshot, ?),
+                 nome_tia_snapshot = COALESCE(nome_tia_snapshot, ?),
+                 telefone_tia_snapshot = COALESCE(telefone_tia_snapshot, ?)
+             WHERE tenant_id = ?
+               AND casal_id = ?`,
+            [
+                casal.nome_tio || null,
+                casal.telefone_tio || null,
+                casal.nome_tia || null,
+                casal.telefone_tia || null,
+                tenantId,
+                casalId
+            ]
+        );
+    }
+    if (await hasTable('tios_casal_equipes')) {
+        await pool.query('DELETE FROM tios_casal_equipes WHERE tenant_id = ? AND casal_id = ?', [tenantId, casalId]);
+    }
+    if (await hasTable('montagem_membros') && await hasColumn('montagem_membros', 'tio_casal_id')) {
+        const updateData = { tio_casal_id: null };
+        if (await hasColumn('montagem_membros', 'nome_externo')) updateData.nome_externo = montarNomeCasal(casal.nome_tio, casal.nome_tia) || null;
+        if (await hasColumn('montagem_membros', 'telefone_externo')) updateData.telefone_externo = montarTelefoneCasalExterno(casal.telefone_tio, casal.telefone_tia);
+        await pool.query('UPDATE montagem_membros SET ? WHERE tenant_id = ? AND tio_casal_id = ?', [updateData, tenantId, casalId]);
+    }
+}
+
 function montarTelefoneCasalExterno(telefoneTio, telefoneTia) {
     return [String(telefoneTio || '').trim(), String(telefoneTia || '').trim()].filter(Boolean).join(' / ') || null;
 }
@@ -419,10 +569,12 @@ async function ensureStructure() {
                 origem_tipo ENUM('EJC','OUTRO_EJC') NOT NULL DEFAULT 'EJC',
                 outro_ejc_id INT NULL,
                 nome_tio VARCHAR(180) NOT NULL,
+                apelido_tio VARCHAR(120) NULL,
                 telefone_tio TEXT NULL,
                 data_nascimento_tio DATE NULL,
                 tio_viuvo TINYINT(1) NOT NULL DEFAULT 0,
                 nome_tia VARCHAR(180) NOT NULL,
+                apelido_tia VARCHAR(120) NULL,
                 telefone_tia TEXT NULL,
                 data_nascimento_tia DATE NULL,
                 tia_viuva TINYINT(1) NOT NULL DEFAULT 0,
@@ -432,10 +584,12 @@ async function ensureStructure() {
                 detalhes_restricao_tio VARCHAR(255) NULL,
                 deficiencia_tio TINYINT(1) NOT NULL DEFAULT 0,
                 qual_deficiencia_tio VARCHAR(255) NULL,
+                possui_carro_tio TINYINT(1) NOT NULL DEFAULT 0,
                 restricao_alimentar_tia TINYINT(1) NOT NULL DEFAULT 0,
                 detalhes_restricao_tia VARCHAR(255) NULL,
                 deficiencia_tia TINYINT(1) NOT NULL DEFAULT 0,
                 qual_deficiencia_tia VARCHAR(255) NULL,
+                possui_carro_tia TINYINT(1) NOT NULL DEFAULT 0,
                 observacoes VARCHAR(255) NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -463,6 +617,12 @@ async function ensureStructure() {
             await pool.query("ALTER TABLE tios_casais ADD COLUMN outro_ejc_id INT NULL AFTER origem_tipo");
         } catch (e) { }
         try {
+            await pool.query("ALTER TABLE tios_casais ADD COLUMN apelido_tio VARCHAR(120) NULL AFTER nome_tio");
+        } catch (e) { }
+        try {
+            await pool.query("ALTER TABLE tios_casais ADD COLUMN apelido_tia VARCHAR(120) NULL AFTER nome_tia");
+        } catch (e) { }
+        try {
             await pool.query("ALTER TABLE tios_casais ADD COLUMN tio_viuvo TINYINT(1) NOT NULL DEFAULT 0 AFTER data_nascimento_tio");
         } catch (e) { }
         try {
@@ -487,6 +647,9 @@ async function ensureStructure() {
             await pool.query("ALTER TABLE tios_casais ADD COLUMN qual_deficiencia_tio VARCHAR(255) NULL AFTER deficiencia_tio");
         } catch (e) { }
         try {
+            await pool.query("ALTER TABLE tios_casais ADD COLUMN possui_carro_tio TINYINT(1) NOT NULL DEFAULT 0 AFTER qual_deficiencia_tio");
+        } catch (e) { }
+        try {
             await pool.query("ALTER TABLE tios_casais ADD COLUMN restricao_alimentar_tia TINYINT(1) NOT NULL DEFAULT 0 AFTER qual_deficiencia_tio");
         } catch (e) { }
         try {
@@ -497,6 +660,9 @@ async function ensureStructure() {
         } catch (e) { }
         try {
             await pool.query("ALTER TABLE tios_casais ADD COLUMN qual_deficiencia_tia VARCHAR(255) NULL AFTER deficiencia_tia");
+        } catch (e) { }
+        try {
+            await pool.query("ALTER TABLE tios_casais ADD COLUMN possui_carro_tia TINYINT(1) NOT NULL DEFAULT 0 AFTER qual_deficiencia_tia");
         } catch (e) { }
         try {
             await pool.query("ALTER TABLE tios_casais ADD COLUMN termos_aceitos_em DATETIME NULL AFTER observacoes");
@@ -1260,10 +1426,10 @@ router.get('/casais', async (req, res) => {
         const whereId = casalIdFiltro > 0 ? 'AND c.id = ?' : '';
         const params = casalIdFiltro > 0 ? [tenantId, casalIdFiltro] : [tenantId];
         const [casais] = await pool.query(
-            `SELECT c.id, c.ecc_id, c.encontro_tipo, c.origem_tipo, c.outro_ejc_id, c.nome_tio, c.telefone_tio, c.cpf_tio, c.data_nascimento_tio, c.tio_viuvo,
-                    c.nome_tia, c.telefone_tia, c.cpf_tia, c.data_nascimento_tia, c.tia_viuva, c.restricao_alimentar, c.deficiencia,
-                    c.restricao_alimentar_tio, c.detalhes_restricao_tio, c.deficiencia_tio, c.qual_deficiencia_tio,
-                    c.restricao_alimentar_tia, c.detalhes_restricao_tia, c.deficiencia_tia, c.qual_deficiencia_tia,
+            `SELECT c.id, c.ecc_id, c.encontro_tipo, c.origem_tipo, c.outro_ejc_id, c.nome_tio, c.apelido_tio, c.telefone_tio, c.cpf_tio, c.data_nascimento_tio, c.tio_viuvo,
+                    c.nome_tia, c.apelido_tia, c.telefone_tia, c.cpf_tia, c.data_nascimento_tia, c.tia_viuva, c.restricao_alimentar, c.deficiencia,
+                    c.restricao_alimentar_tio, c.detalhes_restricao_tio, c.deficiencia_tio, c.qual_deficiencia_tio, c.possui_carro_tio,
+                    c.restricao_alimentar_tia, c.detalhes_restricao_tia, c.deficiencia_tia, c.qual_deficiencia_tia, c.possui_carro_tia,
                     c.observacoes, c.termos_aceitos_em, c.foto_url,
                     c.created_at, c.updated_at, e.numero AS ecc_numero, COALESCE(c.encontro_tipo, e.tipo) AS ecc_tipo, e.descricao AS ecc_descricao,
                     oe.nome AS outro_ejc_nome, oe.paroquia AS outro_ejc_paroquia, oe.bairro AS outro_ejc_bairro
@@ -1435,21 +1601,29 @@ router.post('/casais/bulk-replace', async (req, res) => {
         const normalizarLinha = (item, index) => {
             const linha = Number(item && item.__linha) || index + 2;
             const nomeTio = normalizeUpperText(item && item.nome_tio);
+            const apelidoTio = normalizeUpperText(item && item.apelido_tio);
             const telefoneTio = normalizeTrimmedText(item && item.telefone_tio);
+            const cpfTio = normalizeTrimmedText(item && item.cpf_tio);
             const telefoneTioDigits = normalizePhoneDigits(telefoneTio);
             const dataNascimentoTio = normalizeDate(item && item.data_nascimento_tio);
+            const tioViuvo = parseBool(item && item.tio_viuvo);
             const nomeTia = normalizeUpperText(item && item.nome_tia);
+            const apelidoTia = normalizeUpperText(item && item.apelido_tia);
             const telefoneTia = normalizeTrimmedText(item && item.telefone_tia);
+            const cpfTia = normalizeTrimmedText(item && item.cpf_tia);
             const telefoneTiaDigits = normalizePhoneDigits(telefoneTia);
             const dataNascimentoTia = normalizeDate(item && item.data_nascimento_tia);
+            const tiaViuva = parseBool(item && item.tia_viuva);
             const restricaoAlimentarTio = parseBool(item && item.restricao_alimentar_tio);
             const detalhesRestricaoTio = restricaoAlimentarTio ? (String((item && item.detalhes_restricao_tio) || '').trim() || null) : null;
             const deficienciaTio = parseBool(item && item.deficiencia_tio);
             const qualDeficienciaTio = deficienciaTio ? (String((item && item.qual_deficiencia_tio) || '').trim() || null) : null;
+            const possuiCarroTio = parseBool(item && item.possui_carro_tio);
             const restricaoAlimentarTia = parseBool(item && item.restricao_alimentar_tia);
             const detalhesRestricaoTia = restricaoAlimentarTia ? (String((item && item.detalhes_restricao_tia) || '').trim() || null) : null;
             const deficienciaTia = parseBool(item && item.deficiencia_tia);
             const qualDeficienciaTia = deficienciaTia ? (String((item && item.qual_deficiencia_tia) || '').trim() || null) : null;
+            const possuiCarroTia = parseBool(item && item.possui_carro_tia);
             const origemTipo = String((item && item.origem_tipo) || 'EJC').trim().toUpperCase() === 'OUTRO_EJC' ? 'OUTRO_EJC' : 'EJC';
             const eccId = item && item.ecc_id ? Number(item.ecc_id) : null;
             const encontroTipo = normalizarTipoEncontroTio(item && (item.encontro_tipo || item.ecc_tipo || item.encontro));
@@ -1458,21 +1632,29 @@ router.post('/casais/bulk-replace', async (req, res) => {
             return {
                 linha,
                 nomeTio,
+                apelidoTio,
                 telefoneTio,
+                cpfTio,
                 telefoneTioDigits,
                 dataNascimentoTio,
+                tioViuvo,
                 nomeTia,
+                apelidoTia,
                 telefoneTia,
+                cpfTia,
                 telefoneTiaDigits,
                 dataNascimentoTia,
+                tiaViuva,
                 restricaoAlimentarTio,
                 detalhesRestricaoTio,
                 deficienciaTio,
                 qualDeficienciaTio,
+                possuiCarroTio,
                 restricaoAlimentarTia,
                 detalhesRestricaoTia,
                 deficienciaTia,
                 qualDeficienciaTia,
+                possuiCarroTia,
                 restricaoAlimentar: restricaoAlimentarTio || restricaoAlimentarTia,
                 deficiencia: deficienciaTio || deficienciaTia,
                 observacoes: String((item && item.observacoes) || '').trim() || null,
@@ -1486,8 +1668,12 @@ router.post('/casais/bulk-replace', async (req, res) => {
 
         itens.forEach((item, index) => {
             const row = normalizarLinha(item, index);
-            if (!row.nomeTio || !row.nomeTia) {
-                erros.push({ linha: row.linha, error: 'Dados obrigatórios: nome do tio e nome da tia.' });
+            if (row.tioViuvo && row.tiaViuva) {
+                erros.push({ linha: row.linha, error: 'Marque apenas tio viúvo ou tia viúva.' });
+                return;
+            }
+            if (row.tioViuvo ? !row.nomeTio : (row.tiaViuva ? !row.nomeTia : (!row.nomeTio || !row.nomeTia))) {
+                erros.push({ linha: row.linha, error: row.tioViuvo ? 'Informe o nome do tio viúvo.' : (row.tiaViuva ? 'Informe o nome da tia viúva.' : 'Dados obrigatórios: nome do tio e nome da tia.') });
                 return;
             }
             if (row.telefoneTioDigits && row.telefoneTiaDigits && row.telefoneTioDigits === row.telefoneTiaDigits) {
@@ -1586,20 +1772,23 @@ router.post('/casais/bulk-replace', async (req, res) => {
             // eslint-disable-next-line no-await-in-loop
             await connection.query(
                 `UPDATE tios_casais
-                 SET ecc_id = ?, encontro_tipo = ?, origem_tipo = ?, outro_ejc_id = ?, nome_tio = ?, telefone_tio = ?, data_nascimento_tio = ?,
-                     nome_tia = ?, telefone_tia = ?, data_nascimento_tia = ?, telefone_tio_hash = ?, telefone_tia_hash = ?,
+                 SET ecc_id = ?, encontro_tipo = ?, origem_tipo = ?, outro_ejc_id = ?, nome_tio = ?, apelido_tio = ?, telefone_tio = ?, cpf_tio = ?, cpf_tio_hash = ?, data_nascimento_tio = ?,
+                     tio_viuvo = ?, nome_tia = ?, apelido_tia = ?, telefone_tia = ?, cpf_tia = ?, cpf_tia_hash = ?, data_nascimento_tia = ?, tia_viuva = ?, telefone_tio_hash = ?, telefone_tia_hash = ?,
                      restricao_alimentar = ?, deficiencia = ?,
-                     restricao_alimentar_tio = ?, detalhes_restricao_tio = ?, deficiencia_tio = ?, qual_deficiencia_tio = ?,
-                     restricao_alimentar_tia = ?, detalhes_restricao_tia = ?, deficiencia_tia = ?, qual_deficiencia_tia = ?,
+                     restricao_alimentar_tio = ?, detalhes_restricao_tio = ?, deficiencia_tio = ?, qual_deficiencia_tio = ?, possui_carro_tio = ?,
+                     restricao_alimentar_tia = ?, detalhes_restricao_tia = ?, deficiencia_tia = ?, qual_deficiencia_tia = ?, possui_carro_tia = ?,
                      observacoes = ?
                  WHERE id = ? AND tenant_id = ?`,
                 [
                     null, item.origemTipo === 'EJC' ? item.encontroTipo : null, item.origemTipo, item.origemTipo === 'OUTRO_EJC' ? item.outroEjcId : null,
-                    item.nomeTio, encryptTioPhone(item.telefoneTio), item.dataNascimentoTio, item.nomeTia, encryptTioPhone(item.telefoneTia), item.dataNascimentoTia,
+                    item.nomeTio || '', item.apelidoTio, encryptTioPhone(item.telefoneTio), encryptTioCpf(item.cpfTio), tioCpfHash(item.cpfTio), item.dataNascimentoTio,
+                    item.tioViuvo ? 1 : 0,
+                    item.nomeTia || '', item.apelidoTia, encryptTioPhone(item.telefoneTia), encryptTioCpf(item.cpfTia), tioCpfHash(item.cpfTia), item.dataNascimentoTia,
+                    item.tiaViuva ? 1 : 0,
                     tioPhoneHash(item.telefoneTio), tioPhoneHash(item.telefoneTia),
                     item.restricaoAlimentar ? 1 : 0, item.deficiencia ? 1 : 0,
-                    item.restricaoAlimentarTio ? 1 : 0, encryptTioSensitiveText(item.detalhesRestricaoTio, 'detalhes-restricao-tio'), item.deficienciaTio ? 1 : 0, encryptTioSensitiveText(item.qualDeficienciaTio, 'qual-deficiencia-tio'),
-                    item.restricaoAlimentarTia ? 1 : 0, encryptTioSensitiveText(item.detalhesRestricaoTia, 'detalhes-restricao-tia'), item.deficienciaTia ? 1 : 0, encryptTioSensitiveText(item.qualDeficienciaTia, 'qual-deficiencia-tia'),
+                    item.restricaoAlimentarTio ? 1 : 0, encryptTioSensitiveText(item.detalhesRestricaoTio, 'detalhes-restricao-tio'), item.deficienciaTio ? 1 : 0, encryptTioSensitiveText(item.qualDeficienciaTio, 'qual-deficiencia-tio'), item.possuiCarroTio ? 1 : 0,
+                    item.restricaoAlimentarTia ? 1 : 0, encryptTioSensitiveText(item.detalhesRestricaoTia, 'detalhes-restricao-tia'), item.deficienciaTia ? 1 : 0, encryptTioSensitiveText(item.qualDeficienciaTia, 'qual-deficiencia-tia'), item.possuiCarroTia ? 1 : 0,
                     item.observacoes, item.casalId, tenantId
                 ]
             );
@@ -1608,19 +1797,22 @@ router.post('/casais/bulk-replace', async (req, res) => {
         if (insercoes.length) {
             const valores = insercoes.map((item) => [
                 tenantId, null, item.origemTipo === 'EJC' ? item.encontroTipo : null, item.origemTipo, item.origemTipo === 'OUTRO_EJC' ? item.outroEjcId : null,
-                item.nomeTio, encryptTioPhone(item.telefoneTio), item.dataNascimentoTio, item.nomeTia, encryptTioPhone(item.telefoneTia), item.dataNascimentoTia,
+                item.nomeTio || '', item.apelidoTio, encryptTioPhone(item.telefoneTio), encryptTioCpf(item.cpfTio), tioCpfHash(item.cpfTio), item.dataNascimentoTio,
+                item.tioViuvo ? 1 : 0,
+                item.nomeTia || '', item.apelidoTia, encryptTioPhone(item.telefoneTia), encryptTioCpf(item.cpfTia), tioCpfHash(item.cpfTia), item.dataNascimentoTia,
+                item.tiaViuva ? 1 : 0,
                 tioPhoneHash(item.telefoneTio), tioPhoneHash(item.telefoneTia),
                 item.restricaoAlimentar ? 1 : 0, item.deficiencia ? 1 : 0,
-                item.restricaoAlimentarTio ? 1 : 0, encryptTioSensitiveText(item.detalhesRestricaoTio, 'detalhes-restricao-tio'), item.deficienciaTio ? 1 : 0, encryptTioSensitiveText(item.qualDeficienciaTio, 'qual-deficiencia-tio'),
-                item.restricaoAlimentarTia ? 1 : 0, encryptTioSensitiveText(item.detalhesRestricaoTia, 'detalhes-restricao-tia'), item.deficienciaTia ? 1 : 0, encryptTioSensitiveText(item.qualDeficienciaTia, 'qual-deficiencia-tia'), item.observacoes
+                item.restricaoAlimentarTio ? 1 : 0, encryptTioSensitiveText(item.detalhesRestricaoTio, 'detalhes-restricao-tio'), item.deficienciaTio ? 1 : 0, encryptTioSensitiveText(item.qualDeficienciaTio, 'qual-deficiencia-tio'), item.possuiCarroTio ? 1 : 0,
+                item.restricaoAlimentarTia ? 1 : 0, encryptTioSensitiveText(item.detalhesRestricaoTia, 'detalhes-restricao-tia'), item.deficienciaTia ? 1 : 0, encryptTioSensitiveText(item.qualDeficienciaTia, 'qual-deficiencia-tia'), item.possuiCarroTia ? 1 : 0, item.observacoes
             ]);
             const [result] = await connection.query(
                 `INSERT INTO tios_casais
-                    (tenant_id, ecc_id, encontro_tipo, origem_tipo, outro_ejc_id, nome_tio, telefone_tio, data_nascimento_tio, nome_tia, telefone_tia, data_nascimento_tia,
+                    (tenant_id, ecc_id, encontro_tipo, origem_tipo, outro_ejc_id, nome_tio, apelido_tio, telefone_tio, cpf_tio, cpf_tio_hash, data_nascimento_tio, tio_viuvo, nome_tia, apelido_tia, telefone_tia, cpf_tia, cpf_tia_hash, data_nascimento_tia, tia_viuva,
                      telefone_tio_hash, telefone_tia_hash,
                      restricao_alimentar, deficiencia,
-                     restricao_alimentar_tio, detalhes_restricao_tio, deficiencia_tio, qual_deficiencia_tio,
-                     restricao_alimentar_tia, detalhes_restricao_tia, deficiencia_tia, qual_deficiencia_tia, observacoes)
+                     restricao_alimentar_tio, detalhes_restricao_tio, deficiencia_tio, qual_deficiencia_tio, possui_carro_tio,
+                     restricao_alimentar_tia, detalhes_restricao_tia, deficiencia_tia, qual_deficiencia_tia, possui_carro_tia, observacoes)
                  VALUES ?`,
                 [valores]
             );
@@ -1707,11 +1899,13 @@ router.post('/casais', async (req, res) => {
         await ensureStructure();
         const tenantId = getTenantId(req);
         const nomeTio = normalizeUpperText(req.body.nome_tio);
+        const apelidoTio = normalizeUpperText(req.body.apelido_tio);
         const telefoneTio = normalizeTrimmedText(req.body.telefone_tio);
         const cpfTio = normalizeTrimmedText(req.body.cpf_tio);
         const dataNascimentoTio = normalizeDate(req.body.data_nascimento_tio);
         const tioViuvo = parseBool(req.body.tio_viuvo);
         const nomeTia = normalizeUpperText(req.body.nome_tia);
+        const apelidoTia = normalizeUpperText(req.body.apelido_tia);
         const telefoneTia = normalizeTrimmedText(req.body.telefone_tia);
         const cpfTia = normalizeTrimmedText(req.body.cpf_tia);
         const dataNascimentoTia = normalizeDate(req.body.data_nascimento_tia);
@@ -1720,10 +1914,12 @@ router.post('/casais', async (req, res) => {
         const detalhesRestricaoTio = restricaoAlimentarTio ? (String(req.body.detalhes_restricao_tio || '').trim() || null) : null;
         const deficienciaTio = parseBool(req.body.deficiencia_tio);
         const qualDeficienciaTio = deficienciaTio ? (String(req.body.qual_deficiencia_tio || '').trim() || null) : null;
+        const possuiCarroTio = parseBool(req.body.possui_carro_tio);
         const restricaoAlimentarTia = parseBool(req.body.restricao_alimentar_tia);
         const detalhesRestricaoTia = restricaoAlimentarTia ? (String(req.body.detalhes_restricao_tia || '').trim() || null) : null;
         const deficienciaTia = parseBool(req.body.deficiencia_tia);
         const qualDeficienciaTia = deficienciaTia ? (String(req.body.qual_deficiencia_tia || '').trim() || null) : null;
+        const possuiCarroTia = parseBool(req.body.possui_carro_tia);
         const restricaoAlimentar = restricaoAlimentarTio || restricaoAlimentarTia;
         const deficiencia = deficienciaTio || deficienciaTia;
         const observacoes = String(req.body.observacoes || '').trim() || null;
@@ -1785,20 +1981,20 @@ router.post('/casais', async (req, res) => {
 
         const [result] = await pool.query(
             `INSERT INTO tios_casais
-                (tenant_id, ecc_id, encontro_tipo, origem_tipo, outro_ejc_id, nome_tio, telefone_tio, cpf_tio, cpf_tio_hash, data_nascimento_tio, tio_viuvo, nome_tia, telefone_tia, cpf_tia, cpf_tia_hash, data_nascimento_tia, tia_viuva,
+                (tenant_id, ecc_id, encontro_tipo, origem_tipo, outro_ejc_id, nome_tio, apelido_tio, telefone_tio, cpf_tio, cpf_tio_hash, data_nascimento_tio, tio_viuvo, nome_tia, apelido_tia, telefone_tia, cpf_tia, cpf_tia_hash, data_nascimento_tia, tia_viuva,
                  telefone_tio_hash, telefone_tia_hash,
                  restricao_alimentar, deficiencia,
-                 restricao_alimentar_tio, detalhes_restricao_tio, deficiencia_tio, qual_deficiencia_tio,
-                 restricao_alimentar_tia, detalhes_restricao_tia, deficiencia_tia, qual_deficiencia_tia, observacoes)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                 restricao_alimentar_tio, detalhes_restricao_tio, deficiencia_tio, qual_deficiencia_tio, possui_carro_tio,
+                 restricao_alimentar_tia, detalhes_restricao_tia, deficiencia_tia, qual_deficiencia_tia, possui_carro_tia, observacoes)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
                 tenantId, null, origemTipo === 'EJC' ? encontroTipo : null, origemTipo, origemTipo === 'OUTRO_EJC' ? outroEjcId : null,
-                nomeTioDb, encryptTioPhone(telefoneTio), encryptTioCpf(cpfTio), tioCpfHash(cpfTio), dataNascimentoTio, tioViuvo ? 1 : 0,
-                nomeTiaDb, encryptTioPhone(telefoneTia), encryptTioCpf(cpfTia), tioCpfHash(cpfTia), dataNascimentoTia, tiaViuva ? 1 : 0,
+                nomeTioDb, apelidoTio, encryptTioPhone(telefoneTio), encryptTioCpf(cpfTio), tioCpfHash(cpfTio), dataNascimentoTio, tioViuvo ? 1 : 0,
+                nomeTiaDb, apelidoTia, encryptTioPhone(telefoneTia), encryptTioCpf(cpfTia), tioCpfHash(cpfTia), dataNascimentoTia, tiaViuva ? 1 : 0,
                 tioPhoneHash(telefoneTio), tioPhoneHash(telefoneTia),
                 restricaoAlimentar ? 1 : 0, deficiencia ? 1 : 0,
-                restricaoAlimentarTio ? 1 : 0, encryptTioSensitiveText(detalhesRestricaoTio, 'detalhes-restricao-tio'), deficienciaTio ? 1 : 0, encryptTioSensitiveText(qualDeficienciaTio, 'qual-deficiencia-tio'),
-                restricaoAlimentarTia ? 1 : 0, encryptTioSensitiveText(detalhesRestricaoTia, 'detalhes-restricao-tia'), deficienciaTia ? 1 : 0, encryptTioSensitiveText(qualDeficienciaTia, 'qual-deficiencia-tia'), observacoes
+                restricaoAlimentarTio ? 1 : 0, encryptTioSensitiveText(detalhesRestricaoTio, 'detalhes-restricao-tio'), deficienciaTio ? 1 : 0, encryptTioSensitiveText(qualDeficienciaTio, 'qual-deficiencia-tio'), possuiCarroTio ? 1 : 0,
+                restricaoAlimentarTia ? 1 : 0, encryptTioSensitiveText(detalhesRestricaoTia, 'detalhes-restricao-tia'), deficienciaTia ? 1 : 0, encryptTioSensitiveText(qualDeficienciaTia, 'qual-deficiencia-tia'), possuiCarroTia ? 1 : 0, observacoes
             ]
         );
         const casalId = result.insertId;
@@ -1863,11 +2059,13 @@ router.put('/casais/:id', async (req, res) => {
         const nomeCasalAnterior = montarNomeCasal(casalAtual.nome_tio, casalAtual.nome_tia);
 
         const nomeTio = normalizeUpperText(req.body.nome_tio);
+        const apelidoTio = normalizeUpperText(req.body.apelido_tio);
         const telefoneTio = normalizeTrimmedText(req.body.telefone_tio);
         const cpfTio = normalizeTrimmedText(req.body.cpf_tio);
         const dataNascimentoTio = normalizeDate(req.body.data_nascimento_tio);
         const tioViuvo = parseBool(req.body.tio_viuvo);
         const nomeTia = normalizeUpperText(req.body.nome_tia);
+        const apelidoTia = normalizeUpperText(req.body.apelido_tia);
         const telefoneTia = normalizeTrimmedText(req.body.telefone_tia);
         const cpfTia = normalizeTrimmedText(req.body.cpf_tia);
         const dataNascimentoTia = normalizeDate(req.body.data_nascimento_tia);
@@ -1876,10 +2074,12 @@ router.put('/casais/:id', async (req, res) => {
         const detalhesRestricaoTio = restricaoAlimentarTio ? (String(req.body.detalhes_restricao_tio || '').trim() || null) : null;
         const deficienciaTio = parseBool(req.body.deficiencia_tio);
         const qualDeficienciaTio = deficienciaTio ? (String(req.body.qual_deficiencia_tio || '').trim() || null) : null;
+        const possuiCarroTio = parseBool(req.body.possui_carro_tio);
         const restricaoAlimentarTia = parseBool(req.body.restricao_alimentar_tia);
         const detalhesRestricaoTia = restricaoAlimentarTia ? (String(req.body.detalhes_restricao_tia || '').trim() || null) : null;
         const deficienciaTia = parseBool(req.body.deficiencia_tia);
         const qualDeficienciaTia = deficienciaTia ? (String(req.body.qual_deficiencia_tia || '').trim() || null) : null;
+        const possuiCarroTia = parseBool(req.body.possui_carro_tia);
         const restricaoAlimentar = restricaoAlimentarTio || restricaoAlimentarTia;
         const deficiencia = deficienciaTio || deficienciaTia;
         const observacoes = String(req.body.observacoes || '').trim() || null;
@@ -1942,21 +2142,21 @@ router.put('/casais/:id', async (req, res) => {
 
         const [result] = await pool.query(
             `UPDATE tios_casais
-             SET ecc_id = ?, encontro_tipo = ?, origem_tipo = ?, outro_ejc_id = ?, nome_tio = ?, telefone_tio = ?, cpf_tio = ?, cpf_tio_hash = ?, data_nascimento_tio = ?,
-                 tio_viuvo = ?, nome_tia = ?, telefone_tia = ?, cpf_tia = ?, cpf_tia_hash = ?, data_nascimento_tia = ?, tia_viuva = ?, telefone_tio_hash = ?, telefone_tia_hash = ?,
+             SET ecc_id = ?, encontro_tipo = ?, origem_tipo = ?, outro_ejc_id = ?, nome_tio = ?, apelido_tio = ?, telefone_tio = ?, cpf_tio = ?, cpf_tio_hash = ?, data_nascimento_tio = ?,
+                 tio_viuvo = ?, nome_tia = ?, apelido_tia = ?, telefone_tia = ?, cpf_tia = ?, cpf_tia_hash = ?, data_nascimento_tia = ?, tia_viuva = ?, telefone_tio_hash = ?, telefone_tia_hash = ?,
                  restricao_alimentar = ?, deficiencia = ?,
-                 restricao_alimentar_tio = ?, detalhes_restricao_tio = ?, deficiencia_tio = ?, qual_deficiencia_tio = ?,
-                 restricao_alimentar_tia = ?, detalhes_restricao_tia = ?, deficiencia_tia = ?, qual_deficiencia_tia = ?,
+                 restricao_alimentar_tio = ?, detalhes_restricao_tio = ?, deficiencia_tio = ?, qual_deficiencia_tio = ?, possui_carro_tio = ?,
+                 restricao_alimentar_tia = ?, detalhes_restricao_tia = ?, deficiencia_tia = ?, qual_deficiencia_tia = ?, possui_carro_tia = ?,
                 observacoes = ?
              WHERE id = ? AND tenant_id = ?`,
             [
                 null, origemTipo === 'EJC' ? encontroTipo : null, origemTipo, origemTipo === 'OUTRO_EJC' ? outroEjcId : null,
-                nomeTioDb, encryptTioPhone(telefoneTio), encryptTioCpf(cpfTio), tioCpfHash(cpfTio), dataNascimentoTio,
-                tioViuvo ? 1 : 0, nomeTiaDb, encryptTioPhone(telefoneTia), encryptTioCpf(cpfTia), tioCpfHash(cpfTia), dataNascimentoTia, tiaViuva ? 1 : 0,
+                nomeTioDb, apelidoTio, encryptTioPhone(telefoneTio), encryptTioCpf(cpfTio), tioCpfHash(cpfTio), dataNascimentoTio,
+                tioViuvo ? 1 : 0, nomeTiaDb, apelidoTia, encryptTioPhone(telefoneTia), encryptTioCpf(cpfTia), tioCpfHash(cpfTia), dataNascimentoTia, tiaViuva ? 1 : 0,
                 tioPhoneHash(telefoneTio), tioPhoneHash(telefoneTia),
                 restricaoAlimentar ? 1 : 0, deficiencia ? 1 : 0,
-                restricaoAlimentarTio ? 1 : 0, encryptTioSensitiveText(detalhesRestricaoTio, 'detalhes-restricao-tio'), deficienciaTio ? 1 : 0, encryptTioSensitiveText(qualDeficienciaTio, 'qual-deficiencia-tio'),
-                restricaoAlimentarTia ? 1 : 0, encryptTioSensitiveText(detalhesRestricaoTia, 'detalhes-restricao-tia'), deficienciaTia ? 1 : 0, encryptTioSensitiveText(qualDeficienciaTia, 'qual-deficiencia-tia'),
+                restricaoAlimentarTio ? 1 : 0, encryptTioSensitiveText(detalhesRestricaoTio, 'detalhes-restricao-tio'), deficienciaTio ? 1 : 0, encryptTioSensitiveText(qualDeficienciaTio, 'qual-deficiencia-tio'), possuiCarroTio ? 1 : 0,
+                restricaoAlimentarTia ? 1 : 0, encryptTioSensitiveText(detalhesRestricaoTia, 'detalhes-restricao-tia'), deficienciaTia ? 1 : 0, encryptTioSensitiveText(qualDeficienciaTia, 'qual-deficiencia-tia'), possuiCarroTia ? 1 : 0,
                 observacoes, casalId, tenantId
             ]
         );
@@ -2020,6 +2220,25 @@ router.put('/casais/:id', async (req, res) => {
     }
 });
 
+router.get('/casais/:id/vinculos-edicoes', async (req, res) => {
+    try {
+        await ensureStructure();
+        const tenantId = getTenantId(req);
+        const casalId = Number(req.params.id);
+        if (!casalId) return res.status(400).json({ error: 'ID inválido.' });
+        const [rows] = await pool.query(
+            'SELECT id FROM tios_casais WHERE id = ? AND tenant_id = ? LIMIT 1',
+            [casalId, tenantId]
+        );
+        if (!rows.length) return res.status(404).json({ error: 'Casal não encontrado.' });
+        const vinculosEdicoes = await contarVinculosCasalEmEdicoes({ tenantId, casalId });
+        return res.json({ vinculosEdicoes, total: Number(vinculosEdicoes.total || 0) });
+    } catch (err) {
+        console.error('Erro ao verificar vínculos do casal:', err);
+        return res.status(500).json({ error: 'Erro ao verificar vínculos do casal.' });
+    }
+});
+
 router.delete('/casais/:id', async (req, res) => {
     try {
         await ensureStructure();
@@ -2032,45 +2251,32 @@ router.delete('/casais/:id', async (req, res) => {
         );
         if (!rows.length) return res.status(404).json({ error: 'Casal não encontrado.' });
         const casal = decryptTiosCasal(rows[0]);
+        const vinculosEdicoes = await contarVinculosCasalEmEdicoes({ tenantId, casalId });
+        const preservarHistorico = lerOpcaoPreservarHistorico(req);
+        if (vinculosEdicoes.total > 0 && preservarHistorico === null) {
+            return res.status(409).json({
+                requiresHistoryChoice: true,
+                vinculosEdicoes,
+                message: 'Esse tio/casal está contido em informações nas edições do EJC.'
+            });
+        }
 
-        await pool.query(
-            `INSERT INTO tios_casal_servicos_historico
-                (tenant_id, casal_id, equipe_id, ejc_id, papel, subfuncao, nome_tio_snapshot, telefone_tio_snapshot, nome_tia_snapshot, telefone_tia_snapshot)
-             SELECT
-                ts.tenant_id,
-                ts.casal_id,
-                ts.equipe_id,
-                ts.ejc_id,
-                ts.papel,
-                ts.subfuncao,
-                COALESCE(ts.nome_tio_snapshot, ?),
-                COALESCE(ts.telefone_tio_snapshot, ?),
-                COALESCE(ts.nome_tia_snapshot, ?),
-                COALESCE(ts.telefone_tia_snapshot, ?)
-             FROM tios_casal_servicos ts
-             WHERE ts.casal_id = ?
-               AND ts.tenant_id = ?`,
-            [
-                casal.nome_tio || null,
-                casal.telefone_tio || null,
-                casal.nome_tia || null,
-                casal.telefone_tia || null,
-                casalId,
-                tenantId
-            ]
-        );
+        if (preservarHistorico === false) {
+            await limparVinculosCasalEmEdicoes({ tenantId, casalId });
+        } else {
+            await preservarVinculosCasalEmEdicoes({ tenantId, casalId, casal });
+        }
 
-        await pool.query('DELETE FROM tios_casal_equipes WHERE casal_id = ? AND tenant_id = ?', [casalId, tenantId]);
-        await pool.query('DELETE FROM tios_casal_servicos WHERE casal_id = ? AND tenant_id = ?', [casalId, tenantId]);
-        await sincronizarServicosCasalComMontagem({
-            tenantId,
-            casalId,
-            nomeTio: casal.nome_tio,
-            telefoneTio: casal.telefone_tio,
-            nomeTia: casal.nome_tia,
-            telefoneTia: casal.telefone_tia,
-            aliasesNomes: [montarNomeCasal(casal.nome_tio, casal.nome_tia)]
-        });
+        if (await hasTable('relacoes_familiares')) {
+            await pool.query(
+                `DELETE FROM relacoes_familiares
+                 WHERE tenant_id = ?
+                   AND ((entity_a_type = 'TIO_CASAL' AND entity_a_id = ?)
+                     OR (entity_b_type = 'TIO_CASAL' AND entity_b_id = ?))`,
+                [tenantId, casalId, casalId]
+            );
+        }
+
         const [result] = await pool.query('DELETE FROM tios_casais WHERE id = ? AND tenant_id = ?', [casalId, tenantId]);
         if (rows.length > 0 && rows[0].foto_url) {
             const relativeFoto = String(rows[0].foto_url).replace(/^\/+/, '');

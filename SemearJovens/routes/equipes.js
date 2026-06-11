@@ -333,9 +333,20 @@ router.get('/por-ejc/:ejcId', async (req, res) => {
                   AND he.tenant_id = ?
                   AND COALESCE(he.equipe, '') <> ''
                 GROUP BY he.equipe
+
+                UNION ALL
+
+                SELECT
+                    eq3.id,
+                    eq3.nome,
+                    eq3.descricao,
+                    3 AS origem_prioridade
+                FROM equipes eq3
+                WHERE eq3.tenant_id = ?
+                  AND COALESCE(eq3.ativa, 1) = 1
             ) equipes_base
             ORDER BY nome ASC, origem_prioridade ASC
-        `, [req.params.ejcId, tenantId, req.params.ejcId, tenantId]);
+        `, [req.params.ejcId, tenantId, req.params.ejcId, tenantId, tenantId]);
         const equipesUnicas = new Map();
         (rows || []).forEach((row) => {
             const chave = normalizarNomeEquipe(row.nome);
@@ -719,6 +730,7 @@ router.delete('/funcoes-padrao/:id', async (req, res) => {
 router.get('/:id/funcoes', async (req, res) => {
     try {
         const tenantId = getTenantId(req);
+        await aplicarFuncoesPadraoNaEquipe(req.params.id, tenantId);
         const comPapelBase = await hasPapelBaseColumn();
         const comOrigemPadrao = await hasOrigemPadraoColumn();
         const sql = comPapelBase

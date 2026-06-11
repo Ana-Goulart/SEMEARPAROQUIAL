@@ -1040,14 +1040,23 @@
                     modal.show();
                 },
                 formatarOrigemEquipe(jovem) {
+                    const normalizarNomeMovimentoTio = (nome, fallback = '') => {
+                        const limpar = (valor) => String(valor || '').trim().replace(/\s+/g, ' ')
+                            .replace(/^(EJC|ECC|ECNA)\b\s*/i, '')
+                            .replace(/^Par[oó]quia\b\s*/i, '')
+                            .trim()
+                            .toUpperCase();
+                        return limpar(nome) || limpar(fallback);
+                    };
+
                     if (String(jovem && jovem.papel || '').toUpperCase() === 'TIOS') {
                         const ehOutroTio = String(jovem && jovem.origem_ejc_tipo || '').toUpperCase() === 'OUTRO_EJC'
                             || !!(jovem && jovem.outro_ejc_id)
                             || !!(jovem && jovem.outro_ejc_nome)
                             || !!(jovem && jovem.outro_ejc_paroquia);
                         if (ehOutroTio) {
-                            const nomeParoquia = (jovem && jovem.outro_ejc_paroquia) || (jovem && jovem.outro_ejc_nome);
-                            return nomeParoquia ? `ECC ${nomeParoquia}` : 'ECC';
+                            const nomeMovimento = normalizarNomeMovimentoTio(jovem && jovem.outro_ejc_nome, jovem && jovem.outro_ejc_paroquia);
+                            return nomeMovimento ? `ECC ${nomeMovimento}` : 'ECC';
                         }
                         return this.nomeMeuEJC ? `ECC ${this.nomeMeuEJC}` : 'ECC';
                     }

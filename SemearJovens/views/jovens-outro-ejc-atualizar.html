@@ -274,6 +274,13 @@
                                 <label class="form-label">Qual deficiência do tio?</label>
                                 <input class="form-control" v-model.trim="atualizacaoTio.qual_deficiencia_tio" maxlength="220">
                             </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Tio possui carro?</label>
+                                <select class="form-select" v-model="atualizacaoTio.possui_carro_tio">
+                                    <option :value="false">Não</option>
+                                    <option :value="true">Sim</option>
+                                </select>
+                            </div>
 
                             <div class="col-12 pt-2"><h3 class="h6 text-muted mb-0">Dados da tia</h3></div>
                             <div class="col-md-4">
@@ -302,6 +309,13 @@
                             <div class="col-md-8" v-if="atualizacaoTio.deficiencia_tia">
                                 <label class="form-label">Qual deficiência da tia?</label>
                                 <input class="form-control" v-model.trim="atualizacaoTio.qual_deficiencia_tia" maxlength="220">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Tia possui carro?</label>
+                                <select class="form-select" v-model="atualizacaoTio.possui_carro_tia">
+                                    <option :value="false">Não</option>
+                                    <option :value="true">Sim</option>
+                                </select>
                             </div>
 
                             <div class="col-12">
@@ -396,11 +410,13 @@
                         outra_restricao_tio: '',
                         deficiencia_tio: false,
                         qual_deficiencia_tio: '',
+                        possui_carro_tio: false,
                         restricao_alimentar_tia: false,
                         detalhes_restricao_tia: '',
                         outra_restricao_tia: '',
                         deficiencia_tia: false,
-                        qual_deficiencia_tia: ''
+                        qual_deficiencia_tia: '',
+                        possui_carro_tia: false
                     }
                 };
             },
@@ -496,11 +512,13 @@
                         outra_restricao_tio: '',
                         deficiencia_tio: !!cadastro.deficiencia_tio,
                         qual_deficiencia_tio: cadastro.qual_deficiencia_tio || '',
+                        possui_carro_tio: !!cadastro.possui_carro_tio,
                         restricao_alimentar_tia: !!cadastro.restricao_alimentar_tia,
                         detalhes_restricao_tia: cadastro.detalhes_restricao_tia || '',
                         outra_restricao_tia: '',
                         deficiencia_tia: !!cadastro.deficiencia_tia,
-                        qual_deficiencia_tia: cadastro.qual_deficiencia_tia || ''
+                        qual_deficiencia_tia: cadastro.qual_deficiencia_tia || '',
+                        possui_carro_tia: !!cadastro.possui_carro_tia
                     };
                     if (!this.restricoesDisponiveis.includes(this.atualizacaoTio.detalhes_restricao_tio) && this.atualizacaoTio.detalhes_restricao_tio) {
                         this.atualizacaoTio.outra_restricao_tio = this.atualizacaoTio.detalhes_restricao_tio;
@@ -620,12 +638,14 @@
                                 : null,
                             deficiencia_tio: this.atualizacaoTio.deficiencia_tio ? 1 : 0,
                             qual_deficiencia_tio: this.atualizacaoTio.deficiencia_tio ? (this.atualizacaoTio.qual_deficiencia_tio || null) : null,
+                            possui_carro_tio: this.atualizacaoTio.possui_carro_tio ? 1 : 0,
                             restricao_alimentar_tia: this.atualizacaoTio.restricao_alimentar_tia ? 1 : 0,
                             detalhes_restricao_tia: this.atualizacaoTio.restricao_alimentar_tia
                                 ? this.detalhesRestricaoFinal(this.atualizacaoTio.detalhes_restricao_tia, this.atualizacaoTio.outra_restricao_tia)
                                 : null,
                             deficiencia_tia: this.atualizacaoTio.deficiencia_tia ? 1 : 0,
-                            qual_deficiencia_tia: this.atualizacaoTio.deficiencia_tia ? (this.atualizacaoTio.qual_deficiencia_tia || null) : null
+                            qual_deficiencia_tia: this.atualizacaoTio.deficiencia_tia ? (this.atualizacaoTio.qual_deficiencia_tia || null) : null,
+                            possui_carro_tia: this.atualizacaoTio.possui_carro_tia ? 1 : 0
                         };
                         const res = await fetch('/api/jovens-outro-ejc-public/atualizar-tio', {
                             method: 'POST',

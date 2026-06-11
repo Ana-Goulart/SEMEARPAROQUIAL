@@ -7,21 +7,67 @@ const { decryptTiosCasal } = require('../lib/tiosSensitiveData');
 
 let estruturaGarantida = false;
 
+async function hasColumn(tableName, columnName) {
+    const [rows] = await pool.query(`
+        SELECT COUNT(*) AS cnt
+        FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = ?
+          AND COLUMN_NAME = ?
+    `, [tableName, columnName]);
+    return !!(rows && rows[0] && rows[0].cnt > 0);
+}
+
+async function hasIndex(tableName, indexName) {
+    const [rows] = await pool.query(`
+        SELECT COUNT(*) AS cnt
+        FROM information_schema.STATISTICS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = ?
+          AND INDEX_NAME = ?
+    `, [tableName, indexName]);
+    return !!(rows && rows[0] && rows[0].cnt > 0);
+}
+
+async function runAlterIgnoreDuplicate(sql) {
+    try {
+        await pool.query(sql);
+    } catch (err) {
+        if (err && (err.code === 'ER_DUP_FIELDNAME' || err.code === 'ER_DUP_KEYNAME')) return;
+        throw err;
+    }
+}
+
 async function garantirEstrutura() {
     if (estruturaGarantida) return;
 
     await pool.query(`
         CREATE TABLE IF NOT EXISTS garcons_equipes (
             id INT AUTO_INCREMENT PRIMARY KEY,
+            tenant_id INT NOT NULL,
             ejc_numero INT NOT NULL,
             outro_ejc_id INT NOT NULL,
             reserva_ativa TINYINT(1) NOT NULL DEFAULT 0,
             data_inicio DATE NULL,
             data_fim DATE NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            KEY idx_garcons_equipes_tenant (tenant_id),
             CONSTRAINT fk_garcons_equipe_outro_ejc FOREIGN KEY (outro_ejc_id) REFERENCES outros_ejcs(id) ON DELETE RESTRICT
         )
     `);
+    if (!(await hasColumn('garcons_equipes', 'tenant_id'))) {
+        await runAlterIgnoreDuplicate('ALTER TABLE garcons_equipes ADD COLUMN tenant_id INT NULL AFTER id');
+    }
+    await pool.query(`
+        UPDATE garcons_equipes ge
+        LEFT JOIN outros_ejcs oe ON oe.id = ge.outro_ejc_id
+        SET ge.tenant_id = COALESCE(oe.tenant_id, 1)
+        WHERE ge.tenant_id IS NULL
+    `);
+    await runAlterIgnoreDuplicate('ALTER TABLE garcons_equipes MODIFY COLUMN tenant_id INT NOT NULL');
+    if (!(await hasIndex('garcons_equipes', 'idx_garcons_equipes_tenant'))) {
+        await runAlterIgnoreDuplicate('ALTER TABLE garcons_equipes ADD KEY idx_garcons_equipes_tenant (tenant_id)');
+    }
     try {
         await pool.query('ALTER TABLE garcons_equipes ADD COLUMN reserva_ativa TINYINT(1) NOT NULL DEFAULT 0');
     } catch (e) { }
@@ -214,9 +260,9 @@ router.post('/reservas/:id/titular', async (req, res) => {
         const [[equipe]] = await connection.query(
             `SELECT id, ejc_numero, outro_ejc_id, data_inicio, data_fim
              FROM garcons_equipes
-             WHERE id = ?
+             WHERE id = ? AND tenant_id = ?
              LIMIT 1`,
-            [equipeId]
+            [equipeId, tenantId]
         );
         if (!equipe) {
             await connection.rollback();
@@ -272,16 +318,20 @@ router.post('/reservas/:id/titular', async (req, res) => {
 });
 
 router.get('/equipes', async (req, res) => {
+    const tenantId = getTenantId(req);
+    if (!tenantId) return res.status(401).json({ error: 'Tenant não identificado.' });
+
     try {
         await garantirEstrutura();
 
         const [equipes] = await pool.query(`
-            SELECT ge.id, ge.ejc_numero, ge.outro_ejc_id, ge.reserva_ativa, ge.data_inicio, ge.data_fim, ge.created_at,
+            SELECT ge.id, ge.tenant_id, ge.ejc_numero, ge.outro_ejc_id, ge.reserva_ativa, ge.data_inicio, ge.data_fim, ge.created_at,
                    oe.nome AS outro_ejc_nome, oe.paroquia AS outro_ejc_paroquia, oe.bairro AS outro_ejc_bairro
             FROM garcons_equipes ge
-            JOIN outros_ejcs oe ON oe.id = ge.outro_ejc_id
+            JOIN outros_ejcs oe ON oe.id = ge.outro_ejc_id AND oe.tenant_id = ge.tenant_id
+            WHERE ge.tenant_id = ?
             ORDER BY COALESCE(ge.data_inicio, '1000-01-01') DESC, ge.created_at DESC, ge.id DESC
-        `);
+        `, [tenantId]);
 
         const [membros] = await pool.query(`
             SELECT gm.id, gm.equipe_id, gm.jovem_id, gm.membro_tipo, gm.tio_casal_id, gm.papel, gm.situacao, gm.comissao_id, gm.created_at,
@@ -318,10 +368,12 @@ router.get('/equipes', async (req, res) => {
                    j.circulo,
                    j.data_nascimento
             FROM garcons_membros gm
-            LEFT JOIN jovens j ON j.id = gm.jovem_id
-            LEFT JOIN tios_casais tc ON tc.id = gm.tio_casal_id
+            JOIN garcons_equipes ge ON ge.id = gm.equipe_id
+            LEFT JOIN jovens j ON j.id = gm.jovem_id AND j.tenant_id = ge.tenant_id
+            LEFT JOIN tios_casais tc ON tc.id = gm.tio_casal_id AND tc.tenant_id = ge.tenant_id
+            WHERE ge.tenant_id = ?
             ORDER BY COALESCE(j.nome_completo, tc.nome_tio, tc.nome_tia) ASC
-        `);
+        `, [tenantId]);
 
         const mapa = new Map();
         equipes.forEach(e => mapa.set(e.id, { ...e, membros: [] }));
@@ -348,6 +400,9 @@ router.get('/equipes', async (req, res) => {
 });
 
 router.post('/equipes', async (req, res) => {
+    const tenantId = getTenantId(req);
+    if (!tenantId) return res.status(401).json({ error: 'Tenant não identificado.' });
+
     const ejcNumero = Number(req.body.ejc_numero);
     const outroEjcId = Number(req.body.outro_ejc_id);
     const dataInicio = req.body.data_inicio ? String(req.body.data_inicio).trim() : null;
@@ -363,13 +418,13 @@ router.post('/equipes', async (req, res) => {
     try {
         await garantirEstrutura();
 
-        const [outroRows] = await pool.query('SELECT id FROM outros_ejcs WHERE id = ? LIMIT 1', [outroEjcId]);
+        const [outroRows] = await pool.query('SELECT id FROM outros_ejcs WHERE id = ? AND tenant_id = ? LIMIT 1', [outroEjcId, tenantId]);
         if (!outroRows.length) return res.status(404).json({ error: 'EJC não encontrado na lista.' });
 
         const [result] = await pool.query(
-            `INSERT INTO garcons_equipes (ejc_numero, outro_ejc_id, data_inicio, data_fim)
-             VALUES (?, ?, ?, ?)`,
-            [ejcNumero, outroEjcId, dataInicio || null, dataFim || null]
+            `INSERT INTO garcons_equipes (tenant_id, ejc_numero, outro_ejc_id, data_inicio, data_fim)
+             VALUES (?, ?, ?, ?, ?)`,
+            [tenantId, ejcNumero, outroEjcId, dataInicio || null, dataFim || null]
         );
 
         res.status(201).json({ id: result.insertId, message: 'Equipe de garçons criada com sucesso' });
@@ -380,6 +435,9 @@ router.post('/equipes', async (req, res) => {
 });
 
 router.delete('/equipes/:id', async (req, res) => {
+    const tenantId = getTenantId(req);
+    if (!tenantId) return res.status(401).json({ error: 'Tenant não identificado.' });
+
     const id = Number(req.params.id);
     if (!id) return res.status(400).json({ error: 'ID inválido.' });
 
@@ -389,18 +447,25 @@ router.delete('/equipes/:id', async (req, res) => {
         await connection.beginTransaction();
 
         const [membros] = await connection.query(
-            'SELECT comissao_id FROM garcons_membros WHERE equipe_id = ?',
-            [id]
+            `SELECT gm.comissao_id
+             FROM garcons_membros gm
+             JOIN garcons_equipes ge ON ge.id = gm.equipe_id
+             WHERE gm.equipe_id = ? AND ge.tenant_id = ?`,
+            [id, tenantId]
         );
         const idsComissao = (membros || []).map(m => m.comissao_id).filter(Boolean);
         if (idsComissao.length) {
             await connection.query(
-                'DELETE FROM jovens_comissoes WHERE id IN (?)',
-                [idsComissao]
+                'DELETE FROM jovens_comissoes WHERE tenant_id = ? AND id IN (?)',
+                [tenantId, idsComissao]
             );
         }
 
-        await connection.query('DELETE FROM garcons_equipes WHERE id = ?', [id]);
+        const [result] = await connection.query('DELETE FROM garcons_equipes WHERE id = ? AND tenant_id = ?', [id, tenantId]);
+        if (!result.affectedRows) {
+            await connection.rollback();
+            return res.status(404).json({ error: 'Equipe não encontrada.' });
+        }
         await connection.commit();
         res.json({ message: 'Equipe removida com sucesso' });
     } catch (err) {
@@ -432,8 +497,8 @@ router.post('/equipes/:id/membros', async (req, res) => {
         await connection.beginTransaction();
 
         const [[equipe]] = await connection.query(
-            'SELECT id, ejc_numero, outro_ejc_id, reserva_ativa, data_inicio, data_fim FROM garcons_equipes WHERE id = ? LIMIT 1',
-            [equipeId]
+            'SELECT id, ejc_numero, outro_ejc_id, reserva_ativa, data_inicio, data_fim FROM garcons_equipes WHERE id = ? AND tenant_id = ? LIMIT 1',
+            [equipeId, tenantId]
         );
         if (!equipe) {
             await connection.rollback();
@@ -441,7 +506,7 @@ router.post('/equipes/:id/membros', async (req, res) => {
         }
 
         if (membroTipo === 'JOVEM') {
-            const [jRows] = await connection.query('SELECT id FROM jovens WHERE id = ? LIMIT 1', [jovemId]);
+            const [jRows] = await connection.query('SELECT id FROM jovens WHERE id = ? AND tenant_id = ? LIMIT 1', [jovemId, tenantId]);
             if (!jRows.length) {
                 await connection.rollback();
                 return res.status(404).json({ error: 'Jovem não encontrado.' });
@@ -523,8 +588,8 @@ router.patch('/membros/:id/situacao', async (req, res) => {
                     ge.ejc_numero, ge.outro_ejc_id, ge.reserva_ativa, ge.data_inicio, ge.data_fim
              FROM garcons_membros gm
              JOIN garcons_equipes ge ON ge.id = gm.equipe_id
-             WHERE gm.id = ? LIMIT 1`,
-            [id]
+             WHERE gm.id = ? AND ge.tenant_id = ? LIMIT 1`,
+            [id, tenantId]
         );
         if (!membro) {
             await connection.rollback();
@@ -563,7 +628,7 @@ router.patch('/membros/:id/situacao', async (req, res) => {
             }
         } else if (membro.membro_tipo === 'JOVEM') {
             if (membro.comissao_id) {
-                await connection.query('DELETE FROM jovens_comissoes WHERE id = ?', [membro.comissao_id]);
+                await connection.query('DELETE FROM jovens_comissoes WHERE id = ? AND tenant_id = ?', [membro.comissao_id, tenantId]);
                 novoComissaoId = null;
             }
         } else {
@@ -587,14 +652,17 @@ router.patch('/membros/:id/situacao', async (req, res) => {
 });
 
 router.patch('/equipes/:id/reserva', async (req, res) => {
+    const tenantId = getTenantId(req);
+    if (!tenantId) return res.status(401).json({ error: 'Tenant não identificado.' });
+
     const id = Number(req.params.id);
     if (!id) return res.status(400).json({ error: 'ID inválido.' });
 
     try {
         await garantirEstrutura();
         const [result] = await pool.query(
-            'UPDATE garcons_equipes SET reserva_ativa = 1 WHERE id = ?',
-            [id]
+            'UPDATE garcons_equipes SET reserva_ativa = 1 WHERE id = ? AND tenant_id = ?',
+            [id, tenantId]
         );
         if (!result.affectedRows) return res.status(404).json({ error: 'Equipe não encontrada.' });
         res.json({ message: 'Lista de reserva criada com sucesso.' });
@@ -605,6 +673,9 @@ router.patch('/equipes/:id/reserva', async (req, res) => {
 });
 
 router.delete('/membros/:id', async (req, res) => {
+    const tenantId = getTenantId(req);
+    if (!tenantId) return res.status(401).json({ error: 'Tenant não identificado.' });
+
     const id = Number(req.params.id);
     if (!id) return res.status(400).json({ error: 'ID inválido.' });
 
@@ -614,8 +685,12 @@ router.delete('/membros/:id', async (req, res) => {
         await connection.beginTransaction();
 
         const [[membro]] = await connection.query(
-            'SELECT id, comissao_id FROM garcons_membros WHERE id = ? LIMIT 1',
-            [id]
+            `SELECT gm.id, gm.comissao_id
+             FROM garcons_membros gm
+             JOIN garcons_equipes ge ON ge.id = gm.equipe_id
+             WHERE gm.id = ? AND ge.tenant_id = ?
+             LIMIT 1`,
+            [id, tenantId]
         );
         if (!membro) {
             await connection.rollback();
@@ -624,7 +699,7 @@ router.delete('/membros/:id', async (req, res) => {
 
         await connection.query('DELETE FROM garcons_membros WHERE id = ?', [id]);
         if (membro.comissao_id) {
-            await connection.query('DELETE FROM jovens_comissoes WHERE id = ?', [membro.comissao_id]);
+            await connection.query('DELETE FROM jovens_comissoes WHERE id = ? AND tenant_id = ?', [membro.comissao_id, tenantId]);
         }
 
         await connection.commit();

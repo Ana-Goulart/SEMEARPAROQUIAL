@@ -4,6 +4,7 @@ const { pool } = require('../database');
 const { getTenantId } = require('../lib/tenantIsolation');
 const { buildYoungFamilyMap } = require('../lib/relacoesFamiliares');
 const { decryptTioPhone } = require('../lib/tiosSensitiveData');
+const { blindIndex, decryptValue, encryptValue } = require('../lib/fieldEncryption');
 const {
     ensureHistoricoEquipesSnapshots,
     ensureHistoricoEquipesYoungFkPreserved,
@@ -33,6 +34,36 @@ let tiosServicosSnapshotsCapacidadeGarantida = false;
 let montagemMembrosExtraGarantida = false;
 const hasColumnCache = new Map();
 let geocoderInstance = null;
+
+function normalizeCpfDigits(value) {
+    return String(value || '').replace(/\D/g, '').slice(0, 11);
+}
+
+function formatCpf(value) {
+    const digits = normalizeCpfDigits(value);
+    if (!digits) return null;
+    if (digits.length !== 11) return digits;
+    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+}
+
+function encryptMontagemCpf(value) {
+    const formatted = formatCpf(value);
+    return formatted && normalizeCpfDigits(formatted).length === 11 ? encryptValue(formatted, 'montagem-encontristas:cpf') : null;
+}
+
+function decryptMontagemCpf(value) {
+    return String(decryptValue(value, 'montagem-encontristas:cpf') || '').trim();
+}
+
+function encryptListaMestreCpf(value) {
+    const formatted = formatCpf(value);
+    return formatted && normalizeCpfDigits(formatted).length === 11 ? encryptValue(formatted, 'lista-mestre:cpf') : null;
+}
+
+function listaMestreCpfHash(value) {
+    const digits = normalizeCpfDigits(value);
+    return digits.length === 11 ? blindIndex(digits, 'lista-mestre:cpf') : null;
+}
 
 async function hasTable(tableName) {
     const [rows] = await pool.query(`
@@ -518,6 +549,7 @@ async function garantirMontagemEncontristasDados() {
             resposta_id INT NOT NULL,
             nome_referencia VARCHAR(180) NULL,
             telefone_referencia VARCHAR(30) NULL,
+            cpf TEXT NULL,
             circulo VARCHAR(80) NULL,
             cep VARCHAR(12) NULL,
             endereco VARCHAR(220) NULL,
@@ -534,6 +566,12 @@ async function garantirMontagemEncontristasDados() {
             CONSTRAINT fk_montagem_encontrista_dados_montagem FOREIGN KEY (montagem_id) REFERENCES montagens(id) ON DELETE CASCADE
         )
     `);
+    try {
+        await pool.query('ALTER TABLE montagem_encontristas_dados ADD COLUMN cpf TEXT NULL AFTER telefone_referencia');
+        hasColumnCache.delete('montagem_encontristas_dados.cpf');
+    } catch (err) {
+        if (!err || err.code !== 'ER_DUP_FIELDNAME') throw err;
+    }
     montagemEncontristasDadosGarantido = true;
 }
 
@@ -1300,6 +1338,42 @@ async function sincronizarMontagemComHistoricosExistentes(montagemId, tenantId) 
             return;
         }
 
+        const hasMontagemEjcId = await hasColumn('jovens', 'montagem_ejc_id');
+        await connection.query(
+            `DELETE mm
+             FROM montagem_membros mm
+             JOIN jovens j
+               ON j.id = mm.jovem_id
+              AND j.tenant_id = mm.tenant_id
+             LEFT JOIN jovens cj
+               ON cj.id = j.conjuge_id
+              AND cj.tenant_id = j.tenant_id
+              AND j.estado_civil IN ('Casado', 'Amasiado')
+             LEFT JOIN ejc ej_id
+               ON ej_id.id = j.numero_ejc_fez
+              AND ej_id.tenant_id = j.tenant_id
+             LEFT JOIN ejc ej_num
+               ON ej_num.numero = j.numero_ejc_fez
+              AND ej_num.tenant_id = j.tenant_id
+             LEFT JOIN ejc ecj_id
+               ON ecj_id.id = cj.numero_ejc_fez
+              AND ecj_id.tenant_id = cj.tenant_id
+             LEFT JOIN ejc ecj_num
+               ON ecj_num.numero = cj.numero_ejc_fez
+              AND ecj_num.tenant_id = cj.tenant_id
+             WHERE mm.tenant_id = ?
+               AND mm.montagem_id = ?
+               AND mm.jovem_id IS NOT NULL
+               AND (
+                    COALESCE(ej_id.numero, ej_num.numero, j.numero_ejc_fez) = ?
+                    OR COALESCE(ecj_id.numero, ecj_num.numero, cj.numero_ejc_fez) = ?
+                    ${hasMontagemEjcId ? 'OR j.montagem_ejc_id = ? OR cj.montagem_ejc_id = ?' : ''}
+               )`,
+            hasMontagemEjcId
+                ? [tenantIdNumero, montagemIdNumero, montagem.numero_ejc, montagem.numero_ejc, montagemIdNumero, montagemIdNumero]
+                : [tenantIdNumero, montagemIdNumero, montagem.numero_ejc, montagem.numero_ejc]
+        );
+
         const [equipesRows] = await connection.query(
             'SELECT id, nome FROM equipes WHERE tenant_id = ?',
             [tenantIdNumero]
@@ -1344,6 +1418,20 @@ async function sincronizarMontagemComHistoricosExistentes(montagemId, tenantId) 
         for (const hist of (historicos || [])) {
             const jovemId = Number(hist.jovem_id);
             if (!jovemId || jovensVistos.has(jovemId)) continue;
+            const erroEncontrista = await validarJovemNaoEncontristaDaMontagem({
+                tenantId: tenantIdNumero,
+                montagemId: montagemIdNumero,
+                jovemId,
+                incluirConjuge: true,
+                connection
+            });
+            if (erroEncontrista) {
+                jovensVistos.add(jovemId);
+                if (erroEncontrista.jovem_id && Number(erroEncontrista.jovem_id) !== jovemId) {
+                    jovensVistos.add(Number(erroEncontrista.jovem_id));
+                }
+                continue;
+            }
             const equipeId = equipePorNome.get(normalizarChaveEquipe(hist.equipe));
             if (!equipeId) continue;
             const papelBase = String(hist.papel || 'Membro').trim() || 'Membro';
@@ -1521,6 +1609,67 @@ async function obterConjugeVinculado({ tenantId, jovemId }) {
     const conjugeId = Number(jovem.conjuge_id);
     if (!conjugeId || conjugeId === Number(jovemId)) return null;
     return { id: conjugeId, nome: jovem.conjuge_nome || '' };
+}
+
+async function validarJovemNaoEncontristaDaMontagem({ tenantId, montagemId, jovemId, incluirConjuge = true, connection = pool }) {
+    const id = Number(jovemId);
+    const montagem = Number(montagemId);
+    if (!id || !montagem) return null;
+
+    const [[base]] = await connection.query(
+        `SELECT m.numero_ejc, j.conjuge_id, j.estado_civil
+         FROM montagens m
+         JOIN jovens j ON j.id = ? AND j.tenant_id = m.tenant_id
+         WHERE m.id = ?
+           AND m.tenant_id = ?
+         LIMIT 1`,
+        [id, montagem, tenantId]
+    );
+    if (!base || !Number(base.numero_ejc)) return null;
+
+    const ids = [id];
+    const conjugeId = Number(base.conjuge_id || 0);
+    if (
+        incluirConjuge
+        && conjugeId
+        && conjugeId !== id
+        && ['Casado', 'Amasiado'].includes(String(base.estado_civil || '').trim())
+    ) {
+        ids.push(conjugeId);
+    }
+
+    const montagemEjcSelect = await hasColumn('jovens', 'montagem_ejc_id')
+        ? 'j.montagem_ejc_id'
+        : 'NULL AS montagem_ejc_id';
+    const [jovens] = await connection.query(
+        `SELECT j.id, j.nome_completo, j.numero_ejc_fez, ${montagemEjcSelect},
+                COALESCE(e_id.numero, e_num.numero) AS ejc_numero_fez
+         FROM jovens j
+         LEFT JOIN ejc e_id
+           ON e_id.id = j.numero_ejc_fez
+          AND e_id.tenant_id = j.tenant_id
+         LEFT JOIN ejc e_num
+           ON e_num.numero = j.numero_ejc_fez
+          AND e_num.tenant_id = j.tenant_id
+         WHERE j.tenant_id = ?
+           AND j.id IN (?)`,
+        [tenantId, ids]
+    );
+
+    const numeroMontagem = Number(base.numero_ejc);
+    const bloqueado = (jovens || []).find((row) => {
+        const numeroFez = Number(row.ejc_numero_fez || row.numero_ejc_fez || 0);
+        const montagemEncontristaId = Number(row.montagem_ejc_id || 0);
+        return numeroFez === numeroMontagem || montagemEncontristaId === montagem;
+    });
+    if (!bloqueado) return null;
+
+    return {
+        jovem_id: Number(bloqueado.id),
+        nome: bloqueado.nome_completo || '',
+        numero_ejc: numeroMontagem,
+        error: `${bloqueado.nome_completo || 'Esse jovem'} fez o ${numeroMontagem}º EJC como encontrista e não pode servir nesta montagem.`
+    };
 }
 
 async function sincronizarConjugeNaEquipeMontagem({ tenantId, montagemId, equipeId, funcaoId, jovemId, ehSubstituicao = 0 }) {
@@ -2197,6 +2346,7 @@ router.get('/:id/encontristas-dados', async (req, res) => {
                 `SELECT fr.id, fr.formulario_id, fr.nome_referencia, fr.telefone_referencia, fr.resposta_json, fr.registrado_em,
                         fi.titulo AS formulario_titulo,
                         med.nome_referencia AS nome_editado, med.telefone_referencia AS telefone_editado,
+                        med.cpf AS cpf_editado,
                         med.circulo, med.cep, med.endereco, med.numero, med.bairro, med.cidade, med.complemento,
                         med.latitude, med.longitude, med.updated_at AS dados_atualizados_em
                  FROM montagem_encontristas me
@@ -2216,6 +2366,7 @@ router.get('/:id/encontristas-dados', async (req, res) => {
             );
             parsed.push(...rows.map((row) => ({
                 ...row,
+                cpf: decryptMontagemCpf(row.cpf_editado),
                 resposta: parseJsonSafe(row.resposta_json, {})
             })));
         }
@@ -2225,9 +2376,11 @@ router.get('/:id/encontristas-dados', async (req, res) => {
                 `SELECT j.id AS jovem_id,
                         j.nome_completo,
                         j.telefone,
+                        j.cpf,
                         NULL AS created_at,
                         med.nome_referencia AS nome_editado,
                         med.telefone_referencia AS telefone_editado,
+                        med.cpf AS cpf_editado,
                         med.circulo, med.cep, med.endereco, med.numero, med.bairro, med.cidade, med.complemento,
                         med.latitude, med.longitude, med.updated_at AS dados_atualizados_em
                  FROM jovens j
@@ -2244,6 +2397,7 @@ router.get('/:id/encontristas-dados', async (req, res) => {
                 ...criarEncontristaListaMestre(row),
                 nome_editado: row.nome_editado,
                 telefone_editado: row.telefone_editado,
+                cpf: decryptMontagemCpf(row.cpf_editado) || String(decryptValue(row.cpf, 'lista-mestre:cpf') || '').trim(),
                 circulo: row.circulo,
                 cep: row.cep,
                 endereco: row.endereco,
@@ -2298,6 +2452,11 @@ router.put('/:id/encontristas-dados/:respostaId', async (req, res) => {
 
         const nome = String((req.body && req.body.nome_referencia) || '').trim() || null;
         const telefone = String((req.body && req.body.telefone_referencia) || '').trim() || null;
+        const cpfTexto = String((req.body && req.body.cpf) || '').trim();
+        const cpf = cpfTexto ? encryptMontagemCpf(cpfTexto) : null;
+        if (cpfTexto && normalizeCpfDigits(cpfTexto).length !== 11) {
+            return res.status(400).json({ error: 'CPF inválido. Use 11 dígitos.' });
+        }
         const circulo = String((req.body && req.body.circulo) || '').trim() || null;
         const cep = String((req.body && req.body.cep) || '').trim() || null;
         const endereco = String((req.body && req.body.endereco) || '').trim() || null;
@@ -2314,11 +2473,12 @@ router.put('/:id/encontristas-dados/:respostaId', async (req, res) => {
 
         await pool.query(
             `INSERT INTO montagem_encontristas_dados
-                (tenant_id, montagem_id, resposta_id, nome_referencia, telefone_referencia, circulo, cep, endereco, numero, bairro, cidade, complemento, latitude, longitude)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                (tenant_id, montagem_id, resposta_id, nome_referencia, telefone_referencia, cpf, circulo, cep, endereco, numero, bairro, cidade, complemento, latitude, longitude)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE
                 nome_referencia = VALUES(nome_referencia),
                 telefone_referencia = VALUES(telefone_referencia),
+                cpf = VALUES(cpf),
                 circulo = VALUES(circulo),
                 cep = VALUES(cep),
                 endereco = VALUES(endereco),
@@ -2328,7 +2488,7 @@ router.put('/:id/encontristas-dados/:respostaId', async (req, res) => {
                 complemento = VALUES(complemento),
                 latitude = VALUES(latitude),
                 longitude = VALUES(longitude)`,
-            [tenantId, montagemId, respostaId, nome, telefone, circulo, cep, endereco, numero, bairro, cidade, complemento, latitude, longitude]
+            [tenantId, montagemId, respostaId, nome, telefone, cpf, circulo, cep, endereco, numero, bairro, cidade, complemento, latitude, longitude]
         );
 
         return res.json({ message: 'Dados do encontrista salvos com sucesso.' });
@@ -3096,7 +3256,9 @@ router.get('/:id/jovens-sem-equipe', async (req, res) => {
                 AND (LOWER(tc.nome_tio) = LOWER(j.nome_completo) OR LOWER(tc.nome_tia) = LOWER(j.nome_completo))`
             : '';
         const tiosWhere = hasTiosCasais ? 'AND tc.id IS NULL' : '';
-        const encontristasWhere = hasMontagemEjcId ? 'AND j.montagem_ejc_id IS NULL' : '';
+        const encontristasWhere = hasMontagemEjcId
+            ? 'AND (j.montagem_ejc_id IS NULL OR j.montagem_ejc_id <> m.id)'
+            : '';
 
         const [rows] = await pool.query(`
             SELECT
@@ -3118,6 +3280,9 @@ router.get('/:id/jovens-sem-equipe', async (req, res) => {
                 COALESCE(mjs.destino, 'titular') AS destino,
                 mjs.ordem_reserva
             FROM jovens j
+            JOIN montagens m
+              ON m.id = ?
+             AND m.tenant_id = j.tenant_id
             LEFT JOIN ejc e_id
               ON e_id.id = j.numero_ejc_fez
              AND e_id.tenant_id = j.tenant_id
@@ -3137,10 +3302,14 @@ router.get('/:id/jovens-sem-equipe', async (req, res) => {
               AND COALESCE(j.lista_mestre_ativo, 1) = 1
               AND COALESCE(j.nao_serve_ejc, 0) = 0
               ${encontristasWhere}
+              AND (
+                    COALESCE(e_id.numero, e_num.numero) IS NULL
+                    OR COALESCE(e_id.numero, e_num.numero) <> m.numero_ejc
+                  )
               AND mm.id IS NULL
               ${tiosWhere}
             ORDER BY j.nome_completo ASC
-        `, [montagemId, montagemId, tenantId]);
+        `, [montagemId, montagemId, montagemId, tenantId]);
         return res.json((rows || []).map((row) => {
             const casalKey = obterChaveCasalJovem(row);
             return {
@@ -3264,6 +3433,26 @@ router.post('/:id/jovens-servir/distribuir', async (req, res) => {
 
         if (!selecionados.length) {
             return res.status(400).json({ error: 'Nenhum jovem selecionado para servir.' });
+        }
+
+        for (const jovem of selecionados) {
+            const erroEncontrista = await validarJovemNaoEncontristaDaMontagem({
+                tenantId,
+                montagemId,
+                jovemId: jovem.id,
+                incluirConjuge: true,
+                connection
+            });
+            if (erroEncontrista) {
+                return res.status(409).json({
+                    error: `${erroEncontrista.error} Remova-o da seleção de jovens para servir antes de distribuir as equipes.`,
+                    conflict: {
+                        tipo: 'encontrista_da_montagem',
+                        jovem_id: erroEncontrista.jovem_id,
+                        numero_ejc: erroEncontrista.numero_ejc
+                    }
+                });
+            }
         }
 
         const [alocadosRows] = await connection.query(`
@@ -4593,29 +4782,46 @@ router.post('/:id/membros', async (req, res) => {
         const tenantId = getTenantId(req);
         await garantirEstruturaMontagemMembrosExtra();
 
-        if (!ehSubstituicao) {
-        const [emOutraEquipe] = await pool.query(
-            `SELECT mm.id, mm.equipe_id, e.nome AS equipe_nome
-             FROM montagem_membros mm
-             JOIN equipes e ON e.id = mm.equipe_id
-             WHERE mm.montagem_id = ?
-               AND mm.jovem_id = ?
-               AND mm.equipe_id <> ?
-               AND mm.eh_substituicao = 0
-               AND mm.tenant_id = ?
-             LIMIT 1`,
-            [montagemId, jovem_id, equipe_id, tenantId]
-        );
-        if (emOutraEquipe.length) {
+        const erroEncontrista = await validarJovemNaoEncontristaDaMontagem({
+            tenantId,
+            montagemId,
+            jovemId: jovem_id,
+            incluirConjuge: true
+        });
+        if (erroEncontrista) {
             return res.status(409).json({
-                error: `Esse jovem já está na equipe: ${emOutraEquipe[0].equipe_nome}.`,
+                error: erroEncontrista.error,
                 conflict: {
-                    membro_id: emOutraEquipe[0].id,
-                    equipe_id: emOutraEquipe[0].equipe_id,
-                    equipe_nome: emOutraEquipe[0].equipe_nome
+                    tipo: 'encontrista_da_montagem',
+                    jovem_id: erroEncontrista.jovem_id,
+                    numero_ejc: erroEncontrista.numero_ejc
                 }
             });
         }
+
+        if (!ehSubstituicao) {
+            const [emOutraEquipe] = await pool.query(
+                `SELECT mm.id, mm.equipe_id, e.nome AS equipe_nome
+                 FROM montagem_membros mm
+                 JOIN equipes e ON e.id = mm.equipe_id
+                 WHERE mm.montagem_id = ?
+                   AND mm.jovem_id = ?
+                   AND mm.equipe_id <> ?
+                   AND mm.eh_substituicao = 0
+                   AND mm.tenant_id = ?
+                 LIMIT 1`,
+                [montagemId, jovem_id, equipe_id, tenantId]
+            );
+            if (emOutraEquipe.length) {
+                return res.status(409).json({
+                    error: `Esse jovem já está na equipe: ${emOutraEquipe[0].equipe_nome}.`,
+                    conflict: {
+                        membro_id: emOutraEquipe[0].id,
+                        equipe_id: emOutraEquipe[0].equipe_id,
+                        equipe_nome: emOutraEquipe[0].equipe_nome
+                    }
+                });
+            }
         }
 
         const [duplicadoNaEquipe] = await pool.query(
@@ -5570,7 +5776,7 @@ async function finalizarEncontroHandler(req, res) {
         const encontristasPayload = Array.isArray(req.body && req.body.encontristas) ? req.body.encontristas : [];
         await garantirMontagemEncontristasDados();
         const [encontristasDbDados] = await connection.query(
-            `SELECT resposta_id, nome_referencia, telefone_referencia, circulo, cep, endereco, numero, bairro, cidade, complemento
+            `SELECT resposta_id, nome_referencia, telefone_referencia, cpf, circulo, cep, endereco, numero, bairro, cidade, complemento
              FROM montagem_encontristas_dados
              WHERE tenant_id = ? AND montagem_id = ?`,
             [tenantId, montagemId]
@@ -5583,6 +5789,7 @@ async function finalizarEncontroHandler(req, res) {
                 id: rid,
                 nome_referencia: (db && db.nome_referencia) || (item && item.nome_referencia) || '',
                 telefone_referencia: (db && db.telefone_referencia) || (item && item.telefone_referencia) || '',
+                cpf: (db && db.cpf ? decryptMontagemCpf(db.cpf) : '') || (item && item.cpf) || '',
                 circulo: (db && db.circulo) || (item && item.circulo) || null,
                 cep: (db && db.cep) || (item && item.cep) || null,
                 endereco: (db && db.endereco) || (item && item.endereco) || null,
@@ -5620,9 +5827,12 @@ async function finalizarEncontroHandler(req, res) {
             const comEnderecoBairro = await hasColumn('jovens', 'endereco_bairro');
             const comEnderecoCidade = await hasColumn('jovens', 'endereco_cidade');
             const comEnderecoCep = await hasColumn('jovens', 'endereco_cep');
+            const comCpf = await hasColumn('jovens', 'cpf');
+            const comCpfHash = await hasColumn('jovens', 'cpf_hash');
             for (const item of encontristasEfetivos) {
                 const nome = String((item && item.nome_referencia) || '').trim();
                 const telefone = String((item && item.telefone_referencia) || '').trim();
+                const cpfTexto = String((item && item.cpf) || '').trim();
                 const circulo = String((item && item.circulo) || '').trim() || null;
                 const respostaId = Number(item && item.id);
                 const enderecoRua = String((item && item.endereco) || '').trim() || null;
@@ -5646,6 +5856,8 @@ async function finalizarEncontroHandler(req, res) {
                     if (comEnderecoBairro) updateJovemData.endereco_bairro = enderecoBairro;
                     if (comEnderecoCidade) updateJovemData.endereco_cidade = enderecoCidade;
                     if (comEnderecoCep) updateJovemData.endereco_cep = enderecoCep;
+                    if (comCpf && normalizeCpfDigits(cpfTexto).length === 11) updateJovemData.cpf = encryptListaMestreCpf(cpfTexto);
+                    if (comCpfHash && normalizeCpfDigits(cpfTexto).length === 11) updateJovemData.cpf_hash = listaMestreCpfHash(cpfTexto);
                     await connection.query(
                         'UPDATE jovens SET ? WHERE id = ? AND tenant_id = ?',
                         [updateJovemData, jovemId, tenantId]
@@ -5701,6 +5913,8 @@ async function finalizarEncontroHandler(req, res) {
                     if (comEnderecoBairro) updateJovemExistenteData.endereco_bairro = enderecoBairro;
                     if (comEnderecoCidade) updateJovemExistenteData.endereco_cidade = enderecoCidade;
                     if (comEnderecoCep) updateJovemExistenteData.endereco_cep = enderecoCep;
+                    if (comCpf && normalizeCpfDigits(cpfTexto).length === 11) updateJovemExistenteData.cpf = encryptListaMestreCpf(cpfTexto);
+                    if (comCpfHash && normalizeCpfDigits(cpfTexto).length === 11) updateJovemExistenteData.cpf_hash = listaMestreCpfHash(cpfTexto);
                     await connection.query(
                         'UPDATE jovens SET ? WHERE id = ? AND tenant_id = ?',
                         [updateJovemExistenteData, jovem.id, tenantId]
@@ -5733,6 +5947,8 @@ async function finalizarEncontroHandler(req, res) {
                 if (comEnderecoBairro) { cols.push('endereco_bairro'); vals.push(enderecoBairro); }
                 if (comEnderecoCidade) { cols.push('endereco_cidade'); vals.push(enderecoCidade); }
                 if (comEnderecoCep) { cols.push('endereco_cep'); vals.push(enderecoCep); }
+                if (comCpf && normalizeCpfDigits(cpfTexto).length === 11) { cols.push('cpf'); vals.push(encryptListaMestreCpf(cpfTexto)); }
+                if (comCpfHash && normalizeCpfDigits(cpfTexto).length === 11) { cols.push('cpf_hash'); vals.push(listaMestreCpfHash(cpfTexto)); }
                 const marks = cols.map(() => '?').join(', ');
                 const [insertResult] = await connection.query(
                     `INSERT INTO jovens (${cols.join(', ')}) VALUES (${marks})`,
@@ -6032,11 +6248,35 @@ router.delete('/membro/:membroId', async (req, res) => {
             return res.status(404).json({ error: "Membro não encontrado na montagem." });
         }
 
-        await pool.query('DELETE FROM montagem_membros WHERE id = ? AND tenant_id = ?', [req.params.membroId, tenantId]);
+        const membrosRemover = [dadosMembro];
         if (dadosMembro.jovem_id) {
-            const destino = Number(dadosMembro.eh_substituicao || 0) ? 'reserva' : 'titular';
-            const ordemReserva = destino === 'reserva' && Number.isInteger(Number(dadosMembro.ordem_reserva)) && Number(dadosMembro.ordem_reserva) > 0
-                ? Number(dadosMembro.ordem_reserva)
+            const conjuge = await obterConjugeVinculado({ tenantId, jovemId: dadosMembro.jovem_id });
+            if (conjuge && conjuge.id) {
+                const [[par]] = await pool.query(`
+                    SELECT mm.id, mm.montagem_id, mm.jovem_id, mm.equipe_id, mm.funcao_id,
+                           mm.eh_substituicao, mm.ordem_reserva
+                    FROM montagem_membros mm
+                    WHERE mm.tenant_id = ?
+                      AND mm.montagem_id = ?
+                      AND mm.equipe_id = ?
+                      AND mm.funcao_id = ?
+                      AND mm.jovem_id = ?
+                    LIMIT 1
+                `, [tenantId, dadosMembro.montagem_id, dadosMembro.equipe_id, dadosMembro.funcao_id, conjuge.id]);
+                if (par && par.id) membrosRemover.push(par);
+            }
+        }
+
+        await pool.query(
+            'DELETE FROM montagem_membros WHERE id IN (?) AND tenant_id = ?',
+            [membrosRemover.map((membro) => Number(membro.id)), tenantId]
+        );
+
+        for (const membroRemovido of membrosRemover) {
+            if (!membroRemovido.jovem_id) continue;
+            const destino = Number(membroRemovido.eh_substituicao || 0) ? 'reserva' : 'titular';
+            const ordemReserva = destino === 'reserva' && Number.isInteger(Number(membroRemovido.ordem_reserva)) && Number(membroRemovido.ordem_reserva) > 0
+                ? Number(membroRemovido.ordem_reserva)
                 : null;
             await pool.query(
                 `INSERT INTO montagem_jovens_servir (montagem_id, jovem_id, pode_servir, destino, ordem_reserva)
@@ -6045,7 +6285,7 @@ router.delete('/membro/:membroId', async (req, res) => {
                     pode_servir = 1,
                     destino = VALUES(destino),
                     ordem_reserva = VALUES(ordem_reserva)`,
-                [dadosMembro.montagem_id, dadosMembro.jovem_id, destino, ordemReserva]
+                [membroRemovido.montagem_id, membroRemovido.jovem_id, destino, ordemReserva]
             );
         }
         if (dadosMembro.montagem_id) {
@@ -6059,17 +6299,22 @@ router.delete('/membro/:membroId', async (req, res) => {
             });
         }
 
-        if (dadosMembro.montagem_id && dadosMembro.equipe_id && dadosMembro.funcao_id && dadosMembro.jovem_id) {
+        for (const membroRemovido of membrosRemover) {
+            if (!membroRemovido.montagem_id || !membroRemovido.equipe_id || !membroRemovido.funcao_id || !membroRemovido.jovem_id) continue;
             await removerHistoricoDaAlocacao({
-                montagemId: dadosMembro.montagem_id,
-                equipeId: dadosMembro.equipe_id,
-                funcaoId: dadosMembro.funcao_id,
-                jovemId: dadosMembro.jovem_id,
+                montagemId: membroRemovido.montagem_id,
+                equipeId: membroRemovido.equipe_id,
+                funcaoId: membroRemovido.funcao_id,
+                jovemId: membroRemovido.jovem_id,
                 tenantId
             });
         }
 
-        res.json({ message: "Jovem removido com sucesso" });
+        res.json({
+            message: membrosRemover.length > 1
+                ? "Casal removido com sucesso"
+                : "Jovem removido com sucesso"
+        });
     } catch (err) {
         console.error("Erro ao remover membro:", err);
         res.status(500).json({ error: "Erro ao remover jovem" });

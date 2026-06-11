@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>EJC - Outros EJCs</title>
+    <title>EJC - Outras paróquias/movimentos</title>
     <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
     <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
@@ -485,24 +485,6 @@
             margin: 0 !important;
         }
 
-        .history-add-row {
-            margin-top: 1rem;
-            padding-top: 1rem;
-            border-top: 1px solid rgba(31, 53, 88, 0.08);
-        }
-
-        .history-add-grid {
-            display: grid;
-            grid-template-columns: 1.2fr 1.2fr 0.9fr 1fr auto;
-            gap: 0.75rem;
-        }
-
-        @media (max-width: 991.98px) {
-            .history-add-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
         .ficha-list {
             display: flex;
             flex-direction: column;
@@ -894,7 +876,7 @@
         <main class="container-fluid">
             <div class="outros-ejcs-shell">
                 <div class="d-flex flex-wrap justify-content-between align-items-start mb-4 gap-3">
-                    <h3 class="lista-mestre-page-title">Outros EJCs - EJC {{ nomeMeuEJC }}</h3>
+                    <h3 class="lista-mestre-page-title">Outras paróquias/movimentos - EJC {{ nomeMeuEJC }}</h3>
                     <div class="lista-mestre-toolbar-actions">
                         <div class="lista-mestre-toolbar-buttons">
                             <button class="btn btn-soft-secondary btn-ejc-action"
@@ -906,10 +888,10 @@
                             </button>
                             <button class="btn btn-soft-secondary btn-ejc-action"
                                 @click="abrirModalImportacaoOutro"
-                                title="Importar jovens"
-                                aria-label="Importar jovens">
+                                :title="rotuloImportacaoOutro()"
+                                :aria-label="rotuloImportacaoOutro()">
                                 <span class="btn-ejc-icon"><i class="fa-solid fa-file-import icon-accent"></i></span>
-                                <span class="btn-ejc-text">Importar jovens</span>
+                                <span class="btn-ejc-text">{{ rotuloImportacaoOutro() }}</span>
                             </button>
                             <div v-if="aba !== 'outros'" class="vr mx-1 d-none d-lg-flex"></div>
                             <div v-if="aba !== 'outros'" class="btn-group">
@@ -947,7 +929,7 @@
                 <ul class="nav nav-tabs mb-3 lista-mestre-tabs-bar">
                     <li class="nav-item">
                         <button class="nav-link" :class="{ active: aba === 'outros' }" @click="definirAba('outros')">
-                            Outros EJCs
+                            Outras paróquias/movimentos
                         </button>
                     </li>
                     <li class="nav-item">
@@ -993,14 +975,14 @@
                     <div class="card-body">
                         <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
                             <div>
-                                <div class="fw-semibold text-dark">Filtros avançados de outros EJCs</div>
+                                <div class="fw-semibold text-dark">Filtros avançados de outras paróquias/movimentos</div>
                                 <div class="text-muted small">Refine por nome, paróquia e bairro.</div>
                             </div>
                             <button type="button" class="btn btn-sm btn-outline-secondary" @click="limparFiltrosAbaAtual">Limpar filtros</button>
                         </div>
                         <div class="row g-2">
                             <div class="col-md-4">
-                                <label class="form-label small text-muted">Nome do EJC</label>
+                                <label class="form-label small text-muted">Nome dos Movimentos</label>
                                 <input v-model.trim="filtroOutroEjcNome" class="form-control" placeholder="Buscar por nome">
                             </div>
                             <div class="col-md-4">
@@ -1128,7 +1110,7 @@
                         <table class="table table-hover align-middle mb-0">
                             <thead class="table-light">
                                 <tr>
-                                    <th>Nome do EJC</th>
+                                    <th>Nome dos Movimentos</th>
                                     <th>Paróquia</th>
                                     <th>Bairro</th>
                                     <th style="width: 220px;">Ações</th>
@@ -1271,13 +1253,13 @@
                                     <div class="novo-jovem-panel-title">
                                         <span class="novo-jovem-panel-icon"><i class="fa-solid fa-globe"></i></span>
                                         <div>
-                                            <strong>Informações do EJC</strong>
+                                            <strong>Informações da paróquia/movimento</strong>
                                             <span class="d-block">Cadastre o nome do encontro, a paróquia e a referência de localização.</span>
                                         </div>
                                     </div>
                                     <div class="row g-3">
                                         <div class="col-md-6">
-                                            <label class="text-muted small">Nome do EJC *</label>
+                                            <label class="text-muted small">Nome dos Movimentos *</label>
                                             <input class="form-control" v-model.trim="formOutroEjc.nome" maxlength="160" placeholder="Ex: 12º EJC de São José">
                                         </div>
                                         <div class="col-md-6">
@@ -1323,7 +1305,6 @@
                                                     <div class="fw-semibold">{{ jovem.nome_completo || 'Sem nome' }}</div>
                                                     <div class="small text-muted">
                                                         {{ jovem.telefone || 'Telefone não informado' }}
-                                                        <span v-if="jovem.circulo"> • {{ jovem.circulo }}</span>
                                                         <span v-if="jovem.data_nascimento"> • {{ formatarIdade(jovem.data_nascimento) }}</span>
                                                     </div>
                                                 </div>
@@ -1396,10 +1377,14 @@
                                             <input class="form-control" v-model.trim="novo.apelido" maxlength="120">
                                         </div>
                                         <div class="col-lg-3">
+                                            <label class="text-muted small">CPF</label>
+                                            <input class="form-control" v-model.trim="novo.cpf" maxlength="14" placeholder="000.000.000-00">
+                                        </div>
+                                        <div class="col-lg-3">
                                             <label class="text-muted small">Telefone *</label>
                                             <input class="form-control" v-model.trim="novo.telefone" maxlength="30" placeholder="(31)99999-9999">
                                         </div>
-                                        <div class="col-lg-4">
+                                        <div class="col-lg-3">
                                             <label class="text-muted small">E-mail</label>
                                             <input class="form-control" v-model.trim="novo.email" maxlength="180" placeholder="email@exemplo.com">
                                         </div>
@@ -1438,14 +1423,11 @@
                                             <label class="text-muted small">Número do EJC</label>
                                             <input class="form-control" v-model.trim="novo.outro_ejc_numero" maxlength="30" placeholder="Ex: 14">
                                         </div>
-                                        <div class="col-lg-2">
-                                            <label class="text-muted small">Círculo</label>
-                                            <input class="form-control" v-model.trim="novo.circulo" maxlength="120" placeholder="Ex: Azul">
-                                        </div>
                                         <div class="col-lg-4">
                                             <label class="text-muted small">Estado civil</label>
                                             <select class="form-select" v-model="novo.estado_civil">
                                                 <option value="Solteiro">Solteiro</option>
+                                                <option value="Noivo">Noivo</option>
                                                 <option value="Casado">Casado</option>
                                                 <option value="Amasiado">Amasiado</option>
                                             </select>
@@ -1533,7 +1515,7 @@
             <div class="modal-dialog modal-xl modal-dialog-scrollable ficha-outro-jovem-modal">
                 <div class="modal-content border-0 shadow">
                     <div class="modal-header bg-light border-bottom">
-                        <h5 class="modal-title">{{ jovemOutroFicha.nome_completo || 'Jovem de Outro EJC' }}</h5>
+                        <h5 class="modal-title">{{ jovemOutroFicha.nome_completo || 'Jovem de outra paróquia/movimento' }}</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
@@ -1587,12 +1569,6 @@
                                 </div>
 
                                 <div class="lista-mestre-profile-summary text-start">
-                                    <div class="lista-mestre-summary-item">
-                                        <label class="text-muted small mb-0">Círculo</label>
-                                        <div v-if="!isEditingOutroFicha" class="py-1 px-2 bg-light border rounded">{{ jovemOutroFicha.circulo || 'Não informado' }}</div>
-                                        <input v-else class="form-control form-control-sm" v-model.trim="jovemOutroFicha.circulo" placeholder="Círculo">
-                                    </div>
-
                                     <div class="lista-mestre-summary-item">
                                         <label class="text-muted small mb-0">Origem no EJC</label>
                                         <div class="py-1 px-2 bg-light border rounded">Fez outro EJC</div>
@@ -1672,6 +1648,11 @@
                                                 <label class="text-muted small mb-0">Apelido</label>
                                                 <div v-if="!isEditingOutroFicha" class="py-1 px-2 bg-light border rounded">{{ jovemOutroFicha.apelido || 'Não informado' }}</div>
                                                 <input v-else class="form-control" v-model.trim="jovemOutroFicha.apelido">
+                                            </div>
+                                            <div class="col-md-4">
+                                                <label class="text-muted small mb-0">CPF</label>
+                                                <div v-if="!isEditingOutroFicha" class="py-1 px-2 bg-light border rounded">{{ jovemOutroFicha.cpf || 'Não informado' }}</div>
+                                                <input v-else class="form-control" v-model.trim="jovemOutroFicha.cpf" maxlength="14" placeholder="000.000.000-00">
                                             </div>
                                             <div class="col-md-4">
                                                 <label class="text-muted small mb-0">Telefone</label>
@@ -1782,13 +1763,13 @@
                                                     <div v-if="isEditingOutroFicha" class="history-add-row">
                                                         <small class="text-muted d-block mb-1">Adicionar Equipe:</small>
                                                         <div class="history-add-grid">
-                                                            <select v-model="novaEquipeHistoricoOutro.ejc_id" class="form-select form-select-sm">
+                                                            <select v-model="novaEquipeHistoricoOutro.ejc_id" class="form-select form-select-sm" @change="onEjcHistoricoOutroChange">
                                                                 <option value="">EJC...</option>
                                                                 <option v-for="ejc in ejcs" :key="`ejc-outro-hist-${ejc.id}`" :value="ejc.id">{{ formatarEjcOption(ejc) }}</option>
                                                             </select>
-                                                            <select v-model="novaEquipeHistoricoOutro.equipe_id" class="form-select form-select-sm" @change="onEquipeHistoricoOutroChange">
+                                                            <select v-model="novaEquipeHistoricoOutro.equipe_id" class="form-select form-select-sm" :disabled="!novaEquipeHistoricoOutro.ejc_id" @change="onEquipeHistoricoOutroChange">
                                                                 <option value="">Equipe...</option>
-                                                                <option v-for="eq in todasEquipesOutro" :key="`equipe-outro-hist-${eq.id}`" :value="eq.id">{{ eq.nome }}</option>
+                                                                <option v-for="eq in equipesHistoricoOutroDisponiveis" :key="`equipe-outro-hist-${eq.id}`" :value="eq.id">{{ eq.nome }}</option>
                                                             </select>
                                                             <select v-model="novaEquipeHistoricoOutro.papel" class="form-select form-select-sm" @change="onPapelHistoricoOutroChange">
                                                                 <option v-for="papel in papeisEquipeOutro" :key="`papel-outro-hist-${papel.id || papel.nome}`" :value="papel.nome">{{ papel.nome }}</option>
@@ -1813,6 +1794,7 @@
                                                 <div v-if="!isEditingOutroFicha" class="py-1 px-2 bg-light border rounded">{{ jovemOutroFicha.estado_civil || 'Não informado' }}</div>
                                                 <select v-else class="form-select" v-model="jovemOutroFicha.estado_civil">
                                                     <option value="Solteiro">Solteiro</option>
+                                                    <option value="Noivo">Noivo</option>
                                                     <option value="Casado">Casado</option>
                                                     <option value="Amasiado">Amasiado</option>
                                                 </select>
@@ -1965,6 +1947,9 @@
                         </div>
                     </div>
                     <div class="modal-footer">
+                        <button v-if="abaFichaOutro === 'dados' && isEditingOutroFicha" type="button" class="btn btn-danger me-auto" @click="excluirJovemOutroFicha">
+                            <i class="fa-solid fa-trash icon-accent"></i> Deletar Jovem
+                        </button>
                         <button v-if="abaFichaOutro === 'dados' && isEditingOutroFicha" type="button" class="btn btn-success" @click="salvarFichaOutroJovem">Salvar alterações</button>
                         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
                     </div>
@@ -2039,14 +2024,34 @@
                                         <div class="col-12">
                                             <div class="row g-3">
                                                 <div class="col-12">
-                                                    <strong class="text-muted small d-block">Dados do tio</strong>
+                                                    <div class="d-flex flex-wrap align-items-center gap-3">
+                                                        <strong class="text-muted small d-block">Dados do tio</strong>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" id="externoNovoTioViuvo" v-model="formCasal.tio_viuvo" @change="formCasal.tia_viuva = formCasal.tio_viuvo ? false : formCasal.tia_viuva">
+                                                            <label class="form-check-label small" for="externoNovoTioViuvo">Tio viúvo</label>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                                 <div class="col-lg-5">
-                                                    <label class="text-muted small">Nome do tio *</label>
+                                                    <label class="text-muted small">Nome do tio <span v-if="!formCasal.tia_viuva">*</span></label>
                                                     <input class="form-control"
                                                         v-model.trim="formCasal.nome_tio"
                                                         maxlength="180"
                                                         placeholder="Nome do tio">
+                                                </div>
+                                                <div class="col-lg-3">
+                                                    <label class="text-muted small">Apelido do tio</label>
+                                                    <input class="form-control"
+                                                        v-model.trim="formCasal.apelido_tio"
+                                                        maxlength="120"
+                                                        placeholder="Apelido">
+                                                </div>
+                                                <div class="col-lg-4">
+                                                    <label class="text-muted small">CPF do tio</label>
+                                                    <input class="form-control"
+                                                        v-model.trim="formCasal.cpf_tio"
+                                                        maxlength="14"
+                                                        placeholder="000.000.000-00">
                                                 </div>
                                                 <div class="col-lg-4">
                                                     <label class="text-muted small">Telefone do tio *</label>
@@ -2064,14 +2069,34 @@
                                         <div class="col-12">
                                             <div class="row g-3">
                                                 <div class="col-12">
-                                                    <strong class="text-muted small d-block">Dados da tia</strong>
+                                                    <div class="d-flex flex-wrap align-items-center gap-3">
+                                                        <strong class="text-muted small d-block">Dados da tia</strong>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" id="externoNovoTiaViuva" v-model="formCasal.tia_viuva" @change="formCasal.tio_viuvo = formCasal.tia_viuva ? false : formCasal.tio_viuvo">
+                                                            <label class="form-check-label small" for="externoNovoTiaViuva">Tia viúva</label>
+                                                        </div>
+                                                    </div>
                                                 </div>
                                                 <div class="col-lg-5">
-                                                    <label class="text-muted small">Nome da tia *</label>
+                                                    <label class="text-muted small">Nome da tia <span v-if="!formCasal.tio_viuvo">*</span></label>
                                                     <input class="form-control"
                                                         v-model.trim="formCasal.nome_tia"
                                                         maxlength="180"
                                                         placeholder="Nome da tia">
+                                                </div>
+                                                <div class="col-lg-3">
+                                                    <label class="text-muted small">Apelido da tia</label>
+                                                    <input class="form-control"
+                                                        v-model.trim="formCasal.apelido_tia"
+                                                        maxlength="120"
+                                                        placeholder="Apelido">
+                                                </div>
+                                                <div class="col-lg-4">
+                                                    <label class="text-muted small">CPF da tia</label>
+                                                    <input class="form-control"
+                                                        v-model.trim="formCasal.cpf_tia"
+                                                        maxlength="14"
+                                                        placeholder="000.000.000-00">
                                                 </div>
                                                 <div class="col-lg-4">
                                                     <label class="text-muted small">Telefone da tia *</label>
@@ -2175,13 +2200,33 @@
                                                 <p>Identificação e contato do tio e da tia em um só lugar.</p>
                                             </div>
                                             <div class="row g-3">
-                                                <div class="col-12"><h6 class="tios-section-heading">Dados do Tio</h6></div>
-                                                <div class="col-md-6"><label class="form-label">Nome do tio</label><input class="form-control" v-model.trim="formCasal.nome_tio" maxlength="180"></div>
+                                                <div class="col-12">
+                                                    <div class="d-flex flex-wrap align-items-center gap-3">
+                                                        <h6 class="tios-section-heading mb-0">Dados do Tio</h6>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" id="externoEditTioViuvo" v-model="formCasal.tio_viuvo" @change="formCasal.tia_viuva = formCasal.tio_viuvo ? false : formCasal.tia_viuva">
+                                                            <label class="form-check-label" for="externoEditTioViuvo">Tio viúvo</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6"><label class="form-label">Nome do tio <span v-if="!formCasal.tia_viuva">*</span></label><input class="form-control" v-model.trim="formCasal.nome_tio" maxlength="180"></div>
+                                                <div class="col-md-3"><label class="form-label">Apelido do tio</label><input class="form-control" v-model.trim="formCasal.apelido_tio" maxlength="120"></div>
+                                                <div class="col-md-3"><label class="form-label">CPF do tio</label><input class="form-control" v-model.trim="formCasal.cpf_tio" maxlength="14" placeholder="000.000.000-00"></div>
                                                 <div class="col-md-3"><label class="form-label">Telefone</label><input class="form-control" v-model.trim="formCasal.telefone_tio" maxlength="30"></div>
                                                 <div class="col-md-3"><label class="form-label">Nascimento</label><input type="text" class="form-control date-br" v-model="formCasal.data_nascimento_tio" placeholder="dd/mm/aaaa"></div>
 
-                                                <div class="col-12 pt-2"><h6 class="tios-section-heading">Dados da Tia</h6></div>
-                                                <div class="col-md-6"><label class="form-label">Nome da tia</label><input class="form-control" v-model.trim="formCasal.nome_tia" maxlength="180"></div>
+                                                <div class="col-12 pt-2">
+                                                    <div class="d-flex flex-wrap align-items-center gap-3">
+                                                        <h6 class="tios-section-heading mb-0">Dados da Tia</h6>
+                                                        <div class="form-check">
+                                                            <input class="form-check-input" type="checkbox" id="externoEditTiaViuva" v-model="formCasal.tia_viuva" @change="formCasal.tio_viuvo = formCasal.tia_viuva ? false : formCasal.tio_viuvo">
+                                                            <label class="form-check-label" for="externoEditTiaViuva">Tia viúva</label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6"><label class="form-label">Nome da tia <span v-if="!formCasal.tio_viuvo">*</span></label><input class="form-control" v-model.trim="formCasal.nome_tia" maxlength="180"></div>
+                                                <div class="col-md-3"><label class="form-label">Apelido da tia</label><input class="form-control" v-model.trim="formCasal.apelido_tia" maxlength="120"></div>
+                                                <div class="col-md-3"><label class="form-label">CPF da tia</label><input class="form-control" v-model.trim="formCasal.cpf_tia" maxlength="14" placeholder="000.000.000-00"></div>
                                                 <div class="col-md-3"><label class="form-label">Telefone</label><input class="form-control" v-model.trim="formCasal.telefone_tia" maxlength="30"></div>
                                                 <div class="col-md-3"><label class="form-label">Nascimento</label><input type="text" class="form-control date-br" v-model="formCasal.data_nascimento_tia" placeholder="dd/mm/aaaa"></div>
                                                 <div class="col-md-6">
@@ -2240,8 +2285,8 @@
                                                                     </div>
                                                                 </div>
                                                                 <div class="history-entry-meta">
-                                                                    <span class="badge-role">Tios</span>
-                                                                    <span class="badge-role">{{ obterNomeEquipeServico(item.srv) }}</span>
+                                                                    <span v-if="item.srv.papel" class="badge-role">{{ item.srv.papel }}</span>
+                                                                    <span v-if="obterSubfuncaoServico(item.srv)" class="badge-subrole">{{ obterSubfuncaoServico(item.srv) }}</span>
                                                                 </div>
                                                                 <button v-if="isEditingCasal" type="button" class="btn-icon-delete" @click="removerServicoCasal(item.idx)" title="Remover equipe" aria-label="Remover equipe"><i class="fa-solid fa-trash icon-accent"></i></button>
                                                             </li>
@@ -2249,13 +2294,20 @@
                                                         <div class="history-add-row" v-if="isEditingCasal">
                                                             <small class="text-muted d-block mb-1">Adicionar Equipe:</small>
                                                             <div class="history-add-grid">
-                                                                <select v-model="novoServicoCasal.ejc_id" class="form-select form-select-sm">
+                                                                <select v-model="novoServicoCasal.ejc_id" class="form-select form-select-sm" @change="onEjcServicoCasalChange">
                                                                     <option :value="null">EJC...</option>
                                                                     <option v-for="ejc in ejcs" :key="`ejc-casal-add-${ejc.id}`" :value="ejc.id">{{ formatarEjcOption(ejc) }}</option>
                                                                 </select>
-                                                                <select v-model="novoServicoCasal.equipe_id" class="form-select form-select-sm">
+                                                                <select v-model="novoServicoCasal.equipe_id" class="form-select form-select-sm" :disabled="!novoServicoCasal.ejc_id" @change="onEquipeServicoCasalChange">
                                                                     <option :value="null">Equipe...</option>
-                                                                    <option v-for="eq in equipes" :key="`eq-casal-add-${eq.id}`" :value="eq.id">{{ eq.nome }}</option>
+                                                                    <option v-for="eq in equipesServicoCasalDisponiveis" :key="`eq-casal-add-${eq.id}`" :value="eq.id">{{ eq.nome }}</option>
+                                                                </select>
+                                                                <select v-model="novoServicoCasal.papel" class="form-select form-select-sm" @change="onPapelServicoCasalChange">
+                                                                    <option v-for="papel in papeisEquipeOutro" :key="`papel-casal-add-${papel.id || papel.nome}`" :value="papel.nome">{{ papel.nome }}</option>
+                                                                </select>
+                                                                <select v-model="novoServicoCasal.subfuncao" class="form-select form-select-sm" :disabled="!novoServicoCasal.equipe_id">
+                                                                    <option value="">Subfunção...</option>
+                                                                    <option v-for="funcao in subfuncoesServicoCasalDisponiveis" :key="`subfuncao-casal-add-${funcao.id || funcao.nome}`" :value="funcao.nome">{{ funcao.nome }}</option>
                                                                 </select>
                                                                 <button type="button" class="btn btn-success btn-sm" @click="adicionarServicoCasal" :disabled="!novoServicoCasal.equipe_id || !novoServicoCasal.ejc_id"><i class="fa-solid fa-plus icon-accent"></i></button>
                                                             </div>
@@ -2359,6 +2411,13 @@
                                                         </div>
                                                     </div>
                                                 </div>
+                                                <div class="col-md-12">
+                                                    <label class="form-label d-block">Possui carro?</label>
+                                                    <select class="form-select" v-model="formCasal.possui_carro_tio">
+                                                        <option :value="false">Não</option>
+                                                        <option :value="true">Sim</option>
+                                                    </select>
+                                                </div>
                                                 <div class="col-12 pt-2"><h6 class="tios-section-heading">Saúde da Tia</h6></div>
                                                 <div class="col-md-12">
                                                     <label class="form-label d-block">Pessoa com Deficiência(PcD)?</label>
@@ -2386,6 +2445,13 @@
                                                             </select>
                                                         </div>
                                                     </div>
+                                                </div>
+                                                <div class="col-md-12">
+                                                    <label class="form-label d-block">Possui carro?</label>
+                                                    <select class="form-select" v-model="formCasal.possui_carro_tia">
+                                                        <option :value="false">Não</option>
+                                                        <option :value="true">Sim</option>
+                                                    </select>
                                                 </div>
                                                 <div class="col-12">
                                                     <label class="form-label">Observações</label>
@@ -2456,7 +2522,7 @@
                                             <div>
                                                 <div class="fw-semibold">{{ j.nome_completo }}</div>
                                                 <div class="small text-muted">
-                                                    {{ j.telefone || '-' }} • {{ j.circulo || '-' }} • {{ formatarIdade(j.data_nascimento) }}
+                                                    {{ j.telefone || '-' }} • {{ formatarIdade(j.data_nascimento) }}
                                                 </div>
                                             </div>
                                             <button type="button" class="btn-icon-delete" @click="removerJovemCasal(j)" title="Remover jovem" aria-label="Remover jovem">
@@ -2522,7 +2588,7 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
-                        <p class="text-muted mb-3">Qual tipo de cadastro você quer criar em <strong>Outros EJCs</strong>?</p>
+                        <p class="text-muted mb-3">Qual tipo de cadastro você quer criar em <strong>Outras paróquias/movimentos</strong>?</p>
                         <div class="d-grid gap-2">
                             <button class="btn btn-success" @click="selecionarNovoTipo('jovem')"><i class="fa-solid fa-plus icon-accent"></i> Novo jovem</button>
                             <button class="btn btn-outline-primary" @click="selecionarNovoTipo('tio')"><i class="fa-solid fa-plus icon-accent"></i> Novo tio</button>
@@ -2539,27 +2605,34 @@
             <div class="modal-dialog modal-lg modal-dialog-scrollable">
                 <div class="modal-content border-0 shadow">
                     <div class="modal-header bg-soft-primary">
-                        <h5 class="modal-title">Importar jovens de outros EJCs</h5>
+                        <h5 class="modal-title">{{ tituloImportacaoOutro() }}</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" :disabled="importandoOutroEjc"></button>
                     </div>
                     <div class="modal-body">
                         <div v-if="importandoOutroEjc" class="alert alert-info">
-                            <i class="fa-solid fa-circle-notch fa-spin me-2"></i>Importando jovens...
+                            <i class="fa-solid fa-circle-notch fa-spin me-2"></i>{{ textoCarregandoImportacaoOutro() }}
                         </div>
 
                         <p class="mb-2"><strong>1) Cabeçalho básico</strong></p>
-                        <div class="border rounded p-2 bg-light small" style="white-space: pre-wrap;">nome_completo, sexo, ejc, telefone, numero_ejc_origem</div>
+                        <div v-if="importacaoOutroEhCadastro()" class="border rounded p-2 bg-light small" style="white-space: pre-wrap;">nome, paroquia, bairro, observacoes</div>
+                        <div v-else-if="!importacaoOutroEhTios()" class="border rounded p-2 bg-light small" style="white-space: pre-wrap;">nome_completo, sexo, ejc, telefone, numero_ejc_origem, estado_civil</div>
+                        <div v-else class="border rounded p-2 bg-light small" style="white-space: pre-wrap;">nome_tio, telefone_tio, data_nascimento_tio, nome_tia, telefone_tia, data_nascimento_tia, ejc, observacoes</div>
 
                         <p class="mt-3 mb-2"><strong>2) Coluna do outro EJC</strong></p>
-                        <div class="border rounded p-2 bg-light small" style="white-space: pre-wrap;">Use uma coluna chamada "ejc" e, em cada linha, informe o nome exatamente como está cadastrado:
+                        <div v-if="importacaoOutroEhCadastro()" class="border rounded p-2 bg-light small" style="white-space: pre-wrap;">A coluna nome é obrigatória. Se já existir um cadastro com o mesmo nome e paróquia, ele será atualizado.
+
+Exemplo:
+EJC SÃO JOÃO, Paróquia São João, Centro</div>
+                        <div v-else class="border rounded p-2 bg-light small" style="white-space: pre-wrap;">Use uma coluna chamada "ejc" e, em cada linha, informe o nome exatamente como está cadastrado:
 EJC SÃO JOÃO
 EJC NOSSA SENHORA DAS DORES
 
 Se souber a edição que o jovem fez no EJC de origem, use a coluna opcional "numero_ejc_origem".
 Exemplo: 15 ou XV</div>
 
-                        <p class="mt-3 mb-2"><strong>3) Equipes em que serviu no nosso EJC (opcional)</strong></p>
-                        <div class="border rounded p-2 bg-light small" style="white-space: pre-wrap;">Para cada edição servida, crie uma coluna no formato:
+                        <p class="mt-3 mb-2"><strong>3) {{ importacaoOutroEhCadastro() ? 'Observações (opcional)' : 'Equipes em que serviu no nosso EJC (opcional)' }}</strong></p>
+                        <div v-if="importacaoOutroEhCadastro()" class="border rounded p-2 bg-light small" style="white-space: pre-wrap;">Use a coluna observacoes para informações adicionais do cadastro.</div>
+                        <div v-else class="border rounded p-2 bg-light small" style="white-space: pre-wrap;">Para cada edição servida, crie uma coluna no formato:
 I EJC
 II EJC
 III EJC
@@ -2569,14 +2642,17 @@ Liturgia
 Liturgia (Tio)
 Liturgia (Coordenador - Música)</div>
 
-                        <p class="text-muted small mt-2 mb-2">Use arquivo CSV (.csv). A coluna "ejc" identifica o EJC de origem do jovem; as colunas "I EJC", "II EJC" etc. registram onde ele serviu no nosso EJC.</p>
-                        <div class="mb-3">
-                            <button type="button" class="btn btn-outline-primary" @click="baixarModeloImportacaoOutro" :disabled="importandoOutroEjc">
+                        <p class="text-muted small mt-2 mb-2">Use arquivo Excel (.xlsx) ou CSV (.csv). {{ textoAjudaImportacaoOutro() }}</p>
+                        <div class="mb-3 d-flex flex-wrap gap-2">
+                            <button type="button" class="btn btn-outline-primary" @click="baixarModeloImportacaoOutroExcel" :disabled="importandoOutroEjc">
+                                Baixar modelo Excel
+                            </button>
+                            <button type="button" class="btn btn-outline-primary" @click="baixarModeloImportacaoOutroCsv" :disabled="importandoOutroEjc">
                                 Baixar modelo CSV
                             </button>
                         </div>
-                        <label class="form-label" for="arquivoImportacaoOutroEjc">Selecione o arquivo CSV</label>
-                        <input id="arquivoImportacaoOutroEjc" type="file" class="form-control" accept=".csv" @change="onArquivoImportacaoOutroChange" :disabled="importandoOutroEjc">
+                        <label class="form-label" for="arquivoImportacaoOutroEjc">Selecione o arquivo Excel ou CSV</label>
+                        <input id="arquivoImportacaoOutroEjc" type="file" class="form-control" accept=".xlsx,.csv,text/csv" @change="onArquivoImportacaoOutroChange" :disabled="importandoOutroEjc">
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-soft-secondary" data-bs-dismiss="modal" :disabled="importandoOutroEjc">Cancelar</button>
@@ -2666,7 +2742,6 @@ Liturgia (Coordenador - Música)</div>
                         instagram: '',
                         estado_civil: 'Solteiro',
                         sexo: '',
-                        circulo: '',
                         deficiencia: false,
                         qual_deficiencia: '',
                         restricao_alimentar: false,
@@ -2706,6 +2781,7 @@ Liturgia (Coordenador - Música)</div>
                     outroHistoricoEquipes: [],
                     todasEquipesOutro: [],
                     papeisEquipeOutro: [],
+                    equipesPorEjcHistoricoOutro: {},
                     funcoesPorEquipeHistoricoOutro: {},
                     novaEquipeHistoricoOutro: { equipe_id: '', equipe_nome: '', ejc_id: '', papel: 'Membro', subfuncao: '' },
                     ejcs: [],
@@ -2719,6 +2795,7 @@ Liturgia (Coordenador - Música)</div>
                         origem_ejc_tipo: 'OUTRO_EJC',
                         nome_completo: '',
                         apelido: '',
+                        cpf: '',
                         telefone: '',
                         email: '',
                         data_nascimento: '',
@@ -2727,7 +2804,6 @@ Liturgia (Coordenador - Música)</div>
                         instagram: '',
                         estado_civil: 'Solteiro',
                         sexo: '',
-                        circulo: '',
                         deficiencia: false,
                         qual_deficiencia: '',
                         restricao_alimentar: false,
@@ -2793,11 +2869,17 @@ Liturgia (Coordenador - Música)</div>
                         id: null,
                         foto_url: '',
                         nome_tio: '',
+                        apelido_tio: '',
+                        cpf_tio: '',
                         telefone_tio: '',
                         data_nascimento_tio: '',
+                        tio_viuvo: false,
                         nome_tia: '',
+                        apelido_tia: '',
+                        cpf_tia: '',
                         telefone_tia: '',
                         data_nascimento_tia: '',
+                        tia_viuva: false,
                         origem_tipo: 'OUTRO_EJC',
                         outro_ejc_id: null,
                         outro_ejc_nome_manual: '',
@@ -2811,16 +2893,20 @@ Liturgia (Coordenador - Música)</div>
                         detalhes_restricao_tio: '',
                         deficiencia_tio: false,
                         qual_deficiencia_tio: '',
+                        possui_carro_tio: false,
                         restricao_alimentar_tia: false,
                         detalhes_restricao_tia: '',
                         deficiencia_tia: false,
                         qual_deficiencia_tia: '',
+                        possui_carro_tia: false,
                         observacoes: '',
                         termos_aceitos_em: null
                     },
                     observacoesExtrasCasal: [],
                     novaObservacaoCasal: '',
-                    novoServicoCasal: { equipe_id: null, ejc_id: null }
+                    equipesPorEjcServico: {},
+                    funcoesPorEquipeServicoCasal: {},
+                    novoServicoCasal: { equipe_id: null, ejc_id: null, papel: 'Tio', subfuncao: '' }
                 };
             },
             computed: {
@@ -2948,6 +3034,20 @@ Liturgia (Coordenador - Música)</div>
                     const funcoes = this.funcoesPorEquipeHistoricoOutro[equipeId] || [];
                     const papelSelecionado = this.novaEquipeHistoricoOutro.papel || 'Membro';
                     return funcoes.filter((f) => (f.papel_base || 'Membro') === papelSelecionado);
+                },
+                equipesHistoricoOutroDisponiveis() {
+                    return (this.todasEquipesOutro || []).filter((item) => item && Number(item.id) > 0);
+                },
+                equipesServicoCasalDisponiveis() {
+                    return (this.equipes || []).filter((item) => item && Number(item.id) > 0);
+                },
+                subfuncoesServicoCasalDisponiveis() {
+                    const equipeId = this.novoServicoCasal && this.novoServicoCasal.equipe_id;
+                    if (!equipeId) return [];
+                    const funcoes = this.funcoesPorEquipeServicoCasal[equipeId] || [];
+                    const papelSelecionado = (this.novoServicoCasal && this.novoServicoCasal.papel) || 'Tio';
+                    const papelNormalizado = String(papelSelecionado || '').trim().toLowerCase();
+                    return funcoes.filter((f) => String(f.papel_base || 'Membro').trim().toLowerCase() === papelNormalizado);
                 },
                 outroEjcLabelAtualCasal() {
                     const outroId = Number(this.formCasal && this.formCasal.outro_ejc_id);
@@ -3083,7 +3183,6 @@ Liturgia (Coordenador - Música)</div>
                         telefoneDigitos,
                         item && item.email,
                         item && item.instagram,
-                        item && item.circulo,
                         item && item.estado_civil,
                         item && item.sexo,
                         idade !== null ? `${idade}` : null,
@@ -3160,6 +3259,7 @@ Liturgia (Coordenador - Música)</div>
                         this.carregarOutrosEjcs(),
                         this.carregarEjcs(),
                         this.carregarEquipes(),
+                        this.carregarPapeisEquipeOutro(),
                         this.carregarJovensOutroEjc(),
                         this.carregarCasais()
                     ]);
@@ -3280,7 +3380,7 @@ Liturgia (Coordenador - Música)</div>
                 },
                 async carregarEquipes() {
                     try {
-                        const res = await fetch('/api/tios/equipes');
+                        const res = await fetch('/api/todas-equipes');
                         this.equipes = res.ok ? await res.json() : [];
                         this.todasEquipesOutro = Array.isArray(this.equipes) ? this.equipes.filter((i) => i) : [];
                     } catch (_) {
@@ -3307,6 +3407,9 @@ Liturgia (Coordenador - Música)</div>
                         if (!this.papeisEquipeOutro.some((p) => p.nome === this.novaEquipeHistoricoOutro.papel)) {
                             this.novaEquipeHistoricoOutro.papel = this.papeisEquipeOutro[0].nome;
                         }
+                        if (!this.papeisEquipeOutro.some((p) => p.nome === this.novoServicoCasal.papel)) {
+                            this.novoServicoCasal.papel = this.getPapelPadraoServicoCasal();
+                        }
                     }
                 },
                 async carregarFuncoesEquipeHistoricoOutro(equipeId) {
@@ -3321,12 +3424,70 @@ Liturgia (Coordenador - Música)</div>
                         this.funcoesPorEquipeHistoricoOutro[equipeId] = [];
                     }
                 },
+                async carregarEquipesPorEjcHistoricoOutro(ejcId) {
+                    if (!ejcId || this.equipesPorEjcHistoricoOutro[ejcId]) return;
+                    try {
+                        const res = await fetch(`/api/equipes/por-ejc/${encodeURIComponent(ejcId)}`);
+                        const data = await res.json().catch(() => ([]));
+                        this.equipesPorEjcHistoricoOutro[ejcId] = res.ok && Array.isArray(data) ? data.filter((item) => item && Number(item.id) > 0) : [];
+                    } catch (err) {
+                        console.error('Erro ao carregar equipes do EJC:', err);
+                        this.equipesPorEjcHistoricoOutro[ejcId] = [];
+                    }
+                },
+                async carregarEquipesPorEjcServico(ejcId) {
+                    if (!ejcId || this.equipesPorEjcServico[ejcId]) return;
+                    try {
+                        const res = await fetch(`/api/equipes/por-ejc/${encodeURIComponent(ejcId)}`);
+                        const data = await res.json().catch(() => ([]));
+                        const porEjc = res.ok && Array.isArray(data) ? data.filter((item) => item && Number(item.id) > 0) : [];
+                        this.equipesPorEjcServico[ejcId] = porEjc.length ? porEjc : (this.equipes || []).filter((item) => item && Number(item.id) > 0);
+                    } catch (err) {
+                        console.error('Erro ao carregar equipes do EJC:', err);
+                        this.equipesPorEjcServico[ejcId] = (this.equipes || []).filter((item) => item && Number(item.id) > 0);
+                    }
+                },
+                async carregarFuncoesEquipeServicoCasal(equipeId) {
+                    if (!equipeId || this.funcoesPorEquipeServicoCasal[equipeId]) return;
+                    try {
+                        const res = await fetch(`/api/equipes/${equipeId}/funcoes`);
+                        if (!res.ok) return;
+                        const data = await res.json().catch(() => ([]));
+                        this.funcoesPorEquipeServicoCasal[equipeId] = Array.isArray(data) ? data.filter(Boolean) : [];
+                    } catch (err) {
+                        console.error('Erro ao carregar funções da equipe:', err);
+                        this.funcoesPorEquipeServicoCasal[equipeId] = [];
+                    }
+                },
+                getPapelPadraoServicoCasal() {
+                    const papeis = this.papeisEquipeOutro || [];
+                    const tio = papeis.find((p) => String(p.nome || '').toLowerCase() === 'tio');
+                    return tio ? tio.nome : (papeis[0] && papeis[0].nome ? papeis[0].nome : 'Tio');
+                },
+                onEjcHistoricoOutroChange() {
+                    this.novaEquipeHistoricoOutro.equipe_id = '';
+                    this.novaEquipeHistoricoOutro.subfuncao = '';
+                    this.carregarEquipesPorEjcHistoricoOutro(this.novaEquipeHistoricoOutro.ejc_id);
+                },
                 onEquipeHistoricoOutroChange() {
                     this.novaEquipeHistoricoOutro.subfuncao = '';
                     this.carregarFuncoesEquipeHistoricoOutro(this.novaEquipeHistoricoOutro.equipe_id);
                 },
                 onPapelHistoricoOutroChange() {
                     this.novaEquipeHistoricoOutro.subfuncao = '';
+                },
+                async onEjcServicoCasalChange() {
+                    this.novoServicoCasal.equipe_id = null;
+                    this.novoServicoCasal.subfuncao = '';
+                    if (!this.equipes.length) await this.carregarEquipes();
+                    await this.carregarEquipesPorEjcServico(this.novoServicoCasal.ejc_id);
+                },
+                onEquipeServicoCasalChange() {
+                    this.novoServicoCasal.subfuncao = '';
+                    this.carregarFuncoesEquipeServicoCasal(this.novoServicoCasal.equipe_id);
+                },
+                onPapelServicoCasalChange() {
+                    this.novoServicoCasal.subfuncao = '';
                 },
                 async carregarJovensOutroEjc() {
                     this.carregandoJovens = true;
@@ -3393,15 +3554,13 @@ Liturgia (Coordenador - Música)</div>
                     if (!srv) return '-';
                     const equipe = String(srv.equipe_nome || srv.equipe || '').trim() || 'Equipe';
                     if (srv.ejc_numero) {
-                        return `${equipe} - ${this.numeroParaRomano(srv.ejc_numero)} EJC ${this.nomeMeuEJC}`.trim();
+                        return `${equipe} - ${this.numeroParaRomano(srv.ejc_numero)} EJC`;
                     }
                     return `${equipe} - edição não informada`;
                 },
                 formatarEjcOption(ejc) {
                     if (!ejc) return '-';
-                    const numero = ejc.numero ? `${this.numeroParaRomano(ejc.numero)} EJC` : 'EJC';
-                    const local = [this.nomeMeuEJC || ejc.paroquia, ejc.ano].filter(Boolean).join(' - ');
-                    return [numero, local].filter(Boolean).join(' | ');
+                    return ejc.numero ? this.numeroParaRomano(ejc.numero) : 'EJC';
                 },
                 obterNomeEquipeServico(srv) {
                     if (!srv) return 'Equipe não informada';
@@ -3411,18 +3570,22 @@ Liturgia (Coordenador - Música)</div>
                     const equipe = (this.equipes || []).find((e) => Number(e.id) === equipeId);
                     return (equipe && equipe.nome) ? equipe.nome : 'Equipe não informada';
                 },
+                obterSubfuncaoServico(srv) {
+                    if (!srv) return '';
+                    return String(srv.subfuncao || srv.funcao_nome || srv.funcao || '').trim();
+                },
                 formatarEdicaoServico(srv) {
                     if (!srv) return 'Edição não informada';
                     const numeroBruto = Number(srv.ejc_numero || 0);
                     if (Number.isInteger(numeroBruto) && numeroBruto > 0) {
-                        return `${this.numeroParaRomano(numeroBruto)} EJC ${this.nomeMeuEJC || srv.ejc_paroquia || ''}`.trim();
+                        return `${this.numeroParaRomano(numeroBruto)} EJC`;
                     }
                     const edicaoTexto = String(srv.display_ejc || srv.edicao_ejc || '').trim();
                     if (edicaoTexto) return edicaoTexto;
                     const ejcId = Number(srv.ejc_id || 0);
                     const ejc = (this.ejcs || []).find((e) => Number(e.id) === ejcId);
                     if (ejc && ejc.numero) {
-                        return `${this.numeroParaRomano(ejc.numero)} EJC ${this.nomeMeuEJC || ejc.paroquia || ''}`.trim();
+                        return `${this.numeroParaRomano(ejc.numero)} EJC`;
                     }
                     return 'Edição não informada';
                 },
@@ -3489,7 +3652,7 @@ Liturgia (Coordenador - Música)</div>
                     if (!item) return 'Edição não informada';
                     const numeroBruto = Number(item.display_ejc || item.ejc_numero || 0);
                     if (Number.isInteger(numeroBruto) && numeroBruto > 0) {
-                        return `${this.numeroParaRomano(numeroBruto)} EJC ${this.nomeMeuEJC || item.paroquia_ejc || item.ejc_paroquia || ''}`.trim();
+                        return `${this.numeroParaRomano(numeroBruto)} EJC`;
                     }
                     const edicaoTexto = String(item.display_ejc || item.edicao_ejc || '').trim();
                     if (edicaoTexto) return edicaoTexto;
@@ -3497,7 +3660,7 @@ Liturgia (Coordenador - Música)</div>
                     const ejcId = Number(item.ejc_id || 0);
                     const ejc = (this.ejcs || []).find((registro) => Number(registro.id) === ejcId);
                     if (ejc && ejc.numero) {
-                        return `${this.numeroParaRomano(ejc.numero)} EJC ${this.nomeMeuEJC || ejc.paroquia || ''}`.trim();
+                        return `${this.numeroParaRomano(ejc.numero)} EJC`;
                     }
                     return 'Edição não informada';
                 },
@@ -3938,7 +4101,7 @@ Liturgia (Coordenador - Música)</div>
                             Tios: this.contarTiosOutroEjc(item.id),
                             Observacoes: item.observacoes || ''
                         }));
-                        ExcelUtils.exportJsonToXlsx({ filename: 'outros_ejcs.xlsx', sheetName: 'Outros EJCs', rows });
+                        ExcelUtils.exportJsonToXlsx({ filename: 'paroquias_movimentos.xlsx', sheetName: 'Paroquias Movimentos', rows });
                         return;
                     }
                     if (this.aba === 'membros') {
@@ -3967,6 +4130,28 @@ Liturgia (Coordenador - Música)</div>
                 async importarExcel() {
                     this.abrirModalImportacaoOutro();
                 },
+                importacaoOutroEhTios() {
+                    return this.aba === 'tios';
+                },
+                importacaoOutroEhCadastro() {
+                    return this.aba === 'outros';
+                },
+                rotuloImportacaoOutro() {
+                    if (this.importacaoOutroEhCadastro()) return 'Importar movimentos';
+                    return this.importacaoOutroEhTios() ? 'Importar tios' : 'Importar jovens';
+                },
+                tituloImportacaoOutro() {
+                    if (this.importacaoOutroEhCadastro()) return 'Importar paróquias/movimentos';
+                    return this.importacaoOutroEhTios() ? 'Importar tios de outras paróquias/movimentos' : 'Importar jovens de outras paróquias/movimentos';
+                },
+                textoCarregandoImportacaoOutro() {
+                    if (this.importacaoOutroEhCadastro()) return 'Importando paróquias/movimentos...';
+                    return this.importacaoOutroEhTios() ? 'Importando tios...' : 'Importando jovens...';
+                },
+                textoAjudaImportacaoOutro() {
+                    if (this.importacaoOutroEhCadastro()) return 'O arquivo cadastra ou atualiza outras paróquias/movimentos.';
+                    return 'A coluna "ejc" identifica o EJC de origem; em estado_civil use Solteiro, Noivo, Casado ou Amasiado; as colunas "I EJC", "II EJC" etc. registram onde serviu no nosso EJC.';
+                },
                 abrirModalImportacaoOutro() {
                     this.arquivoImportacaoOutroEjc = null;
                     const input = document.getElementById('arquivoImportacaoOutroEjc');
@@ -3985,10 +4170,11 @@ Liturgia (Coordenador - Música)</div>
                         this.arquivoImportacaoOutroEjc = null;
                         return;
                     }
-                    if (!String(file.name || '').toLowerCase().endsWith('.csv')) {
+                    const nome = String(file.name || '').toLowerCase();
+                    if (!nome.endsWith('.xlsx') && !nome.endsWith('.csv')) {
                         this.arquivoImportacaoOutroEjc = null;
                         event.target.value = '';
-                        alert('Selecione um arquivo CSV (.csv).');
+                        alert('Selecione um arquivo Excel (.xlsx) ou CSV (.csv).');
                         return;
                     }
                     this.arquivoImportacaoOutroEjc = file;
@@ -4042,43 +4228,89 @@ Liturgia (Coordenador - Música)</div>
                         .replace(/[^a-z0-9]+/g, ' ')
                         .trim();
                 },
-                baixarModeloImportacaoOutro() {
-                    const headers = [
-                        'nome_completo',
-                        'sexo',
-                        'ejc',
-                        'telefone',
-                        'numero_ejc_origem',
-                        'estado_civil',
-                        'data_nascimento',
-                        'circulo',
-                        'I EJC',
-                        'II EJC'
-                    ];
-                    const row = [
-                        'Maria Aparecida Silva',
-                        '(31)99999-0000',
-                        'Feminino',
-                        'EJC SÃO JOÃO',
-                        '(31)99999-0000',
-                        '',
-                        'Solteiro',
-                        '2004-06-14',
-                        '',
-                        'Liturgia (Membro)',
-                        'Apoio (Coordenador - Música)'
-                    ];
-                    const csv = [headers, row]
-                        .map((linha) => linha.map((valor) => `"${String(valor || '').replace(/"/g, '""')}"`).join(';'))
+                csvEscapeOutro(valor) {
+                    return `"${String(valor === null || valor === undefined ? '' : valor).replace(/"/g, '""')}"`;
+                },
+                gerarModeloImportacaoOutro() {
+                    if (this.importacaoOutroEhCadastro()) {
+                        return {
+                            filename: 'modelo_importacao_paroquias_movimentos',
+                            sheet: 'Paroquias Movimentos',
+                            headers: ['nome', 'paroquia', 'bairro', 'observacoes'],
+                            row: ['EJC SÃO JOÃO', 'Paróquia São João', 'Centro', 'Cadastro exemplo']
+                        };
+                    }
+                    if (this.importacaoOutroEhTios()) {
+                        return {
+                            filename: 'modelo_importacao_tios_outros_ejcs',
+                            sheet: 'Tios',
+                            headers: [
+                                'nome_tio', 'telefone_tio', 'data_nascimento_tio', 'restricao_alimentar_tio', 'detalhes_restricao_tio',
+                                'deficiencia_tio', 'qual_deficiencia_tio', 'possui_carro_tio', 'nome_tia', 'telefone_tia', 'data_nascimento_tia',
+                                'restricao_alimentar_tia', 'detalhes_restricao_tia', 'deficiencia_tia', 'qual_deficiencia_tia', 'possui_carro_tia',
+                                'ejc', 'observacoes', 'I EJC', 'II EJC'
+                            ],
+                            row: [
+                                'Joao', '(31)99999-1111', '1980-05-10', 'Nao', '', 'Nao', '', 'Nao',
+                                'Maria', '(31)99999-2222', '1982-08-20', 'Sim', 'Alergia a amendoim', 'Nao', '', 'Nao',
+                                'EJC SÃO JOÃO', 'Casal exemplo', 'Liturgia', 'Apoio'
+                            ]
+                        };
+                    }
+                    return {
+                        filename: 'modelo_importacao_jovens_outros_ejcs',
+                        sheet: 'Jovens',
+                        headers: ['nome_completo', 'sexo', 'ejc', 'telefone', 'numero_ejc_origem', 'estado_civil', 'data_nascimento', 'I EJC', 'II EJC'],
+                        row: ['Maria Aparecida Silva', 'Feminino', 'EJC SÃO JOÃO', '(31)99999-0000', '15', 'Noivo', '2004-06-14', 'Liturgia (Membro)', 'Apoio (Coordenador - Música)']
+                    };
+                },
+                baixarModeloImportacaoOutroExcel() {
+                    const modelo = this.gerarModeloImportacaoOutro();
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet([modelo.headers, modelo.row]), modelo.sheet);
+                    XLSX.writeFile(wb, `${modelo.filename}.xlsx`);
+                },
+                baixarModeloImportacaoOutroCsv() {
+                    const modelo = this.gerarModeloImportacaoOutro();
+                    const csv = [modelo.headers, modelo.row]
+                        .map((linha) => linha.map((valor) => this.csvEscapeOutro(valor)).join(';'))
                         .join('\n');
-                    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                    const blob = new Blob([`\uFEFF${csv}\n`], { type: 'text/csv;charset=utf-8;' });
                     const link = document.createElement('a');
                     link.href = URL.createObjectURL(blob);
-                    link.download = 'modelo_importacao_outros_ejcs.csv';
+                    link.download = `${modelo.filename}.csv`;
                     link.style.display = 'none';
                     document.body.appendChild(link);
                     link.click();
                     document.body.removeChild(link);
+                },
+                async lerArquivoImportacaoOutroComoCsv(file) {
+                    const nome = String(file && file.name || '').toLowerCase();
+                    if (nome.endsWith('.csv')) return file.text();
+                    if (!nome.endsWith('.xlsx')) throw new Error('Selecione um arquivo Excel (.xlsx) ou CSV (.csv).');
+                    const rows = await ExcelUtils.readXlsxFile(file);
+                    if (!rows.length) throw new Error('Arquivo inválido ou vazio.');
+                    const headers = [];
+                    rows.forEach((row) => {
+                        Object.keys(row || {}).forEach((key) => {
+                            if (!headers.includes(key)) headers.push(key);
+                        });
+                    });
+                    if (!headers.length) throw new Error('Arquivo inválido ou vazio.');
+                    const normalizarCelulaExcel = (header, valor) => {
+                        const chave = this.normalizarHeaderImportacaoOutro(header);
+                        const texto = String(valor === null || valor === undefined ? '' : valor).trim();
+                        if (!texto || !chave.includes('data')) return valor;
+                        if (/^\d+(\.\d+)?$/.test(texto) && window.XLSX && XLSX.SSF) {
+                            const partes = XLSX.SSF.parse_date_code(Number(texto));
+                            if (partes) return `${partes.y}-${String(partes.m).padStart(2, '0')}-${String(partes.d).padStart(2, '0')}`;
+                        }
+                        return valor;
+                    };
+                    return [
+                        headers,
+                        ...rows.map((row) => headers.map((header) => normalizarCelulaExcel(header, row && row[header] !== undefined ? row[header] : '')))
+                    ].map((linha) => linha.map((valor) => this.csvEscapeOutro(valor)).join(';')).join('\n');
                 },
                 montarPayloadImportacaoOutro(textoOriginal) {
                     const text = String(textoOriginal || '').replace(/^\uFEFF/, '');
@@ -4148,7 +4380,6 @@ Liturgia (Coordenador - Música)</div>
                                 sexo: getVal(colunas, 'sexo', 'Sexo', 'Gender'),
                                 estado_civil: getVal(colunas, 'estado_civil', 'Estado Civil', 'estado civil'),
                                 data_nascimento: getVal(colunas, 'data_nascimento', 'Data Nascimento', 'BirthDate'),
-                                circulo: getVal(colunas, 'circulo', 'Círculo', 'Circle'),
                                 outro_ejc_id: vinculo && vinculo.outro ? vinculo.outro.id : '',
                                 outro_ejc_nome: vinculo && vinculo.outro ? vinculo.outro.nome : (outroInformado || ''),
                                 outro_ejc_numero: vinculo ? String(vinculo.numero || '').trim() : ''
@@ -4158,12 +4389,213 @@ Liturgia (Coordenador - Música)</div>
                     }
                     return payload;
                 },
+                montarPayloadImportacaoCadastrosOutroEjc(textoOriginal) {
+                    const text = String(textoOriginal || '').replace(/^\uFEFF/, '');
+                    const linhas = text.split(/\r?\n/).filter(l => l.trim() !== '');
+                    if (linhas.length < 2) throw new Error('Arquivo inválido ou vazio.');
+                    const delimiter = this.detectarDelimitadorOutro(linhas[0]);
+                    const headers = this.parseCsvLineOutro(linhas[0], delimiter);
+                    const headerIndex = {};
+                    headers.forEach((h, idx) => {
+                        headerIndex[h] = idx;
+                        headerIndex[this.normalizarHeaderImportacaoOutro(h)] = idx;
+                    });
+                    const getVal = (colunas, ...nomes) => {
+                        for (const nome of nomes) {
+                            const idx = headerIndex[nome] !== undefined ? headerIndex[nome] : headerIndex[this.normalizarHeaderImportacaoOutro(nome)];
+                            if (idx !== undefined && colunas[idx] !== undefined && String(colunas[idx]).trim() !== '') return String(colunas[idx]).trim();
+                        }
+                        return '';
+                    };
+                    const payload = [];
+                    for (let i = 1; i < linhas.length; i += 1) {
+                        const colunas = this.parseCsvLineOutro(linhas[i], delimiter);
+                        const nome = getVal(colunas, 'nome', 'Nome', 'nome_ejc', 'Nome do EJC', 'movimento', 'EJC');
+                        if (!nome) continue;
+                        payload.push({
+                            linha: i + 1,
+                            nome,
+                            paroquia: getVal(colunas, 'paroquia', 'Paroquia', 'Paróquia'),
+                            bairro: getVal(colunas, 'bairro', 'Bairro'),
+                            observacoes: getVal(colunas, 'observacoes', 'Observacoes', 'Observações')
+                        });
+                    }
+                    return payload;
+                },
+                async importarCadastrosOutroEjc(registros) {
+                    const chave = (nome, paroquia) => `${this.normalizarNomeImportacaoOutro(nome)}|${this.normalizarNomeImportacaoOutro(paroquia)}`;
+                    const existentes = new Map((this.outrosEjcs || []).map((item) => [chave(item.nome, item.paroquia), item]));
+                    let criados = 0;
+                    let atualizados = 0;
+                    const erros = [];
+                    for (const item of registros) {
+                        try {
+                            const existente = existentes.get(chave(item.nome, item.paroquia));
+                            const res = await fetch(existente ? `/api/outros-ejcs/${existente.id}` : '/api/outros-ejcs', {
+                                method: existente ? 'PUT' : 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    nome: item.nome,
+                                    paroquia: item.paroquia,
+                                    bairro: item.bairro,
+                                    observacoes: item.observacoes || null
+                                })
+                            });
+                            const data = await res.json().catch(() => ({}));
+                            if (!res.ok) throw new Error(data.error || 'Erro ao salvar outro EJC.');
+                            if (existente) atualizados += 1;
+                            else {
+                                criados += 1;
+                                existentes.set(chave(item.nome, item.paroquia), { id: data.id, nome: item.nome, paroquia: item.paroquia });
+                            }
+                        } catch (err) {
+                            erros.push(`Linha ${item.linha}: ${err && err.message ? err.message : 'Erro ao importar.'}`);
+                        }
+                    }
+                    return { criados, atualizados, erros };
+                },
+                montarPayloadImportacaoTiosOutro(textoOriginal) {
+                    const text = String(textoOriginal || '').replace(/^\uFEFF/, '');
+                    const linhas = text.split(/\r?\n/).filter(l => l.trim() !== '');
+                    if (linhas.length < 2) throw new Error('Arquivo inválido ou vazio.');
+                    const delimiter = this.detectarDelimitadorOutro(linhas[0]);
+                    const headers = this.parseCsvLineOutro(linhas[0], delimiter);
+                    const headerIndex = {};
+                    headers.forEach((h, idx) => {
+                        headerIndex[h] = idx;
+                        headerIndex[this.normalizarHeaderImportacaoOutro(h)] = idx;
+                    });
+                    const outrosPorNome = new Map();
+                    (this.outrosEjcs || []).forEach((ejc) => {
+                        const nome = String(ejc.nome || '').trim();
+                        const paroquia = String(ejc.paroquia || '').trim();
+                        if (nome) {
+                            outrosPorNome.set(this.normalizarNomeImportacaoOutro(nome), ejc);
+                            outrosPorNome.set(this.normalizarNomeImportacaoOutro(`EJC ${nome}`), ejc);
+                        }
+                        if (paroquia) outrosPorNome.set(this.normalizarNomeImportacaoOutro(paroquia), ejc);
+                        if (nome || paroquia) outrosPorNome.set(this.normalizarNomeImportacaoOutro([paroquia, nome].filter(Boolean).join(' - ')), ejc);
+                    });
+                    const equipeByNome = new Map((this.equipes || []).map((eq) => [this.normalizarNomeImportacaoOutro(eq.nome), eq]));
+                    const ejcByNumero = new Map((this.ejcs || []).map((ejc) => [Number(ejc.numero), ejc]));
+                    const romanoParaNumero = (texto) => {
+                        const roman = String(texto || '').trim().toUpperCase();
+                        if (/^\d+$/.test(roman)) return Number(roman);
+                        const mapa = { I: 1, V: 5, X: 10, L: 50, C: 100, D: 500, M: 1000 };
+                        let total = 0;
+                        let prev = 0;
+                        for (let i = roman.length - 1; i >= 0; i -= 1) {
+                            const val = mapa[roman[i]];
+                            if (!val) return null;
+                            if (val < prev) total -= val;
+                            else {
+                                total += val;
+                                prev = val;
+                            }
+                        }
+                        return total || null;
+                    };
+                    const parseBool = (valor) => ['1', 'true', 'sim', 's', 'yes'].includes(String(valor || '').trim().toLowerCase());
+                    const getVal = (colunas, ...nomes) => {
+                        for (const nome of nomes) {
+                            const idx = headerIndex[nome] !== undefined ? headerIndex[nome] : headerIndex[this.normalizarHeaderImportacaoOutro(nome)];
+                            if (idx !== undefined && colunas[idx] !== undefined && String(colunas[idx]).trim() !== '') return colunas[idx];
+                        }
+                        return null;
+                    };
+                    const colunasHistorico = headers.map((header, index) => {
+                        const match = this.normalizarNomeImportacaoOutro(header).match(/^([ivxlcdm]+|\d+)\s+ejc$/i);
+                        if (!match) return null;
+                        const numero = romanoParaNumero(match[1]);
+                        return numero ? { index, numero } : null;
+                    }).filter(Boolean);
+                    const payload = [];
+                    for (let i = 1; i < linhas.length; i += 1) {
+                        const colunas = this.parseCsvLineOutro(linhas[i], delimiter);
+                        const nomeTio = getVal(colunas, 'nome_tio', 'Nome Tio', 'NomeTio', 'tio');
+                        const nomeTia = getVal(colunas, 'nome_tia', 'Nome Tia', 'NomeTia', 'tia');
+                        if (!String(nomeTio || '').trim() && !String(nomeTia || '').trim()) continue;
+                        const outroTexto = getVal(colunas, 'ejc', 'EJC', 'outro_ejc', 'Outro EJC', 'outro_ejc_paroquia', 'Paroquia', 'Paróquia');
+                        const outro = outrosPorNome.get(this.normalizarNomeImportacaoOutro(outroTexto));
+                        const servicos = colunasHistorico.map((col) => {
+                            const valor = String(colunas[col.index] || '').trim();
+                            if (!valor) return null;
+                            const equipeNome = valor.split('(')[0].trim();
+                            const equipe = equipeByNome.get(this.normalizarNomeImportacaoOutro(equipeNome));
+                            const ejc = ejcByNumero.get(Number(col.numero));
+                            return equipe && ejc ? { equipe_id: Number(equipe.id), ejc_id: Number(ejc.id) } : null;
+                        }).filter(Boolean);
+                        payload.push({
+                            __linha: i + 1,
+                            origem_tipo: 'OUTRO_EJC',
+                            outro_ejc_id: outro ? outro.id : null,
+                            nome_tio: nomeTio,
+                            telefone_tio: getVal(colunas, 'telefone_tio', 'Telefone Tio', 'TelefoneTio'),
+                            data_nascimento_tio: getVal(colunas, 'data_nascimento_tio', 'Data Nascimento Tio', 'DataNascimentoTio'),
+                            restricao_alimentar_tio: parseBool(getVal(colunas, 'restricao_alimentar_tio', 'Restricao Alimentar Tio', 'Restrição Alimentar Tio')),
+                            detalhes_restricao_tio: getVal(colunas, 'detalhes_restricao_tio', 'Detalhes Restricao Tio', 'Detalhes Restrição Tio'),
+                            deficiencia_tio: parseBool(getVal(colunas, 'deficiencia_tio', 'Deficiencia Tio', 'Deficiência Tio')),
+                            qual_deficiencia_tio: getVal(colunas, 'qual_deficiencia_tio', 'Qual Deficiencia Tio', 'Qual Deficiência Tio'),
+                            possui_carro_tio: parseBool(getVal(colunas, 'possui_carro_tio', 'Possui Carro Tio', 'PossuiCarroTio', 'Carro Tio')),
+                            nome_tia: nomeTia,
+                            telefone_tia: getVal(colunas, 'telefone_tia', 'Telefone Tia', 'TelefoneTia'),
+                            data_nascimento_tia: getVal(colunas, 'data_nascimento_tia', 'Data Nascimento Tia', 'DataNascimentoTia'),
+                            restricao_alimentar_tia: parseBool(getVal(colunas, 'restricao_alimentar_tia', 'Restricao Alimentar Tia', 'Restrição Alimentar Tia')),
+                            detalhes_restricao_tia: getVal(colunas, 'detalhes_restricao_tia', 'Detalhes Restricao Tia', 'Detalhes Restrição Tia'),
+                            deficiencia_tia: parseBool(getVal(colunas, 'deficiencia_tia', 'Deficiencia Tia', 'Deficiência Tia')),
+                            qual_deficiencia_tia: getVal(colunas, 'qual_deficiencia_tia', 'Qual Deficiencia Tia', 'Qual Deficiência Tia'),
+                            possui_carro_tia: parseBool(getVal(colunas, 'possui_carro_tia', 'Possui Carro Tia', 'PossuiCarroTia', 'Carro Tia')),
+                            observacoes: getVal(colunas, 'observacoes', 'Observacoes', 'Observações'),
+                            servicos
+                        });
+                    }
+                    return payload;
+                },
                 async confirmarImportacaoOutro() {
                     if (!this.arquivoImportacaoOutroEjc || this.importandoOutroEjc) return;
                     this.importandoOutroEjc = true;
                     try {
                         if (!this.outrosEjcs.length) await this.carregarOutrosEjcs();
-                        const texto = await this.arquivoImportacaoOutroEjc.text();
+                        const texto = await this.lerArquivoImportacaoOutroComoCsv(this.arquivoImportacaoOutroEjc);
+                        if (this.importacaoOutroEhCadastro()) {
+                            const registros = this.montarPayloadImportacaoCadastrosOutroEjc(texto);
+                            if (!registros.length) throw new Error('Nenhuma paróquia/movimento válida encontrada no arquivo.');
+                            const resultado = await this.importarCadastrosOutroEjc(registros);
+                            let msg = `Importação de paróquias/movimentos concluída!\nCriados: ${resultado.criados}\nAtualizados: ${resultado.atualizados}\nErros: ${resultado.erros.length}`;
+                            if (resultado.erros.length) msg += '\n\n' + resultado.erros.slice(0, 8).join('\n');
+                            alert(msg);
+                            this.arquivoImportacaoOutroEjc = null;
+                            const input = document.getElementById('arquivoImportacaoOutroEjc');
+                            if (input) input.value = '';
+                            if (this.modalImportacaoOutro) this.modalImportacaoOutro.hide();
+                            await this.carregarOutrosEjcs();
+                            this.definirAba('outros');
+                            return;
+                        }
+                        if (this.importacaoOutroEhTios()) {
+                            await Promise.all([this.carregarEquipes(), this.carregarEjcs()]);
+                            const casais = this.montarPayloadImportacaoTiosOutro(texto);
+                            if (!casais.length) throw new Error('Nenhum casal válido encontrado no arquivo.');
+                            const res = await fetch('/api/tios/casais/bulk-replace', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ casais })
+                            });
+                            const data = await res.json().catch(() => ({}));
+                            if (!res.ok) throw new Error(data.error || 'Erro ao importar tios.');
+                            const erros = Array.isArray(data.erros) ? data.erros : [];
+                            let msg = `Importação de tios concluída!\nCriados: ${data.criados || 0}\nAtualizados: ${data.atualizados || 0}\nErros: ${erros.length}`;
+                            if (erros.length) msg += '\n\n' + erros.slice(0, 8).map((erro) => `${erro.linha ? `Linha ${erro.linha}: ` : ''}${erro.error || 'Erro na importação.'}`).join('\n');
+                            alert(msg);
+                            this.arquivoImportacaoOutroEjc = null;
+                            const input = document.getElementById('arquivoImportacaoOutroEjc');
+                            if (input) input.value = '';
+                            if (this.modalImportacaoOutro) this.modalImportacaoOutro.hide();
+                            await this.carregarOutrosEjcs();
+                            await this.carregarCasais();
+                            this.definirAba('tios');
+                            return;
+                        }
                         const payload = this.montarPayloadImportacaoOutro(texto);
                         if (!payload.length) throw new Error('Nenhum jovem válido encontrado no arquivo.');
                         const res = await fetch('/api/outros-ejcs/importar-jovens', {
@@ -4189,7 +4621,8 @@ Liturgia (Coordenador - Música)</div>
                         this.definirAba('membros');
                     } catch (err) {
                         console.error(err);
-                        alert(err && err.message ? err.message : 'Erro ao importar jovens.');
+                        const tipoErro = this.importacaoOutroEhCadastro() ? 'paróquias/movimentos' : (this.importacaoOutroEhTios() ? 'tios' : 'jovens');
+                        alert(err && err.message ? err.message : `Erro ao importar ${tipoErro}.`);
                     } finally {
                         this.importandoOutroEjc = false;
                     }
@@ -4201,6 +4634,7 @@ Liturgia (Coordenador - Música)</div>
                         origem_ejc_tipo: 'OUTRO_EJC',
                         nome_completo: '',
                         apelido: '',
+                        cpf: '',
                         telefone: '',
                         email: '',
                         data_nascimento: '',
@@ -4209,7 +4643,6 @@ Liturgia (Coordenador - Música)</div>
                         instagram: '',
                         estado_civil: 'Solteiro',
                         sexo: '',
-                        circulo: '',
                         deficiencia: false,
                         qual_deficiencia: '',
                         restricao_alimentar: false,
@@ -4274,13 +4707,13 @@ Liturgia (Coordenador - Música)</div>
                             foto_url: data.foto_url || '',
                             nome_completo: data.nome_completo || '',
                             apelido: data.apelido || '',
+                            cpf: data.cpf || '',
                             telefone: data.telefone || '',
                             email: data.email || '',
                             data_nascimento: data.data_nascimento || '',
                             instagram: data.instagram || '',
                             estado_civil: data.estado_civil || 'Solteiro',
                             sexo: data.sexo || '',
-                            circulo: data.circulo || '',
                             deficiencia: !!data.deficiencia,
                             qual_deficiencia: data.qual_deficiencia || '',
                             restricao_alimentar: !!data.restricao_alimentar,
@@ -4323,6 +4756,8 @@ Liturgia (Coordenador - Música)</div>
                     this.resetNovoJovemOutroEjc();
                     if (!item || !item.jovem_id) {
                         this.novo.nome_completo = item?.nome_completo || '';
+                        this.novo.apelido = item?.apelido || '';
+                        this.novo.cpf = item?.cpf || '';
                         this.novo.telefone = item?.telefone || '';
                         this.novo.outro_ejc_id = item?.outro_ejc_id || '';
                         this.novo.outro_ejc_numero = item?.outro_ejc_numero || '';
@@ -4340,6 +4775,7 @@ Liturgia (Coordenador - Música)</div>
                                 origem_ejc_tipo: 'OUTRO_EJC',
                                 nome_completo: data.nome_completo || '',
                                 apelido: data.apelido || '',
+                                cpf: data.cpf || '',
                                 telefone: data.telefone || '',
                                 email: data.email || '',
                                 data_nascimento: this.formatarDataInput(data.data_nascimento),
@@ -4348,7 +4784,6 @@ Liturgia (Coordenador - Música)</div>
                                 instagram: data.instagram || '',
                                 estado_civil: data.estado_civil || 'Solteiro',
                                 sexo: data.sexo || '',
-                                circulo: data.circulo || '',
                                 deficiencia: !!data.deficiencia,
                                 qual_deficiencia: data.qual_deficiencia || '',
                                 restricao_alimentar: !!data.restricao_alimentar,
@@ -4382,6 +4817,7 @@ Liturgia (Coordenador - Música)</div>
                         origem_ejc_tipo: 'OUTRO_EJC',
                         nome_completo: this.jovemOutroFicha.nome_completo,
                         apelido: this.jovemOutroFicha.apelido || null,
+                        cpf: this.jovemOutroFicha.cpf || null,
                         telefone: this.jovemOutroFicha.telefone,
                         email: this.jovemOutroFicha.email || null,
                         data_nascimento: this.jovemOutroFicha.data_nascimento || null,
@@ -4390,7 +4826,6 @@ Liturgia (Coordenador - Música)</div>
                         instagram: this.jovemOutroFicha.instagram || null,
                         estado_civil: this.jovemOutroFicha.estado_civil || 'Solteiro',
                         sexo: this.jovemOutroFicha.sexo || null,
-                        circulo: this.jovemOutroFicha.circulo || null,
                         deficiencia: this.jovemOutroFicha.deficiencia ? 1 : 0,
                         qual_deficiencia: this.jovemOutroFicha.qual_deficiencia || null,
                         restricao_alimentar: this.jovemOutroFicha.restricao_alimentar ? 1 : 0,
@@ -4448,7 +4883,7 @@ Liturgia (Coordenador - Música)</div>
                         alert('Selecione uma subfunção cadastrada para este papel.');
                         return;
                     }
-                    const equipeSelecionada = this.todasEquipesOutro.find((e) => e && e.id == this.novaEquipeHistoricoOutro.equipe_id);
+                    const equipeSelecionada = this.equipesHistoricoOutroDisponiveis.find((e) => e && e.id == this.novaEquipeHistoricoOutro.equipe_id);
                     if (!equipeSelecionada) return;
                     try {
                         const payload = {
@@ -4702,6 +5137,7 @@ Liturgia (Coordenador - Música)</div>
                         origem_ejc_tipo: 'OUTRO_EJC',
                         nome_completo: this.novo.nome_completo,
                         apelido: this.novo.apelido || null,
+                        cpf: this.novo.cpf || null,
                         telefone: this.novo.telefone,
                         email: this.novo.email || null,
                         data_nascimento: this.novo.data_nascimento || null,
@@ -4712,7 +5148,6 @@ Liturgia (Coordenador - Música)</div>
                         instagram: this.novo.instagram || null,
                         estado_civil: this.novo.estado_civil || 'Solteiro',
                         sexo: this.novo.sexo || null,
-                        circulo: this.novo.circulo || null,
                         deficiencia: this.novo.deficiencia ? 1 : 0,
                         qual_deficiencia: this.novo.qual_deficiencia || null,
                         restricao_alimentar: this.novo.restricao_alimentar ? 1 : 0,
@@ -4743,27 +5178,63 @@ Liturgia (Coordenador - Música)</div>
                         alert(this.editandoJovemOutro ? 'Erro ao atualizar jovem.' : 'Erro ao criar jovem.');
                     }
                 },
-                async excluirJovem(item) {
+                async excluirJovem(item, opcoes = {}) {
                     if (!item || !item.jovem_id) {
                         alert('Esse registro ainda não possui cadastro completo para exclusão.');
-                        return;
+                        return false;
                     }
-                    const confirmar = window.showFloatingConfirm
-                        ? await window.showFloatingConfirm(`Deseja excluir ${item.nome_completo}?`)
-                        : window.confirm(`Deseja excluir ${item.nome_completo}?`);
-                    if (!confirmar) return;
                     try {
-                        const res = await fetch(`/api/lista-mestre/${item.jovem_id}`, { method: 'DELETE' });
-                        const data = await res.json().catch(() => ({}));
+                        let queryHistorico = '';
+                        let temVinculosEdicoes = Array.isArray(item.historico_equipes) && item.historico_equipes.length > 0;
+                        if (temVinculosEdicoes) {
+                            const removerHistorico = window.showFloatingConfirm
+                                ? await window.showFloatingConfirm(
+                                    'Esse jovem está vinculado a equipes/edições.\n\nOK: exclui a ficha e remove o nome das equipes/edições.\nCancelar: exclui apenas a ficha e mantém o nome nas equipes/edições.',
+                                    'Histórico em edições'
+                                )
+                                : window.confirm('Esse jovem está vinculado a equipes/edições. OK remove das equipes; Cancelar mantém nas equipes.');
+                            queryHistorico = `?preservar_historico=${removerHistorico ? 0 : 1}`;
+                        } else {
+                            const confirmar = window.showFloatingConfirm
+                                ? await window.showFloatingConfirm(`Deseja excluir ${item.nome_completo}?`)
+                                : window.confirm(`Deseja excluir ${item.nome_completo}?`);
+                            if (!confirmar) return false;
+                        }
+
+                        let res = await fetch(`/api/lista-mestre/${item.jovem_id}${queryHistorico}`, { method: 'DELETE' });
+                        let data = await res.json().catch(() => ({}));
+                        if (res.status === 409 && data && data.requiresHistoryChoice) {
+                            const removerHistorico = window.showFloatingConfirm
+                                ? await window.showFloatingConfirm(
+                                    'Esse jovem está vinculado a equipes/edições.\n\nOK: exclui a ficha e remove o nome das equipes/edições.\nCancelar: exclui apenas a ficha e mantém o nome nas equipes/edições.',
+                                    'Histórico em edições'
+                                )
+                                : window.confirm('Esse jovem está vinculado a equipes/edições. OK remove das equipes; Cancelar mantém nas equipes.');
+                            res = await fetch(`/api/lista-mestre/${item.jovem_id}?preservar_historico=${removerHistorico ? 0 : 1}`, { method: 'DELETE' });
+                            data = await res.json().catch(() => ({}));
+                        }
                         if (!res.ok) {
                             alert(data.error || 'Erro ao excluir jovem.');
-                            return;
+                            return false;
                         }
                         await this.carregarJovensOutroEjc();
+                        if (opcoes.fecharFicha && this.modalEditarInstance) {
+                            this.modalEditarInstance.hide();
+                        }
+                        return true;
                     } catch (err) {
                         console.error(err);
                         alert('Erro ao excluir jovem.');
+                        return false;
                     }
+                },
+                async excluirJovemOutroFicha() {
+                    if (!this.jovemOutroFicha || !this.jovemOutroFicha.id) return;
+                    await this.excluirJovem({
+                        jovem_id: this.jovemOutroFicha.id,
+                        nome_completo: this.jovemOutroFicha.nome_completo || 'este jovem',
+                        historico_equipes: this.historicoEquipesOutroJovem || []
+                    }, { fecharFicha: true });
                 },
                 async abrirPresencas(item) {
                     if (!item || !item.jovem_id) {
@@ -4790,11 +5261,17 @@ Liturgia (Coordenador - Música)</div>
                         id: null,
                         foto_url: '',
                         nome_tio: '',
+                        apelido_tio: '',
+                        cpf_tio: '',
                         telefone_tio: '',
                         data_nascimento_tio: '',
+                        tio_viuvo: false,
                         nome_tia: '',
+                        apelido_tia: '',
+                        cpf_tia: '',
                         telefone_tia: '',
                         data_nascimento_tia: '',
+                        tia_viuva: false,
                         origem_tipo: 'OUTRO_EJC',
                         outro_ejc_id: null,
                         outro_ejc_nome_manual: '',
@@ -4808,14 +5285,16 @@ Liturgia (Coordenador - Música)</div>
                         detalhes_restricao_tio: '',
                         deficiencia_tio: false,
                         qual_deficiencia_tio: '',
+                        possui_carro_tio: false,
                         restricao_alimentar_tia: false,
                         detalhes_restricao_tia: '',
                         deficiencia_tia: false,
                         qual_deficiencia_tia: '',
+                        possui_carro_tia: false,
                         observacoes: '',
                         termos_aceitos_em: null
                     };
-                    this.novoServicoCasal = { equipe_id: null, ejc_id: null };
+                    this.novoServicoCasal = { equipe_id: null, ejc_id: null, papel: this.getPapelPadraoServicoCasal(), subfuncao: '' };
                     this.abaCasal = 'dados';
                     this.subAbaCasalDados = 'cadastro';
                     this.isEditingCasal = true;
@@ -4851,11 +5330,17 @@ Liturgia (Coordenador - Música)</div>
                         id: baseItem.id,
                         foto_url: baseItem.foto_url || '',
                         nome_tio: baseItem.nome_tio || '',
+                        apelido_tio: baseItem.apelido_tio || '',
+                        cpf_tio: baseItem.cpf_tio || '',
                         telefone_tio: baseItem.telefone_tio || '',
                         data_nascimento_tio: baseItem.data_nascimento_tio || '',
+                        tio_viuvo: !!baseItem.tio_viuvo,
                         nome_tia: baseItem.nome_tia || '',
+                        apelido_tia: baseItem.apelido_tia || '',
+                        cpf_tia: baseItem.cpf_tia || '',
                         telefone_tia: baseItem.telefone_tia || '',
                         data_nascimento_tia: baseItem.data_nascimento_tia || '',
+                        tia_viuva: !!baseItem.tia_viuva,
                         origem_tipo: 'OUTRO_EJC',
                         outro_ejc_id: baseItem.outro_ejc_id || null,
                         outro_ejc_nome_manual: baseItem.outro_ejc_nome || '',
@@ -4863,7 +5348,13 @@ Liturgia (Coordenador - Música)</div>
                         ecc_id: null,
                         equipe_ids: Array.isArray(baseItem.equipe_ids) ? baseItem.equipe_ids.slice() : [],
                         servicos: Array.isArray(baseItem.servicos) && baseItem.servicos.length
-                            ? baseItem.servicos.map((s) => ({ equipe_id: s.equipe_id || null, ejc_id: s.ejc_id || null, equipe_nome: s.equipe_nome || '' }))
+                            ? baseItem.servicos.map((s) => ({
+                                equipe_id: s.equipe_id || null,
+                                ejc_id: s.ejc_id || null,
+                                equipe_nome: s.equipe_nome || '',
+                                papel: s.papel || null,
+                                subfuncao: s.subfuncao || s.funcao_nome || s.funcao || null
+                            }))
                             : [],
                         restricao_alimentar: !!baseItem.restricao_alimentar,
                         deficiencia: !!baseItem.deficiencia,
@@ -4871,14 +5362,16 @@ Liturgia (Coordenador - Música)</div>
                         detalhes_restricao_tio: baseItem.detalhes_restricao_tio || '',
                         deficiencia_tio: !!baseItem.deficiencia_tio,
                         qual_deficiencia_tio: baseItem.qual_deficiencia_tio || '',
+                        possui_carro_tio: !!baseItem.possui_carro_tio,
                         restricao_alimentar_tia: !!baseItem.restricao_alimentar_tia,
                         detalhes_restricao_tia: baseItem.detalhes_restricao_tia || '',
                         deficiencia_tia: !!baseItem.deficiencia_tia,
                         qual_deficiencia_tia: baseItem.qual_deficiencia_tia || '',
+                        possui_carro_tia: !!baseItem.possui_carro_tia,
                         observacoes: baseItem.observacoes || '',
                         termos_aceitos_em: baseItem.termos_aceitos_em || null
                     };
-                    this.novoServicoCasal = { equipe_id: null, ejc_id: null };
+                    this.novoServicoCasal = { equipe_id: null, ejc_id: null, papel: this.getPapelPadraoServicoCasal(), subfuncao: '' };
                     this.abaCasal = 'dados';
                     this.subAbaCasalDados = 'cadastro';
                     this.isEditingCasal = false;
@@ -4903,16 +5396,33 @@ Liturgia (Coordenador - Música)</div>
                     const equipeId = this.novoServicoCasal && this.novoServicoCasal.equipe_id ? Number(this.novoServicoCasal.equipe_id) : null;
                     const ejcId = this.novoServicoCasal && this.novoServicoCasal.ejc_id ? Number(this.novoServicoCasal.ejc_id) : null;
                     if (!equipeId || !ejcId) return;
-                    this.formCasal.servicos.push({ equipe_id: equipeId, ejc_id: ejcId });
-                    this.novoServicoCasal = { equipe_id: null, ejc_id: null };
+                    if (this.subfuncoesServicoCasalDisponiveis.length > 0 && !this.novoServicoCasal.subfuncao) {
+                        alert('Selecione uma subfunção cadastrada para este papel.');
+                        return;
+                    }
+                    this.formCasal.servicos.push({
+                        equipe_id: equipeId,
+                        ejc_id: ejcId,
+                        papel: this.novoServicoCasal.papel || this.getPapelPadraoServicoCasal(),
+                        subfuncao: this.novoServicoCasal.subfuncao ? this.novoServicoCasal.subfuncao.trim() : null
+                    });
+                    this.novoServicoCasal = { equipe_id: null, ejc_id: null, papel: this.getPapelPadraoServicoCasal(), subfuncao: '' };
                 },
                 removerServicoCasal(idx) {
                     if (!this.isEditingCasal) return;
                     this.formCasal.servicos.splice(idx, 1);
                 },
                 async salvarCasal() {
-                    if (!this.formCasal.nome_tio || !this.formCasal.telefone_tio || !this.formCasal.nome_tia || !this.formCasal.telefone_tia) {
-                        alert('Preencha nome e telefone do tio e da tia.');
+                    if (this.formCasal.tio_viuvo && this.formCasal.tia_viuva) {
+                        alert('Marque apenas tio viúvo ou tia viúva.');
+                        return;
+                    }
+                    if (this.formCasal.tio_viuvo ? !this.formCasal.nome_tio : (this.formCasal.tia_viuva ? !this.formCasal.nome_tia : (!this.formCasal.nome_tio || !this.formCasal.nome_tia))) {
+                        alert(this.formCasal.tio_viuvo ? 'Preencha o nome do tio viúvo.' : (this.formCasal.tia_viuva ? 'Preencha o nome da tia viúva.' : 'Preencha nome do tio e da tia.'));
+                        return;
+                    }
+                    if (this.formCasal.tio_viuvo ? !this.formCasal.telefone_tio : (this.formCasal.tia_viuva ? !this.formCasal.telefone_tia : (!this.formCasal.telefone_tio || !this.formCasal.telefone_tia))) {
+                        alert(this.formCasal.tio_viuvo ? 'Preencha o telefone do tio viúvo.' : (this.formCasal.tia_viuva ? 'Preencha o telefone da tia viúva.' : 'Preencha telefone do tio e da tia.'));
                         return;
                     }
                     const outroEjcResolvido = await this.resolverOutroEjcCasalId();
@@ -4927,7 +5437,9 @@ Liturgia (Coordenador - Música)</div>
                     const servicosValidos = (this.formCasal.servicos || [])
                         .map((s) => ({
                             equipe_id: s && s.equipe_id ? Number(s.equipe_id) : null,
-                            ejc_id: s && s.ejc_id ? Number(s.ejc_id) : null
+                            ejc_id: s && s.ejc_id ? Number(s.ejc_id) : null,
+                            papel: s && s.papel ? String(s.papel).trim() : null,
+                            subfuncao: s && s.subfuncao ? String(s.subfuncao).trim() : null
                         }))
                         .filter((s) => s.equipe_id);
                     const payload = {
@@ -4961,14 +5473,40 @@ Liturgia (Coordenador - Música)</div>
                     }
                 },
                 async excluirCasal(item) {
-                    if (!(await uiConfirm('Excluir este casal de tios?'))) return;
                     try {
-                        const res = await fetch(`/api/tios/casais/${item.id}`, { method: 'DELETE' });
-                        const data = await res.json().catch(() => ({}));
+                        let queryHistorico = '';
+                        let temVinculosEdicoes = Array.isArray(item && item.servicos) && item.servicos.length > 0;
+                        if (!temVinculosEdicoes && this.formCasal && Number(this.formCasal.id) === Number(item && item.id)) {
+                            temVinculosEdicoes = this.servicosRegistradosCasalComIndice().length > 0;
+                        }
+                        if (temVinculosEdicoes) {
+                            const removerHistorico = await uiConfirm(
+                                'Esse tio/casal está vinculado a equipes/edições.\n\nOK: exclui a ficha e remove o nome das equipes/edições.\nCancelar: exclui apenas a ficha e mantém o nome nas equipes/edições.',
+                                { title: 'Histórico em edições' }
+                            );
+                            queryHistorico = `?preservar_historico=${removerHistorico ? 0 : 1}`;
+                        } else if (!(await uiConfirm('Excluir este casal de tios?'))) {
+                            return;
+                        }
+
+                        let res = await fetch(`/api/tios/casais/${item.id}${queryHistorico}`, { method: 'DELETE' });
+                        let data = await res.json().catch(() => ({}));
+                        if (res.status === 409 && data && data.requiresHistoryChoice) {
+                            const removerHistorico = await uiConfirm(
+                                'Esse tio/casal está vinculado a equipes/edições.\n\nOK: exclui a ficha e remove o nome das equipes/edições.\nCancelar: exclui apenas a ficha e mantém o nome nas equipes/edições.',
+                                { title: 'Histórico em edições' }
+                            );
+                            res = await fetch(`/api/tios/casais/${item.id}?preservar_historico=${removerHistorico ? 0 : 1}`, { method: 'DELETE' });
+                            data = await res.json().catch(() => ({}));
+                        }
                         if (!res.ok) {
                             alert(data.error || 'Erro ao excluir casal.');
                             return;
                         }
+                        this.isEditingCasal = false;
+                        this.abaCasal = 'dados';
+                        this.subAbaCasalDados = 'cadastro';
+                        if (this.modalCasal) this.modalCasal.hide();
                         await this.carregarCasais();
                     } catch (err) {
                         console.error(err);

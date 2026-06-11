@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Outros EJCs - EJC</title>
+    <title>Outras paróquias/movimentos - EJC</title>
     <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
     <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
 
@@ -20,6 +20,8 @@
 
     <!-- Vue -->
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="/js/excel-utils.js"></script>
 
     <style>
         .page-header {
@@ -107,11 +109,17 @@
                     <div
                         class="page-header d-flex justify-content-between align-items-center bg-white p-3 rounded shadow-sm">
                         <h2 class="h4 mb-0 text-gray-800">
-                            <i class="fas fa-globe text-primary me-2"></i>Outros EJCs
+                            <i class="fas fa-globe text-primary me-2"></i>Outras paróquias/movimentos
                         </h2>
                         <div class="d-flex gap-2">
-                            <button class="btn btn-outline-primary" onclick="window.OutrosEjcsApp.openImportModal()">
+                            <button class="btn btn-outline-primary" onclick="window.OutrosEjcsApp.openImportModal('outros')">
+                                <i class="fas fa-file-import me-1"></i> Importar movimentos
+                            </button>
+                            <button class="btn btn-outline-primary" onclick="window.OutrosEjcsApp.openImportModal('jovens')">
                                 <i class="fas fa-file-import me-1"></i> Importar jovens
+                            </button>
+                            <button class="btn btn-outline-primary" onclick="window.OutrosEjcsApp.openImportModal('tios')">
+                                <i class="fas fa-file-import me-1"></i> Importar tios
                             </button>
                             <button class="btn btn-primary" onclick="window.OutrosEjcsApp.openCreateModal()">
                                 <i class="fas fa-plus me-1"></i> Cadastrar Novo
@@ -121,12 +129,12 @@
                 </div>
             </div>
 
-            <!-- Lista de Outros EJCs -->
+            <!-- Lista de Outras Paróquias/Movimentos -->
             <div class="row">
                 <div class="col-12">
                     <div class="card shadow mb-4">
                         <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                            <h6 class="m-0 font-weight-bold text-primary">EJCs Cadastrados</h6>
+                            <h6 class="m-0 font-weight-bold text-primary">Movimentos cadastrados</h6>
                             <div class="text-muted small">
                                 Total: <span id="outrosEjcsTotal">0</span>
                                 • Filtrados: <span id="outrosEjcsFiltrados">0</span>
@@ -143,7 +151,7 @@
                                     cellspacing="0">
                                     <thead class="table-light">
                                         <tr>
-                                            <th><span class="sort-button">Nome do Movimento</span></th>
+                                            <th><span class="sort-button">Nome dos Movimentos</span></th>
                                             <th><span class="sort-button">Paróquia</span></th>
                                             <th><span class="sort-button">Bairro</span></th>
                                             <th style="width: 150px;"><span class="sort-button">Ações</span></th>
@@ -167,27 +175,27 @@
             <div class="modal-dialog modal-lg modal-dialog-scrollable">
                 <div class="modal-content border-0 shadow">
                     <div class="modal-header bg-soft-primary">
-                        <h5 class="modal-title">Importar jovens de outros EJCs</h5>
+                        <h5 class="modal-title" id="importModalTitle">Importar jovens de outras paróquias/movimentos</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" id="btnFecharImportacao"></button>
                     </div>
                     <div class="modal-body">
                         <div id="importOutroEjcLoading" class="alert alert-info d-none">
-                            <i class="fa-solid fa-circle-notch fa-spin me-2"></i>Importando jovens...
+                            <i class="fa-solid fa-circle-notch fa-spin me-2"></i><span id="importOutroEjcLoadingText">Importando jovens...</span>
                         </div>
 
                         <p class="mb-2"><strong>1) Cabeçalho básico</strong></p>
-                        <div class="border rounded p-2 bg-light small" style="white-space: pre-wrap;">nome_completo, sexo, ejc, telefone, numero_ejc_origem</div>
+                        <div id="importHeaderHelp" class="border rounded p-2 bg-light small" style="white-space: pre-wrap;">nome_completo, sexo, ejc, telefone, numero_ejc_origem, estado_civil</div>
 
-                        <p class="mt-3 mb-2"><strong>2) Coluna do outro EJC</strong></p>
-                        <div class="border rounded p-2 bg-light small" style="white-space: pre-wrap;">Use uma coluna chamada "ejc" e, em cada linha, informe o nome exatamente como está cadastrado:
+                        <p class="mt-3 mb-2"><strong id="importSection2Title">2) Coluna da outra paróquia/movimento</strong></p>
+                        <div id="importSection2Help" class="border rounded p-2 bg-light small" style="white-space: pre-wrap;">Use uma coluna chamada "ejc" e, em cada linha, informe o nome exatamente como está cadastrado:
 EJC SÃO JOÃO
 EJC NOSSA SENHORA DAS DORES
 
 Se souber a edição que o jovem fez no EJC de origem, use a coluna opcional "numero_ejc_origem".
 Exemplo: 15 ou XV</div>
 
-                        <p class="mt-3 mb-2"><strong>3) Equipes em que serviu no nosso EJC (opcional)</strong></p>
-                        <div class="border rounded p-2 bg-light small" style="white-space: pre-wrap;">Para cada edição servida, crie uma coluna no formato:
+                        <p class="mt-3 mb-2"><strong id="importSection3Title">3) Equipes em que serviu no nosso EJC (opcional)</strong></p>
+                        <div id="importSection3Help" class="border rounded p-2 bg-light small" style="white-space: pre-wrap;">Para cada edição servida, crie uma coluna no formato:
 I EJC
 II EJC
 III EJC
@@ -197,15 +205,18 @@ Liturgia
 Liturgia (Tio)
 Liturgia (Coordenador - Música)</div>
 
-                        <p class="text-muted small mt-2 mb-2">Use arquivo CSV (.csv). A coluna "ejc" identifica o EJC de origem do jovem; as colunas "I EJC", "II EJC" etc. registram onde ele serviu no nosso EJC.</p>
-                        <div class="mb-3">
-                            <button type="button" class="btn btn-outline-primary" onclick="window.OutrosEjcsApp.downloadImportTemplate()">
+                        <p class="text-muted small mt-2 mb-2" id="importFormatHelp">Use arquivo Excel (.xlsx) ou CSV (.csv). A coluna "ejc" identifica o EJC de origem; em estado_civil use Solteiro, Noivo, Casado ou Amasiado; as colunas "I EJC", "II EJC" etc. registram onde serviu no nosso EJC.</p>
+                        <div class="mb-3 d-flex flex-wrap gap-2">
+                            <button type="button" class="btn btn-outline-primary" onclick="window.OutrosEjcsApp.downloadImportTemplateExcel()">
+                                Baixar modelo Excel
+                            </button>
+                            <button type="button" class="btn btn-outline-primary" onclick="window.OutrosEjcsApp.downloadImportTemplateCsv()">
                                 Baixar modelo CSV
                             </button>
                         </div>
 
-                        <label class="form-label" for="importOutroEjcInput">Selecione o arquivo CSV</label>
-                        <input id="importOutroEjcInput" type="file" class="form-control" accept=".csv" onchange="window.OutrosEjcsApp.onImportFileChange(event)">
+                        <label class="form-label" for="importOutroEjcInput">Selecione o arquivo Excel ou CSV</label>
+                        <input id="importOutroEjcInput" type="file" class="form-control" accept=".xlsx,.csv,text/csv" onchange="window.OutrosEjcsApp.onImportFileChange(event)">
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-soft-secondary" data-bs-dismiss="modal" id="btnCancelarImportacao">Cancelar</button>
@@ -222,7 +233,7 @@ Liturgia (Coordenador - Música)</div>
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="formModalLabel">Cadastrar Outro EJC</h5>
+                        <h5 class="modal-title" id="formModalLabel">Cadastrar outra paróquia/movimento</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <form id="outrosEjcsForm" onsubmit="window.OutrosEjcsApp.saveRecord(event)">
@@ -230,7 +241,7 @@ Liturgia (Coordenador - Música)</div>
                             <input type="hidden" id="recordId">
 
                             <div class="mb-3">
-                                <label for="nome" class="form-label">Nome do Movimento <span
+                                <label for="nome" class="form-label">Nome dos Movimentos <span
                                         class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="nome" required
                                     placeholder="Ex: 1º EJC de São Paulo">
@@ -261,7 +272,7 @@ Liturgia (Coordenador - Música)</div>
             <div class="modal-dialog modal-xl modal-dialog-scrollable">
                 <div class="modal-content border-0 shadow">
                     <div class="modal-header">
-                        <h5 class="modal-title" id="detailsModalTitle">Detalhes do EJC</h5>
+                        <h5 class="modal-title" id="detailsModalTitle">Detalhes da paróquia/movimento</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
@@ -269,7 +280,7 @@ Liturgia (Coordenador - Música)</div>
                             <h6 class="text-muted mb-3">Informações básicas</h6>
                             <div class="row g-3">
                                 <div class="col-md-4">
-                                    <label class="form-label">Nome do Movimento</label>
+                                    <label class="form-label">Nome dos Movimentos</label>
                                     <input type="text" id="detailNome" class="form-control" maxlength="160">
                                 </div>
                                 <div class="col-md-4">
@@ -288,7 +299,7 @@ Liturgia (Coordenador - Música)</div>
 
                         <div>
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <h6 class="text-muted mb-0">Jovens cadastrados deste EJC</h6>
+                                <h6 class="text-muted mb-0">Jovens cadastrados desta paróquia/movimento</h6>
                                 <span id="jovensOutroEjcResumo" class="small text-muted">Total: 0</span>
                             </div>
                             <div id="jovensOutroEjcLoading" class="text-muted d-none mb-2">Carregando jovens...</div>
@@ -326,8 +337,11 @@ Liturgia (Coordenador - Música)</div>
             let detailsModalInstance = null;
             let importModalInstance = null;
             let importFile = null;
+            let importTipo = 'jovens';
             let importandoJovens = false;
             let currentEjcs = [];
+            let equipesCache = [];
+            let ejcsCache = [];
             let selectedId = null;
 
             function romanToNumber(value) {
@@ -459,10 +473,52 @@ Liturgia (Coordenador - Música)</div>
                 if (close) close.disabled = importandoJovens;
             }
 
-            function openImportModal() {
+            function atualizarModalImportacao() {
+                const isTios = importTipo === 'tios';
+                const title = document.getElementById('importModalTitle');
+                const loadingText = document.getElementById('importOutroEjcLoadingText');
+                const headerHelp = document.getElementById('importHeaderHelp');
+                const formatHelp = document.getElementById('importFormatHelp');
+                const section2Title = document.getElementById('importSection2Title');
+                const section2Help = document.getElementById('importSection2Help');
+                const section3Title = document.getElementById('importSection3Title');
+                const section3Help = document.getElementById('importSection3Help');
+                if (title) title.textContent = importTipo === 'outros' ? 'Importar paróquias/movimentos' : (isTios ? 'Importar tios de outras paróquias/movimentos' : 'Importar jovens de outras paróquias/movimentos');
+                if (loadingText) loadingText.textContent = importTipo === 'outros' ? 'Importando paróquias/movimentos...' : (isTios ? 'Importando tios...' : 'Importando jovens...');
+                if (headerHelp) {
+                    headerHelp.textContent = importTipo === 'outros'
+                        ? 'nome, paroquia, bairro, observacoes'
+                        : isTios
+                        ? 'nome_tio, apelido_tio, cpf_tio, telefone_tio, data_nascimento_tio, nome_tia, apelido_tia, cpf_tia, telefone_tia, data_nascimento_tia, ejc, observacoes'
+                        : 'nome_completo, apelido, cpf, sexo, ejc, telefone, numero_ejc_origem, estado_civil';
+                }
+                if (formatHelp) {
+                    formatHelp.textContent = importTipo === 'outros'
+                        ? 'Use arquivo Excel (.xlsx) ou CSV (.csv). O arquivo cadastra ou atualiza outras paróquias/movimentos.'
+                        : isTios
+                        ? 'Use arquivo Excel (.xlsx) ou CSV (.csv). A coluna "ejc" identifica o EJC de origem do casal; as colunas "I EJC", "II EJC" etc. registram onde o casal serviu no nosso EJC.'
+                        : 'Use arquivo Excel (.xlsx) ou CSV (.csv). A coluna "ejc" identifica o EJC de origem do jovem; em estado_civil use Solteiro, Noivo, Casado ou Amasiado; as colunas "I EJC", "II EJC" etc. registram onde ele serviu no nosso EJC.';
+                }
+                if (section2Title) section2Title.textContent = importTipo === 'outros' ? '2) Dados do cadastro' : '2) Coluna da outra paróquia/movimento';
+                if (section2Help) {
+                    section2Help.textContent = importTipo === 'outros'
+                        ? 'A coluna nome é obrigatória. Se já existir um cadastro com o mesmo nome e paróquia, ele será atualizado.\n\nExemplo:\nEJC SÃO JOÃO, Paróquia São João, Centro'
+                        : 'Use uma coluna chamada "ejc" e, em cada linha, informe o nome exatamente como está cadastrado:\nEJC SÃO JOÃO\nEJC NOSSA SENHORA DAS DORES\n\nSe souber a edição que o jovem fez no EJC de origem, use a coluna opcional "numero_ejc_origem".\nExemplo: 15 ou XV';
+                }
+                if (section3Title) section3Title.textContent = importTipo === 'outros' ? '3) Observações (opcional)' : '3) Equipes em que serviu no nosso EJC (opcional)';
+                if (section3Help) {
+                    section3Help.textContent = importTipo === 'outros'
+                        ? 'Use a coluna observacoes para informações adicionais do cadastro.'
+                        : 'Para cada edição servida, crie uma coluna no formato:\nI EJC\nII EJC\nIII EJC\n\nNa célula, informe a equipe:\nLiturgia\nLiturgia (Tio)\nLiturgia (Coordenador - Música)';
+                }
+            }
+
+            function openImportModal(tipo = 'jovens') {
+                importTipo = ['outros', 'tios'].includes(tipo) ? tipo : 'jovens';
                 importFile = null;
                 const input = document.getElementById('importOutroEjcInput');
                 if (input) input.value = '';
+                atualizarModalImportacao();
                 setImportandoJovens(false);
                 if (!importModalInstance) {
                     importModalInstance = new bootstrap.Modal(document.getElementById('importModal'), {
@@ -480,10 +536,11 @@ Liturgia (Coordenador - Música)</div>
                     setImportandoJovens(false);
                     return;
                 }
-                if (!String(file.name || '').toLowerCase().endsWith('.csv')) {
+                const nome = String(file.name || '').toLowerCase();
+                if (!nome.endsWith('.xlsx') && !nome.endsWith('.csv')) {
                     importFile = null;
                     event.target.value = '';
-                    Swal.fire('Atenção', 'Selecione um arquivo CSV (.csv).', 'warning');
+                    Swal.fire('Atenção', 'Selecione um arquivo Excel (.xlsx) ou CSV (.csv).', 'warning');
                     setImportandoJovens(false);
                     return;
                 }
@@ -561,39 +618,130 @@ Liturgia (Coordenador - Música)</div>
                 return out;
             }
 
-            function downloadImportTemplate() {
-                const headers = [
-                    'nome_completo',
-                    'sexo',
-                    'ejc',
-                    'telefone',
-                    'numero_ejc_origem',
-                    'estado_civil',
-                    'data_nascimento',
-                    'circulo',
-                    'I EJC',
-                    'II EJC'
-                ];
-                const row = [
-                    'Maria Aparecida Silva',
-                    '(31)99999-0000',
-                    'Feminino',
-                    'EJC SÃO JOÃO',
-                    '(31)99999-0000',
-                    '',
-                    'Solteiro',
-                    '2004-06-14',
-                    '',
-                    'Liturgia (Membro)',
-                    'Apoio (Coordenador - Música)'
-                ];
-                const csv = [headers, row]
-                    .map((linha) => linha.map((valor) => `"${String(valor || '').replace(/"/g, '""')}"`).join(';'))
+            function getImportTemplate() {
+                if (importTipo === 'outros') {
+                    return {
+                        filename: 'modelo_importacao_outros_ejcs',
+                        sheet: 'Paroquias Movimentos',
+                        headers: ['nome', 'paroquia', 'bairro', 'observacoes'],
+                        row: ['EJC SÃO JOÃO', 'Paróquia São João', 'Centro', 'Cadastro exemplo']
+                    };
+                }
+                if (importTipo === 'tios') {
+                    return {
+                        filename: 'modelo_importacao_tios_outros_ejcs',
+                        sheet: 'Tios',
+                        headers: [
+                            'nome_tio',
+                            'apelido_tio',
+                            'cpf_tio',
+                            'telefone_tio',
+                            'data_nascimento_tio',
+                            'tio_viuvo',
+                            'restricao_alimentar_tio',
+                            'detalhes_restricao_tio',
+                            'deficiencia_tio',
+                            'qual_deficiencia_tio',
+                            'possui_carro_tio',
+                            'nome_tia',
+                            'apelido_tia',
+                            'cpf_tia',
+                            'telefone_tia',
+                            'data_nascimento_tia',
+                            'tia_viuva',
+                            'restricao_alimentar_tia',
+                            'detalhes_restricao_tia',
+                            'deficiencia_tia',
+                            'qual_deficiencia_tia',
+                            'possui_carro_tia',
+                            'ejc',
+                            'observacoes',
+                            'I EJC',
+                            'II EJC'
+                        ],
+                        row: [
+                            'Joao',
+                            'Joaozinho',
+                            '111.111.111-11',
+                            '(31)99999-1111',
+                            '1980-05-10',
+                            'Nao',
+                            'Nao',
+                            '',
+                            'Nao',
+                            '',
+                            'Nao',
+                            'Maria',
+                            'Mari',
+                            '222.222.222-22',
+                            '(31)99999-2222',
+                            '1982-08-20',
+                            'Nao',
+                            'Sim',
+                            'Alergia a amendoim',
+                            'Nao',
+                            '',
+                            'Nao',
+                            'EJC SÃO JOÃO',
+                            'Casal exemplo',
+                            'Liturgia',
+                            'Apoio'
+                        ]
+                    };
+                }
+                return {
+                    filename: 'modelo_importacao_jovens_outros_ejcs',
+                    sheet: 'Jovens',
+                    headers: [
+                        'nome_completo',
+                        'apelido',
+                        'cpf',
+                        'sexo',
+                        'ejc',
+                        'telefone',
+                        'numero_ejc_origem',
+                        'estado_civil',
+                        'data_nascimento',
+                        'I EJC',
+                        'II EJC'
+                    ],
+                    row: [
+                        'Maria Aparecida Silva',
+                        'Maria',
+                        '333.333.333-33',
+                        'Feminino',
+                        'EJC SÃO JOÃO',
+                        '(31)99999-0000',
+                        '15',
+                        'Noivo',
+                        '2004-06-14',
+                        'Liturgia (Membro)',
+                        'Apoio (Coordenador - Música)'
+                    ]
+                };
+            }
+
+            function csvEscape(valor) {
+                return `"${String(valor === null || valor === undefined ? '' : valor).replace(/"/g, '""')}"`;
+            }
+
+            function downloadImportTemplateExcel() {
+                const modelo = getImportTemplate();
+                const wb = XLSX.utils.book_new();
+                const ws = XLSX.utils.aoa_to_sheet([modelo.headers, modelo.row]);
+                XLSX.utils.book_append_sheet(wb, ws, modelo.sheet);
+                XLSX.writeFile(wb, `${modelo.filename}.xlsx`);
+            }
+
+            function downloadImportTemplateCsv() {
+                const modelo = getImportTemplate();
+                const csv = [modelo.headers, modelo.row]
+                    .map((linha) => linha.map((valor) => csvEscape(valor)).join(';'))
                     .join('\n');
-                const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+                const blob = new Blob([`\uFEFF${csv}\n`], { type: 'text/csv;charset=utf-8;' });
                 const link = document.createElement('a');
                 link.href = URL.createObjectURL(blob);
-                link.download = 'modelo_importacao_outros_ejcs.csv';
+                link.download = `${modelo.filename}.csv`;
                 link.style.display = 'none';
                 document.body.appendChild(link);
                 link.click();
@@ -679,11 +827,12 @@ Liturgia (Coordenador - Música)</div>
                         linha: i + 1,
                         jovem: {
                             nome_completo: nome,
+                            apelido: getVal(colunas, 'apelido', 'Apelido', 'nickname', 'Nickname'),
+                            cpf: getVal(colunas, 'cpf', 'CPF'),
                             telefone: getVal(colunas, 'telefone', 'Phone', 'celular'),
                             sexo: getVal(colunas, 'sexo', 'Sexo', 'Gender'),
                             estado_civil: getVal(colunas, 'estado_civil', 'Estado Civil', 'estado civil'),
                             data_nascimento: getVal(colunas, 'data_nascimento', 'Data Nascimento', 'BirthDate'),
-                            circulo: getVal(colunas, 'circulo', 'Círculo', 'Circle'),
                             outro_ejc_id: vinculo.outro.id,
                             outro_ejc_nome: vinculo.outro.nome,
                             outro_ejc_numero: String(vinculo.numero || '').trim()
@@ -695,12 +844,257 @@ Liturgia (Coordenador - Música)</div>
                 return payload;
             }
 
+            function parseImportOutrosEjcsCsv(textoOriginal) {
+                const text = String(textoOriginal || '').replace(/^\uFEFF/, '');
+                const linhas = text.split(/\r?\n/).filter(l => l.trim() !== '');
+                if (linhas.length < 2) throw new Error('Arquivo inválido ou vazio.');
+                const delimiter = detectarDelimitador(linhas[0]);
+                const headers = parseCsvLine(linhas[0], delimiter);
+                const headerIndex = {};
+                headers.forEach((h, idx) => {
+                    headerIndex[h] = idx;
+                    headerIndex[normalizarHeader(h)] = idx;
+                });
+                const getVal = (colunas, ...nomes) => {
+                    for (const nome of nomes) {
+                        const idx = headerIndex[nome] !== undefined ? headerIndex[nome] : headerIndex[normalizarHeader(nome)];
+                        if (idx !== undefined && colunas[idx] !== undefined && String(colunas[idx]).trim() !== '') return String(colunas[idx]).trim();
+                    }
+                    return '';
+                };
+                const payload = [];
+                for (let i = 1; i < linhas.length; i += 1) {
+                    const colunas = parseCsvLine(linhas[i], delimiter);
+                    const nome = getVal(colunas, 'nome', 'Nome', 'nome_ejc', 'Nome do EJC', 'movimento', 'EJC');
+                    if (!nome) continue;
+                    payload.push({
+                        linha: i + 1,
+                        nome,
+                        paroquia: getVal(colunas, 'paroquia', 'Paroquia', 'Paróquia'),
+                        bairro: getVal(colunas, 'bairro', 'Bairro'),
+                        observacoes: getVal(colunas, 'observacoes', 'Observacoes', 'Observações')
+                    });
+                }
+                return payload;
+            }
+
+            async function importarOutrosEjcs(registros) {
+                const chave = (nome, paroquia) => `${normalizarNomeImportacao(nome)}|${normalizarNomeImportacao(paroquia)}`;
+                const existentes = new Map((currentEjcs || []).map((item) => [chave(item.nome, item.paroquia), item]));
+                let criados = 0;
+                let atualizados = 0;
+                const erros = [];
+                for (const item of registros) {
+                    try {
+                        const existente = existentes.get(chave(item.nome, item.paroquia));
+                        const response = await fetch(existente ? `/api/outros-ejcs/${existente.id}` : '/api/outros-ejcs', {
+                            method: existente ? 'PUT' : 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                nome: item.nome,
+                                paroquia: item.paroquia,
+                                bairro: item.bairro,
+                                observacoes: item.observacoes || null
+                            })
+                        });
+                        const data = await response.json().catch(() => ({}));
+                        if (!response.ok) throw new Error(data.error || 'Erro ao salvar paróquia/movimento.');
+                        if (existente) atualizados += 1;
+                        else {
+                            criados += 1;
+                            existentes.set(chave(item.nome, item.paroquia), { id: data.id, nome: item.nome, paroquia: item.paroquia });
+                        }
+                    } catch (error) {
+                        erros.push(`Linha ${item.linha}: ${error && error.message ? error.message : 'Erro ao importar.'}`);
+                    }
+                }
+                return { criados, atualizados, erros };
+            }
+
+            async function arquivoParaTextoCsv(file) {
+                const nome = String(file && file.name || '').toLowerCase();
+                if (nome.endsWith('.csv')) return file.text();
+                if (!nome.endsWith('.xlsx')) throw new Error('Selecione um arquivo Excel (.xlsx) ou CSV (.csv).');
+                const rows = await ExcelUtils.readXlsxFile(file);
+                if (!rows.length) throw new Error('Arquivo inválido ou vazio.');
+                const headers = [];
+                rows.forEach((row) => {
+                    Object.keys(row || {}).forEach((key) => {
+                        if (!headers.includes(key)) headers.push(key);
+                    });
+                });
+                if (!headers.length) throw new Error('Arquivo inválido ou vazio.');
+                const normalizarCelulaExcel = (header, valor) => {
+                    const chave = normalizarHeader(header);
+                    const texto = String(valor === null || valor === undefined ? '' : valor).trim();
+                    if (!texto || !chave.includes('data')) return valor;
+                    if (/^\d+(\.\d+)?$/.test(texto) && window.XLSX && XLSX.SSF) {
+                        const partes = XLSX.SSF.parse_date_code(Number(texto));
+                        if (partes) return `${partes.y}-${String(partes.m).padStart(2, '0')}-${String(partes.d).padStart(2, '0')}`;
+                    }
+                    return valor;
+                };
+                return [
+                    headers,
+                    ...rows.map((row) => headers.map((header) => normalizarCelulaExcel(header, row && row[header] !== undefined ? row[header] : '')))
+                ].map((linha) => linha.map((valor) => csvEscape(valor)).join(';')).join('\n');
+            }
+
+            async function carregarRefsTiosImportacao() {
+                if (!equipesCache.length) {
+                    const res = await fetch('/api/todas-equipes');
+                    equipesCache = res.ok ? await res.json() : [];
+                }
+                if (!ejcsCache.length) {
+                    const res = await fetch('/api/tios/ejcs');
+                    ejcsCache = res.ok ? await res.json() : [];
+                }
+            }
+
+            function parseBoolImport(valor) {
+                return ['1', 'true', 'sim', 's', 'yes'].includes(String(valor || '').trim().toLowerCase());
+            }
+
+            function parseImportTiosCsv(textoOriginal) {
+                const text = String(textoOriginal || '').replace(/^\uFEFF/, '');
+                const linhas = text.split(/\r?\n/).filter(l => l.trim() !== '');
+                if (linhas.length < 2) throw new Error('Arquivo inválido ou vazio.');
+                const delimiter = detectarDelimitador(linhas[0]);
+                const headers = parseCsvLine(linhas[0], delimiter);
+                const headerIndex = {};
+                headers.forEach((h, idx) => {
+                    headerIndex[h] = idx;
+                    headerIndex[normalizarHeader(h)] = idx;
+                });
+                const outrosPorNome = new Map();
+                (currentEjcs || []).forEach((ejc) => {
+                    const nome = String(ejc.nome || '').trim();
+                    const paroquia = String(ejc.paroquia || '').trim();
+                    if (nome) {
+                        outrosPorNome.set(normalizarNomeImportacao(nome), ejc);
+                        outrosPorNome.set(normalizarNomeImportacao(`EJC ${nome}`), ejc);
+                    }
+                    if (paroquia) outrosPorNome.set(normalizarNomeImportacao(paroquia), ejc);
+                    if (nome || paroquia) outrosPorNome.set(normalizarNomeImportacao([paroquia, nome].filter(Boolean).join(' - ')), ejc);
+                });
+                const equipeByNome = new Map((equipesCache || []).map((eq) => [normalizarNomeImportacao(eq.nome), eq]));
+                const ejcByNumero = new Map((ejcsCache || []).map((ejc) => [Number(ejc.numero), ejc]));
+                const parseServicoEquipe = (valor) => {
+                    const texto = String(valor || '').trim();
+                    const match = texto.match(/^(.+?)\s*\(([^)]+)\)\s*$/);
+                    const equipeNome = (match ? match[1] : texto).trim();
+                    let papel = 'Tio';
+                    let subfuncao = null;
+                    if (match && match[2]) {
+                        const partes = String(match[2]).split('-').map((parte) => parte.trim()).filter(Boolean);
+                        if (partes[0]) papel = /^tios?$/i.test(partes[0]) ? 'Tio' : partes[0];
+                        if (partes.length > 1) subfuncao = partes.slice(1).join(' - ');
+                    }
+                    return { equipeNome, papel, subfuncao };
+                };
+                const getVal = (colunas, ...nomes) => {
+                    for (const nome of nomes) {
+                        const idx = headerIndex[nome] !== undefined ? headerIndex[nome] : headerIndex[normalizarHeader(nome)];
+                        if (idx !== undefined && colunas[idx] !== undefined && String(colunas[idx]).trim() !== '') return colunas[idx];
+                    }
+                    return null;
+                };
+                const colunasHistorico = headers.map((header, index) => {
+                    const match = normalizarNomeImportacao(header).match(/^([ivxlcdm]+|\d+)\s+ejc$/i);
+                    return match ? { index, edicao: getEjcNumber(match[1]) || romanToNumber(match[1]) } : null;
+                }).filter((col) => col && Number(col.edicao) > 0);
+                const payload = [];
+                for (let i = 1; i < linhas.length; i += 1) {
+                    const colunas = parseCsvLine(linhas[i], delimiter);
+                    const nomeTio = getVal(colunas, 'nome_tio', 'Nome Tio', 'NomeTio', 'tio');
+                    const nomeTia = getVal(colunas, 'nome_tia', 'Nome Tia', 'NomeTia', 'tia');
+                    if (!String(nomeTio || '').trim() && !String(nomeTia || '').trim()) continue;
+                    const outroTexto = getVal(colunas, 'ejc', 'EJC', 'outro_ejc', 'Outro EJC', 'outro_ejc_paroquia', 'Paroquia', 'Paróquia');
+                    const outro = outrosPorNome.get(normalizarNomeImportacao(outroTexto));
+                    const servicos = colunasHistorico.map((col) => {
+                        const valor = String(colunas[col.index] || '').trim();
+                        if (!valor) return null;
+                        const { equipeNome, papel, subfuncao } = parseServicoEquipe(valor);
+                        const equipe = equipeByNome.get(normalizarNomeImportacao(equipeNome));
+                        const ejc = ejcByNumero.get(Number(col.edicao));
+                        return equipe && ejc ? { equipe_id: Number(equipe.id), ejc_id: Number(ejc.id), papel, subfuncao } : null;
+                    }).filter(Boolean);
+                    payload.push({
+                        __linha: i + 1,
+                        origem_tipo: 'OUTRO_EJC',
+                        outro_ejc_id: outro ? outro.id : null,
+                        nome_tio: nomeTio,
+                        apelido_tio: getVal(colunas, 'apelido_tio', 'Apelido Tio', 'ApelidoTio'),
+                        cpf_tio: getVal(colunas, 'cpf_tio', 'CPF Tio', 'CpfTio'),
+                        telefone_tio: getVal(colunas, 'telefone_tio', 'Telefone Tio', 'TelefoneTio'),
+                        data_nascimento_tio: getVal(colunas, 'data_nascimento_tio', 'Data Nascimento Tio', 'DataNascimentoTio'),
+                        tio_viuvo: parseBoolImport(getVal(colunas, 'tio_viuvo', 'Tio Viuvo', 'Tio Viúvo', 'Viuvo', 'Viúvo')),
+                        restricao_alimentar_tio: parseBoolImport(getVal(colunas, 'restricao_alimentar_tio', 'Restricao Alimentar Tio', 'Restrição Alimentar Tio')),
+                        detalhes_restricao_tio: getVal(colunas, 'detalhes_restricao_tio', 'Detalhes Restricao Tio', 'Detalhes Restrição Tio'),
+                        deficiencia_tio: parseBoolImport(getVal(colunas, 'deficiencia_tio', 'Deficiencia Tio', 'Deficiência Tio')),
+                        qual_deficiencia_tio: getVal(colunas, 'qual_deficiencia_tio', 'Qual Deficiencia Tio', 'Qual Deficiência Tio'),
+                        possui_carro_tio: parseBoolImport(getVal(colunas, 'possui_carro_tio', 'Possui Carro Tio', 'PossuiCarroTio', 'Carro Tio')),
+                        nome_tia: nomeTia,
+                        apelido_tia: getVal(colunas, 'apelido_tia', 'Apelido Tia', 'ApelidoTia'),
+                        cpf_tia: getVal(colunas, 'cpf_tia', 'CPF Tia', 'CpfTia'),
+                        telefone_tia: getVal(colunas, 'telefone_tia', 'Telefone Tia', 'TelefoneTia'),
+                        data_nascimento_tia: getVal(colunas, 'data_nascimento_tia', 'Data Nascimento Tia', 'DataNascimentoTia'),
+                        tia_viuva: parseBoolImport(getVal(colunas, 'tia_viuva', 'Tia Viuva', 'Tia Viúva', 'Viuva Tia', 'Viúva Tia')),
+                        restricao_alimentar_tia: parseBoolImport(getVal(colunas, 'restricao_alimentar_tia', 'Restricao Alimentar Tia', 'Restrição Alimentar Tia')),
+                        detalhes_restricao_tia: getVal(colunas, 'detalhes_restricao_tia', 'Detalhes Restricao Tia', 'Detalhes Restrição Tia'),
+                        deficiencia_tia: parseBoolImport(getVal(colunas, 'deficiencia_tia', 'Deficiencia Tia', 'Deficiência Tia')),
+                        qual_deficiencia_tia: getVal(colunas, 'qual_deficiencia_tia', 'Qual Deficiencia Tia', 'Qual Deficiência Tia'),
+                        possui_carro_tia: parseBoolImport(getVal(colunas, 'possui_carro_tia', 'Possui Carro Tia', 'PossuiCarroTia', 'Carro Tia')),
+                        observacoes: getVal(colunas, 'observacoes', 'Observacoes', 'Observações'),
+                        servicos
+                    });
+                }
+                return payload;
+            }
+
             async function confirmImport() {
                 if (!importFile || importandoJovens) return;
                 setImportandoJovens(true);
                 try {
                     if (!currentEjcs.length) await loadData();
-                    const texto = await importFile.text();
+                    const texto = await arquivoParaTextoCsv(importFile);
+                    if (importTipo === 'outros') {
+                        const registros = parseImportOutrosEjcsCsv(texto);
+                        if (!registros.length) throw new Error('Nenhuma paróquia/movimento válida encontrada no arquivo.');
+                        const resultado = await importarOutrosEjcs(registros);
+                        if (importModalInstance) importModalInstance.hide();
+                        importFile = null;
+                        const input = document.getElementById('importOutroEjcInput');
+                        if (input) input.value = '';
+                        await loadData();
+                        const html = `<div class="text-start">
+                            <div>Criados: <strong>${resultado.criados}</strong></div>
+                            <div>Atualizados: <strong>${resultado.atualizados}</strong></div>
+                            <div>Erros: <strong>${resultado.erros.length}</strong></div>
+                            ${resultado.erros.length ? `<hr><div class="small">${resultado.erros.slice(0, 8).join('<br>')}</div>` : ''}
+                        </div>`;
+                        Swal.fire({ icon: resultado.erros.length ? 'warning' : 'success', title: 'Importação concluída', html });
+                        return;
+                    }
+                    if (importTipo === 'tios') {
+                        await carregarRefsTiosImportacao();
+                        const casais = parseImportTiosCsv(texto);
+                        if (!casais.length) throw new Error('Nenhum casal válido encontrado no arquivo.');
+                        const response = await fetch('/api/tios/casais/bulk-replace', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ casais })
+                        });
+                        const data = await response.json().catch(() => ({}));
+                        if (!response.ok) throw new Error(data.error || 'Erro ao importar tios.');
+                        if (importModalInstance) importModalInstance.hide();
+                        importFile = null;
+                        const input = document.getElementById('importOutroEjcInput');
+                        if (input) input.value = '';
+                        Swal.fire('Importação concluída', `Criados: ${data.criados || 0}<br>Atualizados: ${data.atualizados || 0}<br>Erros: ${(data.erros || []).length}`, (data.erros || []).length ? 'warning' : 'success');
+                        return;
+                    }
+
                     const payload = parseImportCsv(texto);
                     if (!payload.length) throw new Error('Nenhum jovem válido encontrado no arquivo.');
 
@@ -733,7 +1127,8 @@ Liturgia (Coordenador - Música)</div>
                     Swal.fire({ icon: erros.length ? 'warning' : 'success', title: 'Importação concluída', html });
                 } catch (error) {
                     console.error(error);
-                    Swal.fire('Erro', error && error.message ? error.message : 'Erro ao importar jovens.', 'error');
+                    const tipoErro = importTipo === 'outros' ? 'paróquias/movimentos' : (importTipo === 'tios' ? 'tios' : 'jovens');
+                    Swal.fire('Erro', error && error.message ? error.message : `Erro ao importar ${tipoErro}.`, 'error');
                 } finally {
                     setImportandoJovens(false);
                 }
@@ -742,7 +1137,7 @@ Liturgia (Coordenador - Música)</div>
             function openCreateModal() {
                 document.getElementById('outrosEjcsForm').reset();
                 document.getElementById('recordId').value = '';
-                document.getElementById('formModalLabel').textContent = 'Cadastrar Outro EJC';
+                document.getElementById('formModalLabel').textContent = 'Cadastrar outra paróquia/movimento';
                 document.getElementById('btnSalvar').textContent = 'Cadastrar';
 
                 if (createModalInstance) {
@@ -759,7 +1154,7 @@ Liturgia (Coordenador - Música)</div>
                 if (!registro) return;
                 selectedId = id;
 
-                document.getElementById('detailsModalTitle').textContent = `Outro EJC: ${registro.nome || 'Sem nome'}`;
+                document.getElementById('detailsModalTitle').textContent = `Paróquia/movimento: ${registro.nome || 'Sem nome'}`;
                 document.getElementById('detailNome').value = registro.nome || '';
                 document.getElementById('detailParoquia').value = registro.paroquia || '';
                 document.getElementById('detailBairro').value = registro.bairro || '';
@@ -791,7 +1186,7 @@ Liturgia (Coordenador - Música)</div>
 
                     if (!Array.isArray(data) || data.length === 0) {
                         if (resumo) resumo.textContent = 'Total: 0';
-                        container.innerHTML = `<div class="text-muted text-center p-3 bg-light border rounded">Nenhum jovem deste outro EJC cadastrado no sistema.</div>`;
+                        container.innerHTML = `<div class="text-muted text-center p-3 bg-light border rounded">Nenhum jovem desta paróquia/movimento cadastrado no sistema.</div>`;
                         return;
                     }
                     if (resumo) resumo.textContent = `Total: ${data.length}`;
@@ -812,7 +1207,6 @@ Liturgia (Coordenador - Música)</div>
                                         <th>Nº do EJC</th>
                                         <th>Estado civil</th>
                                         <th>Sexo</th>
-                                        <th>Círculo</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -823,7 +1217,6 @@ Liturgia (Coordenador - Música)</div>
                                             <td>${j.outro_ejc_numero || '-'}</td>
                                             <td>${j.estado_civil || '-'}</td>
                                             <td>${j.sexo || '-'}</td>
-                                            <td>${j.circulo || '-'}</td>
                                         </tr>
                                     `).join('')}
                                 </tbody>
@@ -832,7 +1225,7 @@ Liturgia (Coordenador - Música)</div>
                     `;
                 } catch (error) {
                     console.error(error);
-                    container.innerHTML = `<div class="text-danger">Erro ao carregar jovens deste outro EJC.</div>`;
+                    container.innerHTML = `<div class="text-danger">Erro ao carregar jovens desta paróquia/movimento.</div>`;
                 } finally {
                     loadingEl.classList.add('d-none');
                 }
@@ -865,7 +1258,7 @@ Liturgia (Coordenador - Música)</div>
                     await loadData();
                     const updated = currentEjcs.find(e => e.id === selectedId);
                     if (updated) {
-                        document.getElementById('detailsModalTitle').textContent = `Outro EJC: ${updated.nome || 'Sem nome'}`;
+                        document.getElementById('detailsModalTitle').textContent = `Paróquia/movimento: ${updated.nome || 'Sem nome'}`;
                     }
                     Swal.fire({
                         icon: 'success',
@@ -919,7 +1312,7 @@ Liturgia (Coordenador - Música)</div>
                     Swal.fire({
                         icon: 'success',
                         title: 'Sucesso!',
-                        text: isEdit ? 'Registro atualizado.' : 'EJC cadastrado com sucesso!',
+                        text: isEdit ? 'Registro atualizado.' : 'Paróquia/movimento cadastrada com sucesso!',
                         timer: 2000,
                         showConfirmButton: false
                     });
@@ -957,7 +1350,7 @@ Liturgia (Coordenador - Música)</div>
                         Swal.fire('Excluído!', 'O registro foi removido.', 'success');
                     } catch (error) {
                         console.error(error);
-                        Swal.fire('Erro', 'Não foi possível excluir o EJC.', 'error');
+                        Swal.fire('Erro', 'Não foi possível excluir a paróquia/movimento.', 'error');
                     }
                 }
             }
@@ -967,7 +1360,8 @@ Liturgia (Coordenador - Música)</div>
                 openCreateModal,
                 openImportModal,
                 onImportFileChange,
-                downloadImportTemplate,
+                downloadImportTemplateExcel,
+                downloadImportTemplateCsv,
                 confirmImport,
                 openDetailsModal,
                 saveDetails,
