@@ -9,7 +9,7 @@ const { ensureTenantStructure } = require('../lib/tenantSetup');
 const router = express.Router();
 
 const BCRYPT_ROUNDS = Number(process.env.BCRYPT_ROUNDS || 12);
-const CURRENT_RELEASE_NOTICE_VERSION = '1.1.0';
+const CURRENT_RELEASE_NOTICE_VERSION = '1.2.1';
 
 async function ensureReleaseNoticeTable() {
     await pool.query(`

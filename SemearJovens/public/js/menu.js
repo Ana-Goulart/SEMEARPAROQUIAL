@@ -173,10 +173,10 @@ const menuTemplate = `
                                 <small>Alternar aparência do sistema</small>
                             </span>
                         </button>
-                        <div class="dropdown-item topbar-settings-item" title="Versão do Sistema 1.1.0">
+                        <div class="dropdown-item topbar-settings-item" title="Versão do Sistema 1.2.1">
                             <span class="topbar-settings-icon"><i class="fas fa-circle-info"></i></span>
                             <span>
-                                <strong>Versão do Sistema 1.1.0</strong>
+                                <strong>Versão do Sistema 1.2.1</strong>
                                 <small>Informação atual da versão do sistema</small>
                             </span>
                         </div>
