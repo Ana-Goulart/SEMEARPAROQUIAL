@@ -50,8 +50,7 @@ const rotasRelacoesFamiliares = require('./routes/relacoesFamiliares');
 const rotasLogs = require('./routes/logs');
 const { activityLoggerMiddleware } = require('./lib/activityLogs');
 const { personNameResponseMiddleware } = require('./lib/personNameFormatting');
-const { decryptJovemPhone } = require('./lib/jovensSensitiveData');
-const { decryptTioPhone } = require('./lib/tiosSensitiveData');
+const { decryptValue } = require('./lib/fieldEncryption');
 const { requireMenuViewAccess, menuAccessApiMiddleware } = require('./lib/menuAccess');
 
 const CORE_LOGIN_URL = String(process.env.CORE_LOGIN_URL || 'https://login.semearparoquial.com.br/login').trim();
@@ -121,15 +120,20 @@ function decryptResponsePhone(value, preferTio = false) {
     if (value === undefined || value === null || value === '') return value;
     const text = String(value);
     if (!text.includes('enc:v1:')) return value;
+    const purposes = preferTio
+        ? ['tios:telefone', 'lista-mestre:telefone']
+        : ['lista-mestre:telefone', 'tios:telefone'];
 
     return text
         .split('/')
         .map((part) => {
             const trimmed = String(part || '').trim();
             if (!trimmed || !trimmed.includes('enc:v1:')) return trimmed;
-            const first = preferTio ? decryptTioPhone(trimmed) : decryptJovemPhone(trimmed);
-            const fallback = preferTio ? decryptJovemPhone(trimmed) : decryptTioPhone(trimmed);
-            return first || fallback || trimmed;
+            for (const purpose of purposes) {
+                const decrypted = decryptValue(trimmed, purpose, { silent: true });
+                if (decrypted) return String(decrypted).trim() || trimmed;
+            }
+            return trimmed;
         })
         .join(' / ');
 }

@@ -52,7 +52,7 @@ function encryptValue(value, purpose = 'field') {
     return `${ENCRYPTION_PREFIX}:${iv.toString('hex')}:${encrypted.toString('hex')}`;
 }
 
-function decryptValue(value, purpose = 'field') {
+function decryptValue(value, purpose = 'field', options = {}) {
     if (value === undefined || value === null || value === '') return null;
     if (!isEncryptedValue(value)) return String(value);
 
@@ -71,7 +71,9 @@ function decryptValue(value, purpose = 'field') {
         ]);
         return decrypted.toString('utf8');
     } catch (err) {
-        console.error('Falha ao descriptografar campo sensível:', err);
+        if (!options || !options.silent) {
+            console.error('Falha ao descriptografar campo sensível:', err);
+        }
         return null;
     }
 }
