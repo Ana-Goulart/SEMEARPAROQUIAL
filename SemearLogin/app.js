@@ -33,7 +33,7 @@ const loginLimiter = rateLimit({
 });
 
 app.use(helmet({ contentSecurityPolicy: false }));
-app.get('/favicon.ico', (_req, res) => res.status(204).end());
+app.get('/favicon.ico', (_req, res) => res.redirect('/assets/logo-oficial.png'));
 app.use(globalLimiter);
 app.use(express.json());
 app.use(attachUserFromSession);

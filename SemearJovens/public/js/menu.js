@@ -67,8 +67,8 @@ const menuTemplate = `
                     <span class="menu-chevron">▸</span>
                 </button>
                 <div class="menu-group-links" data-group-links="outros-ejcs">
-                    <a href="/gestaodoencontro/outrosejcs" class="nav-link" title="Outras paróquias/movimentos">
-                        <span class="menu-link-icon"><i class="fa-solid fa-globe"></i></span><span class="link-text">Outras paróquias/movimentos</span>
+                    <a href="/gestaodoencontro/outrosejcs" class="nav-link" title="Outras Paróquias">
+                        <span class="menu-link-icon"><i class="fa-solid fa-globe"></i></span><span class="link-text">Outras Paróquias</span>
                     </a>
                 </div>
             </div>

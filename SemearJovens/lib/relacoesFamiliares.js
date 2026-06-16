@@ -70,7 +70,8 @@ function getAllowedRelationsForSourceType(sourceType) {
             RELATION_TYPES.NAMORADO,
             RELATION_TYPES.NOIVO,
             RELATION_TYPES.TIO,
-            RELATION_TYPES.MAE_PAI
+            RELATION_TYPES.MAE_PAI,
+            RELATION_TYPES.FILHO
         ];
     }
     if (sourceType === ENTITY_TYPES.JOVEM) {
@@ -89,7 +90,10 @@ function getAllowedRelationsForSourceType(sourceType) {
 function relationAllowedForPair(sourceType, targetType, relation) {
     if (!getAllowedRelationsForSourceType(sourceType).includes(relation)) return false;
     if (relation === RELATION_TYPES.MAE_PAI) return sourceType === ENTITY_TYPES.TIO_CASAL && targetType === ENTITY_TYPES.JOVEM;
-    if (relation === RELATION_TYPES.FILHO) return sourceType === ENTITY_TYPES.JOVEM && targetType === ENTITY_TYPES.TIO_CASAL;
+    if (relation === RELATION_TYPES.FILHO) return (
+        (sourceType === ENTITY_TYPES.JOVEM && targetType === ENTITY_TYPES.TIO_CASAL)
+        || (sourceType === ENTITY_TYPES.TIO_CASAL && targetType === ENTITY_TYPES.JOVEM)
+    );
     return true;
 }
 

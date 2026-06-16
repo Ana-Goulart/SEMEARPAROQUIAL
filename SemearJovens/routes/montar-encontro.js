@@ -577,12 +577,28 @@ async function garantirMontagemEncontristasDados() {
 
 function criarEncontristaListaMestre(row) {
     const jovemId = Number(row && row.jovem_id);
+    const sexo = String(row && row.sexo ? row.sexo : '').trim();
+    const circulo = String(row && row.circulo ? row.circulo : '').trim();
+    const dataNascimento = row && row.data_nascimento ? row.data_nascimento : null;
+    const telefone = row && (row.telefone_referencia || row.telefone) ? String(row.telefone_referencia || row.telefone).trim() : '';
+    const email = String(decryptValue(row && row.email, 'lista-mestre:email') || '').trim();
+    const campos = [
+        { label: 'Nome', valor: row.nome_referencia || row.nome_completo || '' },
+        { label: 'Telefone', valor: telefone || '' }
+    ];
+    if (sexo) campos.push({ label: 'Sexo', valor: sexo });
+    if (circulo) campos.push({ label: 'Círculo', valor: circulo });
+    if (dataNascimento) campos.push({ label: 'Data de nascimento', valor: dataNascimento });
     return {
         id: jovemId > 0 ? -jovemId : null,
         jovem_id: jovemId > 0 ? jovemId : null,
         formulario_id: null,
         nome_referencia: row.nome_referencia || row.nome_completo || '',
-        telefone_referencia: row.telefone_referencia || row.telefone || '',
+        telefone_referencia: telefone || '',
+        email,
+        sexo,
+        circulo,
+        data_nascimento: dataNascimento,
         resposta_json: null,
         registrado_em: row.registrado_em || row.created_at || null,
         formulario_titulo: 'Lista Mestre',
@@ -590,7 +606,8 @@ function criarEncontristaListaMestre(row) {
         vinculado_lista_mestre: true,
         resposta: {
             origem: 'lista_mestre',
-            jovem_id: jovemId > 0 ? jovemId : null
+            jovem_id: jovemId > 0 ? jovemId : null,
+            campos
         }
     };
 }
@@ -2229,6 +2246,10 @@ router.get('/:id/encontristas-selecionados', async (req, res) => {
                 `SELECT j.id AS jovem_id,
                         j.nome_completo,
                         j.telefone,
+                        j.email,
+                        j.sexo,
+                        j.circulo,
+                        j.data_nascimento,
                         NULL AS created_at,
                         j.nome_completo AS nome_referencia,
                         j.telefone AS telefone_referencia
@@ -2376,12 +2397,15 @@ router.get('/:id/encontristas-dados', async (req, res) => {
                 `SELECT j.id AS jovem_id,
                         j.nome_completo,
                         j.telefone,
+                        j.email,
+                        j.sexo,
+                        j.data_nascimento,
                         j.cpf,
                         NULL AS created_at,
                         med.nome_referencia AS nome_editado,
                         med.telefone_referencia AS telefone_editado,
                         med.cpf AS cpf_editado,
-                        med.circulo, med.cep, med.endereco, med.numero, med.bairro, med.cidade, med.complemento,
+                        COALESCE(med.circulo, j.circulo) AS circulo, med.cep, med.endereco, med.numero, med.bairro, med.cidade, med.complemento,
                         med.latitude, med.longitude, med.updated_at AS dados_atualizados_em
                  FROM jovens j
                  LEFT JOIN montagem_encontristas_dados med

@@ -9,6 +9,8 @@ const {
 } = require('../lib/menuAccess');
 
 let estruturaGarantida = false;
+const FUNCAO_DIRETOR_ESPIRITUAL_PADRE = 'Diretor Espiritual/Padre';
+const DESCRICAO_DIRETOR_ESPIRITUAL_PADRE = 'Função padrão do sistema com acesso de edição a todos os menus.';
 
 async function hasColumn(tableName, columnName) {
     const [rows] = await pool.query(`
@@ -118,6 +120,17 @@ function toIntArray(value) {
     return [...new Set(value.map(v => Number(v)).filter(v => Number.isInteger(v) && v > 0))];
 }
 
+function isFuncaoDiretorEspiritualPadre(nome) {
+    return String(nome || '').trim().toLowerCase() === FUNCAO_DIRETOR_ESPIRITUAL_PADRE.toLowerCase();
+}
+
+function menusTudoEditar() {
+    return MENU_ACCESS_OPTIONS.map((menu) => ({
+        menu_key: menu.key,
+        access_level: 'edit'
+    }));
+}
+
 async function sincronizarMenus(connection, tenantId, funcaoId, menus) {
     const acessos = normalizarAcessoMenus(menus);
     await connection.query(
@@ -133,6 +146,68 @@ async function sincronizarMenus(connection, tenantId, funcaoId, menus) {
     }
 }
 
+async function garantirFuncaoDiretorEspiritualPadre(tenantId, executor = pool) {
+    const tenant = Number(tenantId || 0);
+    if (!tenant) return null;
+
+    const [rows] = await executor.query(
+        `SELECT id
+         FROM funcoes_dirigencia
+         WHERE tenant_id = ?
+           AND LOWER(nome) = LOWER(?)
+         LIMIT 1`,
+        [tenant, FUNCAO_DIRETOR_ESPIRITUAL_PADRE]
+    );
+
+    let funcaoId = rows && rows[0] ? Number(rows[0].id) : 0;
+    if (!funcaoId) {
+        const [result] = await executor.query(
+            `INSERT INTO funcoes_dirigencia (tenant_id, nome, descricao)
+             VALUES (?, ?, ?)`,
+            [tenant, FUNCAO_DIRETOR_ESPIRITUAL_PADRE, DESCRICAO_DIRETOR_ESPIRITUAL_PADRE]
+        );
+        funcaoId = result.insertId;
+    } else {
+        await executor.query(
+            `UPDATE funcoes_dirigencia
+             SET nome = ?, descricao = ?
+             WHERE id = ? AND tenant_id = ?`,
+            [FUNCAO_DIRETOR_ESPIRITUAL_PADRE, DESCRICAO_DIRETOR_ESPIRITUAL_PADRE, funcaoId, tenant]
+        );
+    }
+
+    for (const menu of menusTudoEditar()) {
+        await executor.query(
+            `INSERT INTO funcoes_dirigencia_menus (tenant_id, funcao_id, menu_key, access_level)
+             VALUES (?, ?, ?, ?)
+             ON DUPLICATE KEY UPDATE access_level = VALUES(access_level)`,
+            [tenant, funcaoId, menu.menu_key, menu.access_level]
+        );
+    }
+
+    const [usuariosModulo] = await executor.query(
+        `SELECT u.id
+         FROM tenant_module_users tmu
+         JOIN usuarios u
+           ON u.tenant_id = tmu.tenant_id
+          AND LOWER(u.username) = LOWER(tmu.email)
+         WHERE tmu.tenant_id = ?
+           AND tmu.module_code = 'semear-jovens'
+           AND tmu.ativo = 1`,
+        [tenant]
+    );
+
+    for (const usuario of usuariosModulo || []) {
+        await executor.query(
+            `INSERT IGNORE INTO funcoes_dirigencia_usuarios (tenant_id, funcao_id, usuario_id)
+             VALUES (?, ?, ?)`,
+            [tenant, funcaoId, usuario.id]
+        );
+    }
+
+    return funcaoId;
+}
+
 router.get('/menus-opcoes', async (_req, res) => {
     res.json(MENU_ACCESS_OPTIONS);
 });
@@ -141,6 +216,7 @@ router.get('/meus-acessos', async (req, res) => {
     try {
         await garantirEstrutura();
         const tenantId = getTenantId(req);
+        await garantirFuncaoDiretorEspiritualPadre(tenantId);
         const access = await carregarAcessosUsuario(tenantId, req.user && req.user.id);
         res.json({ menus: MENU_ACCESS_OPTIONS, access });
     } catch (err) {
@@ -153,6 +229,7 @@ router.get('/', async (req, res) => {
     const tenantId = getTenantId(req);
     try {
         await garantirEstrutura();
+        await garantirFuncaoDiretorEspiritualPadre(tenantId);
         const [funcoes] = await pool.query(`
             SELECT id, nome, descricao, created_at
             FROM funcoes_dirigencia
@@ -197,6 +274,7 @@ router.get('/', async (req, res) => {
 
         const result = funcoes.map(f => ({
             ...f,
+            protegida: isFuncaoDiretorEspiritualPadre(f.nome),
             usuarios: usuariosPorFuncao[f.id] || [],
             menus: menusPorFuncao[f.id] || []
         }));
@@ -283,6 +361,15 @@ router.put('/:id', async (req, res) => {
         await garantirEstrutura();
         await connection.beginTransaction();
 
+        const [[funcaoAtual]] = await connection.query(
+            `SELECT id, nome FROM funcoes_dirigencia WHERE id = ? AND tenant_id = ? LIMIT 1`,
+            [id, tenantId]
+        );
+        if (funcaoAtual && isFuncaoDiretorEspiritualPadre(funcaoAtual.nome)) {
+            await connection.rollback();
+            return res.status(403).json({ error: 'A função Diretor Espiritual/Padre é padrão do sistema e não pode ser alterada.' });
+        }
+
         const [exists] = await connection.query(
             `SELECT id FROM funcoes_dirigencia WHERE tenant_id = ? AND LOWER(nome) = LOWER(?) AND id <> ? LIMIT 1`,
             [tenantId, nome, id]
@@ -340,6 +427,14 @@ router.delete('/:id', async (req, res) => {
 
     try {
         await garantirEstrutura();
+        await garantirFuncaoDiretorEspiritualPadre(tenantId);
+        const [[funcao]] = await pool.query(
+            `SELECT nome FROM funcoes_dirigencia WHERE id = ? AND tenant_id = ? LIMIT 1`,
+            [id, tenantId]
+        );
+        if (funcao && isFuncaoDiretorEspiritualPadre(funcao.nome)) {
+            return res.status(403).json({ error: 'A função Diretor Espiritual/Padre é padrão do sistema e não pode ser removida.' });
+        }
         const [result] = await pool.query(
             `DELETE FROM funcoes_dirigencia WHERE id = ? AND tenant_id = ?`,
             [id, tenantId]

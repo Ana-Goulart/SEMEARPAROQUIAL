@@ -820,6 +820,40 @@ function normalizeUpperText(value) {
     return text ? text.toLocaleUpperCase('pt-BR') : null;
 }
 
+function removerPrefixoTio(valor, prefixo) {
+    const texto = normalizeUpperText(valor);
+    if (!texto) return null;
+    return texto.replace(new RegExp(`^(${prefixo})\\s+`, 'i'), '').trim();
+}
+
+function normalizarNomeTio(valor) {
+    const nome = removerPrefixoTio(valor, 'TIO');
+    return nome ? `TIO ${nome}` : null;
+}
+
+function normalizarNomeTia(valor) {
+    const nome = removerPrefixoTio(valor, 'TIA');
+    return nome ? `TIA ${nome}` : null;
+}
+
+function chaveNomePessoaTio(valor, prefixo) {
+    return normalizarTextoComparacao(removerPrefixoTio(valor, prefixo));
+}
+
+function chaveNomeCasalTios(nomeTio, nomeTia) {
+    return `${chaveNomePessoaTio(nomeTio, 'TIO')}|${chaveNomePessoaTio(nomeTia, 'TIA')}`;
+}
+
+function parsePossuiCarroCasal(source) {
+    return parseBool(source && (
+        source.possui_carro
+        ?? source.tem_carro
+        ?? source.possui_carro_casal
+        ?? source.possui_carro_tio
+        ?? source.possui_carro_tia
+    ));
+}
+
 function normalizarTipoEncontroTio(value) {
     const texto = String(value || '').trim().toUpperCase();
     if (!texto) return null;
@@ -1568,8 +1602,14 @@ router.get('/casais', async (req, res) => {
 
         const payload = (casais || []).map((c) => {
             const servicos = filtrarServicosDuplicados(byCasal.get(c.id) || []);
+            const casal = decryptTiosCasal(c);
+            casal.nome_tio = normalizarNomeTio(casal.nome_tio) || casal.nome_tio;
+            casal.nome_tia = normalizarNomeTia(casal.nome_tia) || casal.nome_tia;
+            casal.possui_carro = !!(casal.possui_carro_tio || casal.possui_carro_tia);
+            casal.possui_carro_tio = casal.possui_carro;
+            casal.possui_carro_tia = casal.possui_carro;
             return {
-                ...decryptTiosCasal(c),
+                ...casal,
                 servicos,
                 equipes: Array.from(
                     new Map(servicos.map((s) => [s.equipe_id, { id: s.equipe_id, nome: s.equipe_nome }])).values()
@@ -1600,14 +1640,14 @@ router.post('/casais/bulk-replace', async (req, res) => {
         const telefonesArquivo = new Map();
         const normalizarLinha = (item, index) => {
             const linha = Number(item && item.__linha) || index + 2;
-            const nomeTio = normalizeUpperText(item && item.nome_tio);
+            const nomeTio = normalizarNomeTio(item && item.nome_tio);
             const apelidoTio = normalizeUpperText(item && item.apelido_tio);
             const telefoneTio = normalizeTrimmedText(item && item.telefone_tio);
             const cpfTio = normalizeTrimmedText(item && item.cpf_tio);
             const telefoneTioDigits = normalizePhoneDigits(telefoneTio);
             const dataNascimentoTio = normalizeDate(item && item.data_nascimento_tio);
             const tioViuvo = parseBool(item && item.tio_viuvo);
-            const nomeTia = normalizeUpperText(item && item.nome_tia);
+            const nomeTia = normalizarNomeTia(item && item.nome_tia);
             const apelidoTia = normalizeUpperText(item && item.apelido_tia);
             const telefoneTia = normalizeTrimmedText(item && item.telefone_tia);
             const cpfTia = normalizeTrimmedText(item && item.cpf_tia);
@@ -1618,12 +1658,12 @@ router.post('/casais/bulk-replace', async (req, res) => {
             const detalhesRestricaoTio = restricaoAlimentarTio ? (String((item && item.detalhes_restricao_tio) || '').trim() || null) : null;
             const deficienciaTio = parseBool(item && item.deficiencia_tio);
             const qualDeficienciaTio = deficienciaTio ? (String((item && item.qual_deficiencia_tio) || '').trim() || null) : null;
-            const possuiCarroTio = parseBool(item && item.possui_carro_tio);
+            const possuiCarroCasal = parsePossuiCarroCasal(item);
             const restricaoAlimentarTia = parseBool(item && item.restricao_alimentar_tia);
             const detalhesRestricaoTia = restricaoAlimentarTia ? (String((item && item.detalhes_restricao_tia) || '').trim() || null) : null;
             const deficienciaTia = parseBool(item && item.deficiencia_tia);
             const qualDeficienciaTia = deficienciaTia ? (String((item && item.qual_deficiencia_tia) || '').trim() || null) : null;
-            const possuiCarroTia = parseBool(item && item.possui_carro_tia);
+            const possuiCarroTia = possuiCarroCasal;
             const origemTipo = String((item && item.origem_tipo) || 'EJC').trim().toUpperCase() === 'OUTRO_EJC' ? 'OUTRO_EJC' : 'EJC';
             const eccId = item && item.ecc_id ? Number(item.ecc_id) : null;
             const encontroTipo = normalizarTipoEncontroTio(item && (item.encontro_tipo || item.ecc_tipo || item.encontro));
@@ -1649,7 +1689,7 @@ router.post('/casais/bulk-replace', async (req, res) => {
                 detalhesRestricaoTio,
                 deficienciaTio,
                 qualDeficienciaTio,
-                possuiCarroTio,
+                possuiCarroTio: possuiCarroCasal,
                 restricaoAlimentarTia,
                 detalhesRestricaoTia,
                 deficienciaTia,
@@ -1740,7 +1780,7 @@ router.post('/casais/bulk-replace', async (req, res) => {
             [row.telefone_tio, row.telefone_tia].map(normalizePhoneDigits).filter(Boolean).forEach((telefone) => {
                 if (!existentePorTelefone.has(telefone)) existentePorTelefone.set(telefone, row);
             });
-            const chaveNome = `${normalizarTextoComparacao(row.nome_tio)}|${normalizarTextoComparacao(row.nome_tia)}`;
+            const chaveNome = chaveNomeCasalTios(row.nome_tio, row.nome_tia);
             if (chaveNome !== '|') existentePorNome.set(chaveNome, row);
         }
 
@@ -1750,7 +1790,7 @@ router.post('/casais/bulk-replace', async (req, res) => {
             const candidatos = [
                 existentePorTelefone.get(item.telefoneTioDigits),
                 existentePorTelefone.get(item.telefoneTiaDigits),
-                existentePorNome.get(`${normalizarTextoComparacao(item.nomeTio)}|${normalizarTextoComparacao(item.nomeTia)}`)
+                existentePorNome.get(chaveNomeCasalTios(item.nomeTio, item.nomeTia))
             ].filter(Boolean);
             const idsCandidatos = Array.from(new Set(candidatos.map((row) => Number(row.id)).filter(Boolean)));
             if (idsCandidatos.length > 1) {
@@ -1898,13 +1938,13 @@ router.post('/casais', async (req, res) => {
     try {
         await ensureStructure();
         const tenantId = getTenantId(req);
-        const nomeTio = normalizeUpperText(req.body.nome_tio);
+        const nomeTio = normalizarNomeTio(req.body.nome_tio);
         const apelidoTio = normalizeUpperText(req.body.apelido_tio);
         const telefoneTio = normalizeTrimmedText(req.body.telefone_tio);
         const cpfTio = normalizeTrimmedText(req.body.cpf_tio);
         const dataNascimentoTio = normalizeDate(req.body.data_nascimento_tio);
         const tioViuvo = parseBool(req.body.tio_viuvo);
-        const nomeTia = normalizeUpperText(req.body.nome_tia);
+        const nomeTia = normalizarNomeTia(req.body.nome_tia);
         const apelidoTia = normalizeUpperText(req.body.apelido_tia);
         const telefoneTia = normalizeTrimmedText(req.body.telefone_tia);
         const cpfTia = normalizeTrimmedText(req.body.cpf_tia);
@@ -1914,12 +1954,12 @@ router.post('/casais', async (req, res) => {
         const detalhesRestricaoTio = restricaoAlimentarTio ? (String(req.body.detalhes_restricao_tio || '').trim() || null) : null;
         const deficienciaTio = parseBool(req.body.deficiencia_tio);
         const qualDeficienciaTio = deficienciaTio ? (String(req.body.qual_deficiencia_tio || '').trim() || null) : null;
-        const possuiCarroTio = parseBool(req.body.possui_carro_tio);
+        const possuiCarroCasal = parsePossuiCarroCasal(req.body);
         const restricaoAlimentarTia = parseBool(req.body.restricao_alimentar_tia);
         const detalhesRestricaoTia = restricaoAlimentarTia ? (String(req.body.detalhes_restricao_tia || '').trim() || null) : null;
         const deficienciaTia = parseBool(req.body.deficiencia_tia);
         const qualDeficienciaTia = deficienciaTia ? (String(req.body.qual_deficiencia_tia || '').trim() || null) : null;
-        const possuiCarroTia = parseBool(req.body.possui_carro_tia);
+        const possuiCarroTia = possuiCarroCasal;
         const restricaoAlimentar = restricaoAlimentarTio || restricaoAlimentarTia;
         const deficiencia = deficienciaTio || deficienciaTia;
         const observacoes = String(req.body.observacoes || '').trim() || null;
@@ -1993,7 +2033,7 @@ router.post('/casais', async (req, res) => {
                 nomeTiaDb, apelidoTia, encryptTioPhone(telefoneTia), encryptTioCpf(cpfTia), tioCpfHash(cpfTia), dataNascimentoTia, tiaViuva ? 1 : 0,
                 tioPhoneHash(telefoneTio), tioPhoneHash(telefoneTia),
                 restricaoAlimentar ? 1 : 0, deficiencia ? 1 : 0,
-                restricaoAlimentarTio ? 1 : 0, encryptTioSensitiveText(detalhesRestricaoTio, 'detalhes-restricao-tio'), deficienciaTio ? 1 : 0, encryptTioSensitiveText(qualDeficienciaTio, 'qual-deficiencia-tio'), possuiCarroTio ? 1 : 0,
+                restricaoAlimentarTio ? 1 : 0, encryptTioSensitiveText(detalhesRestricaoTio, 'detalhes-restricao-tio'), deficienciaTio ? 1 : 0, encryptTioSensitiveText(qualDeficienciaTio, 'qual-deficiencia-tio'), possuiCarroCasal ? 1 : 0,
                 restricaoAlimentarTia ? 1 : 0, encryptTioSensitiveText(detalhesRestricaoTia, 'detalhes-restricao-tia'), deficienciaTia ? 1 : 0, encryptTioSensitiveText(qualDeficienciaTia, 'qual-deficiencia-tia'), possuiCarroTia ? 1 : 0, observacoes
             ]
         );
@@ -2058,13 +2098,13 @@ router.put('/casais/:id', async (req, res) => {
         const casalAtual = decryptTiosCasal(casalAtualRows[0] || {});
         const nomeCasalAnterior = montarNomeCasal(casalAtual.nome_tio, casalAtual.nome_tia);
 
-        const nomeTio = normalizeUpperText(req.body.nome_tio);
+        const nomeTio = normalizarNomeTio(req.body.nome_tio);
         const apelidoTio = normalizeUpperText(req.body.apelido_tio);
         const telefoneTio = normalizeTrimmedText(req.body.telefone_tio);
         const cpfTio = normalizeTrimmedText(req.body.cpf_tio);
         const dataNascimentoTio = normalizeDate(req.body.data_nascimento_tio);
         const tioViuvo = parseBool(req.body.tio_viuvo);
-        const nomeTia = normalizeUpperText(req.body.nome_tia);
+        const nomeTia = normalizarNomeTia(req.body.nome_tia);
         const apelidoTia = normalizeUpperText(req.body.apelido_tia);
         const telefoneTia = normalizeTrimmedText(req.body.telefone_tia);
         const cpfTia = normalizeTrimmedText(req.body.cpf_tia);
@@ -2074,12 +2114,12 @@ router.put('/casais/:id', async (req, res) => {
         const detalhesRestricaoTio = restricaoAlimentarTio ? (String(req.body.detalhes_restricao_tio || '').trim() || null) : null;
         const deficienciaTio = parseBool(req.body.deficiencia_tio);
         const qualDeficienciaTio = deficienciaTio ? (String(req.body.qual_deficiencia_tio || '').trim() || null) : null;
-        const possuiCarroTio = parseBool(req.body.possui_carro_tio);
+        const possuiCarroCasal = parsePossuiCarroCasal(req.body);
         const restricaoAlimentarTia = parseBool(req.body.restricao_alimentar_tia);
         const detalhesRestricaoTia = restricaoAlimentarTia ? (String(req.body.detalhes_restricao_tia || '').trim() || null) : null;
         const deficienciaTia = parseBool(req.body.deficiencia_tia);
         const qualDeficienciaTia = deficienciaTia ? (String(req.body.qual_deficiencia_tia || '').trim() || null) : null;
-        const possuiCarroTia = parseBool(req.body.possui_carro_tia);
+        const possuiCarroTia = possuiCarroCasal;
         const restricaoAlimentar = restricaoAlimentarTio || restricaoAlimentarTia;
         const deficiencia = deficienciaTio || deficienciaTia;
         const observacoes = String(req.body.observacoes || '').trim() || null;
@@ -2155,7 +2195,7 @@ router.put('/casais/:id', async (req, res) => {
                 tioViuvo ? 1 : 0, nomeTiaDb, apelidoTia, encryptTioPhone(telefoneTia), encryptTioCpf(cpfTia), tioCpfHash(cpfTia), dataNascimentoTia, tiaViuva ? 1 : 0,
                 tioPhoneHash(telefoneTio), tioPhoneHash(telefoneTia),
                 restricaoAlimentar ? 1 : 0, deficiencia ? 1 : 0,
-                restricaoAlimentarTio ? 1 : 0, encryptTioSensitiveText(detalhesRestricaoTio, 'detalhes-restricao-tio'), deficienciaTio ? 1 : 0, encryptTioSensitiveText(qualDeficienciaTio, 'qual-deficiencia-tio'), possuiCarroTio ? 1 : 0,
+                restricaoAlimentarTio ? 1 : 0, encryptTioSensitiveText(detalhesRestricaoTio, 'detalhes-restricao-tio'), deficienciaTio ? 1 : 0, encryptTioSensitiveText(qualDeficienciaTio, 'qual-deficiencia-tio'), possuiCarroCasal ? 1 : 0,
                 restricaoAlimentarTia ? 1 : 0, encryptTioSensitiveText(detalhesRestricaoTia, 'detalhes-restricao-tia'), deficienciaTia ? 1 : 0, encryptTioSensitiveText(qualDeficienciaTia, 'qual-deficiencia-tia'), possuiCarroTia ? 1 : 0,
                 observacoes, casalId, tenantId
             ]

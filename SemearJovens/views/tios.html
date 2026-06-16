@@ -906,7 +906,7 @@
                             {{ mensagemImportacaoTios }}
                         </div>
                         <p class="mb-2"><strong>1) Cabeçalho recomendado da planilha</strong></p>
-                        <div class="border rounded p-2 bg-light small" style="white-space: pre-wrap;">nome_tio, telefone_tio, data_nascimento_tio, restricao_alimentar_tio, detalhes_restricao_tio, deficiencia_tio, qual_deficiencia_tio, possui_carro_tio, nome_tia, telefone_tia, data_nascimento_tia, restricao_alimentar_tia, detalhes_restricao_tia, deficiencia_tia, qual_deficiencia_tia, possui_carro_tia, origem_tipo, encontro, outro_ejc_paroquia, outro_ejc_nome, observacoes
+                        <div class="border rounded p-2 bg-light small" style="white-space: pre-wrap;">nome_tio, apelido_tio, telefone_tio, data_nascimento_tio, restricao_alimentar_tio, detalhes_restricao_tio, deficiencia_tio, qual_deficiencia_tio, nome_tia, apelido_tia, telefone_tia, data_nascimento_tia, restricao_alimentar_tia, detalhes_restricao_tia, deficiencia_tia, qual_deficiencia_tia, possui_carro, origem_tipo, encontro, outro_ejc_paroquia, outro_ejc_nome, observacoes
 
 Use origem_tipo como:
 EJC ou OUTRO_EJC
@@ -936,7 +936,7 @@ data_nascimento_tio/data_nascimento_tia: AAAA-MM-DD
 origem_tipo: EJC ou OUTRO_EJC
 restricao_alimentar_tio, restricao_alimentar_tia, deficiencia_tio, deficiencia_tia:
 use Sim/Não, True/False ou 1/0
-possui_carro_tio, possui_carro_tia:
+possui_carro:
 use Sim/Não, True/False ou 1/0
 
 Se origem_tipo = EJC:
@@ -1041,6 +1041,10 @@ preencha outro_ejc_paroquia</div>
                                                         placeholder="Nome do tio">
                                                 </div>
                                                 <div class="col-lg-3">
+                                                    <label class="text-muted small">Apelido do tio</label>
+                                                    <input class="form-control" v-model="formCasal.apelido_tio" @input="normalizarCampoMaiusculoCasal('apelido_tio')" maxlength="120">
+                                                </div>
+                                                <div class="col-lg-3">
                                                     <label class="text-muted small">Telefone do tio</label>
                                                     <input class="form-control"
                                                         v-model.trim="formCasal.telefone_tio"
@@ -1054,13 +1058,6 @@ preencha outro_ejc_paroquia</div>
                                                 <div class="col-lg-3">
                                                     <label class="text-muted small">Nascimento</label>
                                                     <input type="date" class="form-control" v-model="formCasal.data_nascimento_tio" lang="pt-BR">
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <label class="text-muted small">Possui carro?</label>
-                                                    <select class="form-select" v-model="formCasal.possui_carro_tio">
-                                                        <option :value="false">Não</option>
-                                                        <option :value="true">Sim</option>
-                                                    </select>
                                                 </div>
                                             </div>
                                         </div>
@@ -1084,6 +1081,10 @@ preencha outro_ejc_paroquia</div>
                                                         placeholder="Nome da tia">
                                                 </div>
                                                 <div class="col-lg-3">
+                                                    <label class="text-muted small">Apelido da tia</label>
+                                                    <input class="form-control" v-model="formCasal.apelido_tia" @input="normalizarCampoMaiusculoCasal('apelido_tia')" maxlength="120">
+                                                </div>
+                                                <div class="col-lg-3">
                                                     <label class="text-muted small">Telefone da tia</label>
                                                     <input class="form-control"
                                                         v-model.trim="formCasal.telefone_tia"
@@ -1099,8 +1100,8 @@ preencha outro_ejc_paroquia</div>
                                                     <input type="date" class="form-control" v-model="formCasal.data_nascimento_tia" lang="pt-BR">
                                                 </div>
                                                 <div class="col-md-6">
-                                                    <label class="text-muted small">Possui carro?</label>
-                                                    <select class="form-select" v-model="formCasal.possui_carro_tia">
+                                                    <label class="text-muted small">O casal possui carro?</label>
+                                                    <select class="form-select" v-model="formCasal.possui_carro">
                                                         <option :value="false">Não</option>
                                                         <option :value="true">Sim</option>
                                                     </select>
@@ -1125,7 +1126,6 @@ preencha outro_ejc_paroquia</div>
                                 <li class="nav-item"><button class="nav-link" :class="{active: abaCasal==='historico'}" @click="carregarComissoesCasal"><i class="fa-solid fa-scroll icon-accent"></i> Histórico / Comissões</button></li>
                                 <li class="nav-item"><button class="nav-link" :class="{active: abaCasal==='observacoes'}" @click="abaCasal='observacoes'; carregarObservacoesCasalExtras()"><i class="fa-solid fa-note-sticky icon-accent"></i> Observações</button></li>
                                 <li class="nav-item"><button class="nav-link" :class="{active: abaCasal==='jovens'}" @click="abaCasal='jovens'; carregarJovensCasal()"><i class="fa-solid fa-people-roof icon-accent"></i> Jovens</button></li>
-                                <li class="nav-item"><button class="nav-link" :class="{active: abaCasal==='presencas'}" @click="abaCasal='presencas'; carregarPresencasCasal()"><i class="fa-solid fa-square-check icon-accent"></i> Presença</button></li>
                             </ul>
                             <div class="pb-1 align-self-end" v-if="formCasal.id && abaCasal === 'dados'">
                                 <button v-if="!isEditingCasal" type="button" class="btn btn-edit-standard btn-sm" @click="iniciarEdicaoCasal">Editar</button>
@@ -1218,6 +1218,7 @@ preencha outro_ejc_paroquia</div>
                                             </div>
                                         </div>
                                         <div class="col-md-4"><label class="form-label">Nome do tio <span v-if="!formCasal.tia_viuva">*</span></label><input class="form-control" v-model="formCasal.nome_tio" @input="normalizarCampoMaiusculoCasal('nome_tio')" maxlength="180"></div>
+                                        <div class="col-md-3"><label class="form-label">Apelido do tio</label><input class="form-control" v-model="formCasal.apelido_tio" @input="normalizarCampoMaiusculoCasal('apelido_tio')" maxlength="120"></div>
                                         <div class="col-md-3"><label class="form-label">Telefone</label><input class="form-control" v-model.trim="formCasal.telefone_tio" maxlength="30"></div>
                                         <div class="col-md-2"><label class="form-label">CPF</label><input class="form-control" v-model="formCasal.cpf_tio" @input="formCasal.cpf_tio = formatarCpf(formCasal.cpf_tio)" maxlength="14"></div>
                                         <div class="col-md-3"><label class="form-label">Nascimento</label><input type="date" class="form-control" v-model="formCasal.data_nascimento_tio" lang="pt-BR"></div>
@@ -1232,6 +1233,7 @@ preencha outro_ejc_paroquia</div>
                                             </div>
                                         </div>
                                         <div class="col-md-4"><label class="form-label">Nome da tia <span v-if="!formCasal.tio_viuvo">*</span></label><input class="form-control" v-model="formCasal.nome_tia" @input="normalizarCampoMaiusculoCasal('nome_tia')" maxlength="180"></div>
+                                        <div class="col-md-3"><label class="form-label">Apelido da tia</label><input class="form-control" v-model="formCasal.apelido_tia" @input="normalizarCampoMaiusculoCasal('apelido_tia')" maxlength="120"></div>
                                         <div class="col-md-3"><label class="form-label">Telefone</label><input class="form-control" v-model.trim="formCasal.telefone_tia" maxlength="30"></div>
                                         <div class="col-md-2"><label class="form-label">CPF</label><input class="form-control" v-model="formCasal.cpf_tia" @input="formCasal.cpf_tia = formatarCpf(formCasal.cpf_tia)" maxlength="14"></div>
                                         <div class="col-md-3"><label class="form-label">Nascimento</label><input type="date" class="form-control" v-model="formCasal.data_nascimento_tia" lang="pt-BR"></div>
@@ -1392,8 +1394,8 @@ preencha outro_ejc_paroquia</div>
                                             </div>
                                         </div>
                                         <div class="col-md-12">
-                                            <label class="form-label d-block">Possui carro?</label>
-                                            <select class="form-select" v-model="formCasal.possui_carro_tio">
+                                            <label class="form-label d-block">O casal possui carro?</label>
+                                            <select class="form-select" v-model="formCasal.possui_carro">
                                                 <option :value="false">Não</option>
                                                 <option :value="true">Sim</option>
                                             </select>
@@ -1425,13 +1427,6 @@ preencha outro_ejc_paroquia</div>
                                                     </select>
                                                 </div>
                                             </div>
-                                        </div>
-                                        <div class="col-md-12">
-                                            <label class="form-label d-block">Possui carro?</label>
-                                            <select class="form-select" v-model="formCasal.possui_carro_tia">
-                                                <option :value="false">Não</option>
-                                                <option :value="true">Sim</option>
-                                            </select>
                                         </div>
                                     </div>
                                 </div>
@@ -1547,24 +1542,6 @@ preencha outro_ejc_paroquia</div>
                                                 </div>
                                             </div>
                                             <button class="btn btn-sm btn-outline-danger" @click="removerJovemCasal(j)">Remover</button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <div v-else>
-                            <div class="row g-3">
-                                <div class="col-12">
-                                    <h6 class="m-0 mb-3">Eventos com Presença Registrada</h6>
-                                    <div v-if="loadingPresencas" class="text-muted">Carregando presenças...</div>
-                                    <div v-else class="list-group">
-                                        <div class="list-group-item" v-for="pres in presencasCasal" :key="`pres-${pres.id}`">
-                                            <div class="fw-semibold">{{ pres.evento_titulo || 'Evento sem título' }}</div>
-                                            <small class="text-muted d-block">Data do evento: {{ pres.evento_data ? formatarDataPresenca(pres.evento_data) : 'Não informada' }}</small>
-                                            <small class="text-muted">Registrado em: {{ pres.registrado_em ? formatarDataHora(pres.registrado_em) : 'Não informado' }}</small>
-                                        </div>
-                                        <div v-if="!presencasCasal.length" class="text-center p-3 text-muted bg-light border rounded">
-                                            Nenhuma presença registrada.
                                         </div>
                                     </div>
                                 </div>
@@ -1755,7 +1732,8 @@ preencha outro_ejc_paroquia</div>
                         { value: 'NAMORADO', label: 'Namorado(a)' },
                         { value: 'NOIVO', label: 'Noivo(a)' },
                         { value: 'TIO', label: 'Tio(a)' },
-                        { value: 'MAE_PAI', label: 'Mãe/Pai' }
+                        { value: 'MAE_PAI', label: 'Mãe/Pai' },
+                        { value: 'FILHO', label: 'Filho(a)' }
                     ],
                     abaCasal: 'dados',
                     subAbaCasalDados: 'cadastro',
@@ -1765,11 +1743,13 @@ preencha outro_ejc_paroquia</div>
                         id: null,
                         foto_url: '',
                         nome_tio: '',
+                        apelido_tio: '',
                         telefone_tio: '',
                         cpf_tio: '',
                         data_nascimento_tio: '',
                         tio_viuvo: false,
                         nome_tia: '',
+                        apelido_tia: '',
                         telefone_tia: '',
                         cpf_tia: '',
                         data_nascimento_tia: '',
@@ -1786,6 +1766,7 @@ preencha outro_ejc_paroquia</div>
                         detalhes_restricao_tio: '',
                         deficiencia_tio: false,
                         qual_deficiencia_tio: '',
+                        possui_carro: false,
                         possui_carro_tio: false,
                         restricao_alimentar_tia: false,
                         detalhes_restricao_tia: '',
@@ -2955,7 +2936,7 @@ preencha outro_ejc_paroquia</div>
                     return this.importarExcelArquivo(file);
                 },
                 async importarCasaisTiosEmLotes(casaisImportacao, ignorados) {
-                    const tamanhoLote = 10;
+                    const tamanhoLote = 500;
                     const totalLotes = Math.ceil(casaisImportacao.length / tamanhoLote);
                     const erros = [];
                     let criados = 0;
@@ -3151,21 +3132,26 @@ preencha outro_ejc_paroquia</div>
                                     __linha: linha,
                                     origem_tipo: origemTipo,
                                     nome_tio: nomeTio,
+                                    apelido_tio: getImportOptional(r, ['ApelidoTio', 'apelido_tio', 'Apelido Tio']),
                                     telefone_tio: telefoneTio,
                                     data_nascimento_tio: getImportOptional(r, ['DataNascimentoTio', 'data_nascimento_tio', 'Data Nascimento Tio']),
                                     restricao_alimentar_tio: parseBoolImport(getImportValue(r, ['RestricaoAlimentarTio', 'restricao_alimentar_tio', 'Restrição Alimentar Tio', 'Restricao Alimentar Tio'])),
                                     detalhes_restricao_tio: getImportOptional(r, ['DetalhesRestricaoTio', 'detalhes_restricao_tio', 'Detalhes Restricao Tio', 'Detalhes Restrição Tio']),
                                     deficiencia_tio: parseBoolImport(getImportValue(r, ['DeficienciaTio', 'deficiencia_tio', 'Deficiência Tio', 'Deficiencia Tio'])),
                                     qual_deficiencia_tio: getImportOptional(r, ['QualDeficienciaTio', 'qual_deficiencia_tio', 'Qual Deficiencia Tio', 'Qual Deficiência Tio']),
-                                    possui_carro_tio: parseBoolImport(getImportValue(r, ['PossuiCarroTio', 'possui_carro_tio', 'Possui Carro Tio', 'Carro Tio'])),
+                                    possui_carro: parseBoolImport(getImportValue(r, ['PossuiCarro', 'possui_carro', 'Possui Carro', 'TemCarro', 'tem_carro', 'Tem Carro']))
+                                        || parseBoolImport(getImportValue(r, ['PossuiCarroTio', 'possui_carro_tio', 'Possui Carro Tio', 'Carro Tio']))
+                                        || parseBoolImport(getImportValue(r, ['PossuiCarroTia', 'possui_carro_tia', 'Possui Carro Tia', 'Carro Tia'])),
+                                    possui_carro_tio: parseBoolImport(getImportValue(r, ['PossuiCarro', 'possui_carro', 'Possui Carro', 'TemCarro', 'tem_carro', 'Tem Carro', 'PossuiCarroTio', 'possui_carro_tio', 'Possui Carro Tio', 'Carro Tio'])),
                                     nome_tia: nomeTia,
+                                    apelido_tia: getImportOptional(r, ['ApelidoTia', 'apelido_tia', 'Apelido Tia']),
                                     telefone_tia: telefoneTia,
                                     data_nascimento_tia: getImportOptional(r, ['DataNascimentoTia', 'data_nascimento_tia', 'Data Nascimento Tia']),
                                     restricao_alimentar_tia: parseBoolImport(getImportValue(r, ['RestricaoAlimentarTia', 'restricao_alimentar_tia', 'Restrição Alimentar Tia', 'Restricao Alimentar Tia'])),
                                     detalhes_restricao_tia: getImportOptional(r, ['DetalhesRestricaoTia', 'detalhes_restricao_tia', 'Detalhes Restricao Tia', 'Detalhes Restrição Tia']),
                                     deficiencia_tia: parseBoolImport(getImportValue(r, ['DeficienciaTia', 'deficiencia_tia', 'Deficiência Tia', 'Deficiencia Tia'])),
                                     qual_deficiencia_tia: getImportOptional(r, ['QualDeficienciaTia', 'qual_deficiencia_tia', 'Qual Deficiencia Tia', 'Qual Deficiência Tia']),
-                                    possui_carro_tia: parseBoolImport(getImportValue(r, ['PossuiCarroTia', 'possui_carro_tia', 'Possui Carro Tia', 'Carro Tia'])),
+                                    possui_carro_tia: parseBoolImport(getImportValue(r, ['PossuiCarro', 'possui_carro', 'Possui Carro', 'TemCarro', 'tem_carro', 'Tem Carro', 'PossuiCarroTia', 'possui_carro_tia', 'Possui Carro Tia', 'Carro Tia'])),
                                     encontro_tipo: origemTipo === 'EJC' ? encontroTipo : null,
                                     ecc_id: null,
                                     outro_ejc_id: origemTipo === 'OUTRO_EJC' ? (outroEjc ? outroEjc.id : null) : null,
@@ -3597,11 +3583,13 @@ preencha outro_ejc_paroquia</div>
                         id: null,
                         foto_url: '',
                         nome_tio: '',
+                        apelido_tio: '',
                         telefone_tio: '',
                         cpf_tio: '',
                         data_nascimento_tio: '',
                         tio_viuvo: false,
                         nome_tia: '',
+                        apelido_tia: '',
                         telefone_tia: '',
                         cpf_tia: '',
                         data_nascimento_tia: '',
@@ -3618,6 +3606,7 @@ preencha outro_ejc_paroquia</div>
                         detalhes_restricao_tio: '',
                         deficiencia_tio: false,
                         qual_deficiencia_tio: '',
+                        possui_carro: false,
                         possui_carro_tio: false,
                         restricao_alimentar_tia: false,
                         detalhes_restricao_tia: '',
@@ -3659,11 +3648,13 @@ preencha outro_ejc_paroquia</div>
                         id: item.id,
                         foto_url: item.foto_url || '',
                         nome_tio: item.nome_tio || '',
+                        apelido_tio: item.apelido_tio || '',
                         telefone_tio: item.telefone_tio || '',
                         cpf_tio: this.formatarCpf(item.cpf_tio || ''),
                         data_nascimento_tio: item.data_nascimento_tio ? String(item.data_nascimento_tio).split('T')[0] : '',
                         tio_viuvo: !!item.tio_viuvo,
                         nome_tia: item.nome_tia || '',
+                        apelido_tia: item.apelido_tia || '',
                         telefone_tia: item.telefone_tia || '',
                         cpf_tia: this.formatarCpf(item.cpf_tia || ''),
                         data_nascimento_tia: item.data_nascimento_tia ? String(item.data_nascimento_tia).split('T')[0] : '',
@@ -3690,12 +3681,13 @@ preencha outro_ejc_paroquia</div>
                         detalhes_restricao_tio: item.detalhes_restricao_tio || '',
                         deficiencia_tio: !!item.deficiencia_tio,
                         qual_deficiencia_tio: item.qual_deficiencia_tio || '',
-                        possui_carro_tio: !!item.possui_carro_tio,
+                        possui_carro: !!(item.possui_carro_tio || item.possui_carro_tia),
+                        possui_carro_tio: !!(item.possui_carro_tio || item.possui_carro_tia),
                         restricao_alimentar_tia: !!item.restricao_alimentar_tia,
                         detalhes_restricao_tia: item.detalhes_restricao_tia || '',
                         deficiencia_tia: !!item.deficiencia_tia,
                         qual_deficiencia_tia: item.qual_deficiencia_tia || '',
-                        possui_carro_tia: !!item.possui_carro_tia,
+                        possui_carro_tia: !!(item.possui_carro_tio || item.possui_carro_tia),
                         observacoes: item.observacoes || '',
                         termos_aceitos_em: item.termos_aceitos_em || null
                     };
@@ -3806,6 +3798,8 @@ preencha outro_ejc_paroquia</div>
                         return;
                     }
                     this.normalizarCamposSaudeCasal();
+                    this.formCasal.possui_carro_tio = !!this.formCasal.possui_carro;
+                    this.formCasal.possui_carro_tia = !!this.formCasal.possui_carro;
                     const servicosValidos = (this.formCasal.servicos || [])
                         .map((s) => ({
                             equipe_id: s && s.equipe_id ? Number(s.equipe_id) : null,
@@ -3814,6 +3808,9 @@ preencha outro_ejc_paroquia</div>
                         .filter((s) => s.equipe_id);
                     const payload = {
                         ...this.formCasal,
+                        possui_carro: !!this.formCasal.possui_carro,
+                        possui_carro_tio: !!this.formCasal.possui_carro,
+                        possui_carro_tia: !!this.formCasal.possui_carro,
                         encontro_tipo: this.formCasal.origem_tipo === 'OUTRO_EJC' ? null : this.formCasal.encontro_tipo,
                         ecc_id: null,
                         outro_ejc_id: this.formCasal.origem_tipo === 'OUTRO_EJC' ? this.formCasal.outro_ejc_id : null,

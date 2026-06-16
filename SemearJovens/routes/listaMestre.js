@@ -3112,7 +3112,11 @@ router.post('/importacao', async (req, res) => {
 
             j.apelido = normalizarTextoOuNull(j.apelido, 120);
             if (hasCpfValue(j.cpf) && !normalizeCpfDigits(j.cpf)) {
-                throw new Error(`Campo cpf fora do padrão: "${j.cpf}". Padrão normal: 000.000.000-00.`);
+                if (j.montagem_ejc_id) {
+                    j.cpf = null;
+                } else {
+                    throw new Error(`Campo cpf fora do padrão: "${j.cpf}". Padrão normal: 000.000.000-00.`);
+                }
             }
             j.cpf = formatCpfDigits(j.cpf);
             j.email = normalizarTextoOuNull(j.email, 180);

@@ -299,6 +299,162 @@
                 background: rgba(148, 163, 184, 0.22);
             }
         }
+
+        .encontrista-ficha-profile-photo {
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
+            background: #f8f9fa;
+        }
+
+        .encontrista-ficha-profile-rail {
+            width: 100%;
+        }
+
+        .encontrista-ficha-summary {
+            width: 100%;
+            max-width: 280px;
+        }
+
+        .encontrista-ficha-summary-item {
+            margin-bottom: 0.75rem;
+        }
+
+        .encontrista-ficha-pane {
+            border: 1px solid rgba(34, 55, 80, 0.08);
+            border-radius: 12px;
+            background: #fff;
+            padding: 1rem;
+        }
+
+        .encontrista-ficha-pane-title h6 {
+            margin: 0;
+            color: #223750;
+            font-weight: 700;
+        }
+
+        .encontrista-ficha-pane-title p {
+            margin: 0.2rem 0 1rem;
+            color: #7b8797;
+            font-size: 0.9rem;
+        }
+
+        .encontristas-lista-toolbar {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .encontristas-lista-actions {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 0.5rem;
+        }
+
+        .encontristas-lista-tabs-row {
+            display: flex;
+            flex-direction: column;
+            gap: 0.9rem;
+            border-bottom: 1px solid #e4d6bf;
+        }
+
+        .encontristas-lista-tabs {
+            border-bottom: 0;
+            margin-bottom: 0;
+        }
+
+        .encontristas-lista-tabs .nav-link {
+            border: 0;
+            border-radius: 0;
+            color: #5f4726;
+            padding: 0.8rem 1.2rem;
+            font-weight: 500;
+            background: transparent;
+        }
+
+        .encontristas-lista-tabs .nav-link.active {
+            color: #c27a16;
+            border-bottom: 2px solid #c27a16;
+            background: transparent;
+        }
+
+        .encontristas-lista-search {
+            width: 100%;
+        }
+
+        .encontristas-lista-search label {
+            display: block;
+            margin-bottom: 0.45rem;
+            color: #8b6d33;
+            font-size: 0.78rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .encontristas-lista-search .input-group-text {
+            background: #fff8ee;
+            border-color: #ecd8b8;
+            color: #9a681b;
+        }
+
+        .encontristas-lista-search .form-control,
+        .encontristas-lista-search .btn {
+            min-height: 54px;
+            border-color: #e4d6bf;
+        }
+
+        .encontristas-grid-table {
+            background: #fff;
+            border: 1px solid #eadfcd;
+        }
+
+        .encontristas-grid-table th {
+            color: #6d4d20;
+            font-weight: 800;
+            background: #fbfaf8;
+            border-bottom-color: #eadfcd;
+        }
+
+        .encontristas-grid-table td {
+            border-color: #eadfcd;
+            padding: 0.8rem 0.75rem;
+        }
+
+        .encontristas-grid-table .sort-button {
+            border: 0;
+            background: transparent;
+            color: inherit;
+            font: inherit;
+            font-weight: inherit;
+            padding: 0;
+        }
+
+        .encontristas-grid-table .sort-indicator {
+            color: #9a681b;
+            font-size: 0.85em;
+        }
+
+        @media (min-width: 992px) {
+            .encontristas-lista-tabs-row {
+                flex-direction: row;
+                justify-content: space-between;
+                align-items: flex-end;
+            }
+
+            .encontristas-lista-search {
+                max-width: 425px;
+                margin-left: auto;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .encontrista-ficha-profile-rail {
+                width: 220px;
+            }
+        }
     </style>
 </head>
 
@@ -703,79 +859,179 @@
                     </template>
 
                     <template v-else-if="abaPrincipalMontagem === 'encontristas'">
-                        <ul class="nav nav-tabs mb-3">
-                            <li class="nav-item">
-                                <button class="nav-link" :class="{ active: abaMontagem === 'encontristas' }" @click="abaMontagem = 'encontristas'">
-                                    Encontristas
+                        <div class="encontristas-lista-toolbar">
+                            <div class="encontristas-lista-actions">
+                                <button class="btn btn-primary btn-ejc-action" @click="abrirNovoEncontristaMontagem" title="Novo" aria-label="Novo">
+                                    <span class="btn-ejc-icon"><i class="fa-solid fa-plus icon-accent"></i></span>
+                                    <span class="btn-ejc-text">Novo</span>
                                 </button>
-                            </li>
-                            <li class="nav-item">
-                                <button class="nav-link" :class="{ active: abaMontagem === 'desistencias' }" @click="abaMontagem = 'desistencias'">
-                                    Desistência
+                                <button class="btn btn-soft-secondary btn-ejc-action" @click="exportarGridEncontristas" title="Exportar" aria-label="Exportar">
+                                    <span class="btn-ejc-icon"><i class="fa-solid fa-folder-open icon-accent"></i></span>
+                                    <span class="btn-ejc-text">Exportar</span>
                                 </button>
-                            </li>
-                        </ul>
-
-                        <div v-if="abaMontagem === 'encontristas'">
-                        <div class="card border-0 shadow-sm mb-3">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center gap-3 flex-wrap">
-                                    <div>
-                                        <h5 class="mb-1">Encontristas</h5>
-                                        <p class="text-muted mb-0">Cadastre manualmente ou importe uma planilha Excel para os jovens desta montagem.</p>
-                                    </div>
-                                    <div class="d-flex gap-2 flex-wrap">
-                                        <button class="btn btn-outline-primary" @click="abrirNovoEncontristaMontagem">
-                                            Cadastrar encontrista
+                                <button class="btn btn-soft-secondary btn-ejc-action" @click="abrirModalImportarEncontristas" title="Importar" aria-label="Importar">
+                                    <span class="btn-ejc-icon"><i class="fa-solid fa-file-import icon-accent"></i></span>
+                                    <span class="btn-ejc-text">Importar</span>
+                                </button>
+                                <div class="vr mx-1 d-none d-lg-flex"></div>
+                                <div class="dropdown">
+                                    <button class="btn btn-soft-secondary dropdown-toggle btn-ejc-action" type="button" data-bs-toggle="dropdown" title="Colunas" aria-label="Colunas">
+                                        <span class="btn-ejc-icon"><i class="fa-solid fa-gear icon-accent"></i></span>
+                                        <span class="btn-ejc-text">Colunas</span>
+                                    </button>
+                                    <div class="dropdown-menu p-3" style="min-width: 280px;">
+                                        <div v-for="(ativo, col) in colunasGridEncontristas" :key="`col-enc-${col}`" class="form-check mb-1">
+                                            <input class="form-check-input" type="checkbox" :id="`col-enc-${col}`" v-model="colunasGridEncontristas[col]">
+                                            <label class="form-check-label" :for="`col-enc-${col}`">{{ labelColunaGridEncontristas(col) }}</label>
+                                        </div>
+                                        <hr class="dropdown-divider">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary w-100" @click.stop="restaurarColunasGridEncontristas">
+                                            Restaurar padrão
                                         </button>
-                                        <button class="btn btn-primary" @click="abrirModalImportarEncontristas">
-                                            Importar Excel
+                                    </div>
+                                </div>
+                                <button class="btn btn-ejc-action" :class="mostrarFiltrosGridEncontristas ? 'btn-primary' : 'btn-soft-primary'"
+                                    @click="mostrarFiltrosGridEncontristas = !mostrarFiltrosGridEncontristas"
+                                    title="Filtros avançados" aria-label="Filtros avançados">
+                                    <span class="btn-ejc-icon"><i class="fa-solid fa-sliders icon-accent"></i></span>
+                                    <span class="btn-ejc-text">Filtros avançados</span>
+                                </button>
+                            </div>
+
+                            <div class="encontristas-lista-tabs-row">
+                                <ul class="nav nav-tabs encontristas-lista-tabs">
+                                    <li class="nav-item">
+                                        <button class="nav-link" :class="{ active: abaMontagem === 'encontristas' }" @click="abaMontagem = 'encontristas'">
+                                            Encontristas
+                                        </button>
+                                    </li>
+                                    <li class="nav-item">
+                                        <button class="nav-link" :class="{ active: abaMontagem === 'desistencias' }" @click="abaMontagem = 'desistencias'">
+                                            Desistência
+                                        </button>
+                                    </li>
+                                </ul>
+                                <div v-if="abaMontagem === 'encontristas'" class="encontristas-lista-search">
+                                    <label>Pesquisa rápida</label>
+                                    <div class="input-group">
+                                        <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
+                                        <input type="search"
+                                            class="form-control"
+                                            v-model.trim="filtrosGridEncontristas.pesquisa"
+                                            placeholder="Pesquise por nome, CPF, telefone, e-mail, círculo...">
+                                        <button v-if="filtrosGridEncontristas.pesquisa"
+                                            type="button"
+                                            class="btn btn-outline-secondary"
+                                            @click="filtrosGridEncontristas.pesquisa = ''"
+                                            title="Limpar pesquisa"
+                                            aria-label="Limpar pesquisa">
+                                            <i class="fa-solid fa-xmark"></i>
                                         </button>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="card border-0 shadow-sm">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div v-if="abaMontagem === 'encontristas'">
+                            <div v-if="mostrarFiltrosGridEncontristas" class="filtro-panel shadow-sm mb-3">
+                                <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end gap-2 mb-3">
                                     <div>
-                                        <h5 class="mb-1">Encontristas da montagem</h5>
-                                        <p class="text-muted mb-0">Aqui ficam os jovens importados da planilha para este encontro.</p>
+                                        <span class="small text-uppercase fw-bold text-muted">Filtros avançados</span>
+                                        <div class="text-muted small">Refine a lista de encontristas abaixo pelos campos da grade.</div>
                                     </div>
-                                    <div class="text-muted small">Total: {{ encontristasSelecionadosExibicao.length }}</div>
+                                    <button class="btn btn-soft-secondary btn-sm" @click="limparFiltrosGridEncontristas">Limpar filtros avançados</button>
                                 </div>
+                                <div class="row g-3">
+                                    <div class="col-12 col-md-3">
+                                        <label>Sexo</label>
+                                        <select class="form-select" v-model="filtrosGridEncontristas.sexo">
+                                            <option value="">Todos</option>
+                                            <option value="Feminino">Feminino</option>
+                                            <option value="Masculino">Masculino</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 col-md-3">
+                                        <label>Círculo</label>
+                                        <select class="form-select" v-model="filtrosGridEncontristas.circulo">
+                                            <option value="">Todos</option>
+                                            <option v-for="c in coresCirculos" :key="`grid-circulo-${c.id || c.nome}`" :value="c.nome">{{ c.nome }}</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-12 col-md-3">
+                                        <label>Ficha/Formulário</label>
+                                        <input type="text" class="form-control" v-model.trim="filtrosGridEncontristas.formulario" placeholder="Filtrar por origem">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <div class="small text-muted">
+                                    Total: <strong>{{ encontristasSelecionadosExibicao.length }}</strong>
+                                    <span v-if="encontristasGridFiltrados.length !== encontristasSelecionadosExibicao.length">
+                                        • Exibindo {{ encontristasGridFiltrados.length }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div class="card border-0 shadow-sm">
+                            <div class="card-body p-0">
                                 <div v-if="carregandoEncontristasSelecionados" class="text-muted">Carregando encontristas...</div>
                                 <div v-else-if="!encontristasSelecionadosExibicao.length" class="text-muted">Nenhum encontrista cadastrado ainda.</div>
-                                <div v-else class="list-group">
-                                    <div class="list-group-item" v-for="resp in encontristasSelecionadosExibicao" :key="`sel-${resp.id}`">
-                                        <div class="d-flex justify-content-between align-items-start gap-2">
-                                            <div>
-                                                <div class="fw-semibold">{{ resp.nome_referencia || 'Sem nome' }}</div>
-                                                <div class="small text-muted d-flex flex-wrap gap-2">
-                                                    <span>Telefone: {{ resp.telefone_referencia || '-' }}</span>
-                                                    <span>Idade: {{ resumoEncontrista(resp).idade || '-' }}</span>
-                                                    <span>Sexo: {{ resumoEncontrista(resp).sexo || '-' }}</span>
-                                                    <span>{{ formatarDataHora(resp.registrado_em || resp.selecionado_em) }}</span>
-                                                    <span v-if="resp.formulario_titulo">• {{ resp.formulario_titulo }}</span>
-                                                </div>
-                                                <div v-if="corCirculoEncontrista(resp.id)" class="mt-2">
-                                                    <span class="badge" :style="badgeCorCirculoStyle(corCirculoEncontrista(resp.id))">Círculo: {{ corCirculoEncontrista(resp.id) }}</span>
-                                                </div>
-                                            </div>
-                                            <div class="d-flex gap-2 flex-wrap justify-content-end">
-                                                <button class="btn btn-sm btn-outline-secondary"
-                                                    @click="abrirModalEditarEncontrista(resp)"
-                                                    :disabled="salvandoEncontristaId === resp.id">
-                                                    Editar
-                                                </button>
-                                                <button class="btn btn-sm btn-outline-danger"
-                                                    @click="registrarDesistencia(resp)"
-                                                    :disabled="salvandoEncontristaId === resp.id">
-                                                    Desistência
-                                                </button>
-                                            </div>
-                                        </div>
+                                <div v-else>
+                                    <div class="table-responsive">
+                                        <table class="table table-hover align-middle mb-0 encontristas-grid-table">
+                                            <thead class="table-light">
+                                                <tr>
+                                                    <th v-if="colunasGridEncontristas.Nome"><button type="button" class="sort-button" @click="ordenarGridEncontristas('nome')">Nome <span class="sort-indicator">{{ iconeOrdenacaoGridEncontristas('nome') }}</span></button></th>
+                                                    <th v-if="colunasGridEncontristas.Telefone"><button type="button" class="sort-button" @click="ordenarGridEncontristas('telefone')">Telefone <span class="sort-indicator">{{ iconeOrdenacaoGridEncontristas('telefone') }}</span></button></th>
+                                                    <th v-if="colunasGridEncontristas.CPF"><button type="button" class="sort-button" @click="ordenarGridEncontristas('cpf')">CPF <span class="sort-indicator">{{ iconeOrdenacaoGridEncontristas('cpf') }}</span></button></th>
+                                                    <th v-if="colunasGridEncontristas.Email"><button type="button" class="sort-button" @click="ordenarGridEncontristas('email')">E-mail <span class="sort-indicator">{{ iconeOrdenacaoGridEncontristas('email') }}</span></button></th>
+                                                    <th v-if="colunasGridEncontristas.Idade"><button type="button" class="sort-button" @click="ordenarGridEncontristas('idade')">Idade <span class="sort-indicator">{{ iconeOrdenacaoGridEncontristas('idade') }}</span></button></th>
+                                                    <th v-if="colunasGridEncontristas.Sexo"><button type="button" class="sort-button" @click="ordenarGridEncontristas('sexo')">Sexo <span class="sort-indicator">{{ iconeOrdenacaoGridEncontristas('sexo') }}</span></button></th>
+                                                    <th v-if="colunasGridEncontristas.Bairro"><button type="button" class="sort-button" @click="ordenarGridEncontristas('bairro')">Bairro <span class="sort-indicator">{{ iconeOrdenacaoGridEncontristas('bairro') }}</span></button></th>
+                                                    <th v-if="colunasGridEncontristas.Circulo"><button type="button" class="sort-button" @click="ordenarGridEncontristas('circulo')">Círculo <span class="sort-indicator">{{ iconeOrdenacaoGridEncontristas('circulo') }}</span></button></th>
+                                                    <th class="text-end">Ações</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr v-if="!encontristasGridFiltrados.length">
+                                                    <td :colspan="colspanGridEncontristas" class="text-center text-muted py-4">
+                                                        Nenhum encontrista encontrado para os filtros atuais.
+                                                    </td>
+                                                </tr>
+                                                <tr v-for="resp in encontristasGridFiltrados" :key="`grid-enc-${resp.id}`">
+                                                    <td v-if="colunasGridEncontristas.Nome" class="fw-semibold">
+                                                        {{ resumoEncontrista(resp).nome || 'Sem nome' }}
+                                                    </td>
+                                                    <td v-if="colunasGridEncontristas.Telefone">{{ resumoEncontrista(resp).telefone || '-' }}</td>
+                                                    <td v-if="colunasGridEncontristas.CPF">{{ resumoEncontrista(resp).cpf || '-' }}</td>
+                                                    <td v-if="colunasGridEncontristas.Email">{{ resumoEncontrista(resp).email || '-' }}</td>
+                                                    <td v-if="colunasGridEncontristas.Idade">{{ resumoEncontrista(resp).idade || '-' }}</td>
+                                                    <td v-if="colunasGridEncontristas.Sexo">{{ resumoEncontrista(resp).sexo || '-' }}</td>
+                                                    <td v-if="colunasGridEncontristas.Bairro">{{ resumoEncontrista(resp).bairro || '-' }}</td>
+                                                    <td v-if="colunasGridEncontristas.Circulo">
+                                                        <span v-if="circuloResumoEncontrista(resp)" class="badge" :style="badgeCorCirculoStyle(circuloResumoEncontrista(resp))">
+                                                            {{ circuloResumoEncontrista(resp) }}
+                                                        </span>
+                                                        <span v-else>-</span>
+                                                    </td>
+                                                    <td class="text-end">
+                                                        <div class="d-flex gap-2 flex-wrap justify-content-end">
+                                                            <button class="btn btn-sm btn-outline-secondary"
+                                                                @click="abrirModalEditarEncontrista(resp)"
+                                                                :disabled="salvandoEncontristaId === resp.id">
+                                                                Editar
+                                                            </button>
+                                                            <button class="btn btn-sm btn-outline-danger"
+                                                                @click="registrarDesistencia(resp)"
+                                                                :disabled="salvandoEncontristaId === resp.id">
+                                                                Desistência
+                                                            </button>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
                             </div>
@@ -1023,68 +1279,404 @@
         </div>
 
         <div class="modal fade" id="modalEditarEncontrista" tabindex="-1" aria-hidden="true">
-            <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable">
                 <div class="modal-content border-0 shadow">
-                    <div class="modal-header bg-light">
-                        <h5 class="modal-title">Editar informações do jovem</h5>
+                    <div class="modal-header align-items-center bg-light border-bottom">
+                        <h5 class="modal-title d-flex align-items-center m-0 text-dark">
+                            {{ encontristaEditando && encontristaEditando.nome_completo ? encontristaEditando.nome_completo : 'Ficha do encontrista' }}
+                        </h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body" v-if="encontristaEditando">
-                        <div class="row g-2 mb-3">
-                            <div class="col-12 col-md-6">
-                                <label class="form-label small text-muted mb-1">Nome</label>
-                                <input class="form-control form-control-sm" v-model="encontristaEditando.nome_referencia">
+                        <div class="d-flex flex-column flex-md-row justify-content-between border-bottom mb-3 gap-2">
+                            <ul class="nav nav-tabs border-bottom-0 mb-0">
+                                <li class="nav-item">
+                                    <button class="nav-link" :class="{ active: abaFichaEncontrista === 'dados' }"
+                                        @click="abaFichaEncontrista = 'dados'; subAbaFichaEncontrista = 'cadastro'">
+                                        <i class="fa-solid fa-user icon-accent"></i> Dados Pessoais
+                                    </button>
+                                </li>
+                                <li class="nav-item">
+                                    <button class="nav-link" :class="{ active: abaFichaEncontrista === 'historico' }"
+                                        @click="abrirAbaHistoricoEncontrista">
+                                        <i class="fa-solid fa-scroll icon-accent"></i> Histórico / Comissões
+                                    </button>
+                                </li>
+                                <li class="nav-item">
+                                    <button class="nav-link" :class="{ active: abaFichaEncontrista === 'observacoes' }"
+                                        @click="abrirAbaObservacoesEncontrista">
+                                        <i class="fa-solid fa-note-sticky icon-accent"></i> Observações
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div v-show="abaFichaEncontrista === 'dados'" class="clearfix">
+                            <div class="float-md-start me-md-4 mb-4 mt-2 d-flex flex-column align-items-center encontrista-ficha-profile-rail">
+                                <div class="position-relative mb-3">
+                                    <img :src="encontristaEditando.foto_url || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(encontristaEditando.nome_completo || encontristaEditando.nome_referencia || 'J') + '&background=e9ecef&color=6c757d&size=220')"
+                                        alt="Foto do encontrista"
+                                        class="rounded border shadow-sm encontrista-ficha-profile-photo">
+                                    <label v-if="encontristaEditando.jovem_id"
+                                        class="position-absolute bottom-0 end-0 rounded-circle d-flex justify-content-center align-items-center shadow cursor-pointer"
+                                        style="width: 32px; height: 32px; cursor: pointer; transform: translate(15%, 15%); background: #d9a650; border: 1px solid #d9a650;"
+                                        title="Adicionar ou trocar foto">
+                                        <i class="fa-solid fa-camera" style="font-size: 14px; color: #8a5a14;"></i>
+                                        <input type="file" accept=".jpeg,.jpg,.png,.webp" class="d-none"
+                                            @change="uploadFotoEncontrista($event)">
+                                    </label>
+                                </div>
+
+                                <div class="encontrista-ficha-summary text-start">
+                                    <div class="encontrista-ficha-summary-item">
+                                        <label class="text-muted small mb-0">Círculo</label>
+                                        <select v-model="encontristaEditando.circulo" class="form-select">
+                                            <option value="">(Não informado)</option>
+                                            <option v-for="c in coresCirculos" :key="`edit-enc-cor-${c.id || c.nome}`" :value="c.nome">{{ c.nome }}</option>
+                                        </select>
+                                    </div>
+                                    <div class="encontrista-ficha-summary-item">
+                                        <label class="text-muted small mb-0">Origem no EJC</label>
+                                        <div class="py-1 px-2 bg-light border rounded">
+                                            {{ encontristaEditando.origem_ejc_tipo === 'OUTRO_EJC' ? 'Fez outro EJC' : ('Fez EJC ' + nomeMeuEJC) }}
+                                        </div>
+                                    </div>
+                                    <div class="encontrista-ficha-summary-item">
+                                        <label class="text-muted small mb-0">Instagram</label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">@</span>
+                                            <input type="text" v-model="encontristaEditando.instagram" class="form-control" placeholder="usuario">
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="col-12 col-md-6">
-                                <label class="form-label small text-muted mb-1">Telefone</label>
-                                <input class="form-control form-control-sm" v-model="encontristaEditando.telefone_referencia">
-                            </div>
-                            <div class="col-12 col-md-6">
-                                <label class="form-label small text-muted mb-1">CPF</label>
-                                <input class="form-control form-control-sm" v-model="encontristaEditando.cpf" maxlength="14" placeholder="000.000.000-00">
-                            </div>
-                            <div class="col-12 col-md-6">
-                                <label class="form-label small text-muted mb-1">Círculo</label>
-                                <select class="form-select form-select-sm" v-model="encontristaEditando.circulo">
-                                    <option value="">Sem círculo</option>
-                                    <option v-for="c in coresCirculos" :key="`edit-enc-cor-${c.id || c.nome}`" :value="c.nome">{{ c.nome }}</option>
-                                </select>
-                            </div>
-                            <div class="col-12 col-md-6">
-                                <label class="form-label small text-muted mb-1">CEP</label>
-                                <input class="form-control form-control-sm" v-model="encontristaEditando.cep">
-                            </div>
-                            <div class="col-12 col-md-8">
-                                <label class="form-label small text-muted mb-1">Endereço</label>
-                                <input class="form-control form-control-sm" v-model="encontristaEditando.endereco">
-                            </div>
-                            <div class="col-12 col-md-4">
-                                <label class="form-label small text-muted mb-1">Número</label>
-                                <input class="form-control form-control-sm" v-model="encontristaEditando.numero">
-                            </div>
-                            <div class="col-12 col-md-6">
-                                <label class="form-label small text-muted mb-1">Bairro</label>
-                                <input class="form-control form-control-sm" v-model="encontristaEditando.bairro">
-                            </div>
-                            <div class="col-12 col-md-6">
-                                <label class="form-label small text-muted mb-1">Cidade</label>
-                                <input class="form-control form-control-sm" v-model="encontristaEditando.cidade">
-                            </div>
-                            <div class="col-12">
-                                <label class="form-label small text-muted mb-1">Complemento</label>
-                                <input class="form-control form-control-sm" v-model="encontristaEditando.complemento">
+
+                            <div class="pt-2">
+                                <div class="ficha-subtabs">
+                                    <button type="button" class="ficha-subtab btn-edit-standard btn-sm" :class="{ active: subAbaFichaEncontrista === 'cadastro' }" @click="subAbaFichaEncontrista = 'cadastro'">Cadastro</button>
+                                    <button type="button" class="ficha-subtab btn-edit-standard btn-sm" :class="{ active: subAbaFichaEncontrista === 'participacao' }" @click="subAbaFichaEncontrista = 'participacao'">Participação no EJC</button>
+                                    <button type="button" class="ficha-subtab btn-edit-standard btn-sm" :class="{ active: subAbaFichaEncontrista === 'familia' }" @click="subAbaFichaEncontrista = 'familia'">Família</button>
+                                    <button type="button" class="ficha-subtab btn-edit-standard btn-sm" :class="{ active: subAbaFichaEncontrista === 'saude' }" @click="subAbaFichaEncontrista = 'saude'">Saúde e Apoio</button>
+                                </div>
+
+                                <div class="encontrista-ficha-pane">
+                                    <div class="encontrista-ficha-pane-title" v-if="subAbaFichaEncontrista === 'cadastro'">
+                                        <h6>Cadastro do jovem</h6>
+                                        <p>Identificação, contato e endereço em um só lugar.</p>
+                                    </div>
+                                    <div class="encontrista-ficha-pane-title" v-else-if="subAbaFichaEncontrista === 'participacao'">
+                                        <h6>Participação no EJC</h6>
+                                        <p>Informações de origem, serviço, círculo, pastorais e caminhada no encontro.</p>
+                                    </div>
+                                    <div class="encontrista-ficha-pane-title" v-else-if="subAbaFichaEncontrista === 'familia'">
+                                        <h6>Família e relacionamentos</h6>
+                                        <p>Casamento, casal de tios e dados do cônjuge em uma área separada.</p>
+                                    </div>
+                                    <div class="encontrista-ficha-pane-title" v-else-if="subAbaFichaEncontrista === 'saude'">
+                                        <h6>Saúde e apoio</h6>
+                                        <p>Deficiência, restrição alimentar e apoio em saúde organizados com mais clareza.</p>
+                                    </div>
+
+                                    <div class="row g-2" v-show="subAbaFichaEncontrista === 'cadastro'">
+                                        <div class="col-12 col-md-8">
+                                            <label class="form-label small text-muted mb-1">Nome Completo</label>
+                                            <input class="form-control" v-model="encontristaEditando.nome_completo">
+                                        </div>
+                                        <div class="col-12 col-md-4">
+                                            <label class="form-label small text-muted mb-1">Apelido</label>
+                                            <input class="form-control" v-model="encontristaEditando.apelido">
+                                        </div>
+                                        <div class="col-12 col-md-4">
+                                            <label class="form-label small text-muted mb-1">Telefone</label>
+                                            <input class="form-control" v-model="encontristaEditando.telefone">
+                                        </div>
+                                        <div class="col-12 col-md-4">
+                                            <label class="form-label small text-muted mb-1">CPF</label>
+                                            <input class="form-control" v-model="encontristaEditando.cpf" maxlength="14" placeholder="000.000.000-00">
+                                        </div>
+                                        <div class="col-12 col-md-4">
+                                            <label class="form-label small text-muted mb-1">E-mail</label>
+                                            <input class="form-control" v-model="encontristaEditando.email" type="email">
+                                        </div>
+                                        <div class="col-12 col-md-4">
+                                            <label class="form-label small text-muted mb-1">Data de Nascimento</label>
+                                            <input type="date" class="form-control" v-model="encontristaEditando.data_nascimento">
+                                        </div>
+                                        <div class="col-12 col-md-4">
+                                            <label class="form-label small text-muted mb-1">Idade</label>
+                                            <input class="form-control" :value="idadeEncontristaFicha" readonly>
+                                        </div>
+                                        <div class="col-12 col-md-4">
+                                            <label class="form-label small text-muted mb-1">Sexo</label>
+                                            <select class="form-select" v-model="encontristaEditando.sexo">
+                                                <option value="">(Não informado)</option>
+                                                <option value="Feminino">Feminino</option>
+                                                <option value="Masculino">Masculino</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-12 col-md-4">
+                                            <label class="form-label small text-muted mb-1">CEP</label>
+                                            <input class="form-control" v-model="encontristaEditando.endereco_cep" @input="onCepInputEncontrista">
+                                        </div>
+                                        <div class="col-12 col-md-6">
+                                            <label class="form-label small text-muted mb-1">Rua</label>
+                                            <input class="form-control" v-model="encontristaEditando.endereco_rua">
+                                        </div>
+                                        <div class="col-12 col-md-2">
+                                            <label class="form-label small text-muted mb-1">Número</label>
+                                            <input class="form-control" v-model="encontristaEditando.endereco_numero">
+                                        </div>
+                                        <div class="col-12 col-md-4">
+                                            <label class="form-label small text-muted mb-1">Bairro</label>
+                                            <input class="form-control" v-model="encontristaEditando.endereco_bairro">
+                                        </div>
+                                        <div class="col-12 col-md-4">
+                                            <label class="form-label small text-muted mb-1">Cidade</label>
+                                            <input class="form-control" v-model="encontristaEditando.endereco_cidade">
+                                        </div>
+                                        <div class="col-12 col-md-2">
+                                            <label class="form-label small text-muted mb-1">UF</label>
+                                            <input class="form-control" v-model="encontristaEditando.endereco_estado" maxlength="2">
+                                        </div>
+                                    </div>
+
+                                    <div class="row g-2" v-show="subAbaFichaEncontrista === 'participacao'">
+                                        <div class="col-12 col-md-4">
+                                            <label class="form-label small text-muted mb-1">Nº EJC que fez</label>
+                                            <input class="form-control" :value="labelNumeroEncontristaMontagem" readonly>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label small text-muted mb-1">Pastorais que participa</label>
+                                            <div class="border rounded p-2 bg-light d-flex flex-wrap gap-3">
+                                                <div v-for="pastoral in pastoraisListaMestre" :key="`past-enc-${pastoral.id}`" class="form-check">
+                                                    <input class="form-check-input" type="checkbox" :id="`past-enc-${pastoral.id}`" :value="pastoral.id" v-model="encontristaPastoraisSelecionadas">
+                                                    <label class="form-check-label" :for="`past-enc-${pastoral.id}`">{{ pastoral.nome }}</label>
+                                                </div>
+                                                <span v-if="!pastoraisListaMestre.length" class="text-muted small">Nenhuma pastoral cadastrada.</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label small text-muted mb-1">Habilidades Musicais</label>
+                                            <select class="form-select mb-2" v-model="encontristaEditando.eh_musico" @change="onMusicoToggleEncontrista">
+                                                <option :value="false">Não</option>
+                                                <option :value="true">Sim</option>
+                                            </select>
+                                            <div v-if="encontristaEditando.eh_musico" class="border rounded p-2 bg-light d-flex flex-wrap gap-3">
+                                                <div class="form-check" v-for="ins in instrumentosListaMestre" :key="`inst-enc-${ins}`">
+                                                    <input class="form-check-input" type="checkbox" :id="`inst-enc-${ins}`" :value="ins" v-model="encontristaEditando.instrumentos_musicais">
+                                                    <label class="form-check-label" :for="`inst-enc-${ins}`">{{ ins }}</label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row g-2" v-show="subAbaFichaEncontrista === 'familia'">
+                                        <div class="col-12 col-md-4">
+                                            <label class="form-label small text-muted mb-1">Estado Civil</label>
+                                            <select class="form-select" v-model="encontristaEditando.estado_civil">
+                                                <option value="Solteiro">Solteiro</option>
+                                                <option value="Noivo">Noivo</option>
+                                                <option value="Casado">Casado</option>
+                                                <option value="Amasiado">Amasiado</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-12 col-md-4" v-if="['Casado', 'Amasiado'].includes(encontristaEditando.estado_civil)">
+                                            <label class="form-label small text-muted mb-1">Data do casamento</label>
+                                            <input type="date" class="form-control" v-model="encontristaEditando.data_casamento">
+                                        </div>
+                                        <div class="col-12 col-md-4" v-if="['Casado', 'Amasiado'].includes(encontristaEditando.estado_civil)">
+                                            <label class="form-label small text-muted mb-1">Nome do cônjuge</label>
+                                            <input class="form-control" v-model="encontristaEditando.conjuge_nome">
+                                        </div>
+                                        <div class="col-12 col-md-4" v-if="['Casado', 'Amasiado'].includes(encontristaEditando.estado_civil)">
+                                            <label class="form-label small text-muted mb-1">Telefone do cônjuge</label>
+                                            <input class="form-control" v-model="encontristaEditando.conjuge_telefone">
+                                        </div>
+                                        <div class="col-12 col-md-8">
+                                            <label class="form-label small text-muted mb-1">Casal de tios</label>
+                                            <select class="form-select" v-model.number="encontristaEditando.tio_casal_id">
+                                                <option :value="null">Selecione...</option>
+                                                <option v-for="casal in tiosCasaisListaMestre" :key="`casal-enc-${casal.id}`" :value="casal.id">
+                                                    {{ casal.nome_tio || '-' }} e {{ casal.nome_tia || '-' }}
+                                                </option>
+                                            </select>
+                                        </div>
+                                        <div class="col-12">
+                                            <label class="form-label small text-muted mb-1">Familiares que já fizeram EJC</label>
+                                            <div class="p-2 bg-light border rounded">
+                                                <div v-if="!encontristaEditando.jovem_id" class="text-muted small">
+                                                    Salve este encontrista na Lista Mestre para vincular familiares.
+                                                </div>
+                                                <template v-else>
+                                                    <div v-if="!familiaresEncontrista.length" class="text-muted small">
+                                                        Nenhum parentesco informado.
+                                                    </div>
+                                                    <div v-else class="d-flex flex-column gap-2">
+                                                        <div v-for="rel in familiaresEncontrista" :key="`rel-enc-${rel.id}`"
+                                                            class="d-flex justify-content-between align-items-start gap-2 p-2 bg-white border rounded">
+                                                            <div>
+                                                                <div class="fw-semibold">{{ rel.nome_exibicao || '-' }}</div>
+                                                                <div class="small text-muted">
+                                                                    {{ rel.relation_label || '-' }}
+                                                                    <span v-if="rel.descricao">• {{ rel.descricao }}</span>
+                                                                </div>
+                                                                <div v-if="rel.telefone" class="small text-muted">
+                                                                    {{ rel.telefone }}
+                                                                </div>
+                                                            </div>
+                                                            <button type="button" class="btn btn-danger btn-ejc-action btn-sm"
+                                                                @click="removerRelacaoFamiliarEncontrista(rel.id)">
+                                                                <span class="btn-ejc-icon"><i class="fa-solid fa-trash icon-accent"></i></span>
+                                                                <span class="btn-ejc-text">Remover</span>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </template>
+                                            </div>
+                                        </div>
+
+                                        <div class="col-12" v-if="encontristaEditando.jovem_id">
+                                            <label class="form-label small text-muted mb-1">Adicionar parentesco</label>
+                                            <div class="p-2 bg-light border rounded">
+                                                <div v-if="sugestoesFamiliaEncontrista.length" class="mb-3">
+                                                    <div class="small fw-semibold text-muted mb-2">Possíveis parentes por sobrenome</div>
+                                                    <div class="d-flex flex-column gap-2">
+                                                        <div v-for="item in sugestoesFamiliaEncontrista"
+                                                            :key="`sug-familia-enc-${item.entity_type}-${item.entity_id}`"
+                                                            class="p-2 bg-white border rounded d-flex justify-content-between align-items-start gap-2">
+                                                            <div>
+                                                                <div class="fw-semibold">{{ item.nome_exibicao }}</div>
+                                                                <div class="small text-muted">
+                                                                    {{ item.descricao || '-' }}
+                                                                    <span v-if="item.sobrenomes_iguais && item.sobrenomes_iguais.length">
+                                                                        • Sobrenomes iguais: {{ item.sobrenomes_iguais.join(', ') }}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                            <button type="button" class="btn btn-outline-primary btn-sm"
+                                                                @click="buscaFamiliaEncontrista = item.nome_exibicao; adicionarRelacaoFamiliarEncontrista(item)">
+                                                                Vincular
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row g-2">
+                                                    <div class="col-md-4">
+                                                        <select v-model="novoParentescoEncontrista" class="form-select">
+                                                            <option v-for="opcao in opcoesParentescoEncontrista" :key="`opcao-par-enc-${opcao.value}`" :value="opcao.value">
+                                                                {{ opcao.label }}
+                                                            </option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="col-md-8">
+                                                        <input type="text"
+                                                            v-model.trim="buscaFamiliaEncontrista"
+                                                            @input="buscarRelacionaveisEncontrista"
+                                                            @focus="buscarRelacionaveisEncontrista"
+                                                            class="form-control"
+                                                            placeholder="Pesquisar em todos os cadastros do sistema...">
+                                                    </div>
+                                                </div>
+                                                <div class="small text-muted mt-2">
+                                                    Você pode adicionar quantos parentes precisar. O vínculo aparece automaticamente na ficha da outra pessoa.
+                                                </div>
+                                                <ul class="list-group mt-2" v-if="resultadosBuscaFamiliaEncontrista.length" style="max-height: 280px; overflow-y: auto;">
+                                                    <li class="list-group-item list-group-item-action small"
+                                                        v-for="item in resultadosBuscaFamiliaEncontrista"
+                                                        :key="`busca-familia-enc-${item.entity_type}-${item.entity_id}`"
+                                                        @click="adicionarRelacaoFamiliarEncontrista(item)">
+                                                        <div class="fw-semibold">{{ item.nome_exibicao }}</div>
+                                                        <div class="text-muted">
+                                                            {{ item.descricao || '-' }}
+                                                            <span v-if="item.telefone">• {{ item.telefone }}</span>
+                                                        </div>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row g-2" v-show="subAbaFichaEncontrista === 'saude'">
+                                        <div class="col-12 col-md-4">
+                                            <label class="form-label small text-muted mb-1">Equipe de saúde</label>
+                                            <select class="form-select" v-model="encontristaEditando.equipe_saude">
+                                                <option :value="false">Não</option>
+                                                <option :value="true">Sim</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-12 col-md-4">
+                                            <label class="form-label small text-muted mb-1">Pessoa com Deficiência(PcD)?</label>
+                                            <select class="form-select" v-model="encontristaEditando.deficiencia">
+                                                <option :value="false">Não</option>
+                                                <option :value="true">Sim</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-12 col-md-8" v-if="encontristaEditando.deficiencia">
+                                            <label class="form-label small text-muted mb-1">Qual deficiência</label>
+                                            <input class="form-control" v-model="encontristaEditando.qual_deficiencia">
+                                        </div>
+                                        <div class="col-12 col-md-4">
+                                            <label class="form-label small text-muted mb-1">Restrição alimentar?</label>
+                                            <select class="form-select" v-model="encontristaEditando.restricao_alimentar">
+                                                <option :value="false">Não</option>
+                                                <option :value="true">Sim</option>
+                                            </select>
+                                        </div>
+                                        <div class="col-12 col-md-8" v-if="encontristaEditando.restricao_alimentar">
+                                            <label class="form-label small text-muted mb-1">Qual restrição</label>
+                                            <select class="form-select" v-model="encontristaEditando.detalhes_restricao">
+                                                <option value="">Selecione...</option>
+                                                <option v-for="item in restricoesAlimentaresListaMestre" :key="`restr-enc-${item}`" :value="item">{{ item }}</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div v-if="Array.isArray(encontristaEditando.campos)">
-                            <div v-for="campo in encontristaEditando.campos" :key="`edit-enc-${encontristaEditando.id}-${campo.key}`" class="mb-2">
-                                <label class="form-label small text-muted mb-1">{{ campo.label }}</label>
-                                <input class="form-control form-control-sm" v-model="campo.valor">
+
+                        <div v-show="abaFichaEncontrista === 'historico'">
+                            <div v-if="carregandoHistoricoEncontrista" class="text-muted">Carregando histórico...</div>
+                            <div v-else class="list-group">
+                                <div v-for="h in historicoEncontrista" :key="`hist-enc-${h.id}`" class="list-group-item">
+                                    <div class="fw-semibold">{{ h.nome_equipe || h.equipe || h.tipo || '-' }}</div>
+                                    <small class="text-muted">{{ h.display_ejc || h.semestre || h.observacao || '' }}</small>
+                                </div>
+                                <div v-if="!historicoEncontrista.length" class="text-center p-3 text-muted bg-light border rounded">
+                                    Nenhum histórico registrado.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div v-show="abaFichaEncontrista === 'observacoes'">
+                            <div class="alert alert-warning d-flex gap-2 align-items-start" role="alert">
+                                <i class="fa-solid fa-triangle-exclamation mt-1"></i>
+                                <div>Registre apenas informações necessárias para o cuidado pastoral e organização do EJC.</div>
+                            </div>
+                            <div class="list-group mb-3">
+                                <div v-for="obs in observacoesEncontrista" :key="`obs-enc-${obs.id}`" class="list-group-item">
+                                    <small class="text-muted d-block">{{ formatarDataHora(obs.created_at) }}</small>
+                                    <p class="mb-0" style="white-space: pre-wrap;">{{ obs.texto }}</p>
+                                </div>
+                                <div v-if="!observacoesEncontrista.length" class="text-center p-3 text-muted bg-light border rounded">
+                                    Nenhuma observação registrada.
+                                </div>
+                            </div>
+                            <div class="bg-light border rounded p-3">
+                                <label class="form-label small text-muted">Adicionar nova observação</label>
+                                <textarea v-model="novaObservacaoEncontrista" class="form-control mb-2" rows="3"></textarea>
+                                <div class="text-end">
+                                    <button class="btn btn-success btn-sm" @click="adicionarObservacaoEncontrista" :disabled="!String(novaObservacaoEncontrista || '').trim()">
+                                        <i class="fa-solid fa-plus icon-accent"></i> Adicionar ao Histórico
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-primary" @click="salvarModalEditarEncontrista">Salvar alterações</button>
+                        <button type="button" class="btn btn-soft-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-success" @click="salvarModalEditarEncontrista">
+                            <i class="fa-solid fa-floppy-disk icon-accent"></i> Salvar Alterações
+                        </button>
                     </div>
                 </div>
             </div>
@@ -1308,24 +1900,32 @@
             <div class="modal-dialog modal-xl modal-dialog-scrollable">
                 <div class="modal-content border-0 shadow">
                     <div class="modal-header bg-light">
-                        <h5 class="modal-title">Importar encontristas por Excel</h5>
+                        <h5 class="modal-title">Importar encontristas por Excel ou CSV</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
                         <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap mb-3">
                             <div>
                                 <h6 class="mb-1">Planilha da montagem</h6>
-                                <p class="text-muted mb-0">Selecione um arquivo <strong>.xlsx</strong>. Cada linha importada entra direto nesta montagem e na Lista Mestre.</p>
+                                <p class="text-muted mb-0">Selecione um arquivo <strong>.xlsx</strong> ou <strong>.csv</strong>. Cada linha importada entra direto nesta montagem e na Lista Mestre.</p>
+                            </div>
+                            <div class="d-flex gap-2 flex-wrap">
+                                <button type="button" class="btn btn-soft-secondary btn-sm" @click="baixarModeloImportacaoEncontristasExcel">
+                                    <i class="fa-solid fa-file-excel icon-accent"></i> Modelo Excel
+                                </button>
+                                <button type="button" class="btn btn-soft-secondary btn-sm" @click="baixarModeloImportacaoEncontristasCSV">
+                                    <i class="fa-solid fa-file-csv icon-accent"></i> Modelo CSV
+                                </button>
                             </div>
                         </div>
                         <div class="row g-3 align-items-end mb-3">
                             <div class="col-12 col-lg-8">
-                                <label class="form-label small text-muted mb-1">Arquivo Excel (.xlsx)</label>
+                                <label class="form-label small text-muted mb-1">Arquivo Excel ou CSV (.xlsx, .csv)</label>
                                 <input
                                     id="arquivoImportacaoEncontristasExcel"
                                     type="file"
                                     class="form-control"
-                                    accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                                    accept=".xlsx,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                                     @change="onArquivoImportacaoEncontristasChange"
                                 >
                             </div>
@@ -1338,7 +1938,7 @@
                         </div>
                         <div class="border rounded bg-light p-3 small mb-3">
                             <div class="fw-semibold mb-2">Colunas aceitas</div>
-                            <div class="text-muted" style="white-space: pre-wrap;">nome_completo, telefone, apelido, email, sexo, data_nascimento, estado_civil, circulo, deficiencia, qual_deficiencia, restricao_alimentar, detalhes_restricao, instagram, eh_musico, instrumentos_musicais, equipe_saude, nao_serve_ejc, motivo_nao_serve_ejc, conjuge_nome, termos_aceitos_em, termos_aceitos_email, endereco_rua, endereco_numero, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep</div>
+                            <div class="text-muted" style="white-space: pre-wrap;">nome_completo, telefone, apelido, email, cpf, sexo, data_nascimento, estado_civil, circulo, deficiencia, qual_deficiencia, restricao_alimentar, detalhes_restricao, instagram, eh_musico, instrumentos_musicais, equipe_saude, conjuge_nome, termos_aceitos_em, termos_aceitos_email, endereco_rua, endereco_numero, endereco_bairro, endereco_cidade, endereco_estado, endereco_cep</div>
                         </div>
                         <div v-if="erroImportacaoEncontristasExcel" class="alert alert-warning py-2 px-3">
                             {{ erroImportacaoEncontristasExcel }}
@@ -1781,6 +2381,27 @@
                     linhasIgnoradasImportacaoEncontristasExcel: 0,
                     erroImportacaoEncontristasExcel: '',
                     filtroImportacaoEncontristas: '',
+                    filtrosGridEncontristas: {
+                        pesquisa: '',
+                        sexo: '',
+                        circulo: '',
+                        formulario: ''
+                    },
+                    mostrarFiltrosGridEncontristas: false,
+                    colunasGridEncontristas: {
+                        Nome: true,
+                        Telefone: true,
+                        CPF: false,
+                        Email: true,
+                        Idade: true,
+                        Sexo: true,
+                        Bairro: false,
+                        Circulo: true,
+                    },
+                    ordenacaoGridEncontristas: {
+                        campo: 'nome',
+                        direcao: 'asc'
+                    },
                     encontristasSelecionados: [],
                     carregandoEncontristasSelecionados: false,
                     carregandoInfoMontagem: false,
@@ -1791,6 +2412,29 @@
                     restricaoInfoAberta: '',
                     coresCirculos: [],
                     encontristaEditando: null,
+                    abaFichaEncontrista: 'dados',
+                    subAbaFichaEncontrista: 'cadastro',
+                    encontristaPastoraisSelecionadas: [],
+                    historicoEncontrista: [],
+                    observacoesEncontrista: [],
+                    novaObservacaoEncontrista: '',
+                    carregandoHistoricoEncontrista: false,
+                    carregandoObservacoesEncontrista: false,
+                    familiaresEncontrista: [],
+                    familiaresEncontristaRequestSeq: 0,
+                    sugestoesFamiliaEncontrista: [],
+                    buscaFamiliaEncontrista: '',
+                    resultadosBuscaFamiliaEncontrista: [],
+                    buscaFamiliaEncontristaTimer: null,
+                    novoParentescoEncontrista: 'IRMAO',
+                    opcoesParentescoEncontrista: [
+                        { value: 'IRMAO', label: 'Irmão(ã)' },
+                        { value: 'PRIMO', label: 'Primo(a)' },
+                        { value: 'NAMORADO', label: 'Namorado(a)' },
+                        { value: 'NOIVO', label: 'Noivo(a)' },
+                        { value: 'TIO', label: 'Tio(a)' },
+                        { value: 'FILHO', label: 'Filho(a)' }
+                    ],
                     edicoesEncontristas: {},
                     edicoesEncontristasCampos: {},
                     desistenciasEncontristas: {},
@@ -1879,6 +2523,10 @@
                 };
             },
             computed: {
+                idadeEncontristaFicha() {
+                    const idade = this.calcularIdade(this.encontristaEditando && this.encontristaEditando.data_nascimento);
+                    return idade === '' || idade === null || idade === undefined ? 'Não informada' : `${idade} anos`;
+                },
                 subAbaSepararAtual() {
                     return (this.subAbasSeparar && this.subAbasSeparar[this.abaSeparar]) || 'titular';
                 },
@@ -2112,6 +2760,40 @@
                     return (this.encontristasSelecionados || [])
                         .filter((item) => !bloqueados.has(Number(item.id)))
                         .map((item) => this.aplicarEdicaoEncontrista(item));
+                },
+                encontristasGridFiltrados() {
+                    const filtros = this.filtrosGridEncontristas || {};
+                    const pesquisa = String(filtros.pesquisa || '').trim().toLowerCase();
+                    const sexoFiltro = String(filtros.sexo || '').trim().toLowerCase();
+                    const circuloFiltro = String(filtros.circulo || '').trim().toLowerCase();
+                    const formularioFiltro = String(filtros.formulario || '').trim().toLowerCase();
+                    const filtrados = (this.encontristasSelecionadosExibicao || []).filter((resp) => {
+                        const resumo = this.resumoEncontrista(resp);
+                        const circulo = String(this.circuloResumoEncontrista(resp) || '').trim();
+                        const formulario = String(resp && resp.formulario_titulo ? resp.formulario_titulo : 'Lista Mestre').trim();
+                        if (sexoFiltro && String(resumo.sexo || '').trim().toLowerCase() !== sexoFiltro) return false;
+                        if (circuloFiltro && circulo.toLowerCase() !== circuloFiltro) return false;
+                        if (formularioFiltro && !formulario.toLowerCase().includes(formularioFiltro)) return false;
+                        if (!pesquisa) return true;
+                        const campos = [
+                            resumo.nome,
+                            resumo.telefone,
+                            resumo.cpf,
+                            resumo.idade,
+                            resumo.sexo,
+                            circulo,
+                            formulario,
+                            resumo.email,
+                            resp && resp.registrado_em,
+                            resp && resp.selecionado_em
+                        ].map((item) => String(item || '').toLowerCase());
+                        return campos.some((texto) => texto.includes(pesquisa));
+                    });
+                    return filtrados.sort((a, b) => this.compararGridEncontristas(a, b));
+                },
+                colspanGridEncontristas() {
+                    const visiveis = Object.values(this.colunasGridEncontristas || {}).filter(Boolean).length;
+                    return Math.max(1, visiveis) + 1;
                 },
                 encontristasDesistentesExibicao() {
                     const bloqueados = this.idsEncontristasBloqueadosSet;
@@ -2796,6 +3478,11 @@
                         nome_referencia: edit && Object.prototype.hasOwnProperty.call(edit, 'nome_referencia') ? edit.nome_referencia : resp.nome_referencia,
                         telefone_referencia: edit && Object.prototype.hasOwnProperty.call(edit, 'telefone_referencia') ? edit.telefone_referencia : resp.telefone_referencia,
                         cpf: edit && Object.prototype.hasOwnProperty.call(edit, 'cpf') ? edit.cpf : resp.cpf,
+                        email: edit && Object.prototype.hasOwnProperty.call(edit, 'email') ? edit.email : resp.email,
+                        sexo: edit && Object.prototype.hasOwnProperty.call(edit, 'sexo') ? edit.sexo : resp.sexo,
+                        data_nascimento: edit && Object.prototype.hasOwnProperty.call(edit, 'data_nascimento') ? edit.data_nascimento : resp.data_nascimento,
+                        bairro: edit && Object.prototype.hasOwnProperty.call(edit, 'bairro') ? edit.bairro : resp.bairro,
+                        endereco_bairro: edit && Object.prototype.hasOwnProperty.call(edit, 'bairro') ? edit.bairro : resp.endereco_bairro,
                         resposta: respostaOriginal ? { ...(resp.resposta || {}), campos: respostaEditada } : resp.resposta
                     };
                 },
@@ -2818,7 +3505,7 @@
                         return Array.from(new Set(valor.map((item) => String(item || '').trim()).filter(Boolean)));
                     }
                     if (!valor) return [];
-                    return Array.from(new Set(String(valor).split(',').map((item) => item.trim()).filter(Boolean)));
+                    return Array.from(new Set(String(valor).split(/[;,]/).map((item) => item.trim()).filter(Boolean)));
                 },
                 resetNovoEncontristaMontagem() {
                     this.novoEncontristaMontagem = {
@@ -2861,6 +3548,144 @@
                     this.erroImportacaoEncontristasExcel = '';
                     const input = document.getElementById('arquivoImportacaoEncontristasExcel');
                     if (input) input.value = '';
+                },
+                colunasModeloImportacaoEncontristas() {
+                    return [
+                        'nome_completo',
+                        'telefone',
+                        'apelido',
+                        'email',
+                        'cpf',
+                        'sexo',
+                        'data_nascimento',
+                        'estado_civil',
+                        'circulo',
+                        'deficiencia',
+                        'qual_deficiencia',
+                        'restricao_alimentar',
+                        'detalhes_restricao',
+                        'instagram',
+                        'eh_musico',
+                        'instrumentos_musicais',
+                        'equipe_saude',
+                        'conjuge_nome',
+                        'termos_aceitos_em',
+                        'termos_aceitos_email',
+                        'endereco_rua',
+                        'endereco_numero',
+                        'endereco_bairro',
+                        'endereco_cidade',
+                        'endereco_estado',
+                        'endereco_cep'
+                    ];
+                },
+                exemploModeloImportacaoEncontristas() {
+                    return {
+                        nome_completo: 'MARIA APARECIDA SILVA',
+                        telefone: '(31)99999-9999',
+                        apelido: 'Maria',
+                        email: 'maria@email.com',
+                        cpf: '000.000.000-00',
+                        sexo: 'Feminino',
+                        data_nascimento: '2008-06-12',
+                        estado_civil: 'Solteiro',
+                        circulo: this.coresCirculos[0] && this.coresCirculos[0].nome ? this.coresCirculos[0].nome : '',
+                        deficiencia: 'Não',
+                        qual_deficiencia: '',
+                        restricao_alimentar: 'Sim',
+                        detalhes_restricao: 'Intolerante à lactose',
+                        instagram: '@maria',
+                        eh_musico: 'Sim',
+                        instrumentos_musicais: 'Voz; Violao',
+                        equipe_saude: 'Não',
+                        conjuge_nome: '',
+                        termos_aceitos_em: '',
+                        termos_aceitos_email: '',
+                        endereco_rua: 'Rua Exemplo',
+                        endereco_numero: '123',
+                        endereco_bairro: 'Centro',
+                        endereco_cidade: 'Belo Horizonte',
+                        endereco_estado: 'MG',
+                        endereco_cep: '30000-000'
+                    };
+                },
+                async baixarModeloImportacaoEncontristasExcel() {
+                    if (!this.coresCirculos.length) await this.carregarCoresCirculos();
+                    const exemplo = this.exemploModeloImportacaoEncontristas();
+                    const headers = this.colunasModeloImportacaoEncontristas();
+                    const row = {};
+                    headers.forEach((h) => { row[h] = exemplo[h] || ''; });
+                    ExcelUtils.exportJsonToXlsx({
+                        filename: 'modelo_importacao_encontristas.xlsx',
+                        sheetName: 'Modelo encontristas',
+                        rows: [row]
+                    });
+                },
+                async baixarModeloImportacaoEncontristasCSV() {
+                    if (!this.coresCirculos.length) await this.carregarCoresCirculos();
+                    const exemplo = this.exemploModeloImportacaoEncontristas();
+                    const headers = this.colunasModeloImportacaoEncontristas();
+                    const escapeCsv = (valor) => {
+                        const texto = String(valor === undefined || valor === null ? '' : valor);
+                        return /[",;\n\r]/.test(texto) ? `"${texto.replace(/"/g, '""')}"` : texto;
+                    };
+                    const linhas = [
+                        headers.join(';'),
+                        headers.map((h) => escapeCsv(exemplo[h] || '')).join(';')
+                    ];
+                    const blob = new Blob([`\ufeff${linhas.join('\n')}`], { type: 'text/csv;charset=utf-8;' });
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = 'modelo_importacao_encontristas.csv';
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    URL.revokeObjectURL(url);
+                },
+                parseCsvImportacaoEncontristas(textoOriginal) {
+                    const texto = String(textoOriginal || '').replace(/^\ufeff/, '');
+                    const linhas = [];
+                    let atual = [];
+                    let campo = '';
+                    let aspas = false;
+                    let separador = texto.includes(';') ? ';' : ',';
+                    for (let i = 0; i < texto.length; i += 1) {
+                        const ch = texto[i];
+                        const prox = texto[i + 1];
+                        if (ch === '"') {
+                            if (aspas && prox === '"') {
+                                campo += '"';
+                                i += 1;
+                            } else {
+                                aspas = !aspas;
+                            }
+                            continue;
+                        }
+                        if (!aspas && ch === separador) {
+                            atual.push(campo);
+                            campo = '';
+                            continue;
+                        }
+                        if (!aspas && (ch === '\n' || ch === '\r')) {
+                            if (ch === '\r' && prox === '\n') i += 1;
+                            atual.push(campo);
+                            if (atual.some((v) => String(v || '').trim() !== '')) linhas.push(atual);
+                            atual = [];
+                            campo = '';
+                            continue;
+                        }
+                        campo += ch;
+                    }
+                    atual.push(campo);
+                    if (atual.some((v) => String(v || '').trim() !== '')) linhas.push(atual);
+                    if (!linhas.length) return [];
+                    const headers = linhas[0].map((h) => String(h || '').trim());
+                    return linhas.slice(1).map((valores) => {
+                        const row = {};
+                        headers.forEach((h, idx) => { row[h] = valores[idx] || ''; });
+                        return row;
+                    });
                 },
                 normalizarCabecalhoImportacaoEncontristas(valor) {
                     return String(valor || '')
@@ -2945,6 +3770,12 @@
                     const encontrado = (this.coresCirculos || []).find((item) => String(item && item.nome ? item.nome : '').trim().toLowerCase() === texto.toLowerCase());
                     return encontrado && encontrado.nome ? encontrado.nome : texto;
                 },
+                normalizarCpfImportacaoEncontristas(valor) {
+                    if (!this.temValorImportacaoEncontristas(valor)) return null;
+                    const texto = String(valor || '').trim();
+                    const digitos = texto.replace(/\D/g, '');
+                    return digitos.length === 11 ? texto : null;
+                },
                 montarLinhaImportacaoEncontristas(linha) {
                     if (!linha || typeof linha !== 'object' || !this.montagemAtiva || !this.montagemAtiva.id) return null;
                     const mapa = {};
@@ -2969,6 +3800,7 @@
                         telefone: this.temValorImportacaoEncontristas(get('telefone', 'celular', 'phone')) ? String(get('telefone', 'celular', 'phone')).trim() : null,
                         apelido: this.temValorImportacaoEncontristas(get('apelido', 'nickname')) ? String(get('apelido', 'nickname')).trim() : null,
                         email: this.temValorImportacaoEncontristas(get('email', 'e_mail', 'e-mail')) ? String(get('email', 'e_mail', 'e-mail')).trim() : null,
+                        cpf: this.normalizarCpfImportacaoEncontristas(get('cpf', 'documento')),
                         sexo: this.normalizarSexoImportacaoEncontristas(get('sexo', 'gender')),
                         data_nascimento: this.normalizarDataImportacaoEncontristas(get('data_nascimento', 'data nascimento', 'birthdate', 'birth_date')),
                         estado_civil: this.normalizarEstadoCivilImportacaoEncontristas(get('estado_civil', 'estado civil', 'civil_status')),
@@ -3018,14 +3850,19 @@
                     this.linhasIgnoradasImportacaoEncontristasExcel = 0;
                     this.erroImportacaoEncontristasExcel = '';
                     if (!file) return;
-                    if (!String(file.name || '').toLowerCase().endsWith('.xlsx')) {
-                        this.erroImportacaoEncontristasExcel = 'Selecione um arquivo Excel (.xlsx).';
+                    const nomeArquivo = String(file.name || '').toLowerCase();
+                    const isCsv = nomeArquivo.endsWith('.csv');
+                    const isXlsx = nomeArquivo.endsWith('.xlsx');
+                    if (!isXlsx && !isCsv) {
+                        this.erroImportacaoEncontristasExcel = 'Selecione um arquivo Excel (.xlsx) ou CSV (.csv).';
                         if (event && event.target) event.target.value = '';
                         return;
                     }
                     try {
                         if (!this.coresCirculos.length) await this.carregarCoresCirculos();
-                        const rows = await ExcelUtils.readXlsxFile(file);
+                        const rows = isCsv
+                            ? this.parseCsvImportacaoEncontristas(await file.text())
+                            : await ExcelUtils.readXlsxFile(file);
                         if (!Array.isArray(rows) || !rows.length) {
                             this.erroImportacaoEncontristasExcel = 'Arquivo vazio.';
                             return;
@@ -3049,14 +3886,14 @@
                         }
                     } catch (err) {
                         console.error('Erro ao ler arquivo de encontristas:', err);
-                        this.erroImportacaoEncontristasExcel = 'Não foi possível ler o arquivo Excel.';
+                        this.erroImportacaoEncontristasExcel = 'Não foi possível ler o arquivo selecionado.';
                     }
                 },
                 async confirmarImportacaoEncontristasExcel() {
                     if (!this.montagemAtiva || !this.montagemAtiva.id) return;
                     const linhas = Array.isArray(this.linhasImportacaoEncontristasExcel) ? this.linhasImportacaoEncontristasExcel : [];
                     if (!linhas.length) {
-                        await this.uiAlert('Selecione um arquivo Excel com encontristas para importar.');
+                        await this.uiAlert('Selecione um arquivo Excel ou CSV com encontristas para importar.');
                         return;
                     }
                     const confirmar = await this.uiConfirm(`Deseja importar ${linhas.length} ${linhas.length === 1 ? 'encontrista' : 'encontristas'} para esta montagem?`);
@@ -3074,9 +3911,6 @@
                             await this.uiAlert(resultado.error || 'Erro ao importar os encontristas.');
                             return;
                         }
-                        await this.carregarEncontristasAba();
-                        if (this.modalImportarEncontristasInstance) this.modalImportarEncontristasInstance.hide();
-                        this.resetImportacaoEncontristasExcel();
                         const resumo = resultado.resumo || { criados: 0, atualizados: 0, erros: 0 };
                         const detalhesErros = Array.isArray(resultado.detalhesErros) ? resultado.detalhesErros : [];
                         let mensagem = `Importação concluída.\nCriados: ${resumo.criados}\nAtualizados: ${resumo.atualizados}\nErros: ${resumo.erros}`;
@@ -3089,10 +3923,17 @@
                             const restante = detalhesErros.length > limite ? `\n... e mais ${detalhesErros.length - limite} erro(s).` : '';
                             mensagem += `\n\nDetalhes:\n${lista}${restante}`;
                         }
+                        if (this.modalImportarEncontristasInstance) this.modalImportarEncontristasInstance.hide();
+                        this.resetImportacaoEncontristasExcel();
+                        try {
+                            await this.carregarEncontristasAba();
+                        } catch (reloadErr) {
+                            console.error('Importação concluída, mas houve erro ao recarregar encontristas:', reloadErr);
+                        }
                         await this.uiAlert(mensagem, resumo.erros ? 'Importação concluída com alertas' : 'Importação concluída');
                     } catch (err) {
-                        console.error('Erro ao importar encontristas por Excel:', err);
-                        await this.uiAlert('Erro ao importar os encontristas por Excel.');
+                        console.error('Erro ao importar encontristas por arquivo:', err);
+                        await this.uiAlert('Erro ao importar os encontristas pelo arquivo.');
                     } finally {
                         this.importandoArquivoEncontristasExcel = false;
                     }
@@ -3451,6 +4292,13 @@
                 corCirculoEncontrista(respId) {
                     return (this.circulosEncontristas && this.circulosEncontristas[String(respId)]) || '';
                 },
+                circuloResumoEncontrista(resp) {
+                    if (!resp) return '';
+                    return this.corCirculoEncontrista(resp.id)
+                        || String(resp.circulo || '').trim()
+                        || this.valorCampoResumo(resp, ['círculo', 'circulo'])
+                        || '';
+                },
                 badgeCorCirculoStyle(nomeCor) {
                     if (!nomeCor) return 'background-color: #f8f9fa; color: #6c757d;';
                     const item = (this.coresCirculos || []).find((c) => String(c.nome || '').toLowerCase() === String(nomeCor).toLowerCase());
@@ -3469,6 +4317,97 @@
                         console.error('Erro ao carregar cores de círculo:', err);
                         this.coresCirculos = [];
                     }
+                },
+                labelColunaGridEncontristas(coluna) {
+                    const labels = {
+                        Nome: 'Nome',
+                        Telefone: 'Telefone',
+                        CPF: 'CPF',
+                        Email: 'E-mail',
+                        Idade: 'Idade',
+                        Sexo: 'Sexo',
+                        Bairro: 'Bairro',
+                        Circulo: 'Círculo'
+                    };
+                    return labels[coluna] || coluna;
+                },
+                limparFiltrosGridEncontristas() {
+                    this.filtrosGridEncontristas = {
+                        pesquisa: '',
+                        sexo: '',
+                        circulo: '',
+                        formulario: ''
+                    };
+                },
+                restaurarColunasGridEncontristas() {
+                    this.colunasGridEncontristas = {
+                        Nome: true,
+                        Telefone: true,
+                        CPF: false,
+                        Email: true,
+                        Idade: true,
+                        Sexo: true,
+                        Bairro: false,
+                        Circulo: true,
+                    };
+                },
+                ordenarGridEncontristas(campo) {
+                    if (this.ordenacaoGridEncontristas.campo === campo) {
+                        this.ordenacaoGridEncontristas.direcao = this.ordenacaoGridEncontristas.direcao === 'asc' ? 'desc' : 'asc';
+                        return;
+                    }
+                    this.ordenacaoGridEncontristas = { campo, direcao: 'asc' };
+                },
+                iconeOrdenacaoGridEncontristas(campo) {
+                    if (this.ordenacaoGridEncontristas.campo !== campo) return '↕';
+                    return this.ordenacaoGridEncontristas.direcao === 'asc' ? '↑' : '↓';
+                },
+                valorOrdenacaoGridEncontrista(resp, campo) {
+                    const resumo = this.resumoEncontrista(resp);
+                    switch (campo) {
+                        case 'idade':
+                            return Number(resumo.idade || 0);
+                        case 'bairro':
+                            return resumo.bairro || '';
+                        case 'circulo':
+                            return this.circuloResumoEncontrista(resp) || '';
+                        default:
+                            return resumo[campo] || '';
+                    }
+                },
+                compararGridEncontristas(a, b) {
+                    const campo = this.ordenacaoGridEncontristas.campo || 'nome';
+                    const direcao = this.ordenacaoGridEncontristas.direcao === 'desc' ? -1 : 1;
+                    const valorA = this.valorOrdenacaoGridEncontrista(a, campo);
+                    const valorB = this.valorOrdenacaoGridEncontrista(b, campo);
+                    if (typeof valorA === 'number' || typeof valorB === 'number') {
+                        return ((Number(valorA) || 0) - (Number(valorB) || 0)) * direcao;
+                    }
+                    return String(valorA || '').localeCompare(String(valorB || ''), 'pt-BR', { numeric: true, sensitivity: 'base' }) * direcao;
+                },
+                exportarGridEncontristas() {
+                    const linhas = (this.encontristasGridFiltrados || []).map((resp) => {
+                        const resumo = this.resumoEncontrista(resp);
+                        return {
+                            Nome: resumo.nome || '',
+                            Telefone: resumo.telefone || '',
+                            CPF: resumo.cpf || '',
+                            'E-mail': resumo.email || '',
+                            Idade: resumo.idade || '',
+                            Sexo: resumo.sexo || '',
+                            Bairro: resumo.bairro || '',
+                            Circulo: this.circuloResumoEncontrista(resp) || ''
+                        };
+                    });
+                    if (!linhas.length) {
+                        this.uiAlert('Nenhum encontrista para exportar.');
+                        return;
+                    }
+                    ExcelUtils.exportJsonToXlsx({
+                        filename: 'encontristas_montagem.xlsx',
+                        sheetName: 'Encontristas',
+                        rows: linhas
+                    });
                 },
                 temDesistencia(respId) {
                     return !!(this.desistenciasEncontristas && this.desistenciasEncontristas[String(respId)]);
@@ -3503,21 +4442,66 @@
                 async abrirModalEditarEncontrista(resp) {
                     if (!resp || !resp.id) return;
                     if (!this.coresCirculos.length) await this.carregarCoresCirculos();
+                    await this.carregarRecursosNovoEncontristaMontagem();
                     const id = String(resp.id);
                     const edit = (this.edicoesEncontristas && this.edicoesEncontristas[id]) ? this.edicoesEncontristas[id] : {};
                     const campos = resp && resp.resposta && Array.isArray(resp.resposta.campos) ? resp.resposta.campos : [];
+                    const jovemId = Number(resp.jovem_id || (Number(resp.id) < 0 ? Math.abs(Number(resp.id)) : 0)) || 0;
+                    let fichaListaMestre = null;
+                    if (jovemId) {
+                        try {
+                            const res = await fetch(`/api/lista-mestre/${jovemId}`);
+                            fichaListaMestre = res.ok ? await res.json().catch(() => null) : null;
+                        } catch (_) {
+                            fichaListaMestre = null;
+                        }
+                    }
+
+                    this.abaFichaEncontrista = 'dados';
+                    this.subAbaFichaEncontrista = 'cadastro';
+                    this.historicoEncontrista = [];
+                    this.observacoesEncontrista = [];
+                    this.novaObservacaoEncontrista = '';
+                    this.encontristaPastoraisSelecionadas = [];
+
                     this.encontristaEditando = {
                         id,
+                        jovem_id: jovemId || null,
                         nome_referencia: String(edit.nome_referencia || resp.nome_referencia || '').trim(),
                         telefone_referencia: String(edit.telefone_referencia || resp.telefone_referencia || '').trim(),
-                        cpf: String(edit.cpf || resp.cpf || this.valorCampoResumo(resp, ['cpf']) || '').trim(),
-                        circulo: this.corCirculoEncontrista(id) || '',
-                        cep: String(edit.cep || this.valorCampoResumo(resp, ['cep']) || '').trim(),
-                        endereco: String(edit.endereco || this.valorCampoResumo(resp, ['endereço', 'endereco', 'rua', 'logradouro']) || '').trim(),
-                        numero: String(edit.numero || this.valorCampoResumo(resp, ['número', 'numero']) || '').trim(),
-                        bairro: String(edit.bairro || this.valorCampoResumo(resp, ['bairro']) || '').trim(),
-                        cidade: String(edit.cidade || this.valorCampoResumo(resp, ['cidade', 'município', 'municipio']) || '').trim(),
+                        origem_ejc_tipo: fichaListaMestre && fichaListaMestre.origem_ejc_tipo ? fichaListaMestre.origem_ejc_tipo : 'INCONFIDENTES',
+                        nome_completo: String((fichaListaMestre && fichaListaMestre.nome_completo) || edit.nome_referencia || resp.nome_referencia || '').trim(),
+                        apelido: String((fichaListaMestre && fichaListaMestre.apelido) || '').trim(),
+                        telefone: String((fichaListaMestre && fichaListaMestre.telefone) || edit.telefone_referencia || resp.telefone_referencia || '').trim(),
+                        cpf: String(edit.cpf || (fichaListaMestre && fichaListaMestre.cpf) || resp.cpf || this.valorCampoResumo(resp, ['cpf']) || '').trim(),
+                        email: String((fichaListaMestre && fichaListaMestre.email) || this.valorCampoResumo(resp, ['email', 'e-mail']) || '').trim(),
+                        data_nascimento: this.normalizarDataInputEncontrista((fichaListaMestre && fichaListaMestre.data_nascimento) || this.valorCampoResumo(resp, ['data de nascimento', 'nascimento'])),
+                        sexo: String((fichaListaMestre && fichaListaMestre.sexo) || '').trim(),
+                        foto_url: fichaListaMestre && fichaListaMestre.foto_url ? fichaListaMestre.foto_url : '',
+                        instagram: String((fichaListaMestre && fichaListaMestre.instagram) || '').replace(/^@+/, ''),
+                        circulo: edit.circulo || this.corCirculoEncontrista(id) || (fichaListaMestre && fichaListaMestre.circulo) || '',
+                        endereco_cep: String(edit.cep || (fichaListaMestre && fichaListaMestre.endereco_cep) || this.valorCampoResumo(resp, ['cep']) || '').trim(),
+                        endereco_rua: String(edit.endereco || (fichaListaMestre && fichaListaMestre.endereco_rua) || this.valorCampoResumo(resp, ['endereço', 'endereco', 'rua', 'logradouro']) || '').trim(),
+                        endereco_numero: String(edit.numero || (fichaListaMestre && fichaListaMestre.endereco_numero) || this.valorCampoResumo(resp, ['número', 'numero']) || '').trim(),
+                        endereco_bairro: String(edit.bairro || (fichaListaMestre && fichaListaMestre.endereco_bairro) || this.valorCampoResumo(resp, ['bairro']) || '').trim(),
+                        endereco_cidade: String(edit.cidade || (fichaListaMestre && fichaListaMestre.endereco_cidade) || this.valorCampoResumo(resp, ['cidade', 'município', 'municipio']) || '').trim(),
+                        endereco_estado: String((fichaListaMestre && fichaListaMestre.endereco_estado) || '').trim(),
                         complemento: String(edit.complemento || this.valorCampoResumo(resp, ['complemento']) || '').trim(),
+                        estado_civil: String((fichaListaMestre && fichaListaMestre.estado_civil) || 'Solteiro'),
+                        data_casamento: this.normalizarDataInputEncontrista(fichaListaMestre && fichaListaMestre.data_casamento),
+                        conjuge_nome: String((fichaListaMestre && fichaListaMestre.conjuge_nome) || '').trim(),
+                        conjuge_telefone: String((fichaListaMestre && fichaListaMestre.conjuge_telefone) || '').trim(),
+                        tio_casal_id: fichaListaMestre && fichaListaMestre.tio_casal_id ? Number(fichaListaMestre.tio_casal_id) : null,
+                        deficiencia: !!(fichaListaMestre && fichaListaMestre.deficiencia),
+                        qual_deficiencia: String((fichaListaMestre && fichaListaMestre.qual_deficiencia) || '').trim(),
+                        restricao_alimentar: !!(fichaListaMestre && fichaListaMestre.restricao_alimentar),
+                        detalhes_restricao: String((fichaListaMestre && fichaListaMestre.detalhes_restricao) || '').trim(),
+                        eh_musico: !!(fichaListaMestre && fichaListaMestre.eh_musico),
+                        instrumentos_musicais: this.normalizarInstrumentosListaMestre(fichaListaMestre && fichaListaMestre.instrumentos_musicais),
+                        equipe_saude: !!(fichaListaMestre && fichaListaMestre.equipe_saude),
+                        nao_serve_ejc: !!(fichaListaMestre && fichaListaMestre.nao_serve_ejc),
+                        motivo_nao_serve_ejc: String((fichaListaMestre && fichaListaMestre.motivo_nao_serve_ejc) || '').trim(),
+                        observacoes_extras: String((fichaListaMestre && fichaListaMestre.observacoes_extras) || '').trim(),
                         latitude: edit.latitude || null,
                         longitude: edit.longitude || null,
                         campos: campos.map((item, idx) => ({
@@ -3526,6 +4510,18 @@
                             valor: this.formatarValorResposta(item ? item.valor : '')
                         }))
                     };
+                    if (jovemId) {
+                        await Promise.all([
+                            this.carregarPastoraisEncontrista(jovemId),
+                            this.carregarHistoricoEncontrista(jovemId),
+                            this.carregarFamiliaresEncontrista(jovemId)
+                        ]);
+                    } else {
+                        this.familiaresEncontrista = [];
+                        this.sugestoesFamiliaEncontrista = [];
+                        this.buscaFamiliaEncontrista = '';
+                        this.resultadosBuscaFamiliaEncontrista = [];
+                    }
                     if (!this.modalEditarEncontristaInstance) {
                         this.modalEditarEncontristaInstance = new bootstrap.Modal(document.getElementById('modalEditarEncontrista'));
                     }
@@ -3535,59 +4531,357 @@
                     const form = this.encontristaEditando;
                     if (!form || !form.id) return;
                     const id = String(form.id);
-                    const atualResumo = (this.edicoesEncontristas && this.edicoesEncontristas[id]) ? this.edicoesEncontristas[id] : {};
-                    this.edicoesEncontristas = {
-                        ...(this.edicoesEncontristas || {}),
-                        [id]: {
-                            ...atualResumo,
-                            nome_referencia: String(form.nome_referencia || '').trim(),
-                            telefone_referencia: String(form.telefone_referencia || '').trim(),
-                            cpf: String(form.cpf || '').trim(),
-                            cep: String(form.cep || '').trim(),
-                            endereco: String(form.endereco || '').trim(),
-                            numero: String(form.numero || '').trim(),
-                            bairro: String(form.bairro || '').trim(),
-                            cidade: String(form.cidade || '').trim(),
-                            complemento: String(form.complemento || '').trim(),
-                            latitude: form.latitude || null,
-                            longitude: form.longitude || null
-                        }
-                    };
-                    const atualCampos = (this.edicoesEncontristasCampos && this.edicoesEncontristasCampos[id]) ? this.edicoesEncontristasCampos[id] : {};
-                    const proxCampos = { ...atualCampos };
-                    (form.campos || []).forEach((campo) => {
-                        if (!campo || !campo.key) return;
-                        proxCampos[campo.key] = String(campo.valor || '').trim();
-                    });
-                    this.edicoesEncontristasCampos = {
-                        ...(this.edicoesEncontristasCampos || {}),
-                        [id]: proxCampos
-                    };
-                    this.salvarEdicoesEncontristasLocal();
-                    this.salvarEdicoesEncontristasCamposLocal();
-                    this.definirCirculoEncontrista(id, form.circulo || '');
                     try {
+                        if (form.jovem_id) {
+                            await this.salvarFichaEncontristaListaMestre(form);
+                        }
+                        const atualResumo = (this.edicoesEncontristas && this.edicoesEncontristas[id]) ? this.edicoesEncontristas[id] : {};
+                        this.edicoesEncontristas = {
+                            ...(this.edicoesEncontristas || {}),
+                            [id]: {
+                                ...atualResumo,
+                                nome_referencia: String(form.nome_completo || form.nome_referencia || '').trim(),
+                                telefone_referencia: String(form.telefone || form.telefone_referencia || '').trim(),
+                                cpf: String(form.cpf || '').trim(),
+                                email: String(form.email || '').trim(),
+                                sexo: String(form.sexo || '').trim(),
+                                data_nascimento: form.data_nascimento || '',
+                                cep: String(form.endereco_cep || '').trim(),
+                                endereco: String(form.endereco_rua || '').trim(),
+                                numero: String(form.endereco_numero || '').trim(),
+                                bairro: String(form.endereco_bairro || '').trim(),
+                                cidade: String(form.endereco_cidade || '').trim(),
+                                complemento: String(form.complemento || '').trim(),
+                                latitude: form.latitude || null,
+                                longitude: form.longitude || null
+                            }
+                        };
+                        const atualCampos = (this.edicoesEncontristasCampos && this.edicoesEncontristasCampos[id]) ? this.edicoesEncontristasCampos[id] : {};
+                        const proxCampos = { ...atualCampos };
+                        (form.campos || []).forEach((campo) => {
+                            if (!campo || !campo.key) return;
+                            proxCampos[campo.key] = String(campo.valor || '').trim();
+                        });
+                        this.edicoesEncontristasCampos = {
+                            ...(this.edicoesEncontristasCampos || {}),
+                            [id]: proxCampos
+                        };
+                        this.salvarEdicoesEncontristasLocal();
+                        this.salvarEdicoesEncontristasCamposLocal();
+                        this.definirCirculoEncontrista(id, form.circulo || '');
                         await this.salvarDadosEncontristaNoBackend({
                             id,
-                            nome_referencia: form.nome_referencia || '',
-                            telefone_referencia: form.telefone_referencia || '',
+                            nome_referencia: form.nome_completo || form.nome_referencia || '',
+                            telefone_referencia: form.telefone || form.telefone_referencia || '',
                             cpf: form.cpf || '',
                             circulo: form.circulo || null,
-                            cep: form.cep || null,
-                            endereco: form.endereco || null,
-                            numero: form.numero || null,
-                            bairro: form.bairro || null,
-                            cidade: form.cidade || null,
+                            cep: form.endereco_cep || null,
+                            endereco: form.endereco_rua || null,
+                            numero: form.endereco_numero || null,
+                            bairro: form.endereco_bairro || null,
+                            cidade: form.endereco_cidade || null,
                             complemento: form.complemento || null,
                             latitude: form.latitude || null,
                             longitude: form.longitude || null
                         });
+                        this.atualizarEncontristaSelecionadoAposEdicao(id, form);
                     } catch (err) {
                         console.error('Erro ao persistir dados do encontrista:', err);
+                        await this.uiAlert(err && err.message ? err.message : 'Erro ao salvar dados do encontrista.');
+                        return;
                     }
                     if (this.modalEditarEncontristaInstance) this.modalEditarEncontristaInstance.hide();
                     if (this.abaMontagem === 'mapa') await this.carregarMapaEncontristas();
                     await this.uiAlert('Alterações salvas com sucesso.', 'Sucesso');
+                },
+                atualizarEncontristaSelecionadoAposEdicao(id, form) {
+                    const chave = String(id || '');
+                    if (!chave || !form) return;
+                    this.encontristasSelecionados = (this.encontristasSelecionados || []).map((item) => {
+                        if (String(item && item.id) !== chave) return item;
+                        return {
+                            ...item,
+                            nome_referencia: String(form.nome_completo || form.nome_referencia || item.nome_referencia || '').trim(),
+                            telefone_referencia: String(form.telefone || form.telefone_referencia || item.telefone_referencia || '').trim(),
+                            cpf: String(form.cpf || item.cpf || '').trim(),
+                            email: String(form.email || item.email || '').trim(),
+                            sexo: String(form.sexo || item.sexo || '').trim(),
+                            data_nascimento: form.data_nascimento || item.data_nascimento || null,
+                            bairro: String(form.endereco_bairro || item.bairro || '').trim(),
+                            endereco_bairro: String(form.endereco_bairro || item.endereco_bairro || '').trim(),
+                            circulo: form.circulo || item.circulo || ''
+                        };
+                    });
+                },
+                normalizarDataInputEncontrista(valor) {
+                    if (!valor) return '';
+                    const texto = String(valor || '').trim();
+                    if (/^\d{4}-\d{2}-\d{2}/.test(texto)) return texto.slice(0, 10);
+                    if (/^\d{2}\/\d{2}\/\d{4}$/.test(texto)) return texto.split('/').reverse().join('-');
+                    return '';
+                },
+                async salvarFichaEncontristaListaMestre(form) {
+                    const jovemId = Number(form.jovem_id || 0);
+                    if (!jovemId) return;
+                    const payload = {
+                        nome_completo: String(form.nome_completo || '').trim(),
+                        apelido: String(form.apelido || '').trim() || null,
+                        telefone: String(form.telefone || '').trim() || null,
+                        cpf: String(form.cpf || '').trim() || null,
+                        email: String(form.email || '').trim() || null,
+                        data_nascimento: form.data_nascimento || null,
+                        instagram: String(form.instagram || '').replace(/^@+/, '').trim() || null,
+                        estado_civil: form.estado_civil || 'Solteiro',
+                        data_casamento: form.data_casamento || null,
+                        sexo: form.sexo || null,
+                        circulo: form.circulo || null,
+                        deficiencia: !!form.deficiencia,
+                        qual_deficiencia: form.deficiencia ? (String(form.qual_deficiencia || '').trim() || null) : null,
+                        restricao_alimentar: !!form.restricao_alimentar,
+                        detalhes_restricao: form.restricao_alimentar ? (String(form.detalhes_restricao || '').trim() || null) : null,
+                        eh_musico: !!form.eh_musico,
+                        instrumentos_musicais: form.eh_musico ? this.normalizarInstrumentosListaMestre(form.instrumentos_musicais) : [],
+                        equipe_saude: !!form.equipe_saude,
+                        nao_serve_ejc: !!form.nao_serve_ejc,
+                        motivo_nao_serve_ejc: form.nao_serve_ejc ? (String(form.motivo_nao_serve_ejc || '').trim() || null) : null,
+                        observacoes_extras: String(form.observacoes_extras || '').trim() || null,
+                        endereco_rua: String(form.endereco_rua || '').trim() || null,
+                        endereco_numero: String(form.endereco_numero || '').trim() || null,
+                        endereco_bairro: String(form.endereco_bairro || '').trim() || null,
+                        endereco_cidade: String(form.endereco_cidade || '').trim() || null,
+                        endereco_estado: String(form.endereco_estado || '').trim() || null,
+                        endereco_cep: String(form.endereco_cep || '').trim() || null,
+                        conjuge_nome: ['Casado', 'Amasiado'].includes(form.estado_civil) ? (String(form.conjuge_nome || '').trim() || null) : null,
+                        conjuge_telefone: ['Casado', 'Amasiado'].includes(form.estado_civil) ? (String(form.conjuge_telefone || '').trim() || null) : null,
+                        tio_casal_id: form.tio_casal_id || null
+                    };
+                    const res = await fetch(`/api/lista-mestre/${jovemId}`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const data = await res.json().catch(() => ({}));
+                    if (!res.ok) {
+                        throw new Error(data.error || 'Erro ao salvar ficha do encontrista na Lista Mestre.');
+                    }
+                    await fetch(`/api/lista-mestre/${jovemId}/pastorais`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ pastorais: this.encontristaPastoraisSelecionadas || [] })
+                    });
+                },
+                async carregarPastoraisEncontrista(jovemId) {
+                    try {
+                        const res = await fetch(`/api/lista-mestre/${jovemId}/pastorais`);
+                        const data = await res.json().catch(() => ([]));
+                        this.encontristaPastoraisSelecionadas = res.ok && Array.isArray(data)
+                            ? data.map((p) => Number(p.id)).filter((id) => Number.isFinite(id))
+                            : [];
+                    } catch (_) {
+                        this.encontristaPastoraisSelecionadas = [];
+                    }
+                },
+                async carregarHistoricoEncontrista(jovemId) {
+                    if (!jovemId) return;
+                    this.carregandoHistoricoEncontrista = true;
+                    try {
+                        const res = await fetch(`/api/lista-mestre/historico/${jovemId}`);
+                        const data = await res.json().catch(() => ([]));
+                        this.historicoEncontrista = res.ok && Array.isArray(data) ? data.filter(Boolean) : [];
+                    } catch (_) {
+                        this.historicoEncontrista = [];
+                    } finally {
+                        this.carregandoHistoricoEncontrista = false;
+                    }
+                },
+                async carregarObservacoesEncontrista(jovemId) {
+                    if (!jovemId) return;
+                    this.carregandoObservacoesEncontrista = true;
+                    try {
+                        const res = await fetch(`/api/lista-mestre/observacoes/${jovemId}`);
+                        const data = await res.json().catch(() => ([]));
+                        this.observacoesEncontrista = res.ok && Array.isArray(data) ? data.filter(Boolean) : [];
+                    } catch (_) {
+                        this.observacoesEncontrista = [];
+                    } finally {
+                        this.carregandoObservacoesEncontrista = false;
+                    }
+                },
+                async carregarFamiliaresEncontrista(jovemId) {
+                    const requestSeq = ++this.familiaresEncontristaRequestSeq;
+                    if (!jovemId) {
+                        this.familiaresEncontrista = [];
+                        this.sugestoesFamiliaEncontrista = [];
+                        this.buscaFamiliaEncontrista = '';
+                        this.resultadosBuscaFamiliaEncontrista = [];
+                        return;
+                    }
+                    try {
+                        const res = await fetch(`/api/relacoes-familiares?entity_type=JOVEM&entity_id=${jovemId}`);
+                        const data = await res.json().catch(() => ([]));
+                        if (requestSeq !== this.familiaresEncontristaRequestSeq || !this.encontristaEditando || Number(this.encontristaEditando.jovem_id) !== Number(jovemId)) return;
+                        this.familiaresEncontrista = res.ok && Array.isArray(data) ? data : [];
+                    } catch (err) {
+                        console.error('Erro ao carregar familiares do encontrista:', err);
+                        if (requestSeq !== this.familiaresEncontristaRequestSeq || !this.encontristaEditando || Number(this.encontristaEditando.jovem_id) !== Number(jovemId)) return;
+                        this.familiaresEncontrista = [];
+                    }
+                    try {
+                        const resSug = await fetch(`/api/relacoes-familiares/sugestoes?entity_type=JOVEM&entity_id=${jovemId}`);
+                        const dataSug = await resSug.json().catch(() => ([]));
+                        if (requestSeq !== this.familiaresEncontristaRequestSeq || !this.encontristaEditando || Number(this.encontristaEditando.jovem_id) !== Number(jovemId)) return;
+                        this.sugestoesFamiliaEncontrista = resSug.ok && Array.isArray(dataSug) ? dataSug : [];
+                    } catch (err) {
+                        console.error('Erro ao carregar sugestões de parentesco do encontrista:', err);
+                        if (requestSeq !== this.familiaresEncontristaRequestSeq || !this.encontristaEditando || Number(this.encontristaEditando.jovem_id) !== Number(jovemId)) return;
+                        this.sugestoesFamiliaEncontrista = [];
+                    }
+                },
+                buscarRelacionaveisEncontrista() {
+                    clearTimeout(this.buscaFamiliaEncontristaTimer);
+                    const termo = String(this.buscaFamiliaEncontrista || '').trim();
+                    const jovemId = this.encontristaEditando && this.encontristaEditando.jovem_id;
+                    if (!jovemId) {
+                        this.resultadosBuscaFamiliaEncontrista = [];
+                        return;
+                    }
+                    this.buscaFamiliaEncontristaTimer = setTimeout(async () => {
+                        try {
+                            const params = new URLSearchParams({
+                                source_type: 'JOVEM',
+                                source_id: String(jovemId),
+                                q: termo
+                            });
+                            const res = await fetch(`/api/relacoes-familiares/search?${params.toString()}`);
+                            const data = await res.json().catch(() => ([]));
+                            const itens = res.ok && Array.isArray(data) ? data : [];
+                            this.resultadosBuscaFamiliaEncontrista = itens.filter((item) => {
+                                if (this.novoParentescoEncontrista === 'FILHO') return item.entity_type === 'TIO_CASAL';
+                                return true;
+                            });
+                        } catch (err) {
+                            console.error('Erro ao pesquisar familiares do encontrista:', err);
+                            this.resultadosBuscaFamiliaEncontrista = [];
+                        }
+                    }, 250);
+                },
+                async adicionarRelacaoFamiliarEncontrista(item) {
+                    const jovemId = this.encontristaEditando && this.encontristaEditando.jovem_id;
+                    if (!item || !jovemId) return;
+                    try {
+                        const res = await fetch('/api/relacoes-familiares', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                source_type: 'JOVEM',
+                                source_id: jovemId,
+                                target_type: item.entity_type,
+                                target_id: item.entity_id,
+                                relation: this.novoParentescoEncontrista
+                            })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            await this.uiAlert(data.error || 'Erro ao salvar parentesco.');
+                            return;
+                        }
+                        this.buscaFamiliaEncontrista = '';
+                        this.resultadosBuscaFamiliaEncontrista = [];
+                        await this.carregarFamiliaresEncontrista(jovemId);
+                    } catch (err) {
+                        console.error('Erro ao adicionar parentesco do encontrista:', err);
+                        await this.uiAlert('Erro ao salvar parentesco.');
+                    }
+                },
+                async removerRelacaoFamiliarEncontrista(relacaoId) {
+                    const jovemId = this.encontristaEditando && this.encontristaEditando.jovem_id;
+                    if (!relacaoId || !jovemId) return;
+                    if (!(await this.uiConfirm('Remover este jovem da lista de familiares?'))) return;
+                    try {
+                        const res = await fetch(`/api/relacoes-familiares/${relacaoId}`, { method: 'DELETE' });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            await this.uiAlert(data.error || 'Erro ao remover parentesco.');
+                            return;
+                        }
+                        await this.carregarFamiliaresEncontrista(jovemId);
+                    } catch (err) {
+                        console.error('Erro ao remover parentesco do encontrista:', err);
+                        await this.uiAlert('Erro ao remover parentesco.');
+                    }
+                },
+                async abrirAbaHistoricoEncontrista() {
+                    this.abaFichaEncontrista = 'historico';
+                    if (this.encontristaEditando && this.encontristaEditando.jovem_id) {
+                        await this.carregarHistoricoEncontrista(this.encontristaEditando.jovem_id);
+                    }
+                },
+                async abrirAbaObservacoesEncontrista() {
+                    this.abaFichaEncontrista = 'observacoes';
+                    if (this.encontristaEditando && this.encontristaEditando.jovem_id) {
+                        await this.carregarObservacoesEncontrista(this.encontristaEditando.jovem_id);
+                    }
+                },
+                async adicionarObservacaoEncontrista() {
+                    const jovemId = this.encontristaEditando && this.encontristaEditando.jovem_id;
+                    const texto = String(this.novaObservacaoEncontrista || '').trim();
+                    if (!jovemId || !texto) return;
+                    const res = await fetch('/api/lista-mestre/observacoes', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ jovem_id: jovemId, texto })
+                    });
+                    if (!res.ok) {
+                        await this.uiAlert('Erro ao adicionar observação.');
+                        return;
+                    }
+                    this.novaObservacaoEncontrista = '';
+                    await this.carregarObservacoesEncontrista(jovemId);
+                },
+                onMusicoToggleEncontrista() {
+                    if (this.encontristaEditando && !this.encontristaEditando.eh_musico) {
+                        this.encontristaEditando.instrumentos_musicais = [];
+                    }
+                },
+                async uploadFotoEncontrista(event) {
+                    const form = this.encontristaEditando;
+                    const file = event && event.target && event.target.files && event.target.files[0] ? event.target.files[0] : null;
+                    if (!form || !form.jovem_id || !file) return;
+                    const tiposPermitidos = ['image/jpeg', 'image/png', 'image/webp'];
+                    const extensao = String(file.name || '').split('.').pop().toLowerCase();
+                    if (!tiposPermitidos.includes(file.type) || !['jpeg', 'jpg', 'png', 'webp'].includes(extensao)) {
+                        await this.uiAlert('Envie apenas imagens JPG, JPEG, PNG ou WEBP.');
+                        event.target.value = '';
+                        return;
+                    }
+                    const formData = new FormData();
+                    formData.append('foto', file);
+                    try {
+                        const res = await fetch(`/api/lista-mestre/${form.jovem_id}/foto`, { method: 'POST', body: formData });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            await this.uiAlert(data.error || 'Erro ao enviar foto.');
+                            return;
+                        }
+                        form.foto_url = data.foto_url || form.foto_url;
+                    } finally {
+                        event.target.value = '';
+                    }
+                },
+                async onCepInputEncontrista() {
+                    const form = this.encontristaEditando;
+                    if (!form) return;
+                    const cep = String(form.endereco_cep || '').replace(/\D/g, '');
+                    if (cep.length !== 8) return;
+                    try {
+                        const res = await fetch(`/api/cep/${cep}`);
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok || data.erro) return;
+                        if (data.logradouro) form.endereco_rua = data.logradouro;
+                        if (data.bairro) form.endereco_bairro = data.bairro;
+                        if (data.localidade) form.endereco_cidade = data.localidade;
+                        if (data.uf) form.endereco_estado = data.uf;
+                    } catch (_) { }
                 },
                 valorCampoResumo(resp, nomes) {
                     const campos = resp && resp.resposta && Array.isArray(resp.resposta.campos) ? resp.resposta.campos : [];
@@ -3604,12 +4898,18 @@
                 resumoEncontrista(resp) {
                     const id = String(resp && resp.id ? resp.id : '');
                     const edit = (id && this.edicoesEncontristas && this.edicoesEncontristas[id]) ? this.edicoesEncontristas[id] : {};
+                    const idadeInformada = this.valorCampoResumo(resp, ['idade']);
+                    const dataNascimento = edit.data_nascimento || (resp && resp.data_nascimento)
+                        || this.valorCampoResumo(resp, ['data de nascimento', 'nascimento']);
+                    const idadeCalculada = this.calcularIdade(this.normalizarDataInputEncontrista(dataNascimento) || dataNascimento);
                     return {
                         nome: edit.nome_referencia || resp.nome_referencia || this.valorCampoResumo(resp, ['nome']) || '',
                         telefone: edit.telefone_referencia || resp.telefone_referencia || this.valorCampoResumo(resp, ['telefone', 'celular', 'whatsapp']) || '',
                         cpf: edit.cpf || resp.cpf || this.valorCampoResumo(resp, ['cpf']) || '',
-                        idade: this.valorCampoResumo(resp, ['idade']) || '',
-                        sexo: this.valorCampoResumo(resp, ['sexo', 'gênero', 'genero']) || ''
+                        email: edit.email || resp.email || this.valorCampoResumo(resp, ['email', 'e-mail']) || '',
+                        idade: idadeInformada || idadeCalculada || '',
+                        sexo: edit.sexo || resp.sexo || this.valorCampoResumo(resp, ['sexo', 'gênero', 'genero']) || '',
+                        bairro: edit.bairro || resp.bairro || resp.endereco_bairro || this.valorCampoResumo(resp, ['bairro']) || ''
                     };
                 },
                 definirCirculoEncontrista(respId, circulo) {

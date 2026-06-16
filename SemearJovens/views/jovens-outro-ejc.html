@@ -2,7 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
-    <title>EJC - Outras paróquias/movimentos</title>
+    <title>EJC - Outras Paróquias</title>
     <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
     <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
@@ -876,7 +876,7 @@
         <main class="container-fluid">
             <div class="outros-ejcs-shell">
                 <div class="d-flex flex-wrap justify-content-between align-items-start mb-4 gap-3">
-                    <h3 class="lista-mestre-page-title">Outras paróquias/movimentos - EJC {{ nomeMeuEJC }}</h3>
+                    <h3 class="lista-mestre-page-title">Outras Paróquias - EJC {{ nomeMeuEJC }}</h3>
                     <div class="lista-mestre-toolbar-actions">
                         <div class="lista-mestre-toolbar-buttons">
                             <button class="btn btn-soft-secondary btn-ejc-action"
@@ -929,7 +929,7 @@
                 <ul class="nav nav-tabs mb-3 lista-mestre-tabs-bar">
                     <li class="nav-item">
                         <button class="nav-link" :class="{ active: aba === 'outros' }" @click="definirAba('outros')">
-                            Outras paróquias/movimentos
+                            Outras Paróquias
                         </button>
                     </li>
                     <li class="nav-item">
@@ -1084,7 +1084,7 @@
                         <div class="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
                             <div>
                                 <div class="fw-semibold text-dark">Filtros avançados de tios</div>
-                                <div class="text-muted small">Filtre por casal, telefone e EJC de origem.</div>
+                                <div class="text-muted small">Filtre por casal, telefone e movimento.</div>
                             </div>
                             <button type="button" class="btn btn-sm btn-outline-secondary" @click="limparFiltrosAbaAtual">Limpar filtros</button>
                         </div>
@@ -1098,8 +1098,8 @@
                                 <input class="form-control" v-model.trim="filtroTelefoneTios" placeholder="Telefone do tio ou tia">
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label small text-muted">EJC de origem</label>
-                                <input class="form-control" v-model.trim="filtroEjcOrigemTios" placeholder="Paróquia ou nome do EJC">
+                                <label class="form-label small text-muted">Movimento</label>
+                                <input class="form-control" v-model.trim="filtroEjcOrigemTios" placeholder="Paróquia ou movimento">
                             </div>
                         </div>
                     </div>
@@ -1197,7 +1197,7 @@
                                 <tr>
                                     <th v-if="colunasVisiveisTios.Casal">Casal</th>
                                     <th v-if="colunasVisiveisTios.Telefones">Telefones</th>
-                                    <th v-if="colunasVisiveisTios.EjcOrigem">EJC de Origem</th>
+                                    <th v-if="colunasVisiveisTios.EjcOrigem">Movimento</th>
                                     <th style="width: 120px;">Ações</th>
                                 </tr>
                             </thead>
@@ -2383,6 +2383,13 @@
                                                 <p>Deficiências e restrições alimentares do tio e da tia.</p>
                                             </div>
                                             <div class="row g-3">
+                                                <div class="col-12">
+                                                    <label class="form-label d-block">O casal possui carro?</label>
+                                                    <select class="form-select" v-model="formCasal.possui_carro">
+                                                        <option :value="false">Não</option>
+                                                        <option :value="true">Sim</option>
+                                                    </select>
+                                                </div>
                                                 <div class="col-12 pt-2"><h6 class="tios-section-heading">Saúde do Tio</h6></div>
                                                 <div class="col-md-12">
                                                     <label class="form-label d-block">Pessoa com Deficiência(PcD)?</label>
@@ -2411,13 +2418,6 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div class="col-md-12">
-                                                    <label class="form-label d-block">Possui carro?</label>
-                                                    <select class="form-select" v-model="formCasal.possui_carro_tio">
-                                                        <option :value="false">Não</option>
-                                                        <option :value="true">Sim</option>
-                                                    </select>
-                                                </div>
                                                 <div class="col-12 pt-2"><h6 class="tios-section-heading">Saúde da Tia</h6></div>
                                                 <div class="col-md-12">
                                                     <label class="form-label d-block">Pessoa com Deficiência(PcD)?</label>
@@ -2445,13 +2445,6 @@
                                                             </select>
                                                         </div>
                                                     </div>
-                                                </div>
-                                                <div class="col-md-12">
-                                                    <label class="form-label d-block">Possui carro?</label>
-                                                    <select class="form-select" v-model="formCasal.possui_carro_tia">
-                                                        <option :value="false">Não</option>
-                                                        <option :value="true">Sim</option>
-                                                    </select>
                                                 </div>
                                                 <div class="col-12">
                                                     <label class="form-label">Observações</label>
@@ -2588,7 +2581,7 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
-                        <p class="text-muted mb-3">Qual tipo de cadastro você quer criar em <strong>Outras paróquias/movimentos</strong>?</p>
+                        <p class="text-muted mb-3">Qual tipo de cadastro você quer criar em <strong>Outras Paróquias</strong>?</p>
                         <div class="d-grid gap-2">
                             <button class="btn btn-success" @click="selecionarNovoTipo('jovem')"><i class="fa-solid fa-plus icon-accent"></i> Novo jovem</button>
                             <button class="btn btn-outline-primary" @click="selecionarNovoTipo('tio')"><i class="fa-solid fa-plus icon-accent"></i> Novo tio</button>
@@ -2893,6 +2886,7 @@ Liturgia (Coordenador - Música)</div>
                         detalhes_restricao_tio: '',
                         deficiencia_tio: false,
                         qual_deficiencia_tio: '',
+                        possui_carro: false,
                         possui_carro_tio: false,
                         restricao_alimentar_tia: false,
                         detalhes_restricao_tia: '',
@@ -2930,7 +2924,7 @@ Liturgia (Coordenador - Música)</div>
                 },
                 placeholderPesquisaRapida() {
                     if (this.aba === 'membros') return 'Pesquisar por nome, telefone, EJC, idade, sexo, moita ou termos';
-                    if (this.aba === 'tios') return 'Pesquisar por casal, telefones ou EJC de origem';
+                    if (this.aba === 'tios') return 'Pesquisar por casal, telefones ou movimento';
                     return 'Pesquisar por nome, paróquia, bairro ou observação';
                 },
                 tituloBotaoNovoAtual() {
@@ -3525,6 +3519,7 @@ Liturgia (Coordenador - Música)</div>
                     return detalhes.filter((d) => String(d || '').toLowerCase().startsWith('presença em:')).length;
                 },
                 labelColunaOutroEjc(coluna) {
+                    if (coluna === 'EjcOrigem' && this.aba === 'tios') return 'Movimento';
                     const labels = {
                         Nome: 'Nome',
                         Telefone: 'Telefone',
@@ -3694,6 +3689,9 @@ Liturgia (Coordenador - Música)</div>
                     if (!this.formCasal.restricao_alimentar_tio) this.formCasal.detalhes_restricao_tio = '';
                     if (!this.formCasal.deficiencia_tia) this.formCasal.qual_deficiencia_tia = '';
                     if (!this.formCasal.restricao_alimentar_tia) this.formCasal.detalhes_restricao_tia = '';
+                    this.formCasal.possui_carro = !!this.formCasal.possui_carro;
+                    this.formCasal.possui_carro_tio = this.formCasal.possui_carro;
+                    this.formCasal.possui_carro_tia = this.formCasal.possui_carro;
                     this.formCasal.deficiencia = !!(this.formCasal.deficiencia_tio || this.formCasal.deficiencia_tia);
                     this.formCasal.restricao_alimentar = !!(this.formCasal.restricao_alimentar_tio || this.formCasal.restricao_alimentar_tia);
                 },
@@ -5285,6 +5283,7 @@ Liturgia (Coordenador - Música)</div>
                         detalhes_restricao_tio: '',
                         deficiencia_tio: false,
                         qual_deficiencia_tio: '',
+                        possui_carro: false,
                         possui_carro_tio: false,
                         restricao_alimentar_tia: false,
                         detalhes_restricao_tia: '',
@@ -5362,6 +5361,7 @@ Liturgia (Coordenador - Música)</div>
                         detalhes_restricao_tio: baseItem.detalhes_restricao_tio || '',
                         deficiencia_tio: !!baseItem.deficiencia_tio,
                         qual_deficiencia_tio: baseItem.qual_deficiencia_tio || '',
+                        possui_carro: !!(baseItem.possui_carro || baseItem.possui_carro_tio || baseItem.possui_carro_tia),
                         possui_carro_tio: !!baseItem.possui_carro_tio,
                         restricao_alimentar_tia: !!baseItem.restricao_alimentar_tia,
                         detalhes_restricao_tia: baseItem.detalhes_restricao_tia || '',

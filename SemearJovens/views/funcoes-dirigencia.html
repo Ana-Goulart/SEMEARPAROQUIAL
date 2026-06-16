@@ -125,6 +125,13 @@
             box-shadow: none;
         }
 
+        .fd-system-badge {
+            border: 1px solid rgba(184, 135, 50, 0.28);
+            background: #fff4dc;
+            color: #8a5b16;
+            font-weight: 700;
+        }
+
         @media (min-width: 768px) {
             .fd-access-head {
                 flex-direction: row;
@@ -179,14 +186,15 @@
                                 <div class="d-flex justify-content-between align-items-start">
                                     <h6 class="mb-1">{{ f.nome }}</h6>
                                     <div class="d-flex gap-1">
-                                        <button class="btn-edit-standard btn-sm btn-ejc-action" @click="abrirModalEditarFuncao(f)" title="Editar" aria-label="Editar">
+                                        <button v-if="!f.protegida" class="btn-edit-standard btn-sm btn-ejc-action" @click="abrirModalEditarFuncao(f)" title="Editar" aria-label="Editar">
                                             <span class="btn-ejc-icon"><i class="fas fa-pen-to-square"></i></span>
                                             <span class="btn-ejc-text">Editar</span>
                                         </button>
-                                        <button class="btn btn-danger btn-ejc-action" @click="removerFuncao(f.id)" title="Excluir" aria-label="Excluir">
+                                        <button v-if="!f.protegida" class="btn btn-danger btn-ejc-action" @click="removerFuncao(f.id)" title="Excluir" aria-label="Excluir">
                                             <span class="btn-ejc-icon"><i class="fa-solid fa-trash icon-accent"></i></span>
                                             <span class="btn-ejc-text">Remover</span>
                                         </button>
+                                        <span v-if="f.protegida" class="badge fd-system-badge">Padrão do sistema</span>
                                     </div>
                                 </div>
                                 <p class="text-muted small mb-2">{{ f.descricao || 'Sem descrição.' }}</p>

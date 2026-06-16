@@ -47,7 +47,6 @@
                         <div class="col-md-4"><label class="form-label">Tem deficiência?</label><select class="form-select" v-model="form.deficiencia_tio"><option :value="false">Não</option><option :value="true">Sim</option></select></div>
                         <div class="col-md-4" v-if="form.deficiencia_tio"><label class="form-label">Qual?</label><input class="form-control" v-model.trim="form.qual_deficiencia_tio"></div>
                         <div class="col-md-4"><label class="form-label">Restrição alimentar?</label><select class="form-select" v-model="form.restricao_alimentar_tio"><option :value="false">Não</option><option :value="true">Sim</option></select></div>
-                        <div class="col-md-4"><label class="form-label">Possui carro?</label><select class="form-select" v-model="form.possui_carro_tio"><option :value="false">Não</option><option :value="true">Sim</option></select></div>
                         <div class="col-md-8" v-if="form.restricao_alimentar_tio">
                             <label class="form-label">Qual restrição?</label>
                             <select class="form-select" v-model="form.detalhes_restricao_tio" required>
@@ -65,7 +64,6 @@
                         <div class="col-md-4"><label class="form-label">Tem deficiência?</label><select class="form-select" v-model="form.deficiencia_tia"><option :value="false">Não</option><option :value="true">Sim</option></select></div>
                         <div class="col-md-4" v-if="form.deficiencia_tia"><label class="form-label">Qual?</label><input class="form-control" v-model.trim="form.qual_deficiencia_tia"></div>
                         <div class="col-md-4"><label class="form-label">Restrição alimentar?</label><select class="form-select" v-model="form.restricao_alimentar_tia"><option :value="false">Não</option><option :value="true">Sim</option></select></div>
-                        <div class="col-md-4"><label class="form-label">Possui carro?</label><select class="form-select" v-model="form.possui_carro_tia"><option :value="false">Não</option><option :value="true">Sim</option></select></div>
                         <div class="col-md-8" v-if="form.restricao_alimentar_tia">
                             <label class="form-label">Qual restrição?</label>
                             <select class="form-select" v-model="form.detalhes_restricao_tia" required>
@@ -76,6 +74,7 @@
                         </div>
 
                         <div class="col-12 pt-2"><div class="section-title">Dados do casal</div></div>
+                        <div class="col-md-4"><label class="form-label">O casal possui carro?</label><select class="form-select" v-model="form.possui_carro"><option :value="false">Não</option><option :value="true">Sim</option></select></div>
                         <div class="col-md-6" v-if="form.origem_tipo === 'OUTRO_EJC'">
                             <label class="form-label">Encontro *</label>
                             <select class="form-select" v-model="form.outro_ejc_id" required>
@@ -148,8 +147,9 @@
                         this.form.telefone_tia = this.formatarTelefone(this.form.telefone_tia);
                         this.form.cpf_tio = this.formatarCpf(this.form.cpf_tio);
                         this.form.cpf_tia = this.formatarCpf(this.form.cpf_tia);
-                        this.form.possui_carro_tio = !!this.form.possui_carro_tio;
-                        this.form.possui_carro_tia = !!this.form.possui_carro_tia;
+                        this.form.possui_carro = !!(this.form.possui_carro || this.form.possui_carro_tio || this.form.possui_carro_tia);
+                        this.form.possui_carro_tio = this.form.possui_carro;
+                        this.form.possui_carro_tia = this.form.possui_carro;
                     } catch (err) { this.erro = err.message || 'Não foi possível abrir o formulário.'; }
                     finally { this.loading = false; }
                 },
@@ -157,7 +157,12 @@
                     if (this.digits(this.form.cpf_tio).length !== 11 || this.digits(this.form.cpf_tia).length !== 11) { alert('Informe CPF com 11 dígitos para tio e tia.'); return; }
                     this.enviando = true;
                     try {
-                        const res = await fetch(`/api/atualizacoes-cadastro-public/tios/${encodeURIComponent(this.token)}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(this.form) });
+                        const payload = {
+                            ...this.form,
+                            possui_carro_tio: this.form.possui_carro ? 1 : 0,
+                            possui_carro_tia: this.form.possui_carro ? 1 : 0
+                        };
+                        const res = await fetch(`/api/atualizacoes-cadastro-public/tios/${encodeURIComponent(this.token)}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                         const data = await res.json().catch(() => ({}));
                         if (!res.ok) throw new Error(data.error || 'Erro ao salvar.');
                         this.sucesso = true;

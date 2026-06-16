@@ -1501,26 +1501,6 @@
                                                         </ul>
                                                     </div>
                                                 </div>
-                                                <div class="col-md-6" v-if="tipoConjuge === 'MESMO_EJC'">
-                                                    <label class="form-label small">Fez ECC/ECNA?</label>
-                                                    <select v-model="jovemEditando.conjuge_ecc_tipo"
-                                                        class="form-select form-select-sm"
-                                                        @change="onConjugeEccTipoChange">
-                                                        <option value="NAO_FEZ">Não fez ainda</option>
-                                                        <option value="ECC">ECC</option>
-                                                        <option value="ECNA">ECNA</option>
-                                                    </select>
-                                                </div>
-                                                <div class="col-md-6" v-if="tipoConjuge === 'MESMO_EJC' && (jovemEditando.conjuge_ecc_tipo === 'ECC' || jovemEditando.conjuge_ecc_tipo === 'ECNA')">
-                                                    <label class="form-label small">Número do ECC/ECNA</label>
-                                                    <select v-model="jovemEditando.conjuge_ecc_numero"
-                                                        class="form-select form-select-sm">
-                                                        <option value="">Selecione...</option>
-                                                        <option v-for="ecc in eccDisponiveisParaConjuge" :key="'ecc-'+ecc.id" :value="ecc.numero">
-                                                            {{ ecc.numero }} {{ ecc.tipo }}
-                                                        </option>
-                                                    </select>
-                                                </div>
                                                 <template
                                                     v-if="tipoConjuge === 'OUTRO_EJC' || tipoConjuge === 'NAO_FEZ'">
                                                     <div class="col-md-6">
@@ -1905,6 +1885,13 @@
                                     <h6 class="m-0 mb-3">Histórico de Observações e Informações Especiais</h6>
 
                                     <!-- LISTA DE OBSERVAÇÕES -->
+                                    <div class="alert alert-warning d-flex gap-2 align-items-start" role="alert">
+                                        <i class="fa-solid fa-triangle-exclamation mt-1"></i>
+                                        <div>
+                                            Registre apenas informações necessárias para o cuidado pastoral e organização do EJC.
+                                            Evite comentários ofensivos, julgamentos, apelidos pejorativos ou qualquer conteúdo que possa expor, constranger ou caracterizar bullying.
+                                        </div>
+                                    </div>
                                     <div class="list-group mb-3">
                                         <div v-for="obs in observacoesExtras" :key="obs.id" class="list-group-item">
                                             <div class="d-flex justify-content-between align-items-start mb-1">
@@ -2026,6 +2013,9 @@
                                     <div class="text-end">
                                         <button class="btn btn-success" @click="abrirModalMissaoExterna">
                                             <i class="fa-solid fa-compass icon-accent"></i> Missão externa
+                                        </button>
+                                        <button class="btn btn-primary ms-2" @click="abrirModalCoordenacaoFicha">
+                                            <i class="fa-solid fa-sitemap icon-accent"></i> Coordenação
                                         </button>
                                     </div>
                                 </div>
@@ -2524,6 +2514,18 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                             <input type="number" min="1" v-model.number="formMoita.ejc_numero" class="form-control"
                                 placeholder="Ex: 2">
                         </div>
+                        <div class="row g-3 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label">Data de início do encontro</label>
+                                <input type="text" class="form-control date-br" v-model="formMoita.data_inicio"
+                                    placeholder="dd/mm/aaaa" autocomplete="off">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Data de fim do encontro</label>
+                                <input type="text" class="form-control date-br" v-model="formMoita.data_fim"
+                                    placeholder="dd/mm/aaaa" autocomplete="off">
+                            </div>
+                        </div>
                         <div class="mb-3">
                             <label class="form-label">Outro EJC *</label>
                             <select v-model.number="formMoita.outro_ejc_id" class="form-select">
@@ -2545,6 +2547,48 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                         <button type="button" class="btn btn-success" @click="salvarMoitaHistorico">Salvar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="modalCoordenacaoFicha" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header text-white" style="background-color: #2d5f85;">
+                        <h5 class="modal-title"><i class="fa-solid fa-sitemap icon-accent"></i> Adicionar em coordenação</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3 p-3 rounded border bg-light">
+                            <div class="fw-semibold">{{ jovemEditando.nome_completo || '-' }}</div>
+                            <div class="small text-muted">{{ jovemEditando.telefone || 'Telefone não informado' }}</div>
+                        </div>
+                        <div v-if="carregandoCoordenacoesFicha" class="text-center py-3">
+                            <div class="spinner-border text-primary" role="status" aria-hidden="true"></div>
+                        </div>
+                        <template v-else>
+                            <div class="mb-3">
+                                <label class="form-label">Coordenação e período *</label>
+                                <select class="form-select" v-model.number="formCoordenacaoFicha.coordenacao_id">
+                                    <option :value="null">Selecione...</option>
+                                    <option v-for="coord in coordenacoesFicha" :key="`coord-ficha-${coord.id}`" :value="coord.id">
+                                        {{ coord.pasta_nome ? (coord.pasta_nome + ' / ') : '' }}{{ coord.nome }}<span v-if="coord.periodo"> - {{ coord.periodo }}</span>
+                                    </option>
+                                </select>
+                            </div>
+                            <div v-if="!coordenacoesFicha.length" class="alert alert-warning mb-0">
+                                Cadastre coordenações no menu Coordenações antes de vincular o jovem.
+                            </div>
+                        </template>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-soft-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button type="button" class="btn btn-success" @click="salvarCoordenacaoFicha"
+                            :disabled="carregandoCoordenacoesFicha || salvandoCoordenacaoFicha || !formCoordenacaoFicha.coordenacao_id">
+                            <span v-if="salvandoCoordenacaoFicha" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                            Salvar
+                        </button>
                     </div>
                 </div>
             </div>
@@ -2743,6 +2787,13 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                     modalMissaoExterna: null,
                     modalMoita: null,
                     modalGarcomMissaoExterna: null,
+                    modalCoordenacaoFicha: null,
+                    coordenacoesFicha: [],
+                    carregandoCoordenacoesFicha: false,
+                    salvandoCoordenacaoFicha: false,
+                    formCoordenacaoFicha: {
+                        coordenacao_id: null
+                    },
                     modalPastoralFicha: null,
                     outrosEjcsList: [], // Lista de EJCs de fora
                     eccEncontros: [],
@@ -2778,6 +2829,8 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                     formMoita: {
                         ejc_numero: null,
                         outro_ejc_id: null,
+                        data_inicio: '',
+                        data_fim: '',
                         funcao_moita: ''
                     },
                     formGarcomMissaoExterna: {
@@ -5091,6 +5144,8 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                         let conjugeEJcId = this.jovemEditando.conjuge_ejc_id || null;
                         let conjugeOutroEjcId = this.jovemEditando.conjuge_outro_ejc_id || null;
                         let conjugeTelefone = this.jovemEditando.conjuge_telefone || null;
+                        this.jovemEditando.conjuge_ecc_tipo = null;
+                        this.jovemEditando.conjuge_ecc_numero = null;
 
                         if (conjugeOutroEjcId) {
                             conjugeId = null;
@@ -5101,14 +5156,6 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                         }
 
                         let moverCasalParaTios = false;
-                        const devePerguntarMoverParaTios = !!conjugeId
-                            && (this.jovemEditando.conjuge_ecc_tipo === 'ECC' || this.jovemEditando.conjuge_ecc_tipo === 'ECNA')
-                            && !!this.jovemEditando.conjuge_ecc_numero;
-                        if (devePerguntarMoverParaTios) {
-                            moverCasalParaTios = await window.showFloatingConfirm(
-                                'Deseja mover este casal para a lista de tios usando os dados do casal?'
-                            );
-                        }
 
                         if (this.jovemEditando.nao_serve_ejc && !String(this.jovemEditando.motivo_nao_serve_ejc || '').trim()) {
                             alert('Informe o motivo de o jovem não servir no EJC.');
@@ -5132,6 +5179,12 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                             qual_deficiencia: this.jovemEditando.qual_deficiencia || null,
                             restricao_alimentar: this.jovemEditando.restricao_alimentar ? 1 : 0,
                             detalhes_restricao: this.jovemEditando.detalhes_restricao || null,
+                            endereco_rua: this.jovemEditando.endereco_rua || null,
+                            endereco_numero: this.jovemEditando.endereco_numero || null,
+                            endereco_bairro: this.jovemEditando.endereco_bairro || null,
+                            endereco_cidade: this.jovemEditando.endereco_cidade || null,
+                            endereco_estado: this.jovemEditando.endereco_estado || null,
+                            endereco_cep: this.jovemEditando.endereco_cep || null,
                             eh_musico: this.jovemEditando.eh_musico ? 1 : 0,
                             equipe_saude: this.jovemEditando.equipe_saude ? 1 : 0,
                             instrumentos_musicais: this.jovemEditando.eh_musico ? this.normalizarInstrumentos(this.jovemEditando.instrumentos_musicais) : [],
@@ -5144,8 +5197,8 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                             conjuge_ejc_id: conjugeEJcId,
                             conjuge_outro_ejc_id: conjugeOutroEjcId,
                             conjuge_paroquia: this.conjFezOutroEjc ? (this.jovemEditando.conjuge_paroquia || null) : null,
-                            conjuge_ecc_tipo: conjugeId ? (this.jovemEditando.conjuge_ecc_tipo || null) : null,
-                            conjuge_ecc_numero: conjugeId ? (this.jovemEditando.conjuge_ecc_numero || null) : null,
+                            conjuge_ecc_tipo: null,
+                            conjuge_ecc_numero: null,
                             mover_casal_para_tios: moverCasalParaTios
                         };
 
@@ -5501,7 +5554,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                     if (this.modalMissaoExterna) this.modalMissaoExterna.hide();
                 },
                 abrirModalMoita() {
-                    this.formMoita = { ejc_numero: null, outro_ejc_id: null, funcao_moita: '' };
+                    this.formMoita = { ejc_numero: null, outro_ejc_id: null, data_inicio: '', data_fim: '', funcao_moita: '' };
                     this.carregarOutrosEjcs();
                     this.carregarFuncoesMoita();
                     if (!this.modalMoita) this.modalMoita = new bootstrap.Modal(document.getElementById('modalMoita'));
@@ -5519,10 +5572,59 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                         this.funcoesMoita = [];
                     }
                 },
+                normalizarDataMoita(valor) {
+                    const texto = String(valor || '').trim();
+                    if (!texto) return null;
+                    const meses = {
+                        jan: '01', janeiro: '01',
+                        fev: '02', fevereiro: '02',
+                        mar: '03', marco: '03', março: '03',
+                        abr: '04', abril: '04',
+                        mai: '05', maio: '05',
+                        jun: '06', junho: '06',
+                        jul: '07', julho: '07',
+                        ago: '08', agosto: '08',
+                        set: '09', setembro: '09',
+                        out: '10', outubro: '10',
+                        nov: '11', novembro: '11',
+                        dez: '12', dezembro: '12'
+                    };
+                    const iso = texto.match(/^(\d{4})-(\d{2})-(\d{2})(?:$|[T\s])/);
+                    const brNumerica = texto.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+                    const brMesExtenso = texto.match(/^(\d{1,2})[/-]([a-zçãéíóú]+)[/-](\d{4})$/i);
+                    const match = iso || brNumerica || brMesExtenso;
+                    if (!match) return null;
+
+                    const dia = (iso ? match[3] : match[1]).padStart(2, '0');
+                    const mes = brMesExtenso
+                        ? meses[match[2].toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')]
+                        : (iso ? match[2] : match[2].padStart(2, '0'));
+                    const ano = iso ? match[1] : match[3];
+                    if (!mes) return null;
+
+                    const data = new Date(Number(ano), Number(mes) - 1, Number(dia));
+                    if (
+                        data.getFullYear() !== Number(ano)
+                        || data.getMonth() !== Number(mes) - 1
+                        || data.getDate() !== Number(dia)
+                    ) return null;
+
+                    return `${ano}-${mes}-${dia}`;
+                },
                 async salvarMoitaHistorico() {
                     if (!this.jovemEditando || !this.jovemEditando.id) return;
                     if (!this.formMoita.ejc_numero || !this.formMoita.outro_ejc_id || !String(this.formMoita.funcao_moita || '').trim()) {
                         alert('Preencha número do EJC, outro EJC e função no moita.');
+                        return;
+                    }
+                    const dataInicio = this.normalizarDataMoita(this.formMoita.data_inicio);
+                    const dataFim = this.normalizarDataMoita(this.formMoita.data_fim);
+                    if (String(this.formMoita.data_inicio || '').trim() && !dataInicio) {
+                        alert('Informe a data de início no formato dd/mm/aaaa ou dd/mês/aaaa.');
+                        return;
+                    }
+                    if (String(this.formMoita.data_fim || '').trim() && !dataFim) {
+                        alert('Informe a data de fim no formato dd/mm/aaaa ou dd/mês/aaaa.');
                         return;
                     }
                     try {
@@ -5531,6 +5633,8 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                             tipo: 'MOITA_OUTRO',
                             ejc_numero: this.formMoita.ejc_numero,
                             outro_ejc_id: this.formMoita.outro_ejc_id,
+                            data_inicio: dataInicio,
+                            data_fim: dataFim,
                             funcao_garcom: this.formMoita.funcao_moita.trim()
                         };
 
@@ -5550,6 +5654,53 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                     } catch (err) {
                         console.error(err);
                         alert("Erro ao adicionar moita.");
+                    }
+                },
+                async carregarCoordenacoesFicha() {
+                    this.carregandoCoordenacoesFicha = true;
+                    try {
+                        const res = await fetch('/api/coordenadores');
+                        const data = await res.json().catch(() => ([]));
+                        this.coordenacoesFicha = Array.isArray(data) ? data.filter((coord) => coord && coord.id) : [];
+                    } catch (err) {
+                        console.error(err);
+                        this.coordenacoesFicha = [];
+                    } finally {
+                        this.carregandoCoordenacoesFicha = false;
+                    }
+                },
+                async abrirModalCoordenacaoFicha() {
+                    if (!this.jovemEditando || !this.jovemEditando.id) return;
+                    this.formCoordenacaoFicha = { coordenacao_id: null };
+                    await this.carregarCoordenacoesFicha();
+                    if (!this.modalCoordenacaoFicha) this.modalCoordenacaoFicha = new bootstrap.Modal(document.getElementById('modalCoordenacaoFicha'));
+                    this.modalCoordenacaoFicha.show();
+                },
+                async salvarCoordenacaoFicha() {
+                    if (!this.jovemEditando || !this.jovemEditando.id || !this.formCoordenacaoFicha.coordenacao_id) return;
+                    this.salvandoCoordenacaoFicha = true;
+                    try {
+                        const res = await fetch(`/api/coordenadores/${this.formCoordenacaoFicha.coordenacao_id}/membros`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                tipo: 'JOVEM',
+                                jovem_id: this.jovemEditando.id
+                            })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao adicionar jovem na coordenação.');
+                            return;
+                        }
+                        if (this.modalCoordenacaoFicha) this.modalCoordenacaoFicha.hide();
+                        await this.carregarComissoes();
+                        alert('Jovem adicionado na coordenação com sucesso.');
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao adicionar jovem na coordenação.');
+                    } finally {
+                        this.salvandoCoordenacaoFicha = false;
                     }
                 },
                 listaReservaPorSexoAtual() {
@@ -5689,7 +5840,6 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                     this.showConjugeEdit = !this.showConjugeEdit;
                     if (this.showConjugeEdit) {
                         this.carregarEjcs();
-                        this.carregarEccEncontros();
                         this.carregarOutrosEjcs();
                         this.inferirTipoConjuge();
                     }
@@ -5714,9 +5864,9 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                     if (this.tipoConjuge !== 'MESMO_EJC') {
                         this.jovemEditando.conjuge_id = null;
                         this.jovemEditando.conjuge_ejc_id = null;
-                        this.jovemEditando.conjuge_ecc_tipo = '';
-                        this.jovemEditando.conjuge_ecc_numero = '';
                     }
+                    this.jovemEditando.conjuge_ecc_tipo = null;
+                    this.jovemEditando.conjuge_ecc_numero = null;
                     if (this.tipoConjuge !== 'OUTRO_EJC') {
                         this.jovemEditando.conjuge_outro_ejc_id = null;
                         this.jovemEditando.conjuge_paroquia = null;
@@ -5725,20 +5875,13 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                         this.jovemEditando.conjuge_nome = '';
                     }
                 },
-                onConjugeEccTipoChange() {
-                    if (!this.jovemEditando.conjuge_ecc_tipo || this.jovemEditando.conjuge_ecc_tipo === 'NAO_FEZ') {
-                        this.jovemEditando.conjuge_ecc_numero = '';
-                    } else {
-                        this.carregarEccEncontros();
-                    }
-                },
                 removerConjugeSelecionado() {
                     this.jovemEditando.conjuge_id = null;
                     this.jovemEditando.conjuge_nome = '';
                     this.jovemEditando.conjuge_telefone = '';
                     this.jovemEditando.conjuge_ejc_id = null;
-                    this.jovemEditando.conjuge_ecc_tipo = 'NAO_FEZ';
-                    this.jovemEditando.conjuge_ecc_numero = '';
+                    this.jovemEditando.conjuge_ecc_tipo = null;
+                    this.jovemEditando.conjuge_ecc_numero = null;
                     this.jovemConjuge = null;
                 },
                 onEstadoCivilChange() {
@@ -5749,8 +5892,8 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                         this.removerConjugeSelecionado();
                         this.jovemEditando.conjuge_outro_ejc_id = null;
                         this.jovemEditando.conjuge_paroquia = null;
-                        this.jovemEditando.conjuge_ecc_tipo = '';
-                        this.jovemEditando.conjuge_ecc_numero = '';
+                        this.jovemEditando.conjuge_ecc_tipo = null;
+                        this.jovemEditando.conjuge_ecc_numero = null;
                         this.showConjugeEdit = true; // Força visualmente a aba de edição a já abrir
                     } else {
                         // Se voltar para Solteiro, apenas limpar
@@ -5758,8 +5901,8 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                         this.removerConjugeSelecionado();
                         this.jovemEditando.conjuge_outro_ejc_id = null;
                         this.jovemEditando.conjuge_paroquia = null;
-                        this.jovemEditando.conjuge_ecc_tipo = '';
-                        this.jovemEditando.conjuge_ecc_numero = '';
+                        this.jovemEditando.conjuge_ecc_tipo = null;
+                        this.jovemEditando.conjuge_ecc_numero = null;
                         this.showConjugeEdit = false;
                     }
                 },
@@ -5783,8 +5926,8 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                     this.jovemEditando.conjuge_telefone = j.telefone;
                     this.jovemEditando.conjuge_ejc_id = j.numero_ejc_fez || null;
                     this.jovemEditando.conjuge_outro_ejc_id = null;
-                    this.jovemEditando.conjuge_ecc_tipo = '';
-                    this.jovemEditando.conjuge_ecc_numero = '';
+                    this.jovemEditando.conjuge_ecc_tipo = null;
+                    this.jovemEditando.conjuge_ecc_numero = null;
                     this.searchResults = [];
                     this.searchQuery = '';
                 },
@@ -5794,8 +5937,8 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                             this.jovemEditando.conjuge_id = null;
                             this.jovemEditando.conjuge_ejc_id = null;
                             this.jovemEditando.conjuge_telefone = null;
-                            this.jovemEditando.conjuge_ecc_tipo = 'NAO_FEZ';
-                            this.jovemEditando.conjuge_ecc_numero = '';
+                            this.jovemEditando.conjuge_ecc_tipo = null;
+                            this.jovemEditando.conjuge_ecc_numero = null;
                         } else if (this.tipoConjuge === 'MESMO_EJC') {
                             this.jovemEditando.conjuge_outro_ejc_id = null;
                             this.jovemEditando.conjuge_paroquia = null;
@@ -5805,8 +5948,8 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                             this.jovemEditando.conjuge_outro_ejc_id = null;
                             this.jovemEditando.conjuge_telefone = null;
                             this.jovemEditando.conjuge_paroquia = null;
-                            this.jovemEditando.conjuge_ecc_tipo = 'NAO_FEZ';
-                            this.jovemEditando.conjuge_ecc_numero = '';
+                            this.jovemEditando.conjuge_ecc_tipo = null;
+                            this.jovemEditando.conjuge_ecc_numero = null;
                         }
 
                         const payload = {
@@ -5816,10 +5959,8 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                             conjuge_ejc_id: this.tipoConjuge === 'MESMO_EJC' ? (this.jovemEditando.conjuge_ejc_id || null) : null,
                             conjuge_outro_ejc_id: this.tipoConjuge === 'OUTRO_EJC' ? (this.jovemEditando.conjuge_outro_ejc_id || null) : null,
                             conjuge_paroquia: null,
-                            conjuge_ecc_tipo: this.tipoConjuge === 'MESMO_EJC' ? (this.jovemEditando.conjuge_ecc_tipo || 'NAO_FEZ') : null,
-                            conjuge_ecc_numero: (this.tipoConjuge === 'MESMO_EJC' && (this.jovemEditando.conjuge_ecc_tipo === 'ECC' || this.jovemEditando.conjuge_ecc_tipo === 'ECNA'))
-                                ? (this.jovemEditando.conjuge_ecc_numero || null)
-                                : null
+                            conjuge_ecc_tipo: null,
+                            conjuge_ecc_numero: null
                         };
                         const res = await fetch(`/api/lista-mestre/${this.jovemEditando.id}`, {
                             method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
@@ -5875,8 +6016,8 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                     this.jovemEditando.conjuge_telefone = null;
                     this.jovemEditando.conjuge_ejc_id = null;
                     this.jovemEditando.conjuge_paroquia = null;
-                    this.jovemEditando.conjuge_ecc_tipo = '';
-                    this.jovemEditando.conjuge_ecc_numero = '';
+                    this.jovemEditando.conjuge_ecc_tipo = null;
+                    this.jovemEditando.conjuge_ecc_numero = null;
                     await this.salvarJovem();
                 },
                 getCirculoColor(c) {

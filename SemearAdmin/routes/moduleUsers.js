@@ -5,6 +5,17 @@ const { ensureStructure, hashPassword } = require('../lib/setup');
 const router = express.Router();
 const GRUPO_ADMIN_LOCAL = 'Tios';
 const GRUPOS_VALIDOS_SEMEAR_JOVENS = new Set(['Tios', 'Jovens', 'Diretor Espiritual', 'Padre']);
+const FUNCAO_DIRETOR_ESPIRITUAL_PADRE = 'Diretor Espiritual/Padre';
+const DESCRICAO_DIRETOR_ESPIRITUAL_PADRE = 'Função padrão do sistema com acesso de edição a todos os menus.';
+const MENU_KEYS_DIRETOR_ESPIRITUAL_PADRE = [
+    'gerencia',
+    'encontros',
+    'outros-ejcs',
+    'planejamento',
+    'secretaria',
+    'financeiro',
+    'minha-igreja'
+];
 const MODULE_DEFINITIONS = [
     { code: 'semear-jovens', nome: 'EJC' }
 ];
@@ -65,6 +76,52 @@ async function keepSingleEjcUser(connection, tenantId) {
     return keepId;
 }
 
+async function garantirFuncaoDiretorEspiritualPadre(connection, tenantId, usuarioId) {
+    const userId = Number(usuarioId || 0);
+    if (!userId) return;
+
+    const [funcoes] = await connection.query(
+        `SELECT id
+         FROM funcoes_dirigencia
+         WHERE tenant_id = ?
+           AND LOWER(nome) = LOWER(?)
+         LIMIT 1`,
+        [tenantId, FUNCAO_DIRETOR_ESPIRITUAL_PADRE]
+    );
+
+    let funcaoId = funcoes && funcoes[0] ? Number(funcoes[0].id) : 0;
+    if (!funcaoId) {
+        const [result] = await connection.query(
+            `INSERT INTO funcoes_dirigencia (tenant_id, nome, descricao)
+             VALUES (?, ?, ?)`,
+            [tenantId, FUNCAO_DIRETOR_ESPIRITUAL_PADRE, DESCRICAO_DIRETOR_ESPIRITUAL_PADRE]
+        );
+        funcaoId = result.insertId;
+    } else {
+        await connection.query(
+            `UPDATE funcoes_dirigencia
+             SET nome = ?, descricao = ?
+             WHERE id = ? AND tenant_id = ?`,
+            [FUNCAO_DIRETOR_ESPIRITUAL_PADRE, DESCRICAO_DIRETOR_ESPIRITUAL_PADRE, funcaoId, tenantId]
+        );
+    }
+
+    for (const menuKey of MENU_KEYS_DIRETOR_ESPIRITUAL_PADRE) {
+        await connection.query(
+            `INSERT INTO funcoes_dirigencia_menus (tenant_id, funcao_id, menu_key, access_level)
+             VALUES (?, ?, ?, 'edit')
+             ON DUPLICATE KEY UPDATE access_level = VALUES(access_level)`,
+            [tenantId, funcaoId, menuKey]
+        );
+    }
+
+    await connection.query(
+        `INSERT IGNORE INTO funcoes_dirigencia_usuarios (tenant_id, funcao_id, usuario_id)
+         VALUES (?, ?, ?)`,
+        [tenantId, funcaoId, userId]
+    );
+}
+
 async function syncLocalSemearJovensUser(connection, { tenantId, nomeCompleto, email, senha, grupo }) {
     const username = normalizeEmail(email);
     if (!username) return;
@@ -75,20 +132,23 @@ async function syncLocalSemearJovensUser(connection, { tenantId, nomeCompleto, e
         [tenantId]
     );
     if (rows.length) {
+        const usuarioId = Number(rows[0].id);
         const updateData = {
             username,
             nome_completo: String(nomeCompleto || '').trim(),
             grupo: grupoSeguro
         };
         if (senha) updateData.senha = await hashPassword(senha);
-        await connection.query('UPDATE usuarios SET ? WHERE id = ?', [updateData, rows[0].id]);
+        await connection.query('UPDATE usuarios SET ? WHERE id = ?', [updateData, usuarioId]);
+        await garantirFuncaoDiretorEspiritualPadre(connection, tenantId, usuarioId);
         return;
     }
 
-    await connection.query(
+    const [result] = await connection.query(
         'INSERT INTO usuarios (tenant_id, username, nome_completo, senha, grupo) VALUES (?, ?, ?, ?, ?)',
         [tenantId, username, String(nomeCompleto || '').trim(), await hashPassword(senha || ''), grupoSeguro]
     );
+    await garantirFuncaoDiretorEspiritualPadre(connection, tenantId, result.insertId);
 }
 
 router.get('/modules', requireAdmin, async (_req, res) => {
