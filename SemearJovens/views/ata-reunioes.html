@@ -90,6 +90,41 @@
             background-color: #ffcccc;
             border-color: #ff9999;
         }
+
+        .ata-actions {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            z-index: 10;
+        }
+
+        .ata-action-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 28px;
+            height: 24px;
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid #ddd;
+            border-radius: 999px;
+            color: #2f2417;
+        }
+
+        .ata-action-btn:hover,
+        .ata-action-btn:focus {
+            background-color: #f8f9fa;
+            border-color: #c7cdd3;
+        }
+
+        .ata-delete-action {
+            color: #5C0120;
+        }
+
+        .ata-delete-action:hover,
+        .ata-delete-action:focus {
+            color: #5C0120;
+            background-color: rgba(92, 1, 32, 0.08);
+        }
     </style>
 </head>
 
@@ -99,7 +134,7 @@
             <div class="d-flex flex-wrap justify-content-end align-items-center gap-3 mb-4">
                 <div class="me-auto">
                     <h3 class="mb-1"><i class="fa-solid fa-note-sticky icon-accent"></i> Ata Reuniões</h3>
-                    <p class="text-muted mb-0">Estruture por ano e mês, igual aos anexos.</p>
+                    <p class="text-muted mb-0">Organize as atas em pastas e subpastas.</p>
                 </div>
                 <div class="d-flex flex-wrap justify-content-end gap-2">
                     <button class="btn btn-primary" @click="criarPasta" :disabled="!podeCriarPasta"><i class="fa-solid fa-plus icon-accent"></i> Nova Pasta</button>
@@ -160,7 +195,7 @@
             </nav>
 
             <div class="mb-3">
-                <small class="text-muted">Regra: na raiz crie pasta de <strong>ano</strong>, dentro do ano crie pasta de <strong>mês</strong>.</small>
+                <small class="text-muted">Crie quantas subpastas precisar. Para criar atas, abra uma pasta.</small>
             </div>
 
             <div v-if="loading" class="text-center py-5">
@@ -185,7 +220,24 @@
 
                 <div v-for="ata in atas" :key="'a'+ata.id" class="col-6 col-md-4 col-lg-2">
                     <div class="ata-item h-100 d-flex flex-column align-items-center position-relative" @click="abrirModalVisualizar(ata)">
-                        <span class="delete-btn" @click.stop="removerAta(ata.id)" title="Apagar Ata"><i class="fa-solid fa-trash icon-accent"></i></span>
+                        <div class="dropdown ata-actions" @click.stop>
+                            <button class="ata-action-btn" type="button" @click="alternarMenuAta(ata.id)"
+                                aria-expanded="false" title="Ações da ata" aria-label="Ações da ata">
+                                <i class="fa-solid fa-ellipsis"></i>
+                            </button>
+                            <ul class="dropdown-menu dropdown-menu-end" :class="{ show: ataMenuAbertoId === ata.id }">
+                                <li>
+                                    <button class="dropdown-item" type="button" @click="abrirModalMoverAta(ata)">
+                                        <i class="fa-solid fa-folder-open me-2 icon-accent"></i>Mover
+                                    </button>
+                                </li>
+                                <li>
+                                    <button class="dropdown-item ata-delete-action" type="button" @click="removerAta(ata.id)">
+                                        <i class="fa-solid fa-trash me-2"></i>Excluir ata
+                                    </button>
+                                </li>
+                            </ul>
+                        </div>
                         <span class="item-icon"><i class="fa-solid fa-note-sticky icon-accent"></i></span>
                         <span class="item-name ata-title">{{ tituloAta(ata) }}</span>
                         <span class="ata-meta">{{ subtituloAta(ata) }}</span>
@@ -224,8 +276,8 @@
                                     </small>
                                 </td>
                                 <td>
-                                    {{ t.responsavel_nome || '-' }}
-                                    <small class="text-muted d-block">{{ t.responsavel_tipo === 'FUNCAO' ? 'Função' : (t.responsavel_tipo === 'USUARIO' ? 'Usuário' : '-') }}</small>
+                                    {{ nomeResponsavelTarefa(t) }}
+                                    <small class="text-muted d-block">{{ tipoResponsavelTarefa(t) }}</small>
                                 </td>
                                 <td>{{ formatarData(t.prazo) || '-' }}</td>
                                 <td>
@@ -335,6 +387,7 @@
                                                             @change="onTipoResponsavelTarefaChange(tarefa)">
                                                             <option value="USUARIO">Usuário</option>
                                                             <option value="FUNCAO">Função Dirigência</option>
+                                                            <option value="QUALQUER">Qualquer pessoa</option>
                                                         </select>
                                                     </div>
                                                     <div class="col-md-3">
@@ -343,10 +396,11 @@
                                                             <option :value="null">(Sem função)</option>
                                                             <option v-for="f in funcoesDirigencia" :key="`tf-${idx}-${f.id}`" :value="f.id">{{ f.nome }}</option>
                                                         </select>
-                                                        <select v-else class="form-select" v-model="tarefa.responsavel_usuario_id">
+                                                        <select v-else-if="tarefa.responsavel_tipo === 'USUARIO'" class="form-select" v-model="tarefa.responsavel_usuario_id">
                                                             <option :value="null">(Sem usuário)</option>
                                                             <option v-for="u in usuarios" :key="`tu-${idx}-${u.id}`" :value="u.id">{{ u.nome_completo }}</option>
                                                         </select>
+                                                        <div v-else class="form-control bg-light text-muted">Qualquer pessoa</div>
                                                     </div>
                                                     <div class="col-md-2">
                                                         <label class="form-label">Data Limite</label>
@@ -410,7 +464,7 @@
                                             <li class="list-group-item px-0" v-for="t in p.tarefas" :key="`tp-${t.id}`">
                                                 <div class="fw-semibold">{{ t.descricao }}</div>
                                                 <small class="text-muted">
-                                                    Responsável: {{ t.responsavel_nome || '-' }} •
+                                                    Responsável: {{ nomeResponsavelTarefa(t) }} •
                                                     Data limite: {{ formatarData(t.prazo) || '-' }} •
                                                     Status: {{ t.status === 'CONCLUIDA' ? 'Concluída' : 'Pendente' }}
                                                 </small>
@@ -430,6 +484,37 @@
                         </button>
                         <button class="btn btn-outline-danger" @click="baixarAtaPdf(ataVisualizando)"><i class="fa-solid fa-file-lines icon-accent"></i> Baixar PDF</button>
                         <button class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="modalMoverAta" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-primary text-white">
+                        <h5 class="modal-title"><i class="fa-solid fa-folder-open me-2"></i>Mover ata</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <label class="form-label">Pasta de destino</label>
+                        <select class="form-select" v-model="pastaDestinoId" :disabled="carregandoPastasMovimento">
+                            <option :value="null" disabled>
+                                {{ carregandoPastasMovimento ? 'Carregando pastas...' : 'Selecione uma pasta' }}
+                            </option>
+                            <option v-for="pasta in pastasMovimento" :key="`destino-${pasta.id}`"
+                                :value="pasta.id" :disabled="ataMovendo && Number(ataMovendo.pasta_id) === Number(pasta.id)">
+                                {{ pasta.caminho }}
+                            </option>
+                        </select>
+                        <small class="text-muted">A ata será removida da pasta atual e aparecerá na pasta escolhida.</small>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                        <button class="btn btn-primary" @click="moverAta"
+                            :disabled="!pastaDestinoId || carregandoPastasMovimento || (ataMovendo && Number(ataMovendo.pasta_id) === Number(pastaDestinoId))">
+                            Mover
+                        </button>
                     </div>
                 </div>
             </div>
@@ -462,8 +547,14 @@
                     funcoesDirigencia: [],
                     modalNovaAta: null,
                     modalVisualizarAta: null,
+                    modalMoverAta: null,
                     ataVisualizando: null,
                     ataEditandoId: null,
+                    ataMovendo: null,
+                    ataMenuAbertoId: null,
+                    pastaDestinoId: null,
+                    pastasMovimento: [],
+                    carregandoPastasMovimento: false,
                     formAta: {
                         titulo: '',
                         horario: '',
@@ -478,16 +569,20 @@
                     return this.currentPath.length ? this.currentPath[this.currentPath.length - 1] : null;
                 },
                 estaNoMes() {
-                    return !!(this.folderAtual && this.folderAtual.tipo === 'MES');
+                    return !!this.folderAtual;
                 },
                 podeCriarPasta() {
-                    return this.currentPath.length < 2;
+                    return true;
                 }
             },
             async mounted() {
                 await this.carregarUsuarios();
                 await this.carregarFuncoesDirigencia();
                 await this.carregarConteudo();
+                document.addEventListener('click', this.fecharMenuAta);
+            },
+            beforeUnmount() {
+                document.removeEventListener('click', this.fecharMenuAta);
             },
             methods: {
                 formatarData(data) {
@@ -520,6 +615,15 @@
                     if (!texto) return 'Ata com ocorrência do termo pesquisado.';
                     const limpo = String(texto).replace(/\s+/g, ' ').trim();
                     return limpo.length > 180 ? `${limpo.slice(0, 180)}...` : limpo;
+                },
+                nomeResponsavelTarefa(tarefa) {
+                    return tarefa && tarefa.responsavel_nome ? tarefa.responsavel_nome : 'Qualquer pessoa';
+                },
+                tipoResponsavelTarefa(tarefa) {
+                    if (!tarefa || !tarefa.responsavel_tipo) return 'Qualquer pessoa';
+                    if (tarefa.responsavel_tipo === 'FUNCAO') return 'Função';
+                    if (tarefa.responsavel_tipo === 'USUARIO') return 'Usuário';
+                    return 'Qualquer pessoa';
                 },
                 async carregarUsuarios() {
                     try {
@@ -629,19 +733,10 @@
                 },
                 async criarPasta() {
                     const depth = this.currentPath.length;
-                    let tipo = null;
-                    let placeholder = '';
-
-                    if (depth === 0) {
-                        tipo = 'ANO';
-                        placeholder = 'Nome da pasta de ano (ex: 2026)';
-                    } else if (depth === 1 && this.folderAtual && this.folderAtual.tipo === 'ANO') {
-                        tipo = 'MES';
-                        placeholder = 'Nome da pasta de mês (ex: Janeiro)';
-                    } else {
-                        alert('Você só pode criar pastas de mês dentro de um ano.');
-                        return;
-                    }
+                    const tipo = depth === 0 ? 'ANO' : 'MES';
+                    const placeholder = depth === 0
+                        ? 'Nome da nova pasta'
+                        : `Nome da subpasta dentro de ${this.folderAtual.nome}`;
 
                     const nome = await window.showFloatingPrompt(placeholder, { title: 'Nova pasta', placeholder });
                     if (!nome || !String(nome).trim()) return;
@@ -707,7 +802,7 @@
                 },
                 abrirModalNovaAta() {
                     if (!this.estaNoMes) {
-                        alert('Abra uma pasta de mês para criar a ata.');
+                        alert('Abra uma pasta para criar a ata.');
                         return;
                     }
                     this.resetFormAta();
@@ -737,7 +832,7 @@
                                     tarefas: Array.isArray(p.tarefas)
                                         ? p.tarefas.map(t => ({
                                             descricao: t.descricao || '',
-                                            responsavel_tipo: t.responsavel_tipo || (t.responsavel_funcao_id ? 'FUNCAO' : 'USUARIO'),
+                                            responsavel_tipo: t.responsavel_tipo || (t.responsavel_funcao_id ? 'FUNCAO' : (t.responsavel_usuario_id ? 'USUARIO' : 'QUALQUER')),
                                             responsavel_usuario_id: t.responsavel_usuario_id || null,
                                             responsavel_funcao_id: t.responsavel_funcao_id || null,
                                             prazo: t.prazo ? String(t.prazo).substring(0, 10).split('-').reverse().join('/') : null,
@@ -780,7 +875,7 @@
                     if (!this.formAta.pautas[pautaIdx].tarefas) this.formAta.pautas[pautaIdx].tarefas = [];
                     this.formAta.pautas[pautaIdx].tarefas.push({
                         descricao: '',
-                        responsavel_tipo: 'USUARIO',
+                        responsavel_tipo: 'QUALQUER',
                         responsavel_usuario_id: null,
                         responsavel_funcao_id: null,
                         prazo: null,
@@ -791,7 +886,10 @@
                     if (!tarefa) return;
                     if (tarefa.responsavel_tipo === 'FUNCAO') {
                         tarefa.responsavel_usuario_id = null;
+                    } else if (tarefa.responsavel_tipo === 'USUARIO') {
+                        tarefa.responsavel_funcao_id = null;
                     } else {
+                        tarefa.responsavel_usuario_id = null;
                         tarefa.responsavel_funcao_id = null;
                     }
                 },
@@ -819,8 +917,8 @@
                                 tarefas: Array.isArray(p.tarefas) ? p.tarefas.map(t => ({
                                     descricao: t.descricao,
                                     responsavel_tipo: t.responsavel_tipo || 'USUARIO',
-                                    responsavel_usuario_id: t.responsavel_usuario_id || null,
-                                    responsavel_funcao_id: t.responsavel_funcao_id || null,
+                                    responsavel_usuario_id: t.responsavel_tipo === 'USUARIO' ? (t.responsavel_usuario_id || null) : null,
+                                    responsavel_funcao_id: t.responsavel_tipo === 'FUNCAO' ? (t.responsavel_funcao_id || null) : null,
                                     prazo: t.prazo || null,
                                     status: t.status || 'PENDENTE'
                                 })) : []
@@ -859,6 +957,7 @@
                     }
                 },
                 async removerAta(id) {
+                    this.fecharMenuAta();
                     if (!(await window.showFloatingConfirm('Excluir esta ata?'))) return;
                     try {
                         const res = await fetch(`/api/ata-reunioes/atas/${id}`, { method: 'DELETE' });
@@ -871,6 +970,77 @@
                     } catch (err) {
                         console.error(err);
                         alert('Erro ao excluir ata.');
+                    }
+                },
+                alternarMenuAta(ataId) {
+                    this.ataMenuAbertoId = this.ataMenuAbertoId === ataId ? null : ataId;
+                },
+                fecharMenuAta() {
+                    this.ataMenuAbertoId = null;
+                },
+                montarArvorePastas(lista) {
+                    const pastas = Array.isArray(lista) ? lista : [];
+                    const porPai = {};
+                    pastas.forEach(pasta => {
+                        const chave = pasta.parent_id ? String(pasta.parent_id) : 'root';
+                        if (!porPai[chave]) porPai[chave] = [];
+                        porPai[chave].push(pasta);
+                    });
+
+                    const resultado = [];
+                    const visitar = (parentId, prefixo) => {
+                        const chave = parentId ? String(parentId) : 'root';
+                        (porPai[chave] || []).forEach(pasta => {
+                            const caminho = prefixo ? `${prefixo} / ${pasta.nome}` : pasta.nome;
+                            resultado.push({ ...pasta, caminho });
+                            visitar(pasta.id, caminho);
+                        });
+                    };
+                    visitar(null, '');
+                    return resultado;
+                },
+                async carregarPastasMovimento() {
+                    this.carregandoPastasMovimento = true;
+                    try {
+                        const res = await fetch('/api/ata-reunioes/pastas?all=1');
+                        const data = res.ok ? await res.json() : [];
+                        this.pastasMovimento = this.montarArvorePastas(data);
+                    } catch (err) {
+                        console.error(err);
+                        this.pastasMovimento = [];
+                        alert('Erro ao carregar pastas.');
+                    } finally {
+                        this.carregandoPastasMovimento = false;
+                    }
+                },
+                async abrirModalMoverAta(ata) {
+                    this.fecharMenuAta();
+                    this.ataMovendo = ata;
+                    this.pastaDestinoId = null;
+                    await this.carregarPastasMovimento();
+                    if (!this.modalMoverAta) this.modalMoverAta = new bootstrap.Modal(document.getElementById('modalMoverAta'));
+                    this.modalMoverAta.show();
+                },
+                async moverAta() {
+                    if (!this.ataMovendo || !this.ataMovendo.id || !this.pastaDestinoId) return;
+                    try {
+                        const res = await fetch(`/api/ata-reunioes/atas/${this.ataMovendo.id}/mover`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ pasta_id: this.pastaDestinoId })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) {
+                            alert(data.error || 'Erro ao mover ata.');
+                            return;
+                        }
+                        if (this.modalMoverAta) this.modalMoverAta.hide();
+                        this.ataMovendo = null;
+                        this.pastaDestinoId = null;
+                        await this.carregarConteudo();
+                    } catch (err) {
+                        console.error(err);
+                        alert('Erro ao mover ata.');
                     }
                 },
                 async alterarStatusTarefa(tarefa, novoStatus) {
@@ -997,7 +1167,7 @@
                                     paragrafo('Tarefas:', 11, true);
                                     tarefas.forEach((t, tIdx) => {
                                         const prazo = this.formatarData(t.prazo) || '-';
-                                        const resp = t.responsavel_nome || '-';
+                                        const resp = this.nomeResponsavelTarefa(t);
                                         const status = t.status === 'CONCLUIDA' ? 'Concluida' : 'Pendente';
                                         paragrafo(`${tIdx + 1}) ${t.descricao || '-'}\nResponsavel: ${resp} | Data limite: ${prazo} | Status: ${status}`);
                                     });

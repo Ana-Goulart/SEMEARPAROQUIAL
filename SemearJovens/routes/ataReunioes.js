@@ -244,6 +244,17 @@ router.get('/pastas', async (req, res) => {
 
     try {
         await garantirEstrutura();
+        if (String(req.query.all || '') === '1') {
+            const [rows] = await pool.query(
+                `SELECT id, nome, tipo, parent_id, ordem, created_at
+                 FROM ata_reunioes_pastas
+                 WHERE tenant_id = ?
+                 ORDER BY parent_id IS NOT NULL ASC, parent_id ASC, ordem ASC, nome ASC`,
+                [tenantId]
+            );
+            return res.json(rows);
+        }
+
         const parentRaw = req.query.parent_id || req.query.parentId || null;
         const parentId = parentRaw ? Number(parentRaw) : null;
         if (parentRaw && !parentId) return res.status(400).json({ error: 'parent_id inválido.' });
@@ -307,24 +318,17 @@ router.post('/pastas', async (req, res) => {
     try {
         await garantirEstrutura();
         const nome = String(req.body.nome || '').trim();
-        const tipo = String(req.body.tipo || '').trim().toUpperCase();
         const parentId = req.body.parent_id ? Number(req.body.parent_id) : null;
+        const tipo = parentId ? 'MES' : 'ANO';
         if (!nome) return res.status(400).json({ error: 'Nome da pasta é obrigatório.' });
-        if (!['ANO', 'MES'].includes(tipo)) return res.status(400).json({ error: 'Tipo de pasta inválido.' });
+        if (req.body.parent_id && !parentId) return res.status(400).json({ error: 'Pasta pai inválida.' });
 
-        if (tipo === 'ANO' && parentId) {
-            return res.status(400).json({ error: 'Pasta de ano não pode ter pasta pai.' });
-        }
-
-        if (tipo === 'MES') {
-            if (!parentId) return res.status(400).json({ error: 'Pasta de mês precisa estar dentro de um ano.' });
+        if (parentId) {
             const [[parent]] = await pool.query(
                 `SELECT id, tipo FROM ata_reunioes_pastas WHERE id = ? AND tenant_id = ? LIMIT 1`,
                 [parentId, tenantId]
             );
-            if (!parent || parent.tipo !== 'ANO') {
-                return res.status(400).json({ error: 'Pasta de mês só pode ser criada dentro de pasta de ano.' });
-            }
+            if (!parent) return res.status(404).json({ error: 'Pasta pai não encontrada.' });
         }
 
         const [exists] = await pool.query(
@@ -653,7 +657,7 @@ router.post('/atas', async (req, res) => {
     const presencas = toIntArray(req.body.presencas);
     const pautas = Array.isArray(req.body.pautas) ? req.body.pautas : [];
 
-    if (!pastaId) return res.status(400).json({ error: 'Selecione a pasta do mês para salvar a ata.' });
+    if (!pastaId) return res.status(400).json({ error: 'Selecione uma pasta para salvar a ata.' });
     if (!pautas.length) return res.status(400).json({ error: 'Adicione ao menos uma pauta.' });
 
     const pautasValidas = pautas
@@ -676,9 +680,9 @@ router.post('/atas', async (req, res) => {
             `SELECT id, tipo FROM ata_reunioes_pastas WHERE id = ? AND tenant_id = ? LIMIT 1`,
             [pastaId, tenantId]
         );
-        if (!pasta || pasta.tipo !== 'MES') {
+        if (!pasta) {
             await connection.rollback();
-            return res.status(400).json({ error: 'Ata deve ser salva dentro de uma pasta de mês.' });
+            return res.status(400).json({ error: 'Ata deve ser salva dentro de uma pasta existente.' });
         }
 
         const [ataResult] = await connection.query(
@@ -775,7 +779,7 @@ router.put('/atas/:id', async (req, res) => {
     const pautas = Array.isArray(req.body.pautas) ? req.body.pautas : [];
 
     if (!ataId) return res.status(400).json({ error: 'ID inválido.' });
-    if (!pastaId) return res.status(400).json({ error: 'Selecione a pasta do mês para salvar a ata.' });
+    if (!pastaId) return res.status(400).json({ error: 'Selecione uma pasta para salvar a ata.' });
     if (!pautas.length) return res.status(400).json({ error: 'Adicione ao menos uma pauta.' });
 
     const pautasValidas = pautas
@@ -807,9 +811,9 @@ router.put('/atas/:id', async (req, res) => {
             `SELECT id, tipo FROM ata_reunioes_pastas WHERE id = ? AND tenant_id = ? LIMIT 1`,
             [pastaId, tenantId]
         );
-        if (!pasta || pasta.tipo !== 'MES') {
+        if (!pasta) {
             await connection.rollback();
-            return res.status(400).json({ error: 'Ata deve ser salva dentro de uma pasta de mês.' });
+            return res.status(400).json({ error: 'Ata deve ser salva dentro de uma pasta existente.' });
         }
 
         await connection.query(
@@ -894,6 +898,42 @@ router.put('/atas/:id', async (req, res) => {
         res.status(500).json({ error: 'Erro ao atualizar ata' });
     } finally {
         connection.release();
+    }
+});
+
+router.put('/atas/:id/mover', async (req, res) => {
+    const tenantId = getTenantId(req);
+    if (!tenantId) return res.status(401).json({ error: 'Tenant não identificado.' });
+
+    const ataId = Number(req.params.id);
+    const pastaId = req.body.pasta_id ? Number(req.body.pasta_id) : null;
+    if (!ataId) return res.status(400).json({ error: 'ID inválido.' });
+    if (!pastaId) return res.status(400).json({ error: 'Pasta de destino inválida.' });
+
+    try {
+        await garantirEstrutura();
+
+        const [[ata]] = await pool.query(
+            `SELECT id, pasta_id FROM ata_reunioes WHERE id = ? AND tenant_id = ? LIMIT 1`,
+            [ataId, tenantId]
+        );
+        if (!ata) return res.status(404).json({ error: 'Ata não encontrada.' });
+
+        const [[pasta]] = await pool.query(
+            `SELECT id FROM ata_reunioes_pastas WHERE id = ? AND tenant_id = ? LIMIT 1`,
+            [pastaId, tenantId]
+        );
+        if (!pasta) return res.status(404).json({ error: 'Pasta de destino não encontrada.' });
+
+        await pool.query(
+            `UPDATE ata_reunioes SET pasta_id = ? WHERE id = ? AND tenant_id = ?`,
+            [pastaId, ataId, tenantId]
+        );
+
+        res.json({ id: ataId, pasta_id: pastaId, message: 'Ata movida com sucesso.' });
+    } catch (err) {
+        console.error('Erro ao mover ata:', err);
+        res.status(500).json({ error: 'Erro ao mover ata' });
     }
 });
 
