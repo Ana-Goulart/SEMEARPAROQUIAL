@@ -772,6 +772,7 @@ router.put('/atas/:id', async (req, res) => {
 
     const ataId = Number(req.params.id);
     const titulo = String(req.body.titulo || '').trim() || null;
+    const dataReuniaoInformada = normalizarData(req.body.data_reuniao);
     const horario = normalizarHorario(req.body.horario);
     const pastaId = req.body.pasta_id ? Number(req.body.pasta_id) : null;
     const observacoesGerais = String(req.body.observacoes_gerais || '').trim() || null;
@@ -806,6 +807,13 @@ router.put('/atas/:id', async (req, res) => {
             await connection.rollback();
             return res.status(404).json({ error: 'Ata não encontrada.' });
         }
+        const dataReuniao = dataReuniaoInformada || (
+            ataExistente.data_reuniao ? String(ataExistente.data_reuniao).substring(0, 10) : null
+        );
+        if (!dataReuniao) {
+            await connection.rollback();
+            return res.status(400).json({ error: 'Informe a data da ata.' });
+        }
 
         const [[pasta]] = await connection.query(
             `SELECT id, tipo FROM ata_reunioes_pastas WHERE id = ? AND tenant_id = ? LIMIT 1`,
@@ -818,9 +826,9 @@ router.put('/atas/:id', async (req, res) => {
 
         await connection.query(
             `UPDATE ata_reunioes
-             SET titulo = ?, horario = ?, pasta_id = ?, observacoes_gerais = ?
+             SET titulo = ?, data_reuniao = ?, horario = ?, pasta_id = ?, observacoes_gerais = ?
              WHERE id = ? AND tenant_id = ?`,
-            [titulo, horario, pastaId, observacoesGerais, ataId, tenantId]
+            [titulo, dataReuniao, horario, pastaId, observacoesGerais, ataId, tenantId]
         );
 
         await connection.query(`DELETE FROM ata_reuniao_presencas WHERE ata_id = ? AND tenant_id = ?`, [ataId, tenantId]);

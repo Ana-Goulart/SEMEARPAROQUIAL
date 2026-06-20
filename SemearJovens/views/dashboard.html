@@ -258,6 +258,52 @@
             text-align: center;
         }
 
+        .tasks-panel {
+            display: grid;
+            gap: 0.9rem;
+        }
+
+        .task-row {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 0.85rem;
+            border: 1px solid rgba(184, 135, 50, 0.14);
+            border-radius: 8px;
+            background: rgba(255, 253, 248, 0.86);
+            padding: 1rem;
+        }
+
+        .task-title {
+            color: #322211;
+            font-weight: 800;
+            line-height: 1.3;
+            overflow-wrap: anywhere;
+        }
+
+        .task-meta {
+            color: #715938;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem 0.9rem;
+            font-size: 0.9rem;
+            margin-top: 0.45rem;
+        }
+
+        .task-actions {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 0.55rem;
+        }
+
+        .task-empty {
+            border: 1px dashed rgba(184, 135, 50, 0.28);
+            border-radius: 8px;
+            padding: 1rem;
+            color: #715938;
+            background: rgba(255, 249, 239, 0.75);
+        }
+
         .release-notice-modal .modal-content {
             border-radius: 18px;
             overflow: hidden;
@@ -347,6 +393,25 @@
             border-color: rgba(210, 184, 136, 0.16);
         }
 
+        :root[data-theme="dark"] .task-row {
+            background: rgba(36, 29, 21, 0.78);
+            border-color: rgba(210, 184, 136, 0.16);
+        }
+
+        :root[data-theme="dark"] .task-title {
+            color: #f2e7d1;
+        }
+
+        :root[data-theme="dark"] .task-meta,
+        :root[data-theme="dark"] .task-empty {
+            color: #bca37a;
+        }
+
+        :root[data-theme="dark"] .task-empty {
+            background: rgba(200, 161, 90, 0.08);
+            border-color: rgba(210, 184, 136, 0.16);
+        }
+
         :root[data-theme="dark"] .release-notice-header,
         :root[data-theme="dark"] .release-notice-item {
             background: linear-gradient(180deg, rgba(36, 29, 21, 0.98), rgba(29, 24, 18, 0.96));
@@ -382,6 +447,17 @@
             .panel-card,
             .quick-card {
                 padding: 1rem;
+            }
+        }
+
+        @media (min-width: 768px) {
+            .task-row {
+                grid-template-columns: minmax(0, 1fr) auto;
+                align-items: center;
+            }
+
+            .task-actions {
+                justify-content: flex-end;
             }
         }
     </style>
@@ -437,6 +513,60 @@
                             <div class="text-muted mb-3" v-if="card.sub">{{ card.sub }}</div>
                             <a class="metric-link" :href="card.link">Abrir módulo</a>
                         </article>
+                    </div>
+                </section>
+
+                <section class="mb-4">
+                    <div class="panel-card">
+                        <div class="panel-head mb-3">
+                            <div>
+                                <div class="panel-label">Tarefas</div>
+                                <h3 class="panel-title">Minhas tarefas</h3>
+                                <p class="panel-subtitle mb-0">
+                                    Pendentes: {{ minhasTarefasPendentes }} de {{ minhasTarefas.length }}
+                                </p>
+                            </div>
+                            <button class="btn btn-outline-primary" @click="carregarMinhasTarefas" :disabled="carregandoTarefas">
+                                {{ carregandoTarefas ? 'Atualizando...' : 'Atualizar' }}
+                            </button>
+                        </div>
+
+                        <div v-if="carregandoTarefas" class="text-center py-3">
+                            <div class="spinner-border text-primary" role="status"></div>
+                        </div>
+                        <div v-else-if="!minhasTarefas.length" class="task-empty">
+                            Nenhuma tarefa para você no momento.
+                        </div>
+                        <div v-else class="tasks-panel">
+                            <article class="task-row" v-for="tarefa in minhasTarefas" :key="`dash-task-${tarefa.id}`">
+                                <div>
+                                    <div class="task-title">{{ tarefa.descricao }}</div>
+                                    <div class="task-meta">
+                                        <span>{{ rotuloResponsavelTarefa(tarefa) }}</span>
+                                        <span>{{ tarefa.pauta_titulo || 'Sem pauta' }}</span>
+                                        <span>Prazo: {{ formatarData(tarefa.prazo) }}</span>
+                                        <span>Ata: {{ formatarData(tarefa.data_reuniao) }} {{ formatarHorario(tarefa.horario) }}</span>
+                                    </div>
+                                </div>
+                                <div class="task-actions">
+                                    <span class="badge" :class="tarefa.status === 'CONCLUIDA' ? 'text-bg-success' : 'text-bg-warning'">
+                                        {{ tarefa.status === 'CONCLUIDA' ? 'Concluída' : 'Pendente' }}
+                                    </span>
+                                    <button class="btn btn-sm btn-outline-primary"
+                                        @click="abrirAtaDaTarefa(tarefa)" :disabled="carregandoAtaId === tarefa.ata_id">
+                                        Ver ata
+                                    </button>
+                                    <button v-if="tarefa.status === 'PENDENTE'" class="btn btn-sm btn-outline-success"
+                                        @click="alterarStatusTarefaDashboard(tarefa, 'CONCLUIDA')" :disabled="salvandoTarefaId === tarefa.id">
+                                        Concluir
+                                    </button>
+                                    <button v-else class="btn btn-sm btn-outline-warning"
+                                        @click="alterarStatusTarefaDashboard(tarefa, 'PENDENTE')" :disabled="salvandoTarefaId === tarefa.id">
+                                        Voltar pendente
+                                    </button>
+                                </div>
+                            </article>
+                        </div>
                     </div>
                 </section>
 
@@ -555,6 +685,62 @@
             </div>
         </div>
 
+        <div class="modal fade" id="modalAtaDashboard" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                <div class="modal-content border-0 shadow" v-if="ataDashboard">
+                    <div class="modal-header">
+                        <div>
+                            <h5 class="modal-title mb-1">{{ tituloAtaDashboard(ataDashboard) }}</h5>
+                            <div class="text-muted small">{{ formatarData(ataDashboard.data_reuniao) }} {{ formatarHorario(ataDashboard.horario) }}</div>
+                        </div>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+                    </div>
+                    <div class="modal-body">
+                        <h6>Presentes</h6>
+                        <div v-if="!ataDashboard.presencas || !ataDashboard.presencas.length" class="text-muted mb-3">
+                            Sem presença registrada.
+                        </div>
+                        <ul v-else class="mb-3">
+                            <li v-for="presenca in ataDashboard.presencas" :key="`dash-ata-presenca-${presenca.usuario_id}`">
+                                {{ presenca.nome_completo }}
+                            </li>
+                        </ul>
+
+                        <h6>Pautas e decisões</h6>
+                        <div v-if="!ataDashboard.pautas || !ataDashboard.pautas.length" class="text-muted">
+                            Sem pautas registradas.
+                        </div>
+                        <div v-else class="d-flex flex-column gap-2">
+                            <div class="border rounded p-3" v-for="pauta in ataDashboard.pautas" :key="`dash-ata-pauta-${pauta.id}`">
+                                <div class="fw-semibold">{{ pauta.ordem }}. {{ pauta.titulo }}</div>
+                                <p class="mb-2 mt-2">{{ pauta.decisoes || 'Sem decisões registradas.' }}</p>
+                                <div class="small fw-semibold">Tarefas da pauta</div>
+                                <div v-if="!pauta.tarefas || !pauta.tarefas.length" class="text-muted small">
+                                    Nenhuma tarefa nesta pauta.
+                                </div>
+                                <ul v-else class="list-group list-group-flush mt-1">
+                                    <li class="list-group-item px-0" v-for="tarefa in pauta.tarefas" :key="`dash-ata-tarefa-${tarefa.id}`">
+                                        <div class="fw-semibold">{{ tarefa.descricao }}</div>
+                                        <small class="text-muted">
+                                            Responsável: {{ rotuloResponsavelTarefa(tarefa) }} |
+                                            Prazo: {{ formatarData(tarefa.prazo) }} |
+                                            Status: {{ tarefa.status === 'CONCLUIDA' ? 'Concluída' : 'Pendente' }}
+                                        </small>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <h6 class="mt-3">Observações gerais</h6>
+                        <p class="mb-0">{{ ataDashboard.observacoes_gerais || 'Sem observações.' }}</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <div class="modal fade release-notice-modal" id="modalReleaseNotice" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
             <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
                 <div class="modal-content border-0 shadow">
@@ -604,6 +790,12 @@
                         modalReleaseNotice: null,
                         releaseNoticeVersion: '1.3.1',
                         salvandoReleaseNotice: false,
+                        carregandoTarefas: false,
+                        salvandoTarefaId: null,
+                        carregandoAtaId: null,
+                        minhasTarefas: [],
+                        ataDashboard: null,
+                        modalAtaDashboard: null,
                         aniversariantesMes: 0,
                         aniversariantesAba: 'jovens',
                         carregandoAniversariantes: false,
@@ -648,6 +840,9 @@
                     },
                     edicaoLink() {
                         return '/gestaodoencontro/ejc';
+                    },
+                    minhasTarefasPendentes() {
+                        return (this.minhasTarefas || []).filter((tarefa) => tarefa.status !== 'CONCLUIDA').length;
                     },
                     resumoCards() {
                         return [
@@ -757,6 +952,23 @@
                         if (Number.isNaN(data.getTime())) return '-';
                         return data.toLocaleDateString('pt-BR');
                     },
+                    formatarHorario(horario) {
+                        if (!horario) return '';
+                        const txt = String(horario).substring(0, 5);
+                        return txt ? `às ${txt}` : '';
+                    },
+                    rotuloResponsavelTarefa(tarefa) {
+                        if (!tarefa || tarefa.responsavel_tipo === 'QUALQUER') return 'Qualquer pessoa';
+                        if (tarefa.responsavel_tipo === 'FUNCAO') return `Função: ${tarefa.responsavel_nome || tarefa.responsavel_funcao_nome || '-'}`;
+                        return `Pessoa: ${tarefa.responsavel_nome || tarefa.responsavel_usuario_nome || '-'}`;
+                    },
+                    tituloAtaDashboard(ata) {
+                        const titulo = String(ata && ata.titulo || '').trim();
+                        if (titulo) return titulo;
+                        const pautas = Array.isArray(ata && ata.pautas) ? ata.pautas : [];
+                        const primeira = pautas.slice().sort((a, b) => Number(a.ordem || 0) - Number(b.ordem || 0))[0];
+                        return String(primeira && primeira.titulo || '').trim() || 'Ata de reunião';
+                    },
                     formatarBytes(value) {
                         const bytes = Number(value || 0);
                         if (!bytes) return '0 B';
@@ -790,6 +1002,59 @@
                             if (window.uiAlert) window.uiAlert(err.message || 'Erro ao carregar dados.');
                         } finally {
                             this.loading = false;
+                        }
+                    },
+                    async carregarMinhasTarefas() {
+                        this.carregandoTarefas = true;
+                        try {
+                            const res = await fetch('/api/dashboard/minhas-tarefas');
+                            const data = await res.json().catch(() => ([]));
+                            if (!res.ok) throw new Error(data.error || 'Erro ao carregar tarefas.');
+                            this.minhasTarefas = Array.isArray(data) ? data : [];
+                        } catch (err) {
+                            console.error(err);
+                            this.minhasTarefas = [];
+                            if (window.uiAlert) window.uiAlert(err.message || 'Erro ao carregar tarefas.');
+                        } finally {
+                            this.carregandoTarefas = false;
+                        }
+                    },
+                    async alterarStatusTarefaDashboard(tarefa, novoStatus) {
+                        if (!tarefa || !tarefa.id || this.salvandoTarefaId) return;
+                        this.salvandoTarefaId = tarefa.id;
+                        try {
+                            const res = await fetch(`/api/dashboard/minhas-tarefas/${tarefa.id}/status`, {
+                                method: 'PUT',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ status: novoStatus })
+                            });
+                            const data = await res.json().catch(() => ({}));
+                            if (!res.ok) throw new Error(data.error || 'Erro ao atualizar tarefa.');
+                            tarefa.status = novoStatus;
+                        } catch (err) {
+                            console.error(err);
+                            if (window.uiAlert) window.uiAlert(err.message || 'Erro ao atualizar tarefa.');
+                        } finally {
+                            this.salvandoTarefaId = null;
+                        }
+                    },
+                    async abrirAtaDaTarefa(tarefa) {
+                        const ataId = Number(tarefa && tarefa.ata_id || 0);
+                        if (!ataId || this.carregandoAtaId) return;
+                        this.carregandoAtaId = ataId;
+                        try {
+                            const res = await fetch(`/api/dashboard/minhas-tarefas/atas/${ataId}`);
+                            const data = await res.json().catch(() => ({}));
+                            if (!res.ok) throw new Error(data.error || 'Erro ao carregar ata.');
+                            this.ataDashboard = data;
+                            const el = document.getElementById('modalAtaDashboard');
+                            if (!this.modalAtaDashboard && el) this.modalAtaDashboard = new bootstrap.Modal(el);
+                            if (this.modalAtaDashboard) this.modalAtaDashboard.show();
+                        } catch (err) {
+                            console.error(err);
+                            if (window.uiAlert) window.uiAlert(err.message || 'Erro ao carregar ata.');
+                        } finally {
+                            this.carregandoAtaId = null;
                         }
                     },
                     async consultarReleaseNotice() {
@@ -892,6 +1157,7 @@
                 mounted() {
                     this.carregarMeuEjc();
                     this.carregarResumo();
+                    this.carregarMinhasTarefas();
                     this.consultarReleaseNotice();
                 }
             }).mount('#app');

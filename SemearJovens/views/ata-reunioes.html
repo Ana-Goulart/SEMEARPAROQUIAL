@@ -316,16 +316,17 @@
                                 <label class="form-label">Título da ata</label>
                                 <input type="text" class="form-control" v-model.trim="formAta.titulo" placeholder="Ex: Reunião da Secretaria">
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
+                                <label class="form-label">Data da ata *</label>
+                                <input type="date" class="form-control" v-model="formAta.data_reuniao" required>
+                            </div>
+                            <div class="col-md-4">
                                 <label class="form-label">Horário</label>
                                 <input type="time" class="form-control" v-model="formAta.horario">
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <label class="form-label">Presentes</label>
                                 <div class="form-control bg-light">{{ formAta.presencas.length }} selecionado(s)</div>
-                            </div>
-                            <div class="col-12">
-                                <small class="text-muted">A data da ata será registrada automaticamente ao salvar.</small>
                             </div>
                         </div>
 
@@ -550,6 +551,7 @@
                     modalMoverAta: null,
                     ataVisualizando: null,
                     ataEditandoId: null,
+                    ataEditandoPastaId: null,
                     ataMovendo: null,
                     ataMenuAbertoId: null,
                     pastaDestinoId: null,
@@ -557,6 +559,7 @@
                     carregandoPastasMovimento: false,
                     formAta: {
                         titulo: '',
+                        data_reuniao: '',
                         horario: '',
                         presencas: [],
                         pautas: [{ titulo: '', decisoes: '', tarefas: [] }],
@@ -595,6 +598,10 @@
                     if (!horario) return '';
                     const txt = String(horario).substring(0, 5);
                     return txt ? `às ${txt}` : '';
+                },
+                dataAtualIso() {
+                    const hoje = new Date();
+                    return `${hoje.getFullYear()}-${String(hoje.getMonth() + 1).padStart(2, '0')}-${String(hoje.getDate()).padStart(2, '0')}`;
                 },
                 tituloFallbackPauta(ata) {
                     const pautas = Array.isArray(ata && ata.pautas) ? ata.pautas : [];
@@ -792,8 +799,10 @@
                 },
                 resetFormAta() {
                     this.ataEditandoId = null;
+                    this.ataEditandoPastaId = null;
                     this.formAta = {
                         titulo: '',
+                        data_reuniao: this.dataAtualIso(),
                         horario: '',
                         presencas: [],
                         pautas: [{ titulo: '', decisoes: '', tarefas: [] }],
@@ -821,8 +830,10 @@
                         }
 
                         this.ataEditandoId = data.id;
+                        this.ataEditandoPastaId = data.pasta_id || null;
                         this.formAta = {
                             titulo: String(data.titulo || '').trim(),
+                            data_reuniao: data.data_reuniao ? String(data.data_reuniao).substring(0, 10) : this.dataAtualIso(),
                             horario: data.horario ? String(data.horario).substring(0, 5) : '',
                             presencas: Array.isArray(data.presencas) ? data.presencas.map(p => Number(p.usuario_id)).filter(Boolean) : [],
                             pautas: Array.isArray(data.pautas) && data.pautas.length
@@ -902,13 +913,19 @@
                         alert('Adicione pelo menos uma pauta com título.');
                         return;
                     }
+                    if (!this.formAta.data_reuniao) {
+                        alert('Informe a data da ata.');
+                        return;
+                    }
 
                     this.salvando = true;
                     try {
+                        const pastaId = this.currentFolderId || this.ataEditandoPastaId || null;
                         const payload = {
                             titulo: this.formAta.titulo || null,
+                            data_reuniao: this.formAta.data_reuniao,
                             horario: this.formAta.horario || null,
-                            pasta_id: this.currentFolderId,
+                            pasta_id: pastaId,
                             presencas: this.formAta.presencas,
                             pautas: this.formAta.pautas.map((p, idx) => ({
                                 ordem: idx + 1,
