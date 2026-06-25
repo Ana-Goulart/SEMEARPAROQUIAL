@@ -163,6 +163,22 @@ function contextoEquipePorQuery(req) {
     return { tipo, equipeId, ejcId, montagemId };
 }
 
+router.get('/jovem-link', async (req, res) => {
+    try {
+        const tenantId = getTenantId(req);
+        const jovemId = Number(req.query.jovem_id || 0);
+        if (!jovemId) return res.status(400).json({ error: 'Informe o jovem_id.' });
+
+        const tokenRow = await obterOuCriarTokenAtualizacao({ tenantId, jovemId });
+        return res.json({
+            link: `${publicBaseUrl(req)}/atualizar/${encodeURIComponent(tokenRow.token)}`
+        });
+    } catch (err) {
+        console.error('Erro ao gerar link de atualização do jovem:', err);
+        return res.status(500).json({ error: 'Erro ao gerar link do jovem.' });
+    }
+});
+
 router.get('/equipe-link', async (req, res) => {
     try {
         const tenantId = getTenantId(req);

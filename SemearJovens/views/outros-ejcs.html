@@ -93,10 +93,79 @@
             white-space: nowrap;
         }
 
-        @media (max-width: 767.98px) {
-            .lista-mestre-grid.table > :not(caption) > * > * {
-                padding: 0.72rem 0.65rem !important;
+        /* ── Accordion mobile ── */
+        .lista-mestre-mobile-expand-col {
+            display: none;
+            width: 3.2rem;
+            text-align: center;
+        }
+        .lista-mestre-mobile-toggle {
+            width: 2.15rem;
+            height: 2.15rem;
+            border: 1px solid rgba(191, 161, 111, 0.35);
+            border-radius: 999px;
+            background: #fff8ee;
+            color: #8f6a24;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            box-shadow: none;
+            transition: all 0.18s ease;
+        }
+        .lista-mestre-mobile-toggle:hover { background: #f4ead8; color: #6f511d; }
+        .lista-mestre-mobile-toggle:focus { box-shadow: 0 0 0 0.2rem rgba(191,161,111,0.2); }
+        .lista-mestre-mobile-detail-row {
+            display: none;
+            background: linear-gradient(180deg, #fffdf9 0%, #fdf7ee 100%);
+        }
+        .lista-mestre-mobile-detail-row.is-open { display: table-row; }
+        .lista-mestre-mobile-detail-cell { padding: 0 !important; border-top: 0 !important; }
+        .lista-mestre-mobile-detail-grid { display: grid; gap: 0.85rem; padding: 1rem 1.1rem; }
+        .lista-mestre-mobile-detail-item {
+            border: 1px solid rgba(34,55,80,0.08);
+            border-radius: 14px;
+            background: #fff;
+            padding: 0.75rem 0.85rem;
+        }
+        .lista-mestre-mobile-detail-label {
+            display: block;
+            margin-bottom: 0.25rem;
+            color: #8b6d41;
+            font-size: 0.77rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+        .lista-mestre-mobile-detail-value { color: #3d4451; font-size: 0.92rem; word-break: break-word; }
+        .lista-mestre-mobile-action { display: flex; justify-content: flex-start; padding-top: 0.2rem; }
+
+        @media (max-width: 1199.98px) {
+            .lista-mestre-mobile-expand-col { display: table-cell; vertical-align: middle; }
+            .lista-mestre-mobile-hidden { display: none; }
+            .lista-mestre-mobile-toggle {
+                width: 3rem !important;
+                height: 3rem !important;
+                min-width: 3rem !important;
+                min-height: 3rem !important;
+                font-size: 1.1rem !important;
             }
+            .lista-mestre-grid .nome-clicavel {
+                font-size: 1.15rem !important;
+                font-weight: 700 !important;
+            }
+            .lista-mestre-grid tbody tr:not(.lista-mestre-mobile-detail-row) td {
+                padding-top: 1.1rem !important;
+                padding-bottom: 1.1rem !important;
+            }
+        }
+        @media (min-width: 1200px) {
+            .lista-mestre-mobile-detail-row,
+            .lista-mestre-mobile-expand-col { display: none !important; }
+            .lista-mestre-th-acoes { width: 150px; }
+        }
+        @media (max-width: 768px) {
+            .lista-mestre-grid .nome-clicavel { font-size: 13px !important; }
         }
     </style>
 </head>
@@ -151,10 +220,11 @@
                                     cellspacing="0">
                                     <thead class="table-light">
                                         <tr>
+                                            <th class="lista-mestre-mobile-expand-col"><span class="visually-hidden">Expandir</span></th>
                                             <th><span class="sort-button">Nome dos Movimentos</span></th>
-                                            <th><span class="sort-button">Paróquia</span></th>
-                                            <th><span class="sort-button">Bairro</span></th>
-                                            <th style="width: 150px;"><span class="sort-button">Ações</span></th>
+                                            <th class="lista-mestre-mobile-hidden"><span class="sort-button">Paróquia</span></th>
+                                            <th class="lista-mestre-mobile-hidden"><span class="sort-button">Bairro</span></th>
+                                            <th class="lista-mestre-mobile-hidden lista-mestre-th-acoes"><span class="sort-button">Ações</span></th>
                                         </tr>
                                     </thead>
                                     <tbody id="outrosEjcsTableBody">
@@ -423,17 +493,43 @@ Liturgia (Coordenador - Música)</div>
 
                 tbody.innerHTML = data.map((registro, index) => `
                     <tr class="${index % 2 === 1 ? 'lista-mestre-row-striped' : ''}">
+                        <td class="align-middle lista-mestre-mobile-expand-col">
+                            <button type="button" class="lista-mestre-mobile-toggle"
+                                onclick="window.OutrosEjcsApp.toggleLinha(${registro.id}, this)"
+                                aria-expanded="false" title="Expandir linha">
+                                <i class="fa-solid fa-plus"></i>
+                            </button>
+                        </td>
                         <td class="align-middle">
                             <div class="lista-mestre-mobile-name-wrap">
                                 <strong class="nome-clicavel" onclick="window.OutrosEjcsApp.openDetailsModal(${registro.id})">${registro.nome || '-'}</strong>
                             </div>
                         </td>
-                        <td class="align-middle">${registro.paroquia || '-'}</td>
-                        <td class="align-middle">${registro.bairro || '-'}</td>
-                        <td class="align-middle outros-ejcs-action-cell">
+                        <td class="align-middle lista-mestre-mobile-hidden">${registro.paroquia || '-'}</td>
+                        <td class="align-middle lista-mestre-mobile-hidden">${registro.bairro || '-'}</td>
+                        <td class="align-middle outros-ejcs-action-cell lista-mestre-mobile-hidden">
                             <button class="btn btn-sm btn-danger" onclick="window.OutrosEjcsApp.deleteRecord(${registro.id})" title="Excluir">
                                 <i class="fas fa-trash"></i>
                             </button>
+                        </td>
+                    </tr>
+                    <tr class="lista-mestre-mobile-detail-row" id="outros-ejcs-detail-${registro.id}">
+                        <td class="lista-mestre-mobile-detail-cell" colspan="5">
+                            <div class="lista-mestre-mobile-detail-grid">
+                                <div class="lista-mestre-mobile-detail-item">
+                                    <span class="lista-mestre-mobile-detail-label">Paróquia</span>
+                                    <div class="lista-mestre-mobile-detail-value">${registro.paroquia || '-'}</div>
+                                </div>
+                                <div class="lista-mestre-mobile-detail-item">
+                                    <span class="lista-mestre-mobile-detail-label">Bairro</span>
+                                    <div class="lista-mestre-mobile-detail-value">${registro.bairro || '-'}</div>
+                                </div>
+                                <div class="lista-mestre-mobile-action">
+                                    <button class="btn btn-sm btn-danger" onclick="window.OutrosEjcsApp.deleteRecord(${registro.id})">
+                                        <i class="fas fa-trash me-1"></i> Excluir
+                                    </button>
+                                </div>
+                            </div>
                         </td>
                     </tr>
                 `).join('');
@@ -1355,6 +1451,16 @@ Liturgia (Coordenador - Música)</div>
                 }
             }
 
+            function toggleLinha(id, btn) {
+                const detailRow = document.getElementById(`outros-ejcs-detail-${id}`);
+                if (!detailRow) return;
+                const isOpen = detailRow.classList.contains('is-open');
+                detailRow.classList.toggle('is-open', !isOpen);
+                btn.setAttribute('aria-expanded', String(!isOpen));
+                const icon = btn.querySelector('i');
+                if (icon) icon.className = isOpen ? 'fa-solid fa-plus' : 'fa-solid fa-minus';
+            }
+
             return {
                 loadData,
                 openCreateModal,
@@ -1366,7 +1472,8 @@ Liturgia (Coordenador - Música)</div>
                 openDetailsModal,
                 saveDetails,
                 saveRecord,
-                deleteRecord
+                deleteRecord,
+                toggleLinha
             };
         })();
     </script>

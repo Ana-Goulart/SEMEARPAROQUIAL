@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EJC - Montar Encontro (Equipe)</title>
     <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
     <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
@@ -268,6 +269,195 @@
             color: #5b4a1c;
             font-weight: 800;
         }
+
+        @media (max-width: 1199.98px) {
+            /* Ligações no mobile: 4 colunas visíveis (Membro, Telefone, Status, Ações) */
+            .ligacoes-grid {
+                table-layout: fixed !important;
+            }
+            .ligacoes-grid colgroup col:nth-child(1) { width: 38% !important; }
+            .ligacoes-grid colgroup col:nth-child(4) { width: 30% !important; }
+            .ligacoes-grid colgroup col:nth-child(7) { width: 20% !important; }
+            .ligacoes-grid colgroup col:nth-child(9) { width: 12% !important; }
+            .ligacoes-grid colgroup col:nth-child(2) { width: 0 !important; }
+            .ligacoes-grid colgroup col:nth-child(3) { width: 0 !important; }
+            .ligacoes-grid colgroup col:nth-child(5) { width: 0 !important; }
+            .ligacoes-grid colgroup col:nth-child(6) { width: 0 !important; }
+            .ligacoes-grid colgroup col:nth-child(8) { width: 0 !important; }
+            .ligacoes-grid .ligacoes-telefone,
+            .ligacoes-grid .ligacoes-acoes {
+                white-space: normal;
+                min-width: 0;
+            }
+        }
+
+        /* ── Mobile cards: substituem a tabela em smartphones (max-width: 768px) ── */
+        .ligacoes-mob-cards { display: none; }
+        .ligacoes-mob-table-wrap { display: block; }
+
+        @media (max-width: 767.98px) {
+            /* Trocar tabela por cards */
+            .ligacoes-mob-cards { display: flex; flex-direction: column; gap: 0.6rem; }
+            .ligacoes-mob-table-wrap { display: none; }
+
+            /* Botões do topo em linha compacta: ícone + texto curto */
+            .cabecalho-equipe-acoes { flex-wrap: nowrap; justify-content: flex-start; gap: 0.35rem; }
+            .cabecalho-equipe-acoes .btn {
+                flex: 1;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 0.15rem;
+                padding: 0.45rem 0.2rem;
+                font-size: 0.72rem;
+                min-width: 0;
+            }
+            .cabecalho-equipe-acoes .btn span { font-size: 10px; white-space: nowrap; line-height: 1; }
+            .cabecalho-equipe-acoes .btn i { font-size: 1rem; }
+
+            /* Card */
+            .ligacoes-mob-card {
+                border: 1px solid rgba(184, 135, 50, 0.22);
+                border-radius: 14px;
+                background: #fff;
+                box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+            }
+            .ligacoes-mob-card-header {
+                display: flex;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 0.5rem;
+                padding: 0.85rem 0.9rem;
+            }
+            .ligacoes-mob-card-info { min-width: 0; flex: 1; }
+            .ligacoes-mob-card-name {
+                font-weight: 700;
+                color: #1a2640;
+                font-size: 0.92rem;
+                text-transform: uppercase;
+                line-height: 1.25;
+                word-break: break-word;
+            }
+            .ligacoes-mob-card-sub {
+                font-size: 0.8rem;
+                color: #64748b;
+                margin-top: 0.18rem;
+            }
+            .ligacoes-mob-card-badges {
+                display: flex;
+                gap: 0.3rem;
+                flex-wrap: wrap;
+                margin-top: 0.35rem;
+            }
+            .ligacoes-mob-chevron {
+                flex-shrink: 0;
+                width: 2rem;
+                height: 2rem;
+                border: 1px solid rgba(191, 161, 111, 0.35);
+                border-radius: 999px;
+                background: #fff8ee;
+                color: #8f6a24;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 0.82rem;
+                cursor: pointer;
+                transition: all 0.15s ease;
+                flex-direction: column;
+            }
+            .ligacoes-mob-chevron:hover { background: #f4ead8; }
+
+            /* Card body expandido */
+            .ligacoes-mob-card-body {
+                border-top: 1px solid rgba(184, 135, 50, 0.12);
+                padding: 0.85rem 0.9rem;
+                background: #fffdf9;
+                border-radius: 0 0 14px 14px;
+            }
+            .ligacoes-mob-field {
+                display: flex;
+                gap: 0.5rem;
+                margin-bottom: 0.5rem;
+                font-size: 0.88rem;
+                align-items: flex-start;
+            }
+            .ligacoes-mob-field-label {
+                color: #8b6d41;
+                font-size: 0.74rem;
+                font-weight: 700;
+                text-transform: uppercase;
+                letter-spacing: 0.03em;
+                min-width: 72px;
+                flex-shrink: 0;
+                padding-top: 0.06rem;
+            }
+            .ligacoes-mob-field-value { color: #3d4451; word-break: break-word; flex: 1; min-width: 0; }
+            .ligacoes-mob-actions {
+                display: flex;
+                gap: 0.5rem;
+                margin-top: 0.8rem;
+            }
+            .ligacoes-mob-actions > * {
+                flex: 1;
+                justify-content: center;
+                text-align: center;
+            }
+            /* Ajustar status badge no mobile */
+            .ligacoes-status-salvo { min-width: 0; }
+
+            /* Badge Atualizado: somente leitura */
+            .ligacoes-mob-atualizado-badge {
+                display: inline-block;
+                padding: 2px 12px;
+                border-radius: 20px;
+                font-size: 0.78rem;
+                font-weight: 700;
+                letter-spacing: 0.02em;
+            }
+            .ligacoes-mob-atualizado-sim {
+                background: #fdf3e3;
+                color: #8f6a24;
+                border: 1px solid rgba(191, 161, 111, 0.4);
+            }
+            .ligacoes-mob-atualizado-nao {
+                background: #f4f6f8;
+                color: #8b9aaa;
+                border: 1px solid rgba(139, 154, 170, 0.3);
+            }
+
+            /* Status dropdown na body do card */
+            .ligacoes-mob-status-select {
+                width: 100%;
+                min-height: 44px;
+                border-color: rgba(191, 161, 111, 0.5) !important;
+                background-color: #fff8ee;
+                color: #3d4451;
+            }
+            .ligacoes-mob-status-select:focus {
+                border-color: #bfa16f !important;
+                box-shadow: 0 0 0 0.2rem rgba(191, 161, 111, 0.25);
+            }
+
+            /* Botões de ação: 50% cada, altura mínima 44px */
+            .ligacoes-mob-btn-salvar,
+            .ligacoes-mob-btn-remover {
+                min-height: 44px;
+                display: flex !important;
+                align-items: center;
+                justify-content: center;
+                gap: 0.4rem;
+            }
+            .ligacoes-mob-btn-salvo {
+                flex: 1;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 44px;
+                font-size: 0.85rem;
+                color: #6c757d;
+                font-weight: 600;
+            }
+        }
     </style>
 </head>
 
@@ -325,8 +515,100 @@
                     </ul>
 
                     <div v-if="abaLigacoes==='ativas'">
+
+                    <!-- Mobile: cards expansíveis (oculto em ≥768px) -->
+                    <div class="ligacoes-mob-cards">
+                        <template v-for="m in membros" :key="`mob-${m.membro_id}`">
+                        <div class="ligacoes-mob-card">
+                            <div class="ligacoes-mob-card-header">
+                                <div class="ligacoes-mob-card-info">
+                                    <div class="ligacoes-mob-card-name">{{ nomeMembro(m) }}</div>
+                                    <div class="ligacoes-mob-card-sub">
+                                        <template v-if="telefoneExibicao(m)">{{ telefoneExibicao(m) }}</template><template v-if="telefoneExibicao(m) && m.funcao_nome"> · </template><template v-if="m.funcao_nome">{{ m.funcao_nome }}</template>
+                                    </div>
+                                    <div class="ligacoes-mob-card-badges">
+                                        <span class="badge" :class="badgeStatusLigacao(m)">{{ m.confirmado ? labelStatusLigacao(m.status_ligacao) : 'Aguardando' }}</span>
+                                    </div>
+                                </div>
+                                <button type="button" class="ligacoes-mob-chevron" data-ui-skip-standardize @click="toggleCardMob(m.membro_id)">
+                                    <i class="fa-solid" :class="cardsMobExpandidos[m.membro_id] ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
+                                </button>
+                            </div>
+                            <div v-if="cardsMobExpandidos[m.membro_id]" class="ligacoes-mob-card-body">
+                                <div class="ligacoes-mob-field">
+                                    <span class="ligacoes-mob-field-label">Idade</span>
+                                    <span class="ligacoes-mob-field-value">{{ idadeExibicao(m) }}</span>
+                                </div>
+                                <div class="ligacoes-mob-field">
+                                    <span class="ligacoes-mob-field-label">Origem</span>
+                                    <span class="ligacoes-mob-field-value">{{ origemExibicao(m) }}</span>
+                                </div>
+                                <div class="ligacoes-mob-field">
+                                    <span class="ligacoes-mob-field-label">Subfunção</span>
+                                    <span class="ligacoes-mob-field-value d-flex align-items-center gap-2">
+                                        <span>{{ m.funcao_nome || '-' }}</span>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary btn-icone-acao" data-ui-skip-standardize @click="abrirModalEditarFuncao(m)" title="Editar função" aria-label="Editar função"><i class="fa-solid fa-pen-to-square"></i></button>
+                                    </span>
+                                </div>
+                                <div class="ligacoes-mob-field">
+                                    <span class="ligacoes-mob-field-label">Atualizado</span>
+                                    <span class="ligacoes-mob-field-value">
+                                        <span v-if="m.exibe_status_atualizacao !== false" class="ligacoes-mob-atualizado-badge" :class="m.atualizado_cadastro ? 'ligacoes-mob-atualizado-sim' : 'ligacoes-mob-atualizado-nao'">{{ m.atualizado_cadastro ? 'Sim' : 'Não' }}</span>
+                                        <span v-else class="text-muted">-</span>
+                                    </span>
+                                </div>
+                                <div class="ligacoes-mob-field" @click.stop>
+                                    <span class="ligacoes-mob-field-label">Observação</span>
+                                    <span class="ligacoes-mob-field-value">
+                                        <div class="observacao-wrap">
+                                            <button type="button" class="btn observacao-toggle" data-ui-skip-standardize
+                                                :class="{ 'tem-conteudo': temObservacao(m), 'aberto': observacaoEstaAberta(m) }"
+                                                @click.stop="toggleObservacao(m)"
+                                                :title="temObservacao(m) ? 'Ver observação' : 'Adicionar observação'">
+                                                <i class="fa-solid fa-book-open"></i>
+                                                <span v-if="temObservacao(m)" class="observacao-alerta"></span>
+                                            </button>
+                                            <div v-if="observacaoEstaAberta(m)" class="observacao-popover">
+                                                <textarea class="form-control form-control-sm" v-model.trim="observacaoTexto" placeholder="Adicionar observação"></textarea>
+                                                <div class="observacao-popover-acoes">
+                                                    <button type="button" class="btn btn-success observacao-popover-salvar" data-ui-skip-standardize :disabled="observacaoSalvando" @click.stop="salvarObservacaoRapida(m)"><i class="fa-solid fa-check"></i></button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </span>
+                                </div>
+                                <div class="ligacoes-mob-field">
+                                    <span class="ligacoes-mob-field-label">Status</span>
+                                    <span class="ligacoes-mob-field-value">
+                                        <span v-if="m.confirmado" class="ligacoes-status-badge">{{ labelStatusLigacao(m.status_ligacao) }}</span>
+                                        <select v-else class="form-select ligacoes-mob-status-select" v-model="m.status_ligacao" @change="onStatusChange(m)">
+                                            <option value="">Selecionar</option>
+                                            <option value="ACEITOU">Aceitou</option>
+                                            <option value="RECUSOU">Recusou</option>
+                                            <option value="LIGAR_MAIS_TARDE">Ligar depois</option>
+                                            <option value="TELEFONE_INCORRETO">Telefone incorreto</option>
+                                        </select>
+                                    </span>
+                                </div>
+                                <div class="ligacoes-mob-actions">
+                                    <span v-if="m.confirmado" class="ligacoes-mob-btn-salvo">Salvo</span>
+                                    <button v-else class="btn btn-sm btn-outline-primary ligacoes-mob-btn-salvar" @click="salvarObservacao(m)">
+                                        <i class="fa-solid fa-floppy-disk"></i> Salvar
+                                    </button>
+                                    <button class="btn btn-sm btn-danger ligacoes-mob-btn-remover" data-ui-skip-standardize @click="removerMembro(m.membro_id)" title="Remover membro" aria-label="Remover membro">
+                                        <i class="fas fa-trash"></i> Remover
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        </template>
+                        <div v-if="!membros.length" class="text-muted text-center py-3">Nenhum membro alocado.</div>
+                    </div>
+
+                    <!-- Desktop: tabela completa (oculta no mobile) -->
+                    <div class="ligacoes-mob-table-wrap">
                     <div class="table-responsive">
-                        <table class="table table-sm table-hover align-middle table-fixed">
+                        <table class="table table-sm table-hover align-middle table-fixed ligacoes-grid">
                             <colgroup>
                                 <col style="width: 17%;">
                                 <col style="width: 7%;">
@@ -341,20 +623,20 @@
                             <thead>
                                 <tr>
                                     <th>Membro</th>
-                                    <th>Idade</th>
-                                    <th>Origem</th>
+                                    <th class="mobile-col-hide">Idade</th>
+                                    <th class="mobile-col-hide">Origem</th>
                                     <th>Telefone</th>
-                                    <th>Subfunção</th>
-                                    <th>Atualizado</th>
+                                    <th class="mobile-col-hide">Subfunção</th>
+                                    <th class="mobile-col-hide">Atualizado</th>
                                     <th>Status</th>
-                                    <th>Observação</th>
+                                    <th class="mobile-col-hide">Observação</th>
                                     <th></th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr v-for="m in membros" :key="`m-${m.membro_id}`">
                                     <td class="fw-semibold nome-caixa-alta">{{ nomeMembro(m) }}</td>
-                                    <td>
+                                    <td class="mobile-col-hide">
                                         <div v-if="m.casal_jovens" class="ligacoes-telefone-lista">
                                             <span v-for="(idade, idx) in idadesDoMembro(m)" :key="`idade-${m.membro_id}-${idx}`" class="ligacoes-telefone-item">
                                                 {{ idade }}
@@ -362,7 +644,7 @@
                                         </div>
                                         <template v-else>{{ idadeExibicao(m) }}</template>
                                     </td>
-                                    <td>
+                                    <td class="mobile-col-hide">
                                         <div v-if="m.casal_jovens" class="ligacoes-telefone-lista">
                                             <span v-for="(origem, idx) in origensDoMembro(m)" :key="`origem-${m.membro_id}-${idx}`" class="ligacoes-telefone-item">
                                                 {{ origem }}
@@ -382,7 +664,7 @@
                                         </div>
                                         <template v-else>{{ telefoneExibicao(m) }}</template>
                                     </td>
-                                    <td>
+                                    <td class="mobile-col-hide">
                                         <div class="d-flex align-items-center gap-2">
                                             <span>{{ m.funcao_nome || '-' }}</span>
                                             <button
@@ -396,7 +678,7 @@
                                             </button>
                                         </div>
                                     </td>
-                                    <td>
+                                    <td class="mobile-col-hide">
                                         <span v-if="m.exibe_status_atualizacao !== false" class="badge" :class="m.atualizado_cadastro ? 'bg-success' : 'bg-light text-dark'">
                                             {{ m.atualizado_cadastro ? 'Sim' : 'Não' }}
                                         </span>
@@ -412,7 +694,7 @@
                                             <option value="TELEFONE_INCORRETO">Telefone incorreto</option>
                                         </select>
                                     </td>
-                                    <td>
+                                    <td class="mobile-col-hide">
                                         <div class="observacao-wrap" @click.stop>
                                             <button
                                                 type="button"
@@ -470,6 +752,7 @@
                             </tbody>
                         </table>
                     </div>
+                    </div><!-- /ligacoes-mob-table-wrap -->
                     </div>
 
                     <div v-else>
@@ -784,7 +1067,8 @@
                     formularioEquipeLink: '',
                     formularioEquipeLinks: [],
                     formularioEquipeResumo: { total: 0, atualizados: 0, percentual: 0 },
-                    formularioEquipeLoading: false
+                    formularioEquipeLoading: false,
+                    cardsMobExpandidos: {}
                 };
             },
             computed: {
@@ -1286,6 +1570,16 @@
                     if (status === 'LIGAR_MAIS_TARDE') return 'Ligar depois';
                     if (status === 'TELEFONE_INCORRETO') return 'Telefone incorreto';
                     return 'Selecionar';
+                },
+                toggleCardMob(id) {
+                    this.cardsMobExpandidos = { ...this.cardsMobExpandidos, [id]: !this.cardsMobExpandidos[id] };
+                },
+                badgeStatusLigacao(m) {
+                    if (!m.confirmado) return 'bg-warning text-dark';
+                    const s = String(m.status_ligacao || '').trim().toUpperCase();
+                    if (s === 'ACEITOU') return 'bg-success';
+                    if (s === 'RECUSOU') return 'bg-danger';
+                    return 'bg-warning text-dark';
                 },
                 ehMembroTio(membro) {
                     if (!membro) return false;

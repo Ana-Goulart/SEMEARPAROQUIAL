@@ -2,6 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EJC - Almoxarifado</title>
     <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
     <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
@@ -59,6 +60,101 @@
         :root[data-theme="dark"] .tab-link.active {
             color: #f1d59f;
             border-bottom-color: #c8a15a;
+        }
+
+        /* Botão de expansão de linha (visível apenas no mobile via d-md-none) */
+        .btn-row-expand {
+            background: none;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 3px 8px;
+            color: #64748b;
+            cursor: pointer;
+            flex-shrink: 0;
+            line-height: 1;
+            transition: background .15s;
+            margin-top: 1px;
+        }
+        .btn-row-expand:hover { background: #f1f5f9; }
+        .btn-row-expand .fa-chevron-down { transition: transform .2s ease; font-size: .72rem; }
+        .btn-row-expand.is-open .fa-chevron-down { transform: rotate(180deg); }
+
+        :root[data-theme="dark"] .btn-row-expand {
+            border-color: rgba(210, 184, 136, 0.2);
+            color: #bca37a;
+        }
+        :root[data-theme="dark"] .btn-row-expand:hover { background: rgba(255,255,255,.06); }
+
+        /* ============================================================
+           Almoxarifado — Responsive Stacked Table (mobile ≤ 768 px)
+           ============================================================ */
+        @media (max-width: 768px) {
+            /* Remove barra de scroll horizontal no wrapper */
+            .card .table-responsive { overflow-x: visible; }
+
+            /* Esconde o cabeçalho da tabela */
+            .table-itens thead { display: none !important; }
+
+            /* Cada linha vira um card */
+            .table-itens tbody tr {
+                display: block;
+                border: 1px solid #e2e8f0;
+                border-radius: 10px;
+                margin-bottom: 10px;
+                padding: 6px 0 8px;
+                background: #fff;
+            }
+
+            /* Células viram blocos flex */
+            .table-itens tbody td {
+                display: flex;
+                align-items: baseline;
+                padding: 4px 12px;
+                border: none;
+                font-size: .9rem;
+                word-break: break-word;
+            }
+
+            /* Primeira célula (Item): cabeçalho do card, alinha itens ao topo */
+            .table-itens tbody td:first-child {
+                align-items: flex-start;
+                padding-bottom: 6px;
+            }
+
+            /* Prefixo "Label: " para células com data-label */
+            .table-itens tbody td[data-label]::before {
+                content: attr(data-label) ": ";
+                font-weight: 600;
+                color: #64748b;
+                min-width: 85px;
+                flex-shrink: 0;
+                font-size: .82rem;
+                margin-right: 4px;
+                padding-top: 1px;
+            }
+
+            /* Células secundárias: ocultas por padrão */
+            .table-itens tbody td.td-secondary { display: none; }
+
+            /* Cells secundárias: visíveis quando linha está expandida */
+            .table-itens tbody tr.row-open td.td-secondary { display: flex; }
+
+            /* Célula de ações: botões alinhados à esquerda e com quebra de linha */
+            .td-acoes .d-flex {
+                justify-content: flex-start !important;
+                flex-wrap: wrap;
+                gap: 8px !important;
+            }
+            .td-acoes { padding-top: 8px !important; border-top: 1px solid #f1f5f9; margin-top: 2px; }
+
+            :root[data-theme="dark"] .table-itens tbody tr {
+                border-color: rgba(210, 184, 136, 0.14);
+                background: linear-gradient(180deg, rgba(36,29,21,.98), rgba(29,24,18,.96));
+            }
+            :root[data-theme="dark"] .table-itens tbody td[data-label]::before {
+                color: #bca37a;
+            }
+            :root[data-theme="dark"] .td-acoes { border-top-color: rgba(210,184,136,.1); }
         }
     </style>
 </head>
@@ -164,7 +260,7 @@
 
             <div v-if="abaAtual === 'itens'" class="card border-0 shadow-sm">
                 <div class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
+                    <table class="table table-hover align-middle mb-0 table-itens">
                         <thead class="table-light">
                             <tr>
                                 <th>Item</th>
@@ -183,31 +279,42 @@
                                     <div class="spinner-border spinner-border-sm text-primary me-2"></div>Carregando...
                                 </td>
                             </tr>
-                            <tr v-for="i in itens" :key="`item-${i.id}`">
+                            <tr v-for="i in itens" :key="`item-${i.id}`" :class="{ 'row-open': expandedRows[i.id] }">
                                 <td>
-                                    <div class="d-flex align-items-center gap-2 flex-wrap">
-                                        <span class="fw-semibold">{{ i.nome }}</span>
-                                        <span
-                                            v-if="itemTemEmprestimo(i)"
-                                            class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle"
-                                            :title="`${formatarQtd(i.quantidade_emprestada)} ${i.unidade || 'UN'} em empréstimo`"
-                                        >
-                                            Emprestado: {{ formatarQtd(i.quantidade_emprestada) }} {{ i.unidade || 'UN' }}
-                                        </span>
+                                    <div class="d-flex align-items-start gap-2">
+                                        <button
+                                            class="btn-row-expand d-md-none"
+                                            :class="{ 'is-open': expandedRows[i.id] }"
+                                            @click.stop="toggleRow(i.id)"
+                                            :aria-expanded="String(!!expandedRows[i.id])"
+                                            :title="expandedRows[i.id] ? 'Recolher' : 'Expandir detalhes'"
+                                        ><i class="fa-solid fa-chevron-down"></i></button>
+                                        <div class="flex-grow-1">
+                                            <div class="d-flex align-items-center gap-2 flex-wrap">
+                                                <span class="fw-semibold">{{ i.nome }}</span>
+                                                <span
+                                                    v-if="itemTemEmprestimo(i)"
+                                                    class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle"
+                                                    :title="`${formatarQtd(i.quantidade_emprestada)} ${i.unidade || 'UN'} em empréstimo`"
+                                                >
+                                                    Emprestado: {{ formatarQtd(i.quantidade_emprestada) }} {{ i.unidade || 'UN' }}
+                                                </span>
+                                            </div>
+                                            <div class="small text-muted">{{ i.descricao || '-' }}</div>
+                                        </div>
                                     </div>
-                                    <div class="small text-muted">{{ i.descricao || '-' }}</div>
                                 </td>
-                                <td>{{ i.categoria_nome || '-' }}</td>
-                                <td :class="Number(i.quantidade_atual) <= Number(i.quantidade_minima) ? 'text-danger fw-semibold' : ''">{{ formatarQtd(i.quantidade_atual) }}</td>
-                                <td>{{ formatarQtd(i.quantidade_minima) }}</td>
-                                <td>{{ i.unidade || 'UN' }}</td>
-                                <td>{{ i.local_nome || '-' }}</td>
-                                <td>
+                                <td data-label="Categoria">{{ i.categoria_nome || '-' }}</td>
+                                <td class="td-secondary" :class="Number(i.quantidade_atual) <= Number(i.quantidade_minima) ? 'text-danger fw-semibold' : ''" data-label="Quantidade">{{ formatarQtd(i.quantidade_atual) }}</td>
+                                <td class="td-secondary" data-label="Mínimo">{{ formatarQtd(i.quantidade_minima) }}</td>
+                                <td class="td-secondary" data-label="Unidade">{{ i.unidade || 'UN' }}</td>
+                                <td class="td-secondary" data-label="Local">{{ i.local_nome || '-' }}</td>
+                                <td class="td-secondary" data-label="Status">
                                     <span class="badge" :class="i.status === 'ATIVO' ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'">
                                         {{ i.status === 'ATIVO' ? 'Ativo' : 'Inativo' }}
                                     </span>
                                 </td>
-                                <td>
+                                <td class="td-secondary td-acoes">
                                     <div class="d-flex justify-content-end gap-2 flex-nowrap">
                                         <button class="btn btn-edit-standard btn-sm" @click="abrirModalItem(i)">Editar</button>
                                         <button
@@ -622,7 +729,8 @@
                     },
                     modalItem: null,
                     modalCategoria: null,
-                    modalLocal: null
+                    modalLocal: null,
+                    expandedRows: {}
                 };
             },
             computed: {
@@ -1071,6 +1179,9 @@
                         return;
                     }
                     await this.carregarTudo();
+                },
+                toggleRow(id) {
+                    this.expandedRows[id] = !this.expandedRows[id];
                 }
             },
             mounted() {

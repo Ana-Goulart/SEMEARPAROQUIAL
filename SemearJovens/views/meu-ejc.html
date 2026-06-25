@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EJC - Meu EJC</title>
     <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
     <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
@@ -22,66 +23,123 @@
                 <h3 class="mb-0">Meu EJC</h3>
             </div>
 
-            <div class="card border-0 shadow-sm" style="max-width: 720px;">
-                <div class="card-body">
-                    <h5 class="card-title mb-2">Identificação oficial do seu EJC</h5>
-                    <p class="text-muted mb-3">
-                        O nome do seu EJC e a paróquia base são dados institucionais do mesmo tenant. Aqui no sistema do EJC você pode editar apenas os bairros atendidos.
-                    </p>
+            <ul class="nav nav-tabs mb-4" id="meuEjcTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="tab-identificacao" data-bs-toggle="tab" data-bs-target="#pane-identificacao" type="button" role="tab">
+                        Identificação do EJC
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="tab-termos" data-bs-toggle="tab" data-bs-target="#pane-termos" type="button" role="tab">
+                        Termos de Uso
+                    </button>
+                </li>
+            </ul>
 
-                    <div class="mb-3">
-                        <label class="form-label">Nome do EJC</label>
-                        <input type="text" class="form-control" v-model.trim="form.nome"
-                            placeholder="Ex.: São José, Santa Luzia, Cristo Rei" disabled>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Paróquia base</label>
-                        <input type="text" class="form-control" v-model.trim="form.paroquia"
-                            placeholder="Ex.: Paróquia Nossa Senhora Aparecida" disabled>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Endereço</label>
-                        <input type="text" class="form-control" v-model.trim="form.endereco"
-                            placeholder="Ex.: Rua ..., nº ..., Bairro ..., Cidade ..." disabled>
-                    </div>
+            <div class="tab-content">
+                <!-- Aba: Identificação do EJC -->
+                <div class="tab-pane fade show active" id="pane-identificacao" role="tabpanel">
+                    <div class="card border-0 shadow-sm" style="max-width: 720px;">
+                        <div class="card-body">
+                            <h5 class="card-title mb-2">Identificação oficial do seu EJC</h5>
+                            <p class="text-muted mb-3">
+                                O nome do seu EJC e a paróquia base são dados institucionais do mesmo tenant. Aqui no sistema do EJC você pode editar apenas os bairros atendidos.
+                            </p>
 
-                    <div class="mb-3">
-                        <label class="form-label">Estado atendido</label>
-                        <select class="form-select" v-model="form.estado_atende" disabled>
-                            <option value="Minas Gerais">Minas Gerais</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Cidade atendida</label>
-                        <select class="form-select" v-model="form.cidade_atende" disabled>
-                            <option value="Contagem">Contagem</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Bairros atendidos</label>
-                        <input type="text" class="form-control mb-2" v-model="filtroBairro"
-                            placeholder="Filtrar bairro...">
-                        <div class="border rounded p-2 bg-light" style="max-height: 220px; overflow: auto;">
-                            <div class="form-check" v-for="b in bairrosFiltrados" :key="b">
-                                <input class="form-check-input" type="checkbox" :id="`bairro-${b}`" :value="b"
-                                    v-model="form.bairros_atendidos">
-                                <label class="form-check-label" :for="`bairro-${b}`">{{ b }}</label>
+                            <div class="mb-3">
+                                <label class="form-label">Nome do EJC</label>
+                                <input type="text" class="form-control" v-model.trim="form.nome"
+                                    placeholder="Ex.: São José, Santa Luzia, Cristo Rei" disabled>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Paróquia base</label>
+                                <input type="text" class="form-control" v-model.trim="form.paroquia"
+                                    placeholder="Ex.: Paróquia Nossa Senhora Aparecida" disabled>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Endereço</label>
+                                <input type="text" class="form-control" v-model.trim="form.endereco"
+                                    placeholder="Ex.: Rua ..., nº ..., Bairro ..., Cidade ..." disabled>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Estado atendido</label>
+                                <select class="form-select" v-model="form.estado_atende" disabled>
+                                    <option value="Minas Gerais">Minas Gerais</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Cidade atendida</label>
+                                <select class="form-select" v-model="form.cidade_atende" disabled>
+                                    <option value="Contagem">Contagem</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Bairros atendidos</label>
+                                <input type="text" class="form-control mb-2" v-model="filtroBairro"
+                                    placeholder="Filtrar bairro...">
+                                <div class="border rounded p-2 bg-light" style="max-height: 220px; overflow: auto;">
+                                    <div class="form-check" v-for="b in bairrosFiltrados" :key="b">
+                                        <input class="form-check-input" type="checkbox" :id="`bairro-${b}`" :value="b"
+                                            v-model="form.bairros_atendidos">
+                                        <label class="form-check-label" :for="`bairro-${b}`">{{ b }}</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="d-flex gap-2">
+                                <button class="btn btn-primary" @click="salvar" :disabled="salvando">
+                                    {{ salvando ? 'Salvando...' : 'Salvar bairros atendidos' }}
+                                </button>
+                                <button class="btn btn-soft-secondary" @click="carregar" :disabled="salvando">Recarregar</button>
+                            </div>
+
+                            <div class="mt-3" v-if="mensagem">
+                                <div class="alert alert-success py-2 mb-0">{{ mensagem }}</div>
+                            </div>
+                            <div class="mt-3" v-if="erro">
+                                <div class="alert alert-danger py-2 mb-0">{{ erro }}</div>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-primary" @click="salvar" :disabled="salvando">
-                            {{ salvando ? 'Salvando...' : 'Salvar bairros atendidos' }}
-                        </button>
-                        <button class="btn btn-soft-secondary" @click="carregar" :disabled="salvando">Recarregar</button>
-                    </div>
+                <!-- Aba: Termos de Uso -->
+                <div class="tab-pane fade" id="pane-termos" role="tabpanel">
+                    <div class="card border-0 shadow-sm" style="max-width: 820px;">
+                        <div class="card-body" style="line-height: 1.65; color: #172033;">
+                            <h5 class="card-title mb-1">Termos de Uso e Política de Privacidade</h5>
+                            <p class="text-muted mb-4" style="font-size: .9rem;">
+                                Este é o termo exibido aos jovens, tios e participantes nos formulários de cadastro e atualização cadastral do sistema.
+                            </p>
 
-                    <div class="mt-3" v-if="mensagem">
-                        <div class="alert alert-success py-2 mb-0">{{ mensagem }}</div>
-                    </div>
-                    <div class="mt-3" v-if="erro">
-                        <div class="alert alert-danger py-2 mb-0">{{ erro }}</div>
+                            <p><strong>TERMO DE CONSENTIMENTO E PRIVACIDADE - SEMEAR PAROQUIAL</strong></p>
+                            <p>Ao clicar em "Li e concordo", você autoriza a plataforma Semear Paroquial e a Coordenação do EJC da sua Paróquia a realizarem o tratamento dos seus dados pessoais para fins estritamente organizacionais e pastorais.</p>
+
+                            <h6 class="fw-bold mt-4 mb-2" style="color: #223750;">1. Quais dados coletamos e para quê?</h6>
+                            <p>Para garantir a sua segurança, organização das equipes e bom andamento dos encontros e eventos do EJC, coletamos:</p>
+                            <p><strong>Dados de Identificação e Contato:</strong> Nome completo, apelido, e-mail, telefone, data de nascimento, CPF (coletado exclusivamente para fins de identificação segura do participante no sistema), sexo, endereço, foto e Instagram. Esses dados servem para a Secretaria emitir crachás, listas de presença e manter contato com você.</p>
+                            <p><strong>Dados de Saúde e Restrições:</strong> Informações sobre alergias, restrições alimentares, tipo de deficiência (PCD) ou formação na área de saúde. Dados fundamentais para que as equipes de apoio saibam como cuidar de você em caso de emergência.</p>
+                            <p><strong>Histórico Pastoral:</strong> Suas habilidades musicais, pastorais que participa e funções que já exerceu em EJCs anteriores. Usado exclusivamente para ajudar a dirigência a entender o seu perfil paroquial.</p>
+                            <p><strong>Foto e Instagram:</strong> A foto é utilizada exclusivamente para identificação no crachá e nos registros internos do EJC, não sendo publicada em redes sociais sem autorização específica.</p>
+
+                            <h6 class="fw-bold mt-4 mb-2" style="color: #223750;">2. Quem tem acesso aos seus dados?</h6>
+                            <p>Os seus dados são armazenados de forma segura em ambiente digital e são de uso restrito da Dirigência e Coordenação Geral do EJC da sua paróquia.</p>
+                            <p><strong>Compartilhamento Interno Limitado:</strong> Para viabilizar a logística e os cuidados com a sua saúde durante os eventos, a Dirigência e Coordenação Geral compartilharão informações específicas de restrições alimentares e alergias estritamente com as equipes de Cozinha e Cafezinho.</p>
+                            <p><strong>Compromisso de Sigilo:</strong> Em hipótese alguma os seus dados cadastrais, fotos ou informações serão vendidos, divulgados, compartilhados com terceiros externos ou utilizados para fins comerciais.</p>
+
+                            <h6 class="fw-bold mt-4 mb-2" style="color: #223750;">3. Direitos do Jovem (LGPD)</h6>
+                            <p>Você, como titular dos seus dados, tem o direito de:</p>
+                            <ul>
+                                <li>Solicitar a correção de informações desatualizadas ou incorretas;</li>
+                                <li>Solicitar o bloqueio ou a exclusão definitiva do seu cadastro da base de dados do sistema a qualquer momento;</li>
+                                <li>Revogar este consentimento a qualquer momento, bastando entrar em contato com a Dirigência do EJC pelo canal oficial da sua paróquia.</li>
+                            </ul>
+                            <p>Os dados serão mantidos enquanto o jovem estiver ativo no EJC ou até que solicite sua exclusão.</p>
+
+                            <h6 class="fw-bold mt-4 mb-2" style="color: #223750;">4. Consentimento</h6>
+                            <p>Ao marcar a caixa de seleção e enviar este formulário, você declara ser maior de 18 anos e manifesta seu consentimento livre, informado e inequívoco para o tratamento dos seus dados conforme descrito neste termo.</p>
+                        </div>
                     </div>
                 </div>
             </div>

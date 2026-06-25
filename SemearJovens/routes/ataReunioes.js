@@ -3,7 +3,7 @@ const router = express.Router();
 const { pool } = require('../database');
 const { getTenantId } = require('../lib/tenantIsolation');
 
-let estruturaGarantida = false;
+let garantirEstruturaPromise = null;
 
 async function hasColumn(tableName, columnName) {
     const [rows] = await pool.query(`
@@ -27,6 +27,18 @@ async function hasIndex(tableName, indexName) {
     return !!(rows && rows[0] && rows[0].cnt > 0);
 }
 
+async function isNullable(tableName, columnName) {
+    const [rows] = await pool.query(`
+        SELECT IS_NULLABLE
+        FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = ?
+          AND COLUMN_NAME = ?
+        LIMIT 1
+    `, [tableName, columnName]);
+    return rows && rows[0] && rows[0].IS_NULLABLE === 'YES';
+}
+
 async function runAlterIgnoreDuplicate(sql) {
     try {
         await pool.query(sql);
@@ -36,17 +48,28 @@ async function runAlterIgnoreDuplicate(sql) {
     }
 }
 
-async function garantirEstrutura() {
-    if (estruturaGarantida) return;
+async function tryDropIndex(tableName, indexName) {
+    try {
+        await pool.query(`ALTER TABLE \`${tableName}\` DROP INDEX \`${indexName}\``);
+    } catch (err) {
+        if (err && (err.code === 'ER_CANT_DROP_FIELD_OR_KEY' || err.code === 'ER_DROP_INDEX_FK')) return;
+        console.error(`[ataReunioes] Falha ao remover índice ${tableName}.${indexName}:`, err.message || err);
+    }
+}
+
+async function _doGarantirEstrutura() {
 
     await pool.query(`
         CREATE TABLE IF NOT EXISTS funcoes_dirigencia (
             id INT AUTO_INCREMENT PRIMARY KEY,
-            nome VARCHAR(160) NOT NULL UNIQUE,
+            tenant_id INT NULL,
+            nome VARCHAR(160) NOT NULL,
             descricao TEXT NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     `);
+    await runAlterIgnoreDuplicate('ALTER TABLE funcoes_dirigencia ADD COLUMN tenant_id INT NULL AFTER id');
+    await runAlterIgnoreDuplicate('ALTER TABLE funcoes_dirigencia ADD KEY idx_funcoes_dirigencia_tenant (tenant_id)');
 
     await pool.query(`
         CREATE TABLE IF NOT EXISTS ata_reunioes_pastas (
@@ -93,7 +116,7 @@ async function garantirEstrutura() {
     `);
 
     if (await hasIndex('ata_reunioes_pastas', 'uniq_ata_pasta_nome_parent')) {
-        await pool.query('ALTER TABLE ata_reunioes_pastas DROP INDEX uniq_ata_pasta_nome_parent');
+        await tryDropIndex('ata_reunioes_pastas', 'uniq_ata_pasta_nome_parent');
     }
     if (!(await hasIndex('ata_reunioes_pastas', 'idx_ata_pastas_tenant'))) {
         await runAlterIgnoreDuplicate('ALTER TABLE ata_reunioes_pastas ADD KEY idx_ata_pastas_tenant (tenant_id)');
@@ -104,8 +127,12 @@ async function garantirEstrutura() {
     if (!(await hasIndex('ata_reunioes', 'idx_ata_reunioes_tenant'))) {
         await runAlterIgnoreDuplicate('ALTER TABLE ata_reunioes ADD KEY idx_ata_reunioes_tenant (tenant_id)');
     }
-    await runAlterIgnoreDuplicate('ALTER TABLE ata_reunioes_pastas MODIFY COLUMN tenant_id INT NOT NULL');
-    await runAlterIgnoreDuplicate('ALTER TABLE ata_reunioes MODIFY COLUMN tenant_id INT NOT NULL');
+    if (await isNullable('ata_reunioes_pastas', 'tenant_id')) {
+        await runAlterIgnoreDuplicate('ALTER TABLE ata_reunioes_pastas MODIFY COLUMN tenant_id INT NOT NULL');
+    }
+    if (await isNullable('ata_reunioes', 'tenant_id')) {
+        await runAlterIgnoreDuplicate('ALTER TABLE ata_reunioes MODIFY COLUMN tenant_id INT NOT NULL');
+    }
 
     const comTitulo = await hasColumn('ata_reunioes', 'titulo');
     if (!comTitulo) {
@@ -198,20 +225,29 @@ async function garantirEstrutura() {
     if (!(await hasIndex('ata_reuniao_tarefas', 'idx_ata_tarefas_tenant'))) {
         await runAlterIgnoreDuplicate('ALTER TABLE ata_reuniao_tarefas ADD KEY idx_ata_tarefas_tenant (tenant_id)');
     }
-    await runAlterIgnoreDuplicate('ALTER TABLE ata_reuniao_presencas MODIFY COLUMN tenant_id INT NOT NULL');
-    await runAlterIgnoreDuplicate('ALTER TABLE ata_reuniao_pautas MODIFY COLUMN tenant_id INT NOT NULL');
-    await runAlterIgnoreDuplicate('ALTER TABLE ata_reuniao_tarefas MODIFY COLUMN tenant_id INT NOT NULL');
+    for (const t of ['ata_reuniao_presencas', 'ata_reuniao_pautas', 'ata_reuniao_tarefas']) {
+        if (await isNullable(t, 'tenant_id')) {
+            await runAlterIgnoreDuplicate(`ALTER TABLE \`${t}\` MODIFY COLUMN tenant_id INT NOT NULL`);
+        }
+    }
 
-    const comPautaIdEmTarefa = await hasColumn('ata_reuniao_tarefas', 'pauta_id');
-    if (!comPautaIdEmTarefa) {
+    if (!(await hasColumn('ata_reuniao_tarefas', 'pauta_id'))) {
         await pool.query(`ALTER TABLE ata_reuniao_tarefas ADD COLUMN pauta_id INT NULL AFTER ata_id`);
     }
-    const comResponsavelFuncaoEmTarefa = await hasColumn('ata_reuniao_tarefas', 'responsavel_funcao_id');
-    if (!comResponsavelFuncaoEmTarefa) {
+    if (!(await hasColumn('ata_reuniao_tarefas', 'responsavel_funcao_id'))) {
         await pool.query(`ALTER TABLE ata_reuniao_tarefas ADD COLUMN responsavel_funcao_id INT NULL AFTER responsavel_usuario_id`);
     }
+}
 
-    estruturaGarantida = true;
+async function garantirEstrutura() {
+    if (!garantirEstruturaPromise) {
+        garantirEstruturaPromise = _doGarantirEstrutura().catch(err => {
+            console.error('[ataReunioes] Falha em garantirEstrutura:', err.message || err);
+            garantirEstruturaPromise = null;
+            throw err;
+        });
+    }
+    return garantirEstruturaPromise;
 }
 
 function normalizarData(value) {
@@ -349,9 +385,10 @@ router.post('/pastas', async (req, res) => {
 });
 
 router.get('/usuarios', async (req, res) => {
+    const tenantId = getTenantId(req);
+    if (!tenantId) return res.status(401).json({ error: 'Tenant não identificado.' });
     try {
         await garantirEstrutura();
-        const tenantId = getTenantId(req);
         const [rows] = await pool.query(`
             SELECT id, nome_completo, username, grupo, data_saida
             FROM usuarios

@@ -181,7 +181,7 @@ async function getTiosTokenContext(token) {
         [token]
     );
     const ctx = rows && rows[0] ? rows[0] : null;
-    if (!ctx || ctx.usado_em || ctx.invalidado_em) return null;
+    if (!ctx || ctx.invalidado_em) return null;
     return ctx;
 }
 
@@ -327,7 +327,7 @@ async function getTokenContext(token) {
         [token]
     );
     const ctx = rows && rows[0] ? rows[0] : null;
-    if (!ctx || ctx.usado_em || ctx.invalidado_em) return null;
+    if (!ctx || ctx.invalidado_em) return null;
     return ctx;
 }
 
@@ -513,7 +513,7 @@ router.post('/tios/:token', express.json(), async (req, res) => {
         );
         await pool.query(
             `UPDATE tios_atualizacao_tokens
-             SET atualizado = 1, usado_em = CURRENT_TIMESTAMP, invalidado_em = CURRENT_TIMESTAMP
+             SET atualizado = 1, usado_em = CURRENT_TIMESTAMP
              WHERE id = ?`,
             [ctx.id]
         );
@@ -722,7 +722,7 @@ router.post('/:token', upload.single('foto'), async (req, res) => {
 
         await connection.query(
             `UPDATE jovens_atualizacao_tokens
-             SET atualizado = 1, usado_em = CURRENT_TIMESTAMP, invalidado_em = CURRENT_TIMESTAMP
+             SET atualizado = 1, usado_em = CURRENT_TIMESTAMP
              WHERE id = ?`,
             [ctx.id]
         );

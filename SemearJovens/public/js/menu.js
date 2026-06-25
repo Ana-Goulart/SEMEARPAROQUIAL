@@ -173,10 +173,10 @@ const menuTemplate = `
                                 <small>Alternar aparência do sistema</small>
                             </span>
                         </button>
-                        <div class="dropdown-item topbar-settings-item" title="Versão do Sistema 1.3.1">
+                        <div class="dropdown-item topbar-settings-item" title="Versão do Sistema 1.4.0">
                             <span class="topbar-settings-icon"><i class="fas fa-circle-info"></i></span>
                             <span>
-                                <strong>Versão do Sistema 1.3.1</strong>
+                                <strong>Versão do Sistema 1.4.0</strong>
                                 <small>Informação atual da versão do sistema</small>
                             </span>
                         </div>
@@ -186,8 +186,9 @@ const menuTemplate = `
                     <span class="topbar-user-avatar">SP</span>
                     <span class="user-name-text">Usuário</span>
                 </div>
-                <button id="btnLogoutSistema" type="button" class="btn btn-sm btn-outline-danger" title="Sair do sistema">
-                    Sair
+                <button id="btnLogoutSistema" type="button" class="btn btn-sm btn-outline-danger btn-ejc-action" title="Sair do sistema" data-ui-skip-standardize>
+                    <span class="btn-ejc-icon"><i class="fa-solid fa-right-from-bracket"></i></span>
+                    <span class="btn-ejc-text">Sair</span>
                 </button>
             </div>
         </header>
@@ -622,8 +623,8 @@ function garantirUxUi() {
         </div>
       </div>
       <div class="modal-footer">
-        <button type="button" class="btn btn-soft-secondary d-none" id="uxFloatingCancel">Cancelar</button>
-        <button type="button" class="btn btn-primary" id="uxFloatingOk">OK</button>
+        <button type="button" class="btn btn-soft-secondary d-none" id="uxFloatingCancel" data-ui-skip-standardize>Cancelar</button>
+        <button type="button" class="btn btn-primary" id="uxFloatingOk" data-ui-skip-standardize>OK</button>
       </div>
     </div>
   </div>

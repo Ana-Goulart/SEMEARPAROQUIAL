@@ -30,6 +30,17 @@
             letter-spacing: .05em;
             text-transform: uppercase;
         }
+        /* ---- Multiselect Restrição Alimentar ---- */
+        .restricao-multiselect { display: flex; flex-direction: column; gap: 0.4rem; }
+        .restricao-options-list { max-height: 140px; overflow-y: auto; border: 1px solid #e5d5bb; border-radius: 6px; padding: 4px 2px; background: #fff; }
+        .restricao-option-item { display: flex; align-items: center; gap: 0.4rem; padding: 3px 8px; cursor: pointer; border-radius: 4px; font-size: 0.875rem; user-select: none; transition: background 0.12s; }
+        .restricao-option-item:hover { background: #fff8ee; }
+        .restricao-option-item.selecionada { background: #f4ede1; font-weight: 600; color: #6e5430; }
+        .restricao-option-check { width: 14px; height: 14px; accent-color: #d9a650; flex-shrink: 0; }
+        .restricao-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+        .restricao-chip { display: inline-flex; align-items: center; gap: 4px; background: #d9a650; color: #fff; border-radius: 999px; font-size: 0.78rem; padding: 2px 8px 2px 10px; font-weight: 600; box-shadow: 0 2px 6px rgba(217,166,80,0.28); }
+        .restricao-chip-remove { background: none; border: none; padding: 0; line-height: 1; font-size: 0.85rem; color: rgba(255,255,255,0.8); cursor: pointer; }
+        .restricao-chip-remove:hover { color: #fff; }
     </style>
 </head>
 <body>
@@ -48,12 +59,15 @@
                     <img src="/assets/logo-oficial.png" alt="Semear Paroquial" class="brand-logo mb-3">
                     <h1 class="h4">Cadastro atualizado</h1>
                     <p class="text-muted">Obrigado por atualizar seus dados e aceitar os termos de uso.</p>
+                    <button type="button" class="btn btn-outline-secondary btn-sm mt-3" @click="preencherNovamente">
+                        Precisa corrigir algo? Preencher novamente
+                    </button>
                 </div>
                 <template v-else>
                     <div class="text-center mb-4">
                         <img src="/assets/logo-oficial.png" alt="Semear Paroquial" class="brand-logo">
                         <h1 class="h4 mt-3 mb-1">Oi {{ jovem.nome_completo }}, atualize seus dados:</h1>
-                        <p class="text-muted mb-0">Preencha as informações abaixo. O link será invalidado após o envio.</p>
+                        <p class="text-muted mb-0">Preencha as informações abaixo. Você pode preencher novamente se precisar corrigir alguma informação.</p>
                     </div>
 
                     <form @submit.prevent="enviar" class="row g-3">
@@ -177,8 +191,9 @@
                             <label class="form-label">Atuação</label>
                             <select class="form-select" v-model="form.equipe_saude_tipo">
                                 <option value="">Selecione</option>
-                                <option>Médico</option>
-                                <option>Enfermeiro</option>
+                                <option>Médico(a)</option>
+                                <option>Enfermeiro(a)</option>
+                                <option>Fisioterapeuta</option>
                             </select>
                         </div>
                         <div class="col-md-4">
@@ -193,19 +208,44 @@
                             <input class="form-control" v-model.trim="form.qual_deficiencia" maxlength="255">
                         </div>
                         <div class="col-md-4">
-                            <label class="form-label">Restrição alimentar?</label>
-                            <select class="form-select" v-model="form.restricao_alimentar">
+                            <label class="form-label">Restrições alimentares e alergias?</label>
+                            <select class="form-select" v-model="form.restricao_alimentar"
+                                @change="if (!form.restricao_alimentar) { form.detalhes_restricao = []; buscaRestricao = ''; }">
                                 <option :value="false">Não</option>
                                 <option :value="true">Sim</option>
                             </select>
                         </div>
                         <div class="col-md-8" v-if="form.restricao_alimentar">
-                            <label class="form-label">Qual restrição?</label>
-                            <select class="form-select" v-model="form.detalhes_restricao" required>
-                                <option value="">Selecione</option>
-                                <option v-for="opcao in opcoesRestricaoAlimentar" :key="`restr-${opcao}`" :value="opcao">{{ opcao }}</option>
-                                <option v-if="form.detalhes_restricao && !opcoesRestricaoAlimentar.includes(form.detalhes_restricao)" :value="form.detalhes_restricao">{{ form.detalhes_restricao }}</option>
-                            </select>
+                            <label class="form-label">Qual restrição? (selecione uma ou mais)</label>
+                            <div class="restricao-multiselect">
+                                <input type="text" v-model="buscaRestricao" class="form-control form-control-sm" placeholder="Buscar restrição...">
+                                <div class="restricao-options-list">
+                                    <label v-for="opcao in restricoesFiltradas(buscaRestricao)" :key="opcao" class="restricao-option-item"
+                                        :class="{ selecionada: normalizarRestricoes(form.detalhes_restricao).includes(opcao) }">
+                                        <input type="checkbox" class="restricao-option-check"
+                                            :checked="normalizarRestricoes(form.detalhes_restricao).includes(opcao)"
+                                            @change="toggleRestricao(opcao)">
+                                        {{ opcao }}
+                                    </label>
+                                    <div v-if="!restricoesFiltradas(buscaRestricao).length" class="px-2 py-1 text-muted small">Nenhuma opção encontrada</div>
+                                    <label class="restricao-option-item" :class="{ selecionada: outrosRestricaoMarcado }">
+                                        <input type="checkbox" class="restricao-option-check" v-model="outrosRestricaoMarcado">
+                                        Outras
+                                    </label>
+                                </div>
+                                <div v-if="outrosRestricaoMarcado" class="d-flex gap-2 mt-1">
+                                    <input type="text" v-model="outrosRestricaoTexto" class="form-control form-control-sm"
+                                        placeholder="Especifique a restrição..." @keyup.enter="adicionarOutrosRestricao">
+                                    <button type="button" class="btn btn-sm btn-success" @click="adicionarOutrosRestricao"
+                                        :disabled="!String(outrosRestricaoTexto || '').trim()">Adicionar</button>
+                                </div>
+                                <div v-if="normalizarRestricoes(form.detalhes_restricao).length" class="restricao-chips">
+                                    <span v-for="item in normalizarRestricoes(form.detalhes_restricao)" :key="item" class="restricao-chip">
+                                        {{ item }}
+                                        <button type="button" class="restricao-chip-remove" @click="toggleRestricao(item)">×</button>
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                         <div class="col-md-4">
                             <label class="form-label">Possui habilidades musicais?</label>
@@ -333,25 +373,49 @@
                     carregandoCidades: false,
                     carregandoBairros: false,
                     ultimoCepBuscado: '',
+                    buscaRestricao: '',
+                    outrosRestricaoMarcado: false,
+                    outrosRestricaoTexto: '',
                     opcoesRestricaoAlimentar: [
                         'Alergia a amendoim',
-                        'Alergia a castanhas',
-                        'Alergia a frutos do mar',
-                        'APLV (Alergia à proteína do leite de vaca)',
+                        'Alergia a castanhas (nozes, castanha-do-pará, amêndoa, avelã, pistache, caju)',
+                        'Alergia a frutos do mar (camarão, caranguejo, lagosta, mariscos)',
+                        'Alergia a peixes',
+                        'Alergia a ovos',
+                        'Alergia a soja',
+                        'Alergia a trigo',
+                        'Alergia a gergelim',
+                        'APLV — Alergia à Proteína do Leite de Vaca',
+                        'Mamão',
+                        'Berinjela',
                         'Intolerante à lactose',
-                        'Intolerante a glúten (Celíaco)',
+                        'Intolerante a glúten (Doença Celíaca)',
+                        'Intolerante a frutose',
+                        'Intolerante a histamina',
                         'Não come carne vermelha',
                         'Não come carne de porco',
-                        'Vegetariano',
-                        'Vegano',
-                        'Outras'
+                        'Não come frutos do mar',
+                        'Não come peixe',
+                        'Vegetariano (não come carnes)',
+                        'Vegano (não come nenhum produto animal)',
+                        'Ovolactovegetariano',
+                        'Dieta Kosher (restrições religiosas judaicas)',
+                        'Dieta Halal (restrições religiosas islâmicas)',
+                        'Produtos de limpeza',
+                        'Diabético (restrição de açúcar)',
+                        'Hipertenso (restrição de sódio/sal)',
+                        'Fenilcetonúria (PKU)',
+                        'Doença de Crohn',
+                        'Síndrome do intestino irritável',
+                        'Refluxo gastroesofágico',
+                        'Restrição de gordura (colesterol alto)'
                     ],
                     foto: null,
                     form: {
                         nome_completo: '', apelido: '', telefone: '', email: '', cpf: '', data_nascimento: '', sexo: '',
                         endereco_rua: '', endereco_numero: '', endereco_bairro: '', endereco_cidade: '', endereco_estado: '', endereco_cep: '',
                         circulo: '', instagram: '', estado_civil: '', equipe_saude: false, equipe_saude_tipo: '',
-                        deficiencia: false, qual_deficiencia: '', restricao_alimentar: false, detalhes_restricao: '',
+                        deficiencia: false, qual_deficiencia: '', restricao_alimentar: false, detalhes_restricao: [],
                         informacao_adicional: '', pastorais: [], eh_musico: false, instrumentos_musicais: [],
                         confirmou_edicao: 'Sim', edicao_correta: '', ja_foi_garcom: false, garcom_numero_ejc: '', garcom_ejc: '', garcom_funcao: '',
                         ja_foi_moita: false, moita_numero_ejc: '', moita_ejc: '', moita_papel: '', aceite_termos: false, foto_url: ''
@@ -366,6 +430,36 @@
                 }
             },
             methods: {
+                normalizarRestricoes(valor) {
+                    if (Array.isArray(valor)) return valor.filter(Boolean).map(v => String(v).trim()).filter(Boolean);
+                    if (!valor) return [];
+                    const txt = String(valor).trim();
+                    if (!txt) return [];
+                    try { const p = JSON.parse(txt); if (Array.isArray(p)) return p.filter(Boolean).map(v => String(v).trim()).filter(Boolean); } catch (e) {}
+                    return [txt];
+                },
+                restricoesFiltradas(busca) {
+                    const q = (busca || '').toLowerCase().trim();
+                    if (!q) return this.opcoesRestricaoAlimentar;
+                    return this.opcoesRestricaoAlimentar.filter(o => o.toLowerCase().includes(q));
+                },
+                toggleRestricao(opcao) {
+                    const arr = this.normalizarRestricoes(this.form.detalhes_restricao);
+                    const idx = arr.indexOf(opcao);
+                    if (idx === -1) arr.push(opcao); else arr.splice(idx, 1);
+                    this.form.detalhes_restricao = arr;
+                    this.form.restricao_alimentar = arr.length > 0;
+                },
+                adicionarOutrosRestricao() {
+                    const texto = String(this.outrosRestricaoTexto || '').trim();
+                    if (!texto) return;
+                    const arr = this.normalizarRestricoes(this.form.detalhes_restricao);
+                    if (!arr.includes(texto)) arr.push(texto);
+                    this.form.detalhes_restricao = arr;
+                    this.form.restricao_alimentar = true;
+                    this.outrosRestricaoTexto = '';
+                    this.outrosRestricaoMarcado = false;
+                },
                 digits(v) { return String(v || '').replace(/\D/g, ''); },
                 formatarCpf(v) {
                     const d = this.digits(v).slice(0, 11);
@@ -515,6 +609,7 @@
                                 equipe_saude: !!data.dados.equipe_saude,
                                 deficiencia: !!data.dados.deficiencia,
                                 restricao_alimentar: !!data.dados.restricao_alimentar,
+                                detalhes_restricao: this.normalizarRestricoes(data.dados.detalhes_restricao),
                                 eh_musico: !!data.dados.eh_musico,
                                 confirmou_edicao: 'Sim',
                                 ja_foi_garcom: false,
@@ -545,6 +640,11 @@
                         this.loading = false;
                     }
                 },
+                async preencherNovamente() {
+                    this.loading = true;
+                    this.sucesso = false;
+                    await this.carregar();
+                },
                 async enviar() {
                     if (this.digits(this.form.cpf).length !== 11) {
                         alert('Informe um CPF com 11 dígitos.');
@@ -571,7 +671,7 @@
             },
             watch: {
                 'form.restricao_alimentar'(valor) {
-                    if (!valor) this.form.detalhes_restricao = '';
+                    if (!valor) { this.form.detalhes_restricao = []; this.buscaRestricao = ''; }
                 },
                 'form.ja_foi_garcom'(valor) {
                     if (!valor) {

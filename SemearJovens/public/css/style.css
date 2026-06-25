@@ -1176,3 +1176,177 @@ h1, h2, h3, h4, h5, h6, .brand-name {
     background: rgba(79, 146, 181, 0.18) !important;
     color: #9fcde4 !important;
 }
+
+/* ── Botão outline do sistema (substitui btn-outline-primary/success/warning) ── */
+.btn-ejc-outline {
+    color: #8a6726;
+    border-color: rgba(184, 135, 50, 0.5);
+    background: transparent;
+}
+.btn-ejc-outline:hover,
+.btn-ejc-outline:focus {
+    background: rgba(184, 135, 50, 0.1);
+    border-color: #b88732;
+    color: #6b4f20;
+}
+.btn-ejc-outline:disabled,
+.btn-ejc-outline.disabled {
+    color: #b8965a;
+    border-color: rgba(184, 135, 50, 0.25);
+    opacity: 0.6;
+}
+:root[data-theme="dark"] .btn-ejc-outline {
+    color: #e2b96a;
+    border-color: rgba(200, 161, 90, 0.45);
+}
+:root[data-theme="dark"] .btn-ejc-outline:hover,
+:root[data-theme="dark"] .btn-ejc-outline:focus {
+    background: rgba(200, 161, 90, 0.12);
+    border-color: #c8a15a;
+    color: #f2e0a8;
+}
+
+/* ════════════════════════════════════════════════════════
+   Fix global mobile: tabelas dentro de .card ou container
+   Scroll horizontal mantém texto numa linha sem quebrar sílabas
+   ════════════════════════════════════════════════════════ */
+@media (max-width: 1199.98px) {
+    /* Habilita scroll horizontal — impede colunas de ficarem estreitas demais */
+    .card .table-responsive,
+    .card-body .table-responsive,
+    .container-fluid .table-responsive,
+    .table-responsive.solicitacoes-scroll {
+        overflow-x: auto;
+    }
+
+    /* Colunas dimensionadas pelo conteúdo; min-width garante que a tabela
+       não encolha abaixo do container quando há poucas colunas */
+    .card .table-responsive > table,
+    .card-body .table-responsive > table,
+    .container-fluid .table-responsive > table,
+    .table-responsive.solicitacoes-scroll > table {
+        table-layout: auto;
+        min-width: 100%;
+    }
+
+    /* Células de nome/texto principal: nunca quebram linha */
+    .nome-clicavel {
+        white-space: nowrap;
+    }
+
+    /* Largura fixa para coluna de toggle do accordion */
+    .lista-mestre-mobile-expand-col {
+        width: 3.4rem !important;
+        min-width: 3.4rem !important;
+        max-width: 3.4rem !important;
+    }
+
+    /* Células escondidas no mobile */
+    .lista-mestre-mobile-hidden,
+    .mobile-col-hide {
+        display: none !important;
+        width: 0 !important;
+        min-width: 0 !important;
+        max-width: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        overflow: hidden !important;
+    }
+}
+
+/* ── Planner do calendário: mantém scroll horizontal (exceção ao fix global) ── */
+.planner-table-resp {
+    overflow-x: auto !important;
+}
+.planner-table-resp > table {
+    table-layout: auto !important;
+    width: max-content !important;
+    min-width: 100%;
+}
+
+/* ════════════════════════════════════════════════════════
+   Paleta Semear: badges e indicadores de status
+   Substitui verde/amarelo/vermelho/azul do Bootstrap por
+   bege-dourado para manter identidade visual do sistema.
+   Afeta apenas elementos com a classe .badge.
+   ════════════════════════════════════════════════════════ */
+
+/* Aprovado / Ativo / Sim / Concluído → bege escuro */
+.badge.bg-success,
+.badge.bg-success-subtle,
+.badge.text-bg-success {
+    background-color: #D4C4A0 !important;
+    color: #5C4A1E !important;
+}
+.badge.bg-success-subtle.text-success,
+.badge.text-success {
+    color: #5C4A1E !important;
+}
+
+/* Pendente / Em análise / Atenção → dourado claro */
+.badge.bg-warning,
+.badge.bg-warning-subtle,
+.badge.text-bg-warning {
+    background-color: #E8B84B !important;
+    color: #5C4A1E !important;
+}
+.badge.bg-warning-subtle.text-warning,
+.badge.text-warning {
+    color: #5C4A1E !important;
+}
+/* Evitar conflito com "text-dark" acrescentado pelo Bootstrap em bg-warning */
+.badge.bg-warning.text-dark {
+    color: #5C4A1E !important;
+}
+
+/* Rejeitado / Saída / Erro → dourado escuro */
+.badge.bg-danger,
+.badge.bg-danger-subtle,
+.badge.text-bg-danger {
+    background-color: #8B6914 !important;
+    color: #FFFFFF !important;
+}
+.badge.bg-danger-subtle.text-danger,
+.badge.text-danger {
+    color: #FFFFFF !important;
+}
+
+/* Informativo / Módulos / Neutro → bege escuro */
+.badge.bg-primary,
+.badge.bg-primary-subtle,
+.badge.text-bg-primary,
+.badge.bg-info,
+.badge.bg-info-subtle,
+.badge.text-bg-info {
+    background-color: #D4C4A0 !important;
+    color: #5C4A1E !important;
+}
+
+/* Dark mode: ajustes de contraste */
+:root[data-theme="dark"] .badge.bg-success,
+:root[data-theme="dark"] .badge.bg-success-subtle,
+:root[data-theme="dark"] .badge.text-bg-success {
+    background-color: rgba(212, 196, 160, 0.2) !important;
+    color: #e8d9b4 !important;
+}
+:root[data-theme="dark"] .badge.bg-warning,
+:root[data-theme="dark"] .badge.bg-warning-subtle,
+:root[data-theme="dark"] .badge.text-bg-warning {
+    background-color: rgba(232, 184, 75, 0.25) !important;
+    color: #f0cc7a !important;
+}
+:root[data-theme="dark"] .badge.bg-danger,
+:root[data-theme="dark"] .badge.bg-danger-subtle,
+:root[data-theme="dark"] .badge.text-bg-danger {
+    background-color: rgba(139, 105, 20, 0.3) !important;
+    color: #f0d080 !important;
+}
+:root[data-theme="dark"] .badge.bg-primary,
+:root[data-theme="dark"] .badge.bg-primary-subtle,
+:root[data-theme="dark"] .badge.text-bg-primary,
+:root[data-theme="dark"] .badge.bg-info,
+:root[data-theme="dark"] .badge.bg-info-subtle,
+:root[data-theme="dark"] .badge.text-bg-info {
+    background-color: rgba(212, 196, 160, 0.18) !important;
+    color: #e8d9b4 !important;
+}

@@ -620,6 +620,27 @@ main.container-fluid > div:first-child h3.mb-1 {
   }
 }
 
+@media (max-width: 767.98px) {
+  #page-topbar {
+    height: 48px;
+    padding-inline: 0.75rem;
+  }
+
+  .topbar-brand-mark {
+    width: 34px;
+    height: 34px;
+  }
+
+  .topbar-brand-name {
+    font-size: 0.88rem;
+  }
+
+  .topbar-icon-btn {
+    width: 36px;
+    height: 36px;
+  }
+}
+
 /* ==============================================
    COMPONENTS
    ============================================== */

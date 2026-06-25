@@ -8,9 +8,6 @@
     <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/css/velzon-theme.css">
-    <link rel="stylesheet" href="/css/style.css">
-    <script src="/js/ui-kit.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Source+Sans+3:wght@400;500;600;700&display=swap');
 
@@ -895,6 +892,103 @@
             }
         }
 
+        .sidebar-group-btn {
+            width: 100%;
+            border: 1px solid rgba(163, 122, 44, 0.16);
+            background: rgba(244, 236, 220, 0.48);
+            color: #7a5720;
+            border-radius: 14px;
+            padding: 11px 16px;
+            text-align: left;
+            font-size: 0.75rem;
+            font-weight: 800;
+            letter-spacing: 0.10em;
+            text-transform: uppercase;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: 0.18s ease;
+        }
+
+        .sidebar-group-btn:hover {
+            background: rgba(244, 236, 220, 0.75);
+            border-color: rgba(163, 122, 44, 0.28);
+        }
+
+        .sidebar-group-btn.group-open {
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+            border-bottom-color: transparent;
+        }
+
+        .sidebar-group-chevron {
+            color: #a37a2c;
+            transition: transform 0.2s ease;
+            display: inline-block;
+        }
+
+        .sidebar-group-chevron.open {
+            transform: rotate(90deg);
+        }
+
+        .sidebar-sub-list {
+            display: grid;
+            gap: 4px;
+            padding: 6px 6px 8px;
+            border: 1px solid rgba(163, 122, 44, 0.16);
+            border-top: 0;
+            border-bottom-left-radius: 14px;
+            border-bottom-right-radius: 14px;
+            background: rgba(255, 255, 255, 0.46);
+            margin-bottom: 0;
+        }
+
+        .sidebar-sub-btn {
+            width: 100%;
+            border: 1px solid transparent;
+            background: transparent;
+            color: #4b5563;
+            border-radius: 11px;
+            padding: 10px 14px;
+            text-align: left;
+            font-weight: 600;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: 0.15s ease;
+            font-size: 0.95rem;
+        }
+
+        .sidebar-sub-btn:hover {
+            background: rgba(255, 255, 255, 0.82);
+            border-color: rgba(163, 122, 44, 0.14);
+        }
+
+        .sidebar-sub-btn.active {
+            background: linear-gradient(180deg, rgba(255, 249, 238, 0.95), rgba(244, 236, 220, 0.92));
+            color: #1d2f45;
+            box-shadow: inset 3px 0 0 #c79d45;
+            border-color: rgba(163, 122, 44, 0.14);
+        }
+
+        .status-em-teste  { background: rgba(217,166,80,0.12); color:#8a5e0a; border:1px solid rgba(217,166,80,0.24); }
+        .status-aprovado  { background: rgba(77,116,80,0.10);  color:#3d6940; border:1px solid rgba(77,116,80,0.18); }
+        .status-reprovado { background: rgba(139,75,66,0.10);  color:#7a3a32; border:1px solid rgba(139,75,66,0.18); }
+
+        .checklist-item { border-radius:16px; border:1px solid var(--bs-border-color, #dee2e6); background:rgba(255,255,255,0.9); padding:16px 18px; margin-bottom:10px; }
+        .checklist-nome { font-weight:700; color:#17263b; font-size:1rem; }
+        .release-summary-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; margin:18px 0 0; }
+        @media(max-width:700px){ .release-summary-grid{ grid-template-columns:repeat(2,1fr); } }
+
+        .tarefa-row { display:flex; justify-content:space-between; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid rgba(0,0,0,0.06); flex-wrap:wrap; }
+        .tarefa-row:last-child { border-bottom:none; }
+        .tarefa-descricao { flex:1; min-width:0; font-size:0.9rem; color:#374151; }
+        .tarefa-descricao.inativa { text-decoration:line-through; color:#9ca3af; }
+        .menu-tarefas-panel { background:rgba(248,249,252,0.9); border-radius:12px; padding:12px 14px; margin-top:12px; border:1px solid rgba(0,0,0,0.07); }
+        .tarefa-checklist-row { display:flex; align-items:flex-start; gap:10px; padding:7px 0; border-bottom:1px solid rgba(0,0,0,0.05); flex-wrap:wrap; }
+        .tarefa-checklist-row:last-child { border-bottom:none; }
+        .tarefa-status-icon { font-size:1.1rem; flex-shrink:0; width:22px; text-align:center; }
+
     </style>
 </head>
 <body>
@@ -908,38 +1002,57 @@
                     <span class="sidebar-menu-label"><span class="sidebar-menu-icon">📊</span>Visão Geral</span>
                     <span class="sidebar-chevron">›</span>
                 </button>
-            </nav>
 
-            <div class="sidebar-section-title">Paróquias</div>
-            <nav class="sidebar-nav-list">
-                <button type="button" class="sidebar-menu-btn" :class="{active: aba==='cadastro'}" @click="abrirCadastro">
-                    <span class="sidebar-menu-label"><span class="sidebar-menu-icon">⛪</span>Cadastrar Paróquia</span>
-                    <span class="sidebar-chevron">›</span>
-                </button>
-                <button type="button" class="sidebar-menu-btn" :class="{active: aba==='lista'}" @click="carregarTenants">
-                    <span class="sidebar-menu-label"><span class="sidebar-menu-icon">📋</span>Paróquias Cadastradas</span>
-                    <span class="sidebar-chevron">›</span>
-                </button>
-            </nav>
+                <div>
+                    <button type="button" class="sidebar-group-btn" :class="{'group-open': gruposAbertos.paroquias}" @click="toggleGrupo('paroquias')">
+                        <span class="sidebar-menu-label"><span class="sidebar-menu-icon">⛪</span>Paróquias</span>
+                        <span class="sidebar-group-chevron" :class="{open: gruposAbertos.paroquias}">›</span>
+                    </button>
+                    <div v-if="gruposAbertos.paroquias" class="sidebar-sub-list">
+                        <button type="button" class="sidebar-sub-btn" :class="{active: aba==='cadastro'}" @click="abrirCadastro">
+                            <span class="sidebar-menu-label"><span class="sidebar-menu-icon">➕</span>Cadastrar Paróquia</span>
+                        </button>
+                        <button type="button" class="sidebar-sub-btn" :class="{active: aba==='lista'}" @click="carregarTenants">
+                            <span class="sidebar-menu-label"><span class="sidebar-menu-icon">📋</span>Paróquias Cadastradas</span>
+                        </button>
+                    </div>
+                </div>
 
-            <div class="sidebar-section-title">Acessos</div>
-            <nav class="sidebar-nav-list">
-                <button type="button" class="sidebar-menu-btn" :class="{active: aba==='usuarios-globais'}" @click="carregarUsuariosGlobais">
-                    <span class="sidebar-menu-label"><span class="sidebar-menu-icon">👥</span>Usuários dos Tenants</span>
-                    <span class="sidebar-chevron">›</span>
-                </button>
-                <button type="button" class="sidebar-menu-btn" :class="{active: aba==='usuarios-sistema'}" @click="carregarUsuariosSistema">
-                    <span class="sidebar-menu-label"><span class="sidebar-menu-icon">🛡️</span>Usuários do Sistema</span>
-                    <span class="sidebar-chevron">›</span>
-                </button>
-                <button type="button" class="sidebar-menu-btn" :class="{active: aba==='mensagens'}" @click="carregarMensagens">
-                    <span class="sidebar-menu-label"><span class="sidebar-menu-icon">✉️</span>Mensagens</span>
-                    <span class="sidebar-chevron">›</span>
-                </button>
-                <button type="button" class="sidebar-menu-btn" :class="{active: aba==='logs'}" @click="carregarLogs">
-                    <span class="sidebar-menu-label"><span class="sidebar-menu-icon">🕘</span>Log</span>
-                    <span class="sidebar-chevron">›</span>
-                </button>
+                <div>
+                    <button type="button" class="sidebar-group-btn" :class="{'group-open': gruposAbertos.acessos}" @click="toggleGrupo('acessos')">
+                        <span class="sidebar-menu-label"><span class="sidebar-menu-icon">🔐</span>Acessos</span>
+                        <span class="sidebar-group-chevron" :class="{open: gruposAbertos.acessos}">›</span>
+                    </button>
+                    <div v-if="gruposAbertos.acessos" class="sidebar-sub-list">
+                        <button type="button" class="sidebar-sub-btn" :class="{active: aba==='usuarios-globais'}" @click="carregarUsuariosGlobais">
+                            <span class="sidebar-menu-label"><span class="sidebar-menu-icon">👥</span>Usuários dos Tenants</span>
+                        </button>
+                        <button type="button" class="sidebar-sub-btn" :class="{active: aba==='usuarios-sistema'}" @click="carregarUsuariosSistema">
+                            <span class="sidebar-menu-label"><span class="sidebar-menu-icon">🛡️</span>Usuários do Sistema</span>
+                        </button>
+                        <button type="button" class="sidebar-sub-btn" :class="{active: aba==='mensagens'}" @click="carregarMensagens">
+                            <span class="sidebar-menu-label"><span class="sidebar-menu-icon">✉️</span>Mensagens</span>
+                        </button>
+                        <button type="button" class="sidebar-sub-btn" :class="{active: aba==='logs'}" @click="carregarLogs">
+                            <span class="sidebar-menu-label"><span class="sidebar-menu-icon">🕘</span>Log</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <button type="button" class="sidebar-group-btn" :class="{'group-open': gruposAbertos.changelog}" @click="toggleGrupo('changelog')">
+                        <span class="sidebar-menu-label"><span class="sidebar-menu-icon">📝</span>Change Log</span>
+                        <span class="sidebar-group-chevron" :class="{open: gruposAbertos.changelog}">›</span>
+                    </button>
+                    <div v-if="gruposAbertos.changelog" class="sidebar-sub-list">
+                        <button type="button" class="sidebar-sub-btn" :class="{active: aba==='changelog-historico'}" @click="carregarQaReleases()">
+                            <span class="sidebar-menu-label"><span class="sidebar-menu-icon">🕓</span>Histórico</span>
+                        </button>
+                        <button type="button" class="sidebar-sub-btn" :class="{active: aba==='changelog-menus'}" @click="carregarQaMenus()">
+                            <span class="sidebar-menu-label"><span class="sidebar-menu-icon">🗂️</span>Menus</span>
+                        </button>
+                    </div>
+                </div>
             </nav>
         </aside>
 
@@ -967,7 +1080,7 @@
                     {{ mensagem.texto }}
                 </div>
 
-                <section class="hero-grid">
+                <section v-if="aba==='dashboard'" class="hero-grid">
                     <article class="hero-card">
                         <div class="hero-kicker">Painel Principal</div>
                         <h1 class="hero-title">Boas-vindas ao Semear Paroquial</h1>
@@ -1344,6 +1457,276 @@
                     </div>
                 </div>
 
+                <div v-else-if="aba==='changelog-menus'">
+                    <div class="card border-0 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                                <p class="text-muted mb-0">Cadastre os menus, submenus e suas funcionalidades para usar no checklist de cada release.</p>
+                                <button class="btn btn-primary btn-sm" @click="abrirModalQaMenu()">+ Adicionar menu</button>
+                            </div>
+
+                            <div class="mt-3" v-if="qaMenus.length">
+                                <div class="list-group list-group-flush">
+                                    <div class="list-group-item py-3" v-for="m in qaMenusOrdenados" :key="`qam-${m.id}`">
+                                        <!-- Linha do menu -->
+                                        <div class="d-flex justify-content-between align-items-center gap-2 flex-wrap">
+                                            <div class="d-flex align-items-center gap-2 flex-wrap" style="cursor:pointer;flex:1;min-width:0" @click="toggleMenuExpandido(m.id)">
+                                                <span style="font-size:0.7rem;color:#6b7280;flex-shrink:0">{{ menuExpandido === m.id ? '▼' : '▶' }}</span>
+                                                <span v-if="m.submenu_de" class="text-muted me-1">↳</span>
+                                                <strong>{{ m.nome }}</strong>
+                                                <small class="text-muted" v-if="m.submenu_de">Submenu de: {{ nomeMenuPai(m.submenu_de) }}</small>
+                                                <span class="badge" :class="m.ativo ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'">
+                                                    {{ m.ativo ? 'Ativo' : 'Inativo' }}
+                                                </span>
+                                                <small class="text-muted ms-auto" v-if="m.created_at">Criado em: {{ formatarData(m.created_at) }}</small>
+                                            </div>
+                                            <div class="d-flex gap-1 flex-shrink-0">
+                                                <button class="btn btn-outline-secondary btn-sm" @click.stop="abrirModalQaMenu(m)" title="Editar menu">✏</button>
+                                                <button class="btn btn-outline-secondary btn-sm" @click.stop="toggleAtivoQaMenu(m)">{{ m.ativo ? 'Desativar' : 'Ativar' }}</button>
+                                                <button class="btn btn-outline-danger btn-sm" @click.stop="abrirExcluirMenu(m)">Excluir</button>
+                                            </div>
+                                        </div>
+
+                                        <!-- Painel de funcionalidades expansível -->
+                                        <div v-if="menuExpandido === m.id" class="menu-tarefas-panel">
+                                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                                <span class="small fw-semibold text-muted text-uppercase" style="letter-spacing:.06em">Funcionalidades</span>
+                                                <button class="btn btn-outline-primary btn-sm" @click.stop="abrirModalFuncionalidade(m.id)">+ Funcionalidade</button>
+                                            </div>
+
+                                            <div v-if="funcionalidadesPorMenu[m.id] && funcionalidadesPorMenu[m.id].length">
+                                                <div class="tarefa-row" v-for="f in funcionalidadesPorMenu[m.id]" :key="`func-${f.id}`">
+                                                    <div style="flex:1;min-width:0">
+                                                        <span class="tarefa-descricao" :class="{ inativa: !f.ativo }">{{ f.descricao }}</span>
+                                                        <small class="text-muted d-block" v-if="f.created_at">Adicionada em: {{ formatarData(f.created_at) }}</small>
+                                                    </div>
+                                                    <div class="d-flex gap-1 flex-shrink-0">
+                                                        <button class="btn btn-outline-secondary btn-sm" @click.stop="abrirModalFuncionalidade(m.id, f)" title="Editar funcionalidade">✏</button>
+                                                        <button class="btn btn-outline-secondary btn-sm" @click.stop="toggleAtivoFuncionalidade(m.id, f)">{{ f.ativo ? 'Desativar' : 'Ativar' }}</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div v-else class="small text-muted">
+                                                Nenhuma funcionalidade cadastrada. Clique em "+ Funcionalidade" para adicionar.
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div v-else class="text-center text-muted py-4">
+                                <div class="mb-2" style="font-size:2rem">🗂️</div>
+                                <strong>Nenhum menu cadastrado ainda.</strong><br>
+                                Clique em "+ Adicionar menu" para mapear os menus do sistema.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div v-else-if="aba==='changelog-historico'">
+                    <div class="card border-0 shadow-sm" v-if="!qaRelease">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                                <p class="text-muted mb-0">Acompanhe o ciclo de qualidade de cada versão lançada no sistema.</p>
+                                <button class="btn btn-primary btn-sm" @click="abrirModalQaRelease()">+ Nova release</button>
+                            </div>
+
+                            <div class="mt-3" v-if="qaReleases.length">
+                                <div class="list-group list-group-flush">
+                                    <div class="list-group-item d-flex justify-content-between align-items-center flex-wrap gap-2 py-3"
+                                         v-for="r in qaReleases" :key="`qar-${r.id}`">
+                                        <div style="cursor:pointer;flex:1;min-width:0" @click="abrirRelease(r)">
+                                            <strong>Versão {{ r.versao }}</strong>
+                                            <small class="text-muted ms-2">{{ ambienteLabel(r.ambiente) }} · {{ formatarData(r.created_at) }}</small>
+                                            <div v-if="r.descricao" class="text-muted small mt-1">{{ r.descricao }}</div>
+                                        </div>
+                                        <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                            <button class="btn btn-sm btn-outline-secondary" @click.stop="abrirModalRelatorio(r)">📋 Ver relatório</button>
+                                            <button class="btn btn-sm btn-outline-danger" @click.stop="abrirExcluirRelease(r)">Excluir</button>
+                                            <span class="badge rounded-pill px-3 py-2" :class="statusReleaseClass(r.status)">{{ statusReleaseLabel(r.status) }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div v-else class="text-center text-muted py-4">
+                                <div class="mb-2" style="font-size:2rem">🕓</div>
+                                <strong>Nenhuma release criada ainda.</strong><br>
+                                Clique em "+ Nova release" para registrar a primeira versão.
+                            </div>
+                        </div>
+                    </div>
+
+                    <template v-if="qaRelease">
+                        <div class="card border-0 shadow-sm mb-3">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                                    <div>
+                                        <h5 class="mb-1">Versão {{ qaRelease.versao }}</h5>
+                                        <div class="d-flex gap-2 align-items-center flex-wrap mt-1">
+                                            <span class="badge rounded-pill px-3 py-2" :class="statusReleaseClass(qaRelease.status)">{{ statusReleaseLabel(qaRelease.status) }}</span>
+                                            <span class="badge bg-secondary-subtle text-secondary rounded-pill px-3 py-2">{{ ambienteLabel(qaRelease.ambiente) }}</span>
+                                            <span class="text-muted small">{{ formatarData(qaRelease.created_at) }}</span>
+                                        </div>
+                                        <div v-if="qaRelease.descricao" class="text-muted small mt-2">{{ qaRelease.descricao }}</div>
+                                    </div>
+                                    <button class="btn btn-outline-secondary btn-sm" @click="fecharRelease()">← Voltar</button>
+                                </div>
+
+                                <!-- Stats por funcionalidades quando existem; fallback por menus -->
+                                <div class="release-summary-grid" v-if="totalFuncionalidadesRelease > 0">
+                                    <div class="card border-0 bg-light text-center p-3">
+                                        <div class="text-muted small">Total de funcionalidades</div>
+                                        <div class="fw-bold fs-4">{{ totalFuncionalidadesRelease }}</div>
+                                    </div>
+                                    <div class="card border-0 bg-light text-center p-3">
+                                        <div class="text-muted small">Ok</div>
+                                        <div class="fw-bold fs-4 text-success">{{ funcionalidadesOkRelease }}</div>
+                                    </div>
+                                    <div class="card border-0 bg-light text-center p-3">
+                                        <div class="text-muted small">Falharam</div>
+                                        <div class="fw-bold fs-4 text-danger">{{ funcionalidadesFalharamRelease }}</div>
+                                    </div>
+                                    <div class="card border-0 bg-light text-center p-3">
+                                        <div class="text-muted small">Não testadas</div>
+                                        <div class="fw-bold fs-4 text-secondary">{{ funcionalidadesNaoTestadasRelease }}</div>
+                                    </div>
+                                </div>
+                                <div class="release-summary-grid" v-else>
+                                    <div class="card border-0 bg-light text-center p-3">
+                                        <div class="text-muted small">Menus</div>
+                                        <div class="fw-bold fs-4">{{ qaChecklist.length }}</div>
+                                    </div>
+                                    <div class="card border-0 bg-light text-center p-3">
+                                        <div class="text-muted small">Testados</div>
+                                        <div class="fw-bold fs-4">{{ qaChecklist.filter(m => m.status !== 'nao_testado').length }}</div>
+                                    </div>
+                                    <div class="card border-0 bg-light text-center p-3">
+                                        <div class="text-muted small">Ok</div>
+                                        <div class="fw-bold fs-4 text-success">{{ qaChecklist.filter(m => m.status === 'ok').length }}</div>
+                                    </div>
+                                    <div class="card border-0 bg-light text-center p-3">
+                                        <div class="text-muted small">Falharam</div>
+                                        <div class="fw-bold fs-4 text-danger">{{ qaChecklist.filter(m => m.status === 'falhou').length }}</div>
+                                    </div>
+                                </div>
+
+                                <!-- Barra de progresso -->
+                                <div class="mt-3" v-if="totalFuncionalidadesRelease > 0">
+                                    <div class="d-flex justify-content-between small text-muted mb-1">
+                                        <span>Progresso</span>
+                                        <span>{{ progressoRelease }}%</span>
+                                    </div>
+                                    <div class="progress" style="height:8px;border-radius:99px">
+                                        <div class="progress-bar bg-success" :style="`width:${progressoOkRelease}%`"></div>
+                                        <div class="progress-bar bg-danger" :style="`width:${progressoFalharamRelease}%`"></div>
+                                        <div class="progress-bar bg-warning" :style="`width:${progressoParcialRelease}%`"></div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="card border-0 shadow-sm">
+                            <div class="card-body">
+                                <h6 class="mb-3">Checklist de menus</h6>
+
+                                <div v-if="qaChecklist.length">
+                                    <div class="checklist-item" v-for="item in qaChecklistOrdenado" :key="`chk-${item.menu_id}`">
+                                        <!-- Cabeçalho do menu -->
+                                        <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                                            <div style="flex:1;min-width:0">
+                                                <div class="checklist-nome">
+                                                    <span v-if="item.submenu_de" class="me-1 text-muted fw-normal">↳</span>
+                                                    {{ item.nome }}
+                                                </div>
+                                                <div v-if="item.submenu_de" class="text-muted small mt-1">Submenu de: {{ nomeMenuPai(item.submenu_de) }}</div>
+                                            </div>
+                                            <!-- Status: calculado pelas funcionalidades (quando há) ou manual -->
+                                            <span v-if="item.funcionalidades && item.funcionalidades.length"
+                                                  class="badge rounded-pill px-3 py-2"
+                                                  :class="statusReleaseClass(calcularStatusMenu(item.funcionalidades))">
+                                                {{ statusReleaseLabel(calcularStatusMenu(item.funcionalidades)) }}
+                                            </span>
+                                            <select v-else class="form-select form-select-sm" style="min-width:148px" v-model="item.status">
+                                                <option value="nao_testado">⬜ Não testado</option>
+                                                <option value="ok">✅ Ok</option>
+                                                <option value="falhou">❌ Falhou</option>
+                                                <option value="parcial">⚠️ Parcial</option>
+                                            </select>
+                                        </div>
+
+                                        <!-- Sub-checklist de funcionalidades -->
+                                        <div v-if="item.funcionalidades && item.funcionalidades.length" class="menu-tarefas-panel mt-2">
+                                            <div class="tarefa-checklist-row" v-for="f in item.funcionalidades" :key="`frc-${f.funcionalidade_id}`" style="flex-direction:column;align-items:stretch;gap:6px">
+                                                <!-- Linha 1: descrição + data -->
+                                                <div class="d-flex justify-content-between align-items-center gap-2">
+                                                    <div class="small fw-medium">{{ f.descricao }}</div>
+                                                    <span class="small text-muted flex-shrink-0" v-if="f.created_at">Adicionada: {{ formatarDataCurta(f.created_at) }}</span>
+                                                </div>
+                                                <!-- Linha 2: Foi alterado? -->
+                                                <label class="d-flex align-items-center gap-2 mb-0" style="cursor:pointer">
+                                                    <input type="checkbox" v-model="f.alterado">
+                                                    <span class="small text-muted">Foi alterado nessa versão?</span>
+                                                </label>
+                                                <!-- Linhas 3-4: tipo e descrição da alteração (se marcado) -->
+                                                <template v-if="f.alterado">
+                                                    <select class="form-select form-select-sm" v-model="f.tipo_alteracao">
+                                                        <option value="funcionalidade">🆕 Adição de funcionalidade</option>
+                                                        <option value="bug">🐛 Correção de bug</option>
+                                                    </select>
+                                                    <input class="form-control form-control-sm" v-model="f.descricao_alteracao"
+                                                        placeholder="Descreva o que foi alterado..." style="font-size:0.85rem">
+                                                </template>
+                                                <!-- Linha 5: status + observação -->
+                                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                                    <span class="tarefa-status-icon">{{ statusTarefaIcone(f.status) }}</span>
+                                                    <select class="form-select form-select-sm flex-shrink-0" style="min-width:148px" v-model="f.status">
+                                                        <option value="nao_testado">⬜ Não testado</option>
+                                                        <option value="ok">✅ Ok</option>
+                                                        <option value="falhou">❌ Falhou</option>
+                                                        <option value="parcial">⚠️ Parcial</option>
+                                                    </select>
+                                                    <input class="form-control form-control-sm" v-model="f.observacao"
+                                                        placeholder="Obs. (opcional)" style="font-size:0.8rem;min-width:140px">
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Observação geral do menu -->
+                                        <div class="mt-2">
+                                            <textarea class="form-control form-control-sm" rows="1" v-model="item.observacao"
+                                                placeholder="Observação geral do menu (opcional)..."></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div v-else class="text-center text-muted py-3">
+                                    Nenhum menu ativo encontrado. Cadastre menus na aba "Menus" primeiro.
+                                </div>
+
+                                <div v-if="qaChecklist.length" class="d-flex justify-content-between align-items-center flex-wrap gap-2 mt-3">
+                                    <div class="d-flex gap-2 flex-wrap">
+                                        <template v-if="qaRelease.status === 'em_teste'">
+                                            <button class="btn btn-outline-success btn-sm" @click="finalizarRelease('aprovado')" :disabled="salvandoQa">✓ Aprovar release</button>
+                                            <button class="btn btn-outline-danger btn-sm" @click="finalizarRelease('reprovado')" :disabled="salvandoQa">✗ Reprovar release</button>
+                                        </template>
+                                        <template v-else>
+                                            <span class="badge rounded-pill px-3 py-2" :class="statusReleaseClass(qaRelease.status)">
+                                                Release {{ statusReleaseLabel(qaRelease.status) }}
+                                            </span>
+                                            <button class="btn btn-outline-secondary btn-sm" @click="abrirModalRelatorio(qaRelease)">📋 Ver relatório</button>
+                                        </template>
+                                    </div>
+                                    <button class="btn btn-primary btn-sm" @click="salvarTestes()" :disabled="salvandoQa">
+                                        {{ salvandoQa ? 'Salvando...' : 'Salvar checklist' }}
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
                 <div v-else-if="aba==='logs'" class="card border-0 shadow-sm">
                     <div class="card-body">
                         <div class="d-flex justify-content-between align-items-center mb-3">
@@ -1412,6 +1795,30 @@
             </div>
         </div>
 
+        <div v-if="dialogExcluirMenu.aberto" class="overlay">
+            <div class="dialog-card p-4">
+                <h5 class="mb-2">⚠️ Excluir menu</h5>
+                <p class="text-muted mb-1">Deseja excluir o menu <strong>{{ dialogExcluirMenu.item?.nome }}</strong>?</p>
+                <p class="text-muted mb-3">Esta ação também excluirá todas as funcionalidades cadastradas neste menu e não poderá ser desfeita.</p>
+                <div class="d-flex justify-content-end gap-2">
+                    <button class="btn btn-light" @click="dialogExcluirMenu.aberto=false">Cancelar</button>
+                    <button class="btn btn-danger" :disabled="saving" @click="confirmarExcluirMenu" style="background:#7f1d1d;border-color:#7f1d1d">🗑 Excluir</button>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="dialogExcluirRelease.aberto" class="overlay">
+            <div class="dialog-card p-4">
+                <h5 class="mb-2">⚠️ Excluir release</h5>
+                <p class="text-muted mb-1">Deseja excluir a release <strong>{{ dialogExcluirRelease.item ? `${dialogExcluirRelease.item.versao} — ${ambienteLabel(dialogExcluirRelease.item.ambiente)}` : '' }}</strong>?</p>
+                <p class="text-muted mb-3">Esta ação também excluirá todos os resultados de testes desta release e não poderá ser desfeita.</p>
+                <div class="d-flex justify-content-end gap-2">
+                    <button class="btn btn-light" @click="dialogExcluirRelease.aberto=false">Cancelar</button>
+                    <button class="btn btn-danger" :disabled="saving" @click="confirmarExcluirRelease" style="background:#7f1d1d;border-color:#7f1d1d">🗑 Excluir</button>
+                </div>
+            </div>
+        </div>
+
         <div v-if="dialogDesabilitar.aberto" class="overlay">
             <div class="dialog-card p-4">
                 <h5 class="mb-2">Desabilitar Paróquia</h5>
@@ -1473,7 +1880,181 @@
                 </div>
             </div>
         </div>
+
+        <div v-if="modalFuncionalidade.aberto" class="overlay">
+            <div class="dialog-card p-4">
+                <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                    <div>
+                        <h5 class="mb-1">{{ funcionalidadeForm.id ? 'Editar funcionalidade' : 'Adicionar funcionalidade' }}</h5>
+                        <div class="text-muted small">Funcionalidade que será exibida no checklist de cada release.</div>
+                    </div>
+                    <button class="btn btn-light border" @click="fecharModalFuncionalidade()">Fechar</button>
+                </div>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label">Descrição</label>
+                        <input class="form-control" v-model.trim="funcionalidadeForm.descricao" placeholder="Ex.: Criar novo jovem, Exportar lista...">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">Ordem</label>
+                        <input class="form-control" type="number" v-model.number="funcionalidadeForm.ordem" min="0">
+                    </div>
+                    <div class="col-6" v-if="funcionalidadeForm.id">
+                        <label class="form-label">Ativo</label>
+                        <select class="form-select" v-model="funcionalidadeForm.ativo">
+                            <option :value="true">Sim</option>
+                            <option :value="false">Não</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                    <button class="btn btn-light border" @click="fecharModalFuncionalidade()">Cancelar</button>
+                    <button class="btn btn-primary" @click="salvarFuncionalidade()" :disabled="saving">
+                        {{ saving ? 'Salvando...' : (funcionalidadeForm.id ? 'Salvar alterações' : 'Adicionar funcionalidade') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de relatório da release -->
+        <div v-if="modalRelatorio.aberto" class="overlay">
+            <div class="dialog-card p-4" style="max-width:680px;width:100%">
+                <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                    <div>
+                        <h5 class="mb-1">📋 Relatório da Release {{ relatorioRelease && relatorioRelease.versao }}</h5>
+                        <div class="text-muted small">{{ relatorioRelease && ambienteLabel(relatorioRelease.ambiente) }}</div>
+                    </div>
+                    <button class="btn btn-light border" @click="fecharModalRelatorio()">Fechar</button>
+                </div>
+
+                <div v-if="!relatorioFuncionalidades.length" class="text-muted text-center py-4">
+                    Nenhuma funcionalidade foi marcada como alterada nessa release.
+                </div>
+
+                <div v-else style="max-height:55vh;overflow-y:auto">
+                    <!-- Novas funcionalidades -->
+                    <div v-if="relatorioNovasFuncionalidades.length" class="mb-3">
+                        <div class="fw-bold mb-2">🆕 NOVAS FUNCIONALIDADES</div>
+                        <div v-for="grupo in relatorioNovasFuncionalidades" :key="`ng-${grupo.menu_nome}`" class="ms-2 mb-3">
+                            <div class="fw-semibold small text-uppercase text-muted mb-1">{{ grupo.menu_nome }}</div>
+                            <ul class="mb-0 ps-3">
+                                <li v-for="f in grupo.funcionalidades" :key="`nf-${f.descricao}`" class="mb-1">
+                                    <span class="fw-medium">{{ f.descricao }}</span>
+                                    <div v-if="f.descricao_alteracao" class="text-muted small">{{ f.descricao_alteracao }}</div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Bugs corrigidos -->
+                    <div v-if="relatorioBugsCorrigidos.length" :class="{ 'mt-3 pt-3 border-top': relatorioNovasFuncionalidades.length }">
+                        <div class="fw-bold mb-2">🐛 BUGS CORRIGIDOS</div>
+                        <div v-for="grupo in relatorioBugsCorrigidos" :key="`bg-${grupo.menu_nome}`" class="ms-2 mb-3">
+                            <div class="fw-semibold small text-uppercase text-muted mb-1">{{ grupo.menu_nome }}</div>
+                            <ul class="mb-0 ps-3">
+                                <li v-for="f in grupo.funcionalidades" :key="`bf-${f.descricao}`" class="mb-1">
+                                    <span class="fw-medium">{{ f.descricao }}</span>
+                                    <div v-if="f.descricao_alteracao" class="text-muted small">{{ f.descricao_alteracao }}</div>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Totais -->
+                    <div class="mt-3 pt-3 border-top d-flex flex-wrap gap-3 text-muted small">
+                        <span>🆕 Novas funcionalidades: <strong>{{ totalNovasRelatorio }}</strong></span>
+                        <span>🐛 Bugs corrigidos: <strong>{{ totalBugsRelatorio }}</strong></span>
+                        <span>📋 Total de alterações: <strong>{{ relatorioFuncionalidades.length }}</strong></span>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                    <button class="btn btn-light border" @click="fecharModalRelatorio()">Fechar</button>
+                    <button v-if="modalRelatorio.modo === 'aprovar'" class="btn btn-success" @click="confirmarAprovacao()" :disabled="salvandoQa">
+                        {{ salvandoQa ? 'Aprovando...' : '✅ Confirmar aprovação' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="modalQaMenu.aberto" class="overlay">
+            <div class="dialog-card p-4">
+                <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                    <div>
+                        <h5 class="mb-1">{{ qaMenuForm.id ? 'Editar menu' : 'Adicionar menu' }}</h5>
+                        <div class="text-muted small">Mapeie um menu ou submenu para usar no checklist de releases.</div>
+                    </div>
+                    <button class="btn btn-light border" @click="fecharModalQaMenu()">Fechar</button>
+                </div>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label">Nome do menu</label>
+                        <input class="form-control" v-model.trim="qaMenuForm.nome" placeholder="Ex.: Dashboard, Relatórios...">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Submenu de (opcional)</label>
+                        <select class="form-select" v-model="qaMenuForm.submenu_de">
+                            <option :value="null">— Nenhum (menu raiz) —</option>
+                            <option v-for="m in qaMenusRaiz" :key="`pai-${m.id}`" :value="m.id">{{ m.nome }}</option>
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">Ordem</label>
+                        <input class="form-control" type="number" v-model.number="qaMenuForm.ordem" min="0">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label">Ativo</label>
+                        <select class="form-select" v-model="qaMenuForm.ativo">
+                            <option :value="true">Sim</option>
+                            <option :value="false">Não</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                    <button class="btn btn-light border" @click="fecharModalQaMenu()">Cancelar</button>
+                    <button class="btn btn-primary" @click="salvarQaMenu()" :disabled="saving">
+                        {{ saving ? 'Salvando...' : (qaMenuForm.id ? 'Salvar alterações' : 'Adicionar menu') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="modalQaRelease.aberto" class="overlay">
+            <div class="dialog-card p-4">
+                <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                    <div>
+                        <h5 class="mb-1">Nova release</h5>
+                        <div class="text-muted small">Registre uma nova versão para iniciar o ciclo de testes.</div>
+                    </div>
+                    <button class="btn btn-light border" @click="fecharModalQaRelease()">Fechar</button>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Versão</label>
+                        <input class="form-control" v-model.trim="qaReleaseForm.versao" placeholder="Ex.: 1.0.0, 2.3.1...">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Ambiente</label>
+                        <select class="form-select" v-model="qaReleaseForm.ambiente">
+                            <option value="homologacao">Homologação</option>
+                            <option value="producao">Produção</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Descrição geral</label>
+                        <textarea class="form-control" rows="3" v-model.trim="qaReleaseForm.descricao" placeholder="O que mudou nessa versão..."></textarea>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                    <button class="btn btn-light border" @click="fecharModalQaRelease()">Cancelar</button>
+                    <button class="btn btn-primary" @click="salvarQaRelease()" :disabled="saving">
+                        {{ saving ? 'Criando...' : 'Criar release' }}
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
+</div>
 
     <script>
         const { createApp } = Vue;
@@ -1481,6 +2062,7 @@
             data() {
                 return {
                     aba: 'dashboard',
+                    gruposAbertos: { paroquias: false, acessos: false, changelog: false },
                     saving: false,
                     editandoId: null,
                     tenants: [],
@@ -1495,6 +2077,8 @@
                     modulosDisponiveis: [],
                     mensagem: { tipo: '', texto: '' },
                     dialogExcluir: { aberto: false, item: null },
+                    dialogExcluirMenu: { aberto: false, item: null },
+                    dialogExcluirRelease: { aberto: false, item: null },
                     dialogDesabilitar: { aberto: false, item: null, motivo: '' },
                     dialogDetalheParoquia: { aberto: false, item: null },
                     modalUsuarioSistema: { aberto: false },
@@ -1516,24 +2100,23 @@
                         admin_username: '',
                         admin_senha: '',
                         modules: []
-                    }
+                    },
+                    qaMenus: [],
+                    modalQaMenu: { aberto: false },
+                    qaMenuForm: { id: null, nome: '', submenu_de: null, ordem: 0, ativo: true },
+                    qaReleases: [],
+                    qaRelease: null,
+                    qaChecklist: [],
+                    modalQaRelease: { aberto: false },
+                    qaReleaseForm: { versao: '', ambiente: 'homologacao', descricao: '' },
+                    salvandoQa: false,
+                    menuExpandido: null,
+                    funcionalidadesPorMenu: {},
+                    funcionalidadeForm: { id: null, menu_id: null, descricao: '', ordem: 0, ativo: true },
+                    modalFuncionalidade: { aberto: false },
+                    modalRelatorio: { aberto: false, modo: 'relatorio', dados: null },
+                    relatorioRelease: null
                 };
-            },
-            computed: {
-                logsFiltrados() {
-                    const usuario = String(this.filtrosLog.usuario || '').trim().toLowerCase();
-                    const acao = String(this.filtrosLog.acao || '').trim().toLowerCase();
-                    const data = String(this.filtrosLog.data || '').trim();
-                    return (this.logs || []).filter((log) => {
-                        const nomeUsuario = `${log.actor_name || ''} ${log.actor_identifier || ''}`.toLowerCase();
-                        const textoAcao = `${log.action_label || ''} ${log.menu_label || ''}`.toLowerCase();
-                        const dataLog = this.formatarDataInput(log.created_at);
-                        if (usuario && !nomeUsuario.includes(usuario)) return false;
-                        if (acao && !textoAcao.includes(acao)) return false;
-                        if (data && dataLog !== data) return false;
-                        return true;
-                    });
-                }
             },
             async mounted() {
                 const me = await fetch('/api/admin/me').then(r => r.json()).catch(() => ({}));
@@ -1650,6 +2233,332 @@
                 abrirDashboard() {
                     this.aba = 'dashboard';
                     this.limparMensagem();
+                },
+                toggleGrupo(grupo) {
+                    this.gruposAbertos[grupo] = !this.gruposAbertos[grupo];
+                },
+                nomeMenuPai(id) {
+                    const pai = (this.qaMenus || []).find((m) => m.id === Number(id));
+                    return pai ? pai.nome : '?';
+                },
+                async carregarQaMenus() {
+                    this.aba = 'changelog-menus';
+                    const res = await fetch('/api/admin/qa-menus');
+                    this.qaMenus = res.ok ? await res.json() : [];
+                },
+                abrirModalQaMenu(item = null) {
+                    if (item) {
+                        this.qaMenuForm = { id: item.id, nome: item.nome, submenu_de: item.submenu_de || null, ordem: item.ordem, ativo: !!item.ativo };
+                    } else {
+                        this.qaMenuForm = { id: null, nome: '', submenu_de: null, ordem: 0, ativo: true };
+                    }
+                    this.modalQaMenu = { aberto: true };
+                },
+                fecharModalQaMenu() {
+                    this.modalQaMenu = { aberto: false };
+                    this.qaMenuForm = { id: null, nome: '', submenu_de: null, ordem: 0, ativo: true };
+                },
+                async salvarQaMenu() {
+                    if (!this.qaMenuForm.nome) { this.erro('Informe o nome do menu.'); return; }
+                    this.saving = true;
+                    try {
+                        const url = this.qaMenuForm.id ? `/api/admin/qa-menus/${this.qaMenuForm.id}` : '/api/admin/qa-menus';
+                        const method = this.qaMenuForm.id ? 'PUT' : 'POST';
+                        const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(this.qaMenuForm) });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) { this.erro(data.error || 'Erro ao salvar menu.'); return; }
+                        this.sucesso(data.message || 'Menu salvo com sucesso.');
+                        this.fecharModalQaMenu();
+                        await this.carregarQaMenus();
+                    } catch (_) {
+                        this.erro('Erro ao conectar com o servidor.');
+                    } finally {
+                        this.saving = false;
+                    }
+                },
+                async toggleAtivoQaMenu(item) {
+                    try {
+                        const res = await fetch(`/api/admin/qa-menus/${item.id}/ativo`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ ativo: !item.ativo })
+                        });
+                        if (res.ok) await this.carregarQaMenus();
+                    } catch (_) {
+                        this.erro('Erro ao atualizar menu.');
+                    }
+                },
+                abrirExcluirMenu(item) {
+                    this.dialogExcluirMenu = { aberto: true, item };
+                },
+                async confirmarExcluirMenu() {
+                    if (!this.dialogExcluirMenu.item) return;
+                    this.saving = true;
+                    try {
+                        const res = await fetch(`/api/admin/qa-menus/${this.dialogExcluirMenu.item.id}`, { method: 'DELETE' });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) { this.erro(data.error || 'Erro ao excluir menu.'); return; }
+                        this.sucesso(data.message || 'Menu excluído com sucesso.');
+                        this.dialogExcluirMenu = { aberto: false, item: null };
+                        await this.carregarQaMenus();
+                    } catch (_) {
+                        this.erro('Erro ao conectar com o servidor.');
+                    } finally {
+                        this.saving = false;
+                    }
+                },
+                async carregarQaReleases() {
+                    this.aba = 'changelog-historico';
+                    this.qaRelease = null;
+                    this.qaChecklist = [];
+                    const res = await fetch('/api/admin/qa-releases');
+                    this.qaReleases = res.ok ? await res.json() : [];
+                },
+                abrirModalQaRelease() {
+                    this.qaReleaseForm = { versao: '', ambiente: 'homologacao', descricao: '' };
+                    this.modalQaRelease = { aberto: true };
+                },
+                fecharModalQaRelease() {
+                    this.modalQaRelease = { aberto: false };
+                },
+                async salvarQaRelease() {
+                    if (!this.qaReleaseForm.versao || !this.qaReleaseForm.ambiente) { this.erro('Informe a versão e o ambiente.'); return; }
+                    this.saving = true;
+                    try {
+                        const res = await fetch('/api/admin/qa-releases', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(this.qaReleaseForm) });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) { this.erro(data.error || 'Erro ao criar release.'); return; }
+                        this.sucesso(data.message || 'Release criada com sucesso.');
+                        this.fecharModalQaRelease();
+                        await this.carregarQaReleases();
+                    } catch (_) {
+                        this.erro('Erro ao conectar com o servidor.');
+                    } finally {
+                        this.saving = false;
+                    }
+                },
+                abrirExcluirRelease(item) {
+                    this.dialogExcluirRelease = { aberto: true, item };
+                },
+                async confirmarExcluirRelease() {
+                    if (!this.dialogExcluirRelease.item) return;
+                    this.saving = true;
+                    try {
+                        const res = await fetch(`/api/admin/qa-releases/${this.dialogExcluirRelease.item.id}`, { method: 'DELETE' });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) { this.erro(data.error || 'Erro ao excluir release.'); return; }
+                        this.sucesso(data.message || 'Release excluída com sucesso.');
+                        this.dialogExcluirRelease = { aberto: false, item: null };
+                        await this.carregarQaReleases();
+                    } catch (_) {
+                        this.erro('Erro ao conectar com o servidor.');
+                    } finally {
+                        this.saving = false;
+                    }
+                },
+                async abrirRelease(release) {
+                    try {
+                        const res = await fetch(`/api/admin/qa-releases/${release.id}`);
+                        if (!res.ok) { this.erro('Erro ao carregar release.'); return; }
+                        const data = await res.json();
+                        this.qaRelease = data.release;
+                        this.qaChecklist = data.checklist;
+                    } catch (_) {
+                        this.erro('Erro ao conectar com o servidor.');
+                    }
+                },
+                fecharRelease() {
+                    this.qaRelease = null;
+                    this.qaChecklist = [];
+                },
+                async salvarTestes() {
+                    if (!this.qaRelease || !this.qaChecklist.length) return;
+                    this.salvandoQa = true;
+                    try {
+                        const testes = this.qaChecklist.map((item) => ({
+                            ...item,
+                            status: (item.funcionalidades && item.funcionalidades.length)
+                                ? this.calcularStatusMenu(item.funcionalidades)
+                                : item.status
+                        }));
+                        const res = await fetch(`/api/admin/qa-releases/${this.qaRelease.id}/testes`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ testes })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) { this.erro(data.error || 'Erro ao salvar checklist.'); return; }
+                        for (const item of this.qaChecklist) {
+                            if (item.funcionalidades && item.funcionalidades.length) {
+                                item.status = this.calcularStatusMenu(item.funcionalidades);
+                            }
+                        }
+                        this.sucesso(data.message || 'Checklist salvo com sucesso.');
+                    } catch (_) {
+                        this.erro('Erro ao conectar com o servidor.');
+                    } finally {
+                        this.salvandoQa = false;
+                    }
+                },
+                async finalizarRelease(status) {
+                    if (!this.qaRelease) return;
+                    if (status === 'aprovado') {
+                        this.relatorioRelease = this.qaRelease;
+                        this.modalRelatorio = { aberto: true, modo: 'aprovar', dados: null };
+                        return;
+                    }
+                    if (!window.confirm('Deseja reprovar esta release? O status não poderá ser revertido.')) return;
+                    this.salvandoQa = true;
+                    try {
+                        await this.salvarTestes();
+                        const res = await fetch(`/api/admin/qa-releases/${this.qaRelease.id}/status`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ status })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) { this.erro(data.error || 'Erro ao finalizar release.'); return; }
+                        this.sucesso(data.message || 'Release finalizada com sucesso.');
+                        this.qaRelease = { ...this.qaRelease, status };
+                    } catch (_) {
+                        this.erro('Erro ao conectar com o servidor.');
+                    } finally {
+                        this.salvandoQa = false;
+                    }
+                },
+                async abrirModalRelatorio(release) {
+                    if (this.qaRelease && release.id === this.qaRelease.id) {
+                        this.relatorioRelease = this.qaRelease;
+                        this.modalRelatorio = { aberto: true, modo: 'relatorio', dados: null };
+                        return;
+                    }
+                    try {
+                        const res = await fetch(`/api/admin/qa-releases/${release.id}/relatorio`);
+                        if (!res.ok) { this.erro('Erro ao carregar relatório.'); return; }
+                        const data = await res.json();
+                        this.relatorioRelease = data.release;
+                        this.modalRelatorio = { aberto: true, modo: 'relatorio', dados: data.funcionalidades };
+                    } catch (_) {
+                        this.erro('Erro ao conectar com o servidor.');
+                    }
+                },
+                fecharModalRelatorio() {
+                    this.modalRelatorio = { aberto: false, modo: 'relatorio', dados: null };
+                    this.relatorioRelease = null;
+                },
+                async confirmarAprovacao() {
+                    if (!this.qaRelease) return;
+                    this.salvandoQa = true;
+                    try {
+                        await this.salvarTestes();
+                        const res = await fetch(`/api/admin/qa-releases/${this.qaRelease.id}/status`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ status: 'aprovado' })
+                        });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) { this.erro(data.error || 'Erro ao aprovar release.'); return; }
+                        this.sucesso(data.message || 'Release aprovada com sucesso.');
+                        this.qaRelease = { ...this.qaRelease, status: 'aprovado' };
+                        this.fecharModalRelatorio();
+                    } catch (_) {
+                        this.erro('Erro ao conectar com o servidor.');
+                    } finally {
+                        this.salvandoQa = false;
+                    }
+                },
+                agruparRelatorio(tipo) {
+                    const filtrado = (this.relatorioFuncionalidades || []).filter((f) => f.tipo_alteracao === tipo);
+                    const grupos = {};
+                    for (const f of filtrado) {
+                        if (!grupos[f.menu_nome]) grupos[f.menu_nome] = [];
+                        grupos[f.menu_nome].push(f);
+                    }
+                    return Object.entries(grupos).map(([menu_nome, funcionalidades]) => ({ menu_nome, funcionalidades }));
+                },
+                statusReleaseLabel(status) {
+                    return { em_teste: 'Em teste', aprovado: 'Aprovado', reprovado: 'Reprovado' }[status] || status;
+                },
+                statusReleaseClass(status) {
+                    return { em_teste: 'status-em-teste', aprovado: 'status-aprovado', reprovado: 'status-reprovado' }[status] || '';
+                },
+                ambienteLabel(amb) {
+                    return { homologacao: 'Homologação', producao: 'Produção' }[amb] || amb;
+                },
+                calcularStatusMenu(tarefas) {
+                    if (!tarefas || !tarefas.length) return 'nao_testado';
+                    const s = tarefas.map((t) => t.status);
+                    if (s.every((x) => x === 'ok')) return 'ok';
+                    if (s.some((x) => x === 'falhou')) return 'falhou';
+                    if (s.some((x) => x !== 'nao_testado')) return 'parcial';
+                    return 'nao_testado';
+                },
+                statusTarefaIcone(status) {
+                    return { ok: '✅', falhou: '❌', parcial: '⚠️', nao_testado: '⬜' }[status] || '⬜';
+                },
+                formatarDataCurta(valor) {
+                    if (!valor) return '';
+                    const data = new Date(valor);
+                    if (Number.isNaN(data.getTime())) return '';
+                    return `${String(data.getDate()).padStart(2, '0')}/${String(data.getMonth() + 1).padStart(2, '0')}`;
+                },
+                async toggleMenuExpandido(menuId) {
+                    if (this.menuExpandido === menuId) {
+                        this.menuExpandido = null;
+                        return;
+                    }
+                    this.menuExpandido = menuId;
+                    if (!this.funcionalidadesPorMenu[menuId]) await this.carregarFuncionalidadesMenu(menuId);
+                },
+                async carregarFuncionalidadesMenu(menuId) {
+                    const res = await fetch(`/api/admin/qa-menus/${menuId}/funcionalidades`);
+                    const funcs = res.ok ? await res.json() : [];
+                    this.funcionalidadesPorMenu = { ...this.funcionalidadesPorMenu, [menuId]: funcs };
+                },
+                abrirModalFuncionalidade(menuId, func = null) {
+                    if (func) {
+                        this.funcionalidadeForm = { id: func.id, menu_id: menuId, descricao: func.descricao, ordem: func.ordem, ativo: !!func.ativo };
+                    } else {
+                        this.funcionalidadeForm = { id: null, menu_id: menuId, descricao: '', ordem: 0, ativo: true };
+                    }
+                    this.modalFuncionalidade = { aberto: true };
+                },
+                fecharModalFuncionalidade() {
+                    this.modalFuncionalidade = { aberto: false };
+                    this.funcionalidadeForm = { id: null, menu_id: null, descricao: '', ordem: 0, ativo: true };
+                },
+                async salvarFuncionalidade() {
+                    if (!this.funcionalidadeForm.descricao) { this.erro('Informe a descrição da funcionalidade.'); return; }
+                    this.saving = true;
+                    try {
+                        const { menu_id } = this.funcionalidadeForm;
+                        const url = this.funcionalidadeForm.id
+                            ? `/api/admin/qa-menus/${menu_id}/funcionalidades/${this.funcionalidadeForm.id}`
+                            : `/api/admin/qa-menus/${menu_id}/funcionalidades`;
+                        const method = this.funcionalidadeForm.id ? 'PUT' : 'POST';
+                        const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(this.funcionalidadeForm) });
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) { this.erro(data.error || 'Erro ao salvar funcionalidade.'); return; }
+                        this.sucesso(data.message || 'Funcionalidade salva com sucesso.');
+                        this.fecharModalFuncionalidade();
+                        await this.carregarFuncionalidadesMenu(menu_id);
+                    } catch (_) {
+                        this.erro('Erro ao conectar com o servidor.');
+                    } finally {
+                        this.saving = false;
+                    }
+                },
+                async toggleAtivoFuncionalidade(menuId, func) {
+                    try {
+                        const res = await fetch(`/api/admin/qa-menus/${menuId}/funcionalidades/${func.id}/ativo`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ ativo: !func.ativo })
+                        });
+                        if (res.ok) await this.carregarFuncionalidadesMenu(menuId);
+                    } catch (_) {
+                        this.erro('Erro ao atualizar funcionalidade.');
+                    }
                 },
                 editarTenant(t) {
                     this.editandoId = t.id;
@@ -2034,7 +2943,9 @@
                         'usuarios-globais': 'Usuários dos Módulos',
                         'usuarios-sistema': 'Usuários do Ambiente Ana',
                         mensagens: 'Central de Mensagens',
-                        logs: 'Log do Sistema'
+                        logs: 'Log do Sistema',
+                        'changelog-historico': 'Histórico de Alterações',
+                        'changelog-menus': 'Menus'
                     }[this.aba] || 'Administração Geral';
                 },
                 descricaoAbaAtual() {
@@ -2045,8 +2956,90 @@
                         'usuarios-globais': 'Visualize os responsáveis que acessam os módulos contratados em cada paróquia.',
                         'usuarios-sistema': 'Gerencie quem pode entrar no ambiente administrativo central do Semear.',
                         mensagens: 'Acompanhe chamados, responda usuários e mantenha a comunicação administrativa em ordem.',
-                        logs: 'Consulte o histórico recente de ações realizadas no painel administrativo central.'
+                        logs: 'Consulte o histórico recente de ações realizadas no painel administrativo central.',
+                        'changelog-historico': 'Registro das mudanças realizadas no ecossistema Semear ao longo do tempo.',
+                        'changelog-menus': 'Gerenciamento dos menus do ecossistema Semear.'
                     }[this.aba] || 'Painel administrativo central da plataforma.';
+                },
+                totalFuncionalidadesRelease() {
+                    return this.qaChecklist.reduce((sum, item) => sum + (item.funcionalidades ? item.funcionalidades.length : 0), 0);
+                },
+                funcionalidadesOkRelease() {
+                    return this.qaChecklist.reduce((sum, item) => sum + (item.funcionalidades || []).filter(f => f.status === 'ok').length, 0);
+                },
+                funcionalidadesFalharamRelease() {
+                    return this.qaChecklist.reduce((sum, item) => sum + (item.funcionalidades || []).filter(f => f.status === 'falhou').length, 0);
+                },
+                funcionalidadesParcialRelease() {
+                    return this.qaChecklist.reduce((sum, item) => sum + (item.funcionalidades || []).filter(f => f.status === 'parcial').length, 0);
+                },
+                funcionalidadesNaoTestadasRelease() {
+                    return this.qaChecklist.reduce((sum, item) => sum + (item.funcionalidades || []).filter(f => f.status === 'nao_testado').length, 0);
+                },
+                progressoRelease() {
+                    const total = this.totalFuncionalidadesRelease;
+                    if (!total) return 0;
+                    return Math.round((total - this.funcionalidadesNaoTestadasRelease) / total * 100);
+                },
+                progressoOkRelease() {
+                    return this.totalFuncionalidadesRelease ? Math.round(this.funcionalidadesOkRelease / this.totalFuncionalidadesRelease * 100) : 0;
+                },
+                progressoFalharamRelease() {
+                    return this.totalFuncionalidadesRelease ? Math.round(this.funcionalidadesFalharamRelease / this.totalFuncionalidadesRelease * 100) : 0;
+                },
+                progressoParcialRelease() {
+                    return this.totalFuncionalidadesRelease ? Math.round(this.funcionalidadesParcialRelease / this.totalFuncionalidadesRelease * 100) : 0;
+                },
+                relatorioFuncionalidades() {
+                    if (this.modalRelatorio.dados !== null) return this.modalRelatorio.dados;
+                    const result = [];
+                    for (const item of this.qaChecklist) {
+                        for (const f of (item.funcionalidades || [])) {
+                            if (f.alterado) result.push({ menu_nome: item.nome, ...f });
+                        }
+                    }
+                    return result;
+                },
+                relatorioNovasFuncionalidades() {
+                    return this.agruparRelatorio('funcionalidade');
+                },
+                relatorioBugsCorrigidos() {
+                    return this.agruparRelatorio('bug');
+                },
+                totalNovasRelatorio() {
+                    return (this.relatorioFuncionalidades || []).filter((f) => f.tipo_alteracao === 'funcionalidade').length;
+                },
+                totalBugsRelatorio() {
+                    return (this.relatorioFuncionalidades || []).filter((f) => f.tipo_alteracao === 'bug').length;
+                },
+                qaMenusOrdenados() {
+                    const menus = this.qaMenus || [];
+                    const raiz = menus.filter((m) => !m.submenu_de).sort((a, b) => a.ordem - b.ordem || String(a.nome).localeCompare(String(b.nome)));
+                    const result = [];
+                    const addedIds = new Set();
+                    for (const pai of raiz) {
+                        result.push(pai);
+                        addedIds.add(pai.id);
+                        menus.filter((m) => m.submenu_de === pai.id).sort((a, b) => a.ordem - b.ordem || String(a.nome).localeCompare(String(b.nome))).forEach((f) => { result.push(f); addedIds.add(f.id); });
+                    }
+                    menus.filter((m) => !addedIds.has(m.id)).forEach((m) => result.push(m));
+                    return result;
+                },
+                qaMenusRaiz() {
+                    return (this.qaMenus || []).filter((m) => !m.submenu_de && m.id !== this.qaMenuForm.id).sort((a, b) => String(a.nome).localeCompare(String(b.nome)));
+                },
+                qaChecklistOrdenado() {
+                    const lista = this.qaChecklist || [];
+                    const raiz = lista.filter((m) => !m.submenu_de).sort((a, b) => a.ordem - b.ordem || String(a.nome).localeCompare(String(b.nome)));
+                    const result = [];
+                    const addedIds = new Set();
+                    for (const pai of raiz) {
+                        result.push(pai);
+                        addedIds.add(pai.menu_id);
+                        lista.filter((m) => m.submenu_de === pai.menu_id).sort((a, b) => a.ordem - b.ordem || String(a.nome).localeCompare(String(b.nome))).forEach((f) => { result.push(f); addedIds.add(f.menu_id); });
+                    }
+                    lista.filter((m) => !addedIds.has(m.menu_id)).forEach((m) => result.push(m));
+                    return result;
                 },
                 adminLabel() {
                     return 'Admin';
@@ -2104,6 +3097,20 @@
                 mensagensFiltradas() {
                     if (this.filtroMensagemStatus === 'TODAS') return this.mensagensAjuda;
                     return this.mensagensAjuda.filter((item) => String(item.status || '').trim() === this.filtroMensagemStatus);
+                },
+                logsFiltrados() {
+                    const usuario = String(this.filtrosLog.usuario || '').trim().toLowerCase();
+                    const acao = String(this.filtrosLog.acao || '').trim().toLowerCase();
+                    const data = String(this.filtrosLog.data || '').trim();
+                    return (this.logs || []).filter((log) => {
+                        const nomeUsuario = `${log.actor_name || ''} ${log.actor_identifier || ''}`.toLowerCase();
+                        const textoAcao = `${log.action_label || ''} ${log.menu_label || ''}`.toLowerCase();
+                        const dataLog = this.formatarDataInput(log.created_at);
+                        if (usuario && !nomeUsuario.includes(usuario)) return false;
+                        if (acao && !textoAcao.includes(acao)) return false;
+                        if (data && dataLog !== data) return false;
+                        return true;
+                    });
                 }
             }
         }).mount('#app');

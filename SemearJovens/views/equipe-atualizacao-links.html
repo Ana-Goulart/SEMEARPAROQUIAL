@@ -40,11 +40,11 @@
             display: inline-flex;
             gap: 6px;
             align-items: center;
-            border: 1px solid rgba(34, 55, 80, 0.14);
+            border: 1px solid rgba(201, 154, 61, 0.28);
             border-radius: 999px;
             padding: 7px 12px;
-            background: #eef3f8;
-            color: #223750;
+            background: rgba(201, 154, 61, 0.1);
+            color: #6b420a;
             font-weight: 700;
         }
         .links-table th {
@@ -56,21 +56,22 @@
             vertical-align: middle;
         }
         .copy-link-btn {
-            border-color: rgba(34, 55, 80, 0.32);
-            color: #223750;
+            border-color: #c99a3d;
+            color: #8a5a14;
             font-weight: 600;
+            background: transparent;
         }
         .copy-link-btn:hover,
         .copy-link-btn:focus {
-            background: #223750;
-            border-color: #223750;
+            background: #c99a3d;
+            border-color: #c99a3d;
             color: #fff;
         }
         .copy-feedback {
             display: inline-flex;
             align-items: center;
             margin-left: 8px;
-            color: #18794e;
+            color: #8a5a14;
             font-size: 0.82rem;
             font-weight: 700;
             white-space: nowrap;
@@ -88,14 +89,14 @@
             line-height: 1;
         }
         .status-badge-pendente {
-            border-color: rgba(34, 55, 80, 0.14);
-            background: #eef3f8;
-            color: #223750;
+            border-color: rgba(34, 55, 80, 0.18);
+            background: #f0ede6;
+            color: #5c5040;
         }
         .status-badge-atualizado {
-            border-color: rgba(24, 121, 78, 0.2);
-            background: #e8f6ef;
-            color: #18794e;
+            border-color: rgba(201, 154, 61, 0.35);
+            background: rgba(201, 154, 61, 0.14);
+            color: #7a4f0e;
         }
         @media (min-width: 768px) {
             .page-shell {
@@ -119,7 +120,7 @@
 
         <div class="panel">
             <div v-if="loading" class="text-center py-5">
-                <div class="spinner-border text-primary"></div>
+                <div class="spinner-border" style="color: #c99a3d;"></div>
             </div>
             <div v-else-if="erro" class="alert alert-warning mb-0">{{ erro }}</div>
             <template v-else>

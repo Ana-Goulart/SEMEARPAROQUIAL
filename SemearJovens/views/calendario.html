@@ -397,6 +397,57 @@
                 min-width: 0;
             }
         }
+
+        /* ── Planner mobile: scroll horizontal + coluna Hora sticky ── */
+        @media (max-width: 768px) {
+            .planner-table-resp {
+                overflow-x: auto !important;
+                -webkit-overflow-scrolling: touch;
+            }
+
+            .planner-table-resp > table {
+                min-width: 770px !important;
+                table-layout: fixed !important;
+            }
+
+            /* Coluna Hora: sticky à esquerda, 70px */
+            .planner-table-resp > table thead th:first-child,
+            .planner-table-resp > table tbody th {
+                position: sticky;
+                left: 0;
+                z-index: 2;
+                width: 70px !important;
+                min-width: 70px !important;
+            }
+
+            .planner-table-resp > table thead th:first-child {
+                background-color: #f8f9fa;
+                z-index: 3;
+                box-shadow: 2px 0 4px rgba(0, 0, 0, 0.07);
+            }
+
+            .planner-table-resp > table tbody th {
+                background-color: #fff;
+                box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05);
+            }
+
+            /* Colunas dos dias: 100px cada */
+            .planner-table-resp > table thead th:not(:first-child) {
+                width: 100px !important;
+                min-width: 100px !important;
+            }
+
+            .planner-cell {
+                min-width: 100px !important;
+                width: 100px !important;
+            }
+
+            /* Botão "Ativar modo limpar": largura 100% empilhado */
+            .planner-limpar-col {
+                flex: 0 0 100% !important;
+                max-width: 100% !important;
+            }
+        }
     </style>
 </head>
 
@@ -468,7 +519,7 @@
                                         <input type="color" class="form-control form-control-color" v-model="corSelecionada"
                                             title="Cor da coordenação">
                                     </div>
-                                    <div class="col-6 col-lg-3 d-grid">
+                                    <div class="col-6 col-lg-3 d-grid planner-limpar-col">
                                         <button type="button" class="btn btn-outline-secondary"
                                             :class="{active: modoLimpar}" @click="modoLimpar = !modoLimpar">
                                             {{ modoLimpar ? 'Modo limpar ativo' : 'Ativar modo limpar' }}
@@ -480,12 +531,12 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="table-responsive">
-                            <table class="table table-bordered align-middle mb-0">
+                        <div class="table-responsive planner-table-resp">
+                            <table class="table table-bordered align-middle mb-0 table-no-mobile-expand">
                                 <thead class="table-light">
                                     <tr>
-                                        <th scope="col" style="min-width: 90px;">Hora</th>
-                                        <th scope="col" v-for="dia in dias" :key="dia">{{ dia }}</th>
+                                        <th scope="col" style="min-width: 90px; width: 90px;">Hora</th>
+                                        <th scope="col" style="min-width: 120px;" v-for="dia in dias" :key="dia">{{ dia }}</th>
                                     </tr>
                                 </thead>
                                 <tbody>

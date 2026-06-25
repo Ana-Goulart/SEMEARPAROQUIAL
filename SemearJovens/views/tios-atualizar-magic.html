@@ -14,6 +14,17 @@
         .shell { max-width: 920px; }
         .brand-logo { width: 84px; height: 84px; object-fit: contain; }
         .section-title { color: #8a6a36; font-size: .82rem; font-weight: 700; text-transform: uppercase; }
+        /* ---- Multiselect Restrição Alimentar ---- */
+        .restricao-multiselect { display: flex; flex-direction: column; gap: 0.4rem; }
+        .restricao-options-list { max-height: 140px; overflow-y: auto; border: 1px solid #e5d5bb; border-radius: 6px; padding: 4px 2px; background: #fff; }
+        .restricao-option-item { display: flex; align-items: center; gap: 0.4rem; padding: 3px 8px; cursor: pointer; border-radius: 4px; font-size: 0.875rem; user-select: none; transition: background 0.12s; }
+        .restricao-option-item:hover { background: #fff8ee; }
+        .restricao-option-item.selecionada { background: #f4ede1; font-weight: 600; color: #6e5430; }
+        .restricao-option-check { width: 14px; height: 14px; accent-color: #d9a650; flex-shrink: 0; }
+        .restricao-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+        .restricao-chip { display: inline-flex; align-items: center; gap: 4px; background: #d9a650; color: #fff; border-radius: 999px; font-size: 0.78rem; padding: 2px 8px 2px 10px; font-weight: 600; box-shadow: 0 2px 6px rgba(217,166,80,0.28); }
+        .restricao-chip-remove { background: none; border: none; padding: 0; line-height: 1; font-size: 0.85rem; color: rgba(255,255,255,0.8); cursor: pointer; }
+        .restricao-chip-remove:hover { color: #fff; }
     </style>
 </head>
 <body>
@@ -46,14 +57,32 @@
                         <div class="col-md-4"><label class="form-label">Data de nascimento</label><input class="form-control" type="date" v-model="form.data_nascimento_tio"></div>
                         <div class="col-md-4"><label class="form-label">Tem deficiência?</label><select class="form-select" v-model="form.deficiencia_tio"><option :value="false">Não</option><option :value="true">Sim</option></select></div>
                         <div class="col-md-4" v-if="form.deficiencia_tio"><label class="form-label">Qual?</label><input class="form-control" v-model.trim="form.qual_deficiencia_tio"></div>
-                        <div class="col-md-4"><label class="form-label">Restrição alimentar?</label><select class="form-select" v-model="form.restricao_alimentar_tio"><option :value="false">Não</option><option :value="true">Sim</option></select></div>
+                        <div class="col-md-4"><label class="form-label">Restrições alimentares e alergias?</label><select class="form-select" v-model="form.restricao_alimentar_tio" @change="if (!form.restricao_alimentar_tio) { form.detalhes_restricao_tio = []; buscaRestricaoTio = ''; }"><option :value="false">Não</option><option :value="true">Sim</option></select></div>
                         <div class="col-md-8" v-if="form.restricao_alimentar_tio">
-                            <label class="form-label">Qual restrição?</label>
-                            <select class="form-select" v-model="form.detalhes_restricao_tio" required>
-                                <option value="">Selecione</option>
-                                <option v-for="opcao in opcoesRestricaoAlimentar" :key="`restr-tio-${opcao}`" :value="opcao">{{ opcao }}</option>
-                                <option v-if="form.detalhes_restricao_tio && !opcoesRestricaoAlimentar.includes(form.detalhes_restricao_tio)" :value="form.detalhes_restricao_tio">{{ form.detalhes_restricao_tio }}</option>
-                            </select>
+                            <label class="form-label">Qual restrição? (selecione uma ou mais)</label>
+                            <div class="restricao-multiselect">
+                                <input type="text" v-model="buscaRestricaoTio" class="form-control form-control-sm" placeholder="Buscar restrição...">
+                                <div class="restricao-options-list">
+                                    <label v-for="opcao in restricoesFiltradas(buscaRestricaoTio)" :key="opcao" class="restricao-option-item" :class="{ selecionada: normalizarRestricoes(form.detalhes_restricao_tio).includes(opcao) }">
+                                        <input type="checkbox" class="restricao-option-check" :checked="normalizarRestricoes(form.detalhes_restricao_tio).includes(opcao)" @change="toggleRestricaoTio(opcao)">
+                                        {{ opcao }}
+                                    </label>
+                                    <div v-if="!restricoesFiltradas(buscaRestricaoTio).length" class="px-2 py-1 text-muted small">Nenhuma opção encontrada</div>
+                                    <label class="restricao-option-item" :class="{ selecionada: outrosRestricaoMarcadoTio }">
+                                        <input type="checkbox" class="restricao-option-check" v-model="outrosRestricaoMarcadoTio">
+                                        Outras
+                                    </label>
+                                </div>
+                                <div v-if="outrosRestricaoMarcadoTio" class="d-flex gap-2 mt-1">
+                                    <input type="text" v-model="outrosRestricaoTextoTio" class="form-control form-control-sm"
+                                        placeholder="Especifique a restrição..." @keyup.enter="adicionarOutrosRestricaoTio">
+                                    <button type="button" class="btn btn-sm btn-success" @click="adicionarOutrosRestricaoTio"
+                                        :disabled="!String(outrosRestricaoTextoTio || '').trim()">Adicionar</button>
+                                </div>
+                                <div v-if="normalizarRestricoes(form.detalhes_restricao_tio).length" class="restricao-chips">
+                                    <span v-for="item in normalizarRestricoes(form.detalhes_restricao_tio)" :key="item" class="restricao-chip">{{ item }}<button type="button" class="restricao-chip-remove" @click="toggleRestricaoTio(item)">×</button></span>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="col-12 pt-2"><div class="section-title">Dados da tia</div></div>
@@ -63,14 +92,32 @@
                         <div class="col-md-4"><label class="form-label">Data de nascimento</label><input class="form-control" type="date" v-model="form.data_nascimento_tia"></div>
                         <div class="col-md-4"><label class="form-label">Tem deficiência?</label><select class="form-select" v-model="form.deficiencia_tia"><option :value="false">Não</option><option :value="true">Sim</option></select></div>
                         <div class="col-md-4" v-if="form.deficiencia_tia"><label class="form-label">Qual?</label><input class="form-control" v-model.trim="form.qual_deficiencia_tia"></div>
-                        <div class="col-md-4"><label class="form-label">Restrição alimentar?</label><select class="form-select" v-model="form.restricao_alimentar_tia"><option :value="false">Não</option><option :value="true">Sim</option></select></div>
+                        <div class="col-md-4"><label class="form-label">Restrições alimentares e alergias?</label><select class="form-select" v-model="form.restricao_alimentar_tia" @change="if (!form.restricao_alimentar_tia) { form.detalhes_restricao_tia = []; buscaRestricaoTia = ''; }"><option :value="false">Não</option><option :value="true">Sim</option></select></div>
                         <div class="col-md-8" v-if="form.restricao_alimentar_tia">
-                            <label class="form-label">Qual restrição?</label>
-                            <select class="form-select" v-model="form.detalhes_restricao_tia" required>
-                                <option value="">Selecione</option>
-                                <option v-for="opcao in opcoesRestricaoAlimentar" :key="`restr-tia-${opcao}`" :value="opcao">{{ opcao }}</option>
-                                <option v-if="form.detalhes_restricao_tia && !opcoesRestricaoAlimentar.includes(form.detalhes_restricao_tia)" :value="form.detalhes_restricao_tia">{{ form.detalhes_restricao_tia }}</option>
-                            </select>
+                            <label class="form-label">Qual restrição? (selecione uma ou mais)</label>
+                            <div class="restricao-multiselect">
+                                <input type="text" v-model="buscaRestricaoTia" class="form-control form-control-sm" placeholder="Buscar restrição...">
+                                <div class="restricao-options-list">
+                                    <label v-for="opcao in restricoesFiltradas(buscaRestricaoTia)" :key="opcao" class="restricao-option-item" :class="{ selecionada: normalizarRestricoes(form.detalhes_restricao_tia).includes(opcao) }">
+                                        <input type="checkbox" class="restricao-option-check" :checked="normalizarRestricoes(form.detalhes_restricao_tia).includes(opcao)" @change="toggleRestricaoTia(opcao)">
+                                        {{ opcao }}
+                                    </label>
+                                    <div v-if="!restricoesFiltradas(buscaRestricaoTia).length" class="px-2 py-1 text-muted small">Nenhuma opção encontrada</div>
+                                    <label class="restricao-option-item" :class="{ selecionada: outrosRestricaoMarcadoTia }">
+                                        <input type="checkbox" class="restricao-option-check" v-model="outrosRestricaoMarcadoTia">
+                                        Outras
+                                    </label>
+                                </div>
+                                <div v-if="outrosRestricaoMarcadoTia" class="d-flex gap-2 mt-1">
+                                    <input type="text" v-model="outrosRestricaoTextoTia" class="form-control form-control-sm"
+                                        placeholder="Especifique a restrição..." @keyup.enter="adicionarOutrosRestricaoTia">
+                                    <button type="button" class="btn btn-sm btn-success" @click="adicionarOutrosRestricaoTia"
+                                        :disabled="!String(outrosRestricaoTextoTia || '').trim()">Adicionar</button>
+                                </div>
+                                <div v-if="normalizarRestricoes(form.detalhes_restricao_tia).length" class="restricao-chips">
+                                    <span v-for="item in normalizarRestricoes(form.detalhes_restricao_tia)" :key="item" class="restricao-chip">{{ item }}<button type="button" class="restricao-chip-remove" @click="toggleRestricaoTia(item)">×</button></span>
+                                </div>
+                            </div>
                         </div>
 
                         <div class="col-12 pt-2"><div class="section-title">Dados do casal</div></div>
@@ -115,24 +162,98 @@
                     erro: '',
                     sucesso: false,
                     outrosEjcs: [],
+                    buscaRestricaoTio: '',
+                    buscaRestricaoTia: '',
+                    outrosRestricaoMarcadoTio: false,
+                    outrosRestricaoTextoTio: '',
+                    outrosRestricaoMarcadoTia: false,
+                    outrosRestricaoTextoTia: '',
                     opcoesRestricaoAlimentar: [
                         'Alergia a amendoim',
-                        'Alergia a castanhas',
-                        'Alergia a frutos do mar',
-                        'APLV (Alergia à proteína do leite de vaca)',
+                        'Alergia a castanhas (nozes, castanha-do-pará, amêndoa, avelã, pistache, caju)',
+                        'Alergia a frutos do mar (camarão, caranguejo, lagosta, mariscos)',
+                        'Alergia a peixes',
+                        'Alergia a ovos',
+                        'Alergia a soja',
+                        'Alergia a trigo',
+                        'Alergia a gergelim',
+                        'APLV — Alergia à Proteína do Leite de Vaca',
+                        'Mamão',
+                        'Berinjela',
                         'Intolerante à lactose',
-                        'Intolerante a glúten (Celíaco)',
+                        'Intolerante a glúten (Doença Celíaca)',
+                        'Intolerante a frutose',
+                        'Intolerante a histamina',
                         'Não come carne vermelha',
                         'Não come carne de porco',
-                        'Vegetariano',
-                        'Vegano',
-                        'Outras'
+                        'Não come frutos do mar',
+                        'Não come peixe',
+                        'Vegetariano (não come carnes)',
+                        'Vegano (não come nenhum produto animal)',
+                        'Ovolactovegetariano',
+                        'Dieta Kosher (restrições religiosas judaicas)',
+                        'Dieta Halal (restrições religiosas islâmicas)',
+                        'Produtos de limpeza',
+                        'Diabético (restrição de açúcar)',
+                        'Hipertenso (restrição de sódio/sal)',
+                        'Fenilcetonúria (PKU)',
+                        'Doença de Crohn',
+                        'Síndrome do intestino irritável',
+                        'Refluxo gastroesofágico',
+                        'Restrição de gordura (colesterol alto)'
                     ],
                     token: window.location.pathname.split('/').filter(Boolean).pop() || '',
                     form: { aceite_termos: false }
                 };
             },
             methods: {
+                normalizarRestricoes(valor) {
+                    if (Array.isArray(valor)) return valor.filter(Boolean).map(v => String(v).trim()).filter(Boolean);
+                    if (!valor) return [];
+                    const txt = String(valor).trim();
+                    if (!txt) return [];
+                    try { const p = JSON.parse(txt); if (Array.isArray(p)) return p.filter(Boolean).map(v => String(v).trim()).filter(Boolean); } catch (e) {}
+                    return [txt];
+                },
+                restricoesFiltradas(busca) {
+                    const q = (busca || '').toLowerCase().trim();
+                    if (!q) return this.opcoesRestricaoAlimentar;
+                    return this.opcoesRestricaoAlimentar.filter(o => o.toLowerCase().includes(q));
+                },
+                toggleRestricaoTio(opcao) {
+                    const arr = this.normalizarRestricoes(this.form.detalhes_restricao_tio);
+                    const idx = arr.indexOf(opcao);
+                    if (idx === -1) arr.push(opcao); else arr.splice(idx, 1);
+                    this.form.detalhes_restricao_tio = arr;
+                    this.form.restricao_alimentar_tio = arr.length > 0;
+                },
+                toggleRestricaoTia(opcao) {
+                    const arr = this.normalizarRestricoes(this.form.detalhes_restricao_tia);
+                    const idx = arr.indexOf(opcao);
+                    if (idx === -1) arr.push(opcao); else arr.splice(idx, 1);
+                    this.form.detalhes_restricao_tia = arr;
+                    this.form.restricao_alimentar_tia = arr.length > 0;
+                },
+                adicionarOutrosRestricaoTio() {
+                    const texto = String(this.outrosRestricaoTextoTio || '').trim();
+                    if (!texto) return;
+                    const arr = this.normalizarRestricoes(this.form.detalhes_restricao_tio);
+                    if (!arr.includes(texto)) arr.push(texto);
+                    this.form.detalhes_restricao_tio = arr;
+                    this.form.restricao_alimentar_tio = true;
+                    this.outrosRestricaoTextoTio = '';
+                    this.outrosRestricaoMarcadoTio = false;
+                },
+                adicionarOutrosRestricaoTia() {
+                    const texto = String(this.outrosRestricaoTextoTia || '').trim();
+                    if (!texto) return;
+                    const arr = this.normalizarRestricoes(this.form.detalhes_restricao_tia);
+                    if (!arr.includes(texto)) arr.push(texto);
+                    this.form.detalhes_restricao_tia = arr;
+                    this.form.restricao_alimentar_tia = true;
+                    this.outrosRestricaoTextoTia = '';
+                    this.outrosRestricaoMarcadoTia = false;
+                },
                 digits(v) { return String(v || '').replace(/\D/g, ''); },
                 formatarCpf(v) { const d = this.digits(v).slice(0, 11); if (d.length <= 3) return d; if (d.length <= 6) return `${d.slice(0,3)}.${d.slice(3)}`; if (d.length <= 9) return `${d.slice(0,3)}.${d.slice(3,6)}.${d.slice(6)}`; return `${d.slice(0,3)}.${d.slice(3,6)}.${d.slice(6,9)}-${d.slice(9)}`; },
                 formatarTelefone(v) { const d = this.digits(v).slice(0, 11); if (d.length <= 2) return d ? `(${d}` : ''; if (d.length <= 7) return `(${d.slice(0,2)})${d.slice(2)}`; return `(${d.slice(0,2)})${d.slice(2,7)}-${d.slice(7)}`; },
@@ -143,6 +264,8 @@
                         if (!res.ok) throw new Error(data.error || 'Link inválido.');
                         this.outrosEjcs = data.outros_ejcs || [];
                         this.form = { ...(data.casal || {}), aceite_termos: false };
+                        this.form.detalhes_restricao_tio = this.normalizarRestricoes(this.form.detalhes_restricao_tio);
+                        this.form.detalhes_restricao_tia = this.normalizarRestricoes(this.form.detalhes_restricao_tia);
                         this.form.telefone_tio = this.formatarTelefone(this.form.telefone_tio);
                         this.form.telefone_tia = this.formatarTelefone(this.form.telefone_tia);
                         this.form.cpf_tio = this.formatarCpf(this.form.cpf_tio);
@@ -160,7 +283,9 @@
                         const payload = {
                             ...this.form,
                             possui_carro_tio: this.form.possui_carro ? 1 : 0,
-                            possui_carro_tia: this.form.possui_carro ? 1 : 0
+                            possui_carro_tia: this.form.possui_carro ? 1 : 0,
+                            detalhes_restricao_tio: JSON.stringify(this.normalizarRestricoes(this.form.detalhes_restricao_tio)),
+                            detalhes_restricao_tia: JSON.stringify(this.normalizarRestricoes(this.form.detalhes_restricao_tia))
                         };
                         const res = await fetch(`/api/atualizacoes-cadastro-public/tios/${encodeURIComponent(this.token)}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                         const data = await res.json().catch(() => ({}));
@@ -172,10 +297,10 @@
             },
             watch: {
                 'form.restricao_alimentar_tio'(valor) {
-                    if (!valor) this.form.detalhes_restricao_tio = '';
+                    if (!valor) { this.form.detalhes_restricao_tio = []; this.buscaRestricaoTio = ''; }
                 },
                 'form.restricao_alimentar_tia'(valor) {
-                    if (!valor) this.form.detalhes_restricao_tia = '';
+                    if (!valor) { this.form.detalhes_restricao_tia = []; this.buscaRestricaoTia = ''; }
                 }
             },
             mounted() { this.carregar(); }

@@ -206,6 +206,126 @@ async function ensureTenantStructure() {
             console.error('Aviso ao ajustar índice de username para multitenant:', errIdx && errIdx.message ? errIdx.message : errIdx);
         }
 
+        // Migração: remove tenant_id herdado da versão SemearAdmin das tabelas QA globais
+        for (const tbl of ['qa_menus', 'qa_releases', 'qa_testes', 'qa_menu_funcionalidades', 'qa_testes_funcionalidades']) {
+            if (await hasTable(tbl) && await hasColumn(tbl, 'tenant_id')) {
+                try {
+                    const [idxRows] = await pool.query(`
+                        SELECT INDEX_NAME FROM information_schema.STATISTICS
+                        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = 'tenant_id'
+                        GROUP BY INDEX_NAME`, [tbl]);
+                    for (const r of idxRows) {
+                        try { await pool.query(`ALTER TABLE \`${tbl}\` DROP INDEX \`${r.INDEX_NAME}\``); } catch (_) {}
+                    }
+                    await pool.query(`ALTER TABLE \`${tbl}\` DROP COLUMN tenant_id`);
+                } catch (errMig) {
+                    console.error(`Aviso ao remover tenant_id de ${tbl}:`, errMig && errMig.message ? errMig.message : errMig);
+                }
+            }
+        }
+
+        if (!await hasTable('qa_menus')) {
+            await pool.query(`
+                CREATE TABLE IF NOT EXISTS qa_menus (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    nome VARCHAR(120) NOT NULL,
+                    submenu_de INT NULL,
+                    ativo TINYINT(1) NOT NULL DEFAULT 1,
+                    ordem INT NOT NULL DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            `);
+        }
+
+        if (!await hasTable('qa_releases')) {
+            await pool.query(`
+                CREATE TABLE IF NOT EXISTS qa_releases (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    versao VARCHAR(20) NOT NULL,
+                    descricao TEXT,
+                    status ENUM('em_teste', 'aprovado', 'reprovado') NOT NULL DEFAULT 'em_teste',
+                    ambiente ENUM('homologacao', 'producao') NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+                )
+            `);
+        }
+
+        if (!await hasTable('qa_testes')) {
+            await pool.query(`
+                CREATE TABLE IF NOT EXISTS qa_testes (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    release_id INT NOT NULL,
+                    menu_id INT NOT NULL,
+                    alterado TINYINT(1) NOT NULL DEFAULT 0,
+                    descricao_alteracao TEXT,
+                    status ENUM('nao_testado', 'ok', 'falhou', 'parcial') NOT NULL DEFAULT 'nao_testado',
+                    observacao TEXT,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    UNIQUE KEY uq_qa_testes_release_menu (release_id, menu_id)
+                )
+            `);
+        }
+
+        // Migração: renomear tabelas antigas se existirem
+        if (await hasTable('qa_menu_tarefas') && !await hasTable('qa_menu_funcionalidades')) {
+            await pool.query('RENAME TABLE qa_menu_tarefas TO qa_menu_funcionalidades');
+        }
+        if (await hasTable('qa_testes_tarefas') && !await hasTable('qa_testes_funcionalidades')) {
+            await pool.query('RENAME TABLE qa_testes_tarefas TO qa_testes_funcionalidades');
+        }
+
+        if (!await hasTable('qa_menu_funcionalidades')) {
+            await pool.query(`
+                CREATE TABLE IF NOT EXISTS qa_menu_funcionalidades (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    menu_id INT NOT NULL,
+                    descricao VARCHAR(255) NOT NULL,
+                    ativo TINYINT(1) NOT NULL DEFAULT 1,
+                    ordem INT NOT NULL DEFAULT 0,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    KEY idx_qa_menu_funcionalidades_menu (menu_id)
+                )
+            `);
+        }
+
+        if (!await hasTable('qa_testes_funcionalidades')) {
+            await pool.query(`
+                CREATE TABLE IF NOT EXISTS qa_testes_funcionalidades (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    release_id INT NOT NULL,
+                    funcionalidade_id INT NOT NULL,
+                    status ENUM('nao_testado', 'ok', 'falhou', 'parcial') NOT NULL DEFAULT 'nao_testado',
+                    observacao TEXT,
+                    alterado TINYINT(1) NOT NULL DEFAULT 0,
+                    tipo_alteracao ENUM('funcionalidade','bug') NULL,
+                    descricao_alteracao TEXT,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    UNIQUE KEY uq_qa_testes_funcionalidades (release_id, funcionalidade_id)
+                )
+            `);
+        }
+
+        // Migração: renomear coluna tarefa_id → funcionalidade_id
+        if (await hasTable('qa_testes_funcionalidades') && await hasColumn('qa_testes_funcionalidades', 'tarefa_id') && !await hasColumn('qa_testes_funcionalidades', 'funcionalidade_id')) {
+            try {
+                await pool.query('ALTER TABLE qa_testes_funcionalidades RENAME COLUMN tarefa_id TO funcionalidade_id');
+            } catch (errRename) {
+                console.error('Aviso ao renomear tarefa_id:', errRename && errRename.message ? errRename.message : errRename);
+            }
+        }
+
+        // Migração: adicionar novas colunas em qa_testes_funcionalidades
+        if (await hasTable('qa_testes_funcionalidades') && !await hasColumn('qa_testes_funcionalidades', 'alterado')) {
+            await pool.query('ALTER TABLE qa_testes_funcionalidades ADD COLUMN alterado TINYINT(1) NOT NULL DEFAULT 0');
+        }
+        if (await hasTable('qa_testes_funcionalidades') && !await hasColumn('qa_testes_funcionalidades', 'tipo_alteracao')) {
+            await pool.query("ALTER TABLE qa_testes_funcionalidades ADD COLUMN tipo_alteracao ENUM('funcionalidade','bug') NULL");
+        }
+        if (await hasTable('qa_testes_funcionalidades') && !await hasColumn('qa_testes_funcionalidades', 'descricao_alteracao')) {
+            await pool.query('ALTER TABLE qa_testes_funcionalidades ADD COLUMN descricao_alteracao TEXT');
+        }
+
         const adminUser = String(process.env.ADMIN_MASTER_USER || 'admin').trim();
         const adminNome = String(process.env.ADMIN_MASTER_NOME || 'Administrador Geral').trim();
         const adminPass = String(process.env.ADMIN_MASTER_PASS || 'admin123').trim();

@@ -194,14 +194,14 @@
                                 <input class="form-control" v-model.trim="atualizacaoJovem.qual_deficiencia" maxlength="220">
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label">Possui restrição alimentar?</label>
+                                <label class="form-label">Restrições alimentares e alergias?</label>
                                 <select class="form-select" v-model="atualizacaoJovem.restricao_alimentar">
                                     <option :value="false">Não</option>
                                     <option :value="true">Sim</option>
                                 </select>
                             </div>
                             <div class="col-md-8" v-if="atualizacaoJovem.restricao_alimentar">
-                                <label class="form-label">Qual restrição alimentar?</label>
+                                <label class="form-label">Quais restrições alimentares e alergias?</label>
                                 <select class="form-select" v-model="atualizacaoJovem.detalhes_restricao">
                                     <option disabled value="">Selecione...</option>
                                     <option v-for="item in restricoesDisponiveis" :key="`rj-${item}`" :value="item">{{ item }}</option>
@@ -248,14 +248,14 @@
 
                             <div class="col-12 pt-2"><h3 class="h6 text-muted mb-0">Dados do tio</h3></div>
                             <div class="col-md-4">
-                                <label class="form-label">Tio possui restrição alimentar?</label>
+                                <label class="form-label">Restrições alimentares e alergias do tio?</label>
                                 <select class="form-select" v-model="atualizacaoTio.restricao_alimentar_tio">
                                     <option :value="false">Não</option>
                                     <option :value="true">Sim</option>
                                 </select>
                             </div>
                             <div class="col-md-8" v-if="atualizacaoTio.restricao_alimentar_tio">
-                                <label class="form-label">Qual restrição alimentar do tio?</label>
+                                <label class="form-label">Quais restrições do tio?</label>
                                 <select class="form-select" v-model="atualizacaoTio.detalhes_restricao_tio">
                                     <option disabled value="">Selecione...</option>
                                     <option v-for="item in restricoesDisponiveis" :key="`rtio-${item}`" :value="item">{{ item }}</option>
@@ -284,14 +284,14 @@
 
                             <div class="col-12 pt-2"><h3 class="h6 text-muted mb-0">Dados da tia</h3></div>
                             <div class="col-md-4">
-                                <label class="form-label">Tia possui restrição alimentar?</label>
+                                <label class="form-label">Restrições alimentares e alergias da tia?</label>
                                 <select class="form-select" v-model="atualizacaoTio.restricao_alimentar_tia">
                                     <option :value="false">Não</option>
                                     <option :value="true">Sim</option>
                                 </select>
                             </div>
                             <div class="col-md-8" v-if="atualizacaoTio.restricao_alimentar_tia">
-                                <label class="form-label">Qual restrição alimentar da tia?</label>
+                                <label class="form-label">Quais restrições da tia?</label>
                                 <select class="form-select" v-model="atualizacaoTio.detalhes_restricao_tia">
                                     <option disabled value="">Selecione...</option>
                                     <option v-for="item in restricoesDisponiveis" :key="`rtia-${item}`" :value="item">{{ item }}</option>
@@ -359,15 +359,37 @@
                     erro: '',
                     restricoesDisponiveis: [
                         'Alergia a amendoim',
-                        'Alergia a castanhas',
-                        'Alergia a frutos do mar',
-                        'APLV (Alergia à proteína do leite de vaca)',
+                        'Alergia a castanhas (nozes, castanha-do-pará, amêndoa, avelã, pistache, caju)',
+                        'Alergia a frutos do mar (camarão, caranguejo, lagosta, mariscos)',
+                        'Alergia a peixes',
+                        'Alergia a ovos',
+                        'Alergia a soja',
+                        'Alergia a trigo',
+                        'Alergia a gergelim',
+                        'APLV — Alergia à Proteína do Leite de Vaca',
+                        'Mamão',
+                        'Berinjela',
                         'Intolerante à lactose',
-                        'Intolerante a glúten (Celíaco)',
+                        'Intolerante a glúten (Doença Celíaca)',
+                        'Intolerante a frutose',
+                        'Intolerante a histamina',
                         'Não come carne vermelha',
                         'Não come carne de porco',
-                        'Vegetariano',
-                        'Vegano'
+                        'Não come frutos do mar',
+                        'Não come peixe',
+                        'Vegetariano (não come carnes)',
+                        'Vegano (não come nenhum produto animal)',
+                        'Ovolactovegetariano',
+                        'Dieta Kosher (restrições religiosas judaicas)',
+                        'Dieta Halal (restrições religiosas islâmicas)',
+                        'Produtos de limpeza',
+                        'Diabético (restrição de açúcar)',
+                        'Hipertenso (restrição de sódio/sal)',
+                        'Fenilcetonúria (PKU)',
+                        'Doença de Crohn',
+                        'Síndrome do intestino irritável',
+                        'Refluxo gastroesofágico',
+                        'Restrição de gordura (colesterol alto)'
                     ],
                     estadosCivis: ['Solteiro(a)', 'Namorando', 'Noivo(a)', 'Casado(a)', 'Separado(a)', 'Divorciado(a)', 'Viúvo(a)'],
                     outrosEjcs: [],

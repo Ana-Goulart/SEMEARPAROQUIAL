@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EJC - Moita</title>
     <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
     <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
@@ -112,6 +113,136 @@
                 max-width: 360px;
             }
         }
+
+        /* ── Melhorias UX mobile Moita (max-width: 767.98px) ── */
+
+        /* 1. Botões topo: lado a lado com texto visível */
+        .moita-top-btn-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        @media (max-width: 767.98px) {
+            .moita-top-btn-group .btn {
+                flex: 1 1 0;
+                min-width: 0;
+                flex-direction: column;
+                gap: 0.2rem;
+                white-space: normal;
+                line-height: 1.25;
+                padding: 0.55rem 0.5rem;
+            }
+            .moita-top-btn-group .btn .btn-ejc-text {
+                display: inline !important;
+                font-size: 0.75rem;
+            }
+
+            /* 2. Botão Funções: bege/dourado, não parece desabilitado */
+            .btn-funcoes-moita {
+                background: #fff8ee !important;
+                border-color: rgba(191, 161, 111, 0.5) !important;
+                color: #9a681b !important;
+                box-shadow: 0 4px 12px rgba(15, 23, 42, 0.06) !important;
+            }
+            .btn-funcoes-moita:hover {
+                background: #fff2db !important;
+                border-color: rgba(191, 161, 111, 0.7) !important;
+                color: #8a5a14 !important;
+            }
+
+            /* 3. Tabela de jovens: accordion mobile */
+            .moita-table-main { table-layout: fixed; width: 100%; }
+            .moita-table-main thead { display: none; }
+            .moita-table-main .moita-acao-td { display: none; }
+            .moita-table-main tbody tr:not(.moita-mobile-detail-row) td { height: 52px; }
+            .moita-table-main tbody td:nth-child(2) { overflow: hidden; }
+
+            .moita-mobile-expand-td {
+                display: table-cell !important;
+                width: 3rem;
+                min-width: 3rem;
+                max-width: 3rem;
+                text-align: center;
+                vertical-align: middle;
+            }
+            .moita-mobile-toggle {
+                width: 2.8rem;
+                height: 2.8rem;
+                border: 1px solid rgba(191, 161, 111, 0.35);
+                border-radius: 999px;
+                background: #fff8ee;
+                color: #8f6a24;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 0.9rem;
+                transition: background 0.18s, color 0.18s;
+            }
+            .moita-mobile-toggle:hover { background: #f4ead8; color: #6f511d; }
+            .moita-mobile-toggle:focus { box-shadow: 0 0 0 0.2rem rgba(191,161,111,0.22); }
+
+            .moita-nome-mobile {
+                color: var(--vz-primary);
+                font-weight: 700;
+                font-size: 13px;
+                display: block;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            .moita-funcao-mobile {
+                display: block;
+                font-size: 11px;
+                color: #8b6d41;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            /* 4. Títulos dos cards de reserva em uma linha */
+            .moita-lista-reserva-titulo {
+                font-size: 14px !important;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                min-width: 0;
+            }
+
+            .moita-mobile-detail-row {
+                display: none;
+                background: linear-gradient(180deg, #fffdf9 0%, #fdf7ee 100%);
+            }
+            .moita-mobile-detail-row.is-open { display: table-row; }
+            .moita-mobile-detail-cell { padding: 0 !important; border-top: 0 !important; }
+            .moita-mobile-detail-grid { display: grid; gap: 0.75rem; padding: 0.85rem 1rem; }
+            .moita-mobile-detail-item {
+                border: 1px solid rgba(34, 55, 80, 0.08);
+                border-radius: 12px;
+                background: #fff;
+                padding: 0.65rem 0.8rem;
+            }
+            .moita-mobile-detail-label {
+                display: block;
+                margin-bottom: 0.2rem;
+                color: #8b6d41;
+                font-size: 0.75rem;
+                font-weight: 700;
+                letter-spacing: 0.03em;
+                text-transform: uppercase;
+            }
+            .moita-mobile-detail-value { color: #3d4451; font-size: 0.9rem; word-break: break-word; }
+            .moita-mobile-action { padding-top: 0.35rem; }
+
+            /* 4. Scroll contínuo: garante que card e tabela não cortam conteúdo */
+            .table-responsive { overflow-x: visible; }
+        }
+
+        @media (min-width: 768px) {
+            .moita-mobile-expand-td,
+            .moita-mobile-detail-row { display: none !important; }
+            .moita-table-main .moita-acao-td { display: table-cell; }
+            .moita-funcao-mobile { display: none !important; }
+        }
     </style>
 </head>
 
@@ -120,14 +251,16 @@
         <main class="container-fluid">
             <div class="d-flex flex-wrap justify-content-end align-items-start gap-3">
                 <div class="moita-toolbar-actions">
-                    <button class="btn btn-success btn-ejc-action btn-sm" @click="abrirModalCadastroMoita" title="Adicionar jovem" aria-label="Adicionar jovem">
-                        <span class="btn-ejc-icon"><i class="fa-solid fa-plus icon-accent"></i></span>
-                        <span class="btn-ejc-text">Adicionar Jovem</span>
-                    </button>
-                    <button class="btn btn-ejc-action btn-edit-standard btn-sm" @click="abrirModalFuncao" title="Visualizar funções" aria-label="Visualizar funções">
-                        <span class="btn-ejc-icon"><i class="fa-solid fa-eye icon-accent"></i></span>
-                        <span class="btn-ejc-text">Funções de Moita</span>
-                    </button>
+                    <div class="moita-top-btn-group">
+                        <button class="btn btn-success btn-ejc-action btn-sm" @click="abrirModalCadastroMoita" title="Adicionar jovem" aria-label="Adicionar jovem">
+                            <span class="btn-ejc-icon"><i class="fa-solid fa-plus icon-accent"></i></span>
+                            <span class="btn-ejc-text">Adicionar Jovem</span>
+                        </button>
+                        <button class="btn btn-soft-secondary btn-ejc-action btn-sm btn-funcoes-moita" @click="abrirModalFuncao" title="Visualizar funções" aria-label="Visualizar funções">
+                            <span class="btn-ejc-icon"><i class="fa-solid fa-eye icon-accent"></i></span>
+                            <span class="btn-ejc-text">Funções de Moita</span>
+                        </button>
+                    </div>
                     <div class="moita-toolbar-search">
                         <div class="input-group">
                             <span class="input-group-text"><i class="fa-solid fa-magnifying-glass"></i></span>
@@ -152,7 +285,7 @@
                     <div class="card border-0 shadow-sm h-100">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <h6 class="mb-0">Lista de Reserva - Mulheres</h6>
+                                <h6 class="mb-0 moita-lista-reserva-titulo">Lista de Reserva - Mulheres</h6>
                                 <div class="d-flex gap-2">
                                     <button class="btn btn-sm btn-outline-secondary" @click="abrirModalVisualizacao('MULHERES')"
                                         title="Visualizar lista">
@@ -174,7 +307,7 @@
                     <div class="card border-0 shadow-sm h-100">
                         <div class="card-body">
                             <div class="d-flex justify-content-between align-items-center mb-2">
-                                <h6 class="mb-0">Lista de Reserva - Homens</h6>
+                                <h6 class="mb-0 moita-lista-reserva-titulo">Lista de Reserva - Homens</h6>
                                 <div class="d-flex gap-2">
                                     <button class="btn btn-sm btn-outline-secondary" @click="abrirModalVisualizacao('HOMENS')"
                                         title="Visualizar lista">
@@ -206,35 +339,86 @@
                     Nenhum registro de moita encontrado.
                 </div>
                 <div v-else class="table-responsive">
-                    <table class="table table-hover align-middle mb-0">
+                    <table class="table table-hover align-middle mb-0 moita-table-main table-no-mobile-expand">
                         <thead class="table-light">
                             <tr>
+                                <th class="moita-mobile-expand-td"><span class="visually-hidden">Expandir linha</span></th>
                                 <th>Nome Completo</th>
-                                <th>Telefone</th>
-                                <th>EJC de Origem</th>
-                                <th>Nº EJC</th>
-                                <th>Período</th>
-                                <th>EJC</th>
-                                <th>Função</th>
-                                <th>Ações</th>
+                                <th class="mobile-col-hide">Telefone</th>
+                                <th class="mobile-col-hide">EJC de Origem</th>
+                                <th class="mobile-col-hide">Nº EJC</th>
+                                <th class="mobile-col-hide">Período</th>
+                                <th class="mobile-col-hide">EJC</th>
+                                <th class="mobile-col-hide">Função</th>
+                                <th class="moita-acao-td">Ações</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="r in registrosFiltrados" :key="r.id">
-                                <td>{{ r.nome_completo }}</td>
-                                <td>{{ r.telefone || '-' }}</td>
-                                <td>{{ formatarEjcOrigem(r) }}</td>
-                                <td>{{ r.ejc_numero ? (r.ejc_numero + 'º EJC') : '-' }}</td>
-                                <td>{{ formatarPeriodoMoita(r) }}</td>
-                                <td>{{ nomeOutroEjc(r) }}</td>
-                                <td>{{ r.funcao_moita || '-' }}</td>
+                            <template v-for="r in registrosFiltrados" :key="r.id">
+                            <tr>
+                                <td class="moita-mobile-expand-td">
+                                    <button type="button"
+                                        class="moita-mobile-toggle"
+                                        :aria-expanded="String(!!linhaExpandidaMoita[r.id])"
+                                        :title="linhaExpandidaMoita[r.id] ? 'Recolher linha' : 'Expandir linha'"
+                                        @click="toggleLinhaMoita(r.id)">
+                                        <i class="fa-solid" :class="linhaExpandidaMoita[r.id] ? 'fa-chevron-up' : 'fa-chevron-down'"></i>
+                                    </button>
+                                </td>
                                 <td>
+                                    <span class="moita-nome-mobile">{{ r.nome_completo }}</span>
+                                    <span class="moita-funcao-mobile">{{ r.funcao_moita || '-' }}</span>
+                                </td>
+                                <td class="mobile-col-hide">{{ r.telefone || '-' }}</td>
+                                <td class="mobile-col-hide">{{ formatarEjcOrigem(r) }}</td>
+                                <td class="mobile-col-hide">{{ r.ejc_numero ? (r.ejc_numero + 'º EJC') : '-' }}</td>
+                                <td class="mobile-col-hide">{{ formatarPeriodoMoita(r) }}</td>
+                                <td class="mobile-col-hide">{{ nomeOutroEjc(r) }}</td>
+                                <td class="mobile-col-hide">{{ r.funcao_moita || '-' }}</td>
+                                <td class="moita-acao-td">
                                     <button type="button" class="btn btn-sm btn-soft-secondary btn-ejc-action" @click="abrirModalEditarMoita(r)" title="Editar" aria-label="Editar">
                                         <span class="btn-ejc-icon"><i class="fa-solid fa-pen-to-square icon-accent"></i></span>
                                         <span class="btn-ejc-text">Editar</span>
                                     </button>
                                 </td>
                             </tr>
+                            <tr class="moita-mobile-detail-row" :class="{ 'is-open': !!linhaExpandidaMoita[r.id] }">
+                                <td class="moita-mobile-detail-cell" colspan="9">
+                                    <div class="moita-mobile-detail-grid">
+                                        <div class="moita-mobile-detail-item" v-if="r.telefone">
+                                            <span class="moita-mobile-detail-label">Telefone</span>
+                                            <div class="moita-mobile-detail-value">{{ r.telefone }}</div>
+                                        </div>
+                                        <div class="moita-mobile-detail-item">
+                                            <span class="moita-mobile-detail-label">EJC de Origem</span>
+                                            <div class="moita-mobile-detail-value">{{ formatarEjcOrigem(r) }}</div>
+                                        </div>
+                                        <div class="moita-mobile-detail-item">
+                                            <span class="moita-mobile-detail-label">Nº EJC</span>
+                                            <div class="moita-mobile-detail-value">{{ r.ejc_numero ? (r.ejc_numero + 'º EJC') : '-' }}</div>
+                                        </div>
+                                        <div class="moita-mobile-detail-item" v-if="formatarPeriodoMoita(r) !== '-'">
+                                            <span class="moita-mobile-detail-label">Período</span>
+                                            <div class="moita-mobile-detail-value">{{ formatarPeriodoMoita(r) }}</div>
+                                        </div>
+                                        <div class="moita-mobile-detail-item">
+                                            <span class="moita-mobile-detail-label">EJC</span>
+                                            <div class="moita-mobile-detail-value">{{ nomeOutroEjc(r) }}</div>
+                                        </div>
+                                        <div class="moita-mobile-detail-item" v-if="r.funcao_moita">
+                                            <span class="moita-mobile-detail-label">Função</span>
+                                            <div class="moita-mobile-detail-value">{{ r.funcao_moita }}</div>
+                                        </div>
+                                        <div class="moita-mobile-action">
+                                            <button type="button" class="btn btn-sm btn-soft-secondary btn-ejc-action w-100" @click="abrirModalEditarMoita(r)">
+                                                <span class="btn-ejc-icon"><i class="fa-solid fa-pen-to-square icon-accent"></i></span>
+                                                <span class="btn-ejc-text">Editar</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            </template>
                         </tbody>
                     </table>
                 </div>
@@ -560,6 +744,7 @@
                     nomeMeuEJC: (window.__NOME_EJC_ATUAL && String(window.__NOME_EJC_ATUAL).trim()) || 'Inconfidentes',
                     carregando: true,
                     registros: [],
+                    linhaExpandidaMoita: {},
                     erroApi: '',
                     pesquisaRapida: '',
                     funcoes: [],
@@ -615,6 +800,9 @@
                 }
             },
             methods: {
+                toggleLinhaMoita(id) {
+                    this.linhaExpandidaMoita = { ...this.linhaExpandidaMoita, [id]: !this.linhaExpandidaMoita[id] };
+                },
                 normalizarTextoBusca(valor) {
                     return String(valor || '')
                         .normalize('NFD')

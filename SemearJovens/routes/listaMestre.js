@@ -560,6 +560,31 @@ async function ensureEquipeSaudeColumn() {
     hasEquipeSaudeColumnCache = true;
 }
 
+let hasEquipeSaudeTipoColumnCache = null;
+async function hasEquipeSaudeTipoColumn() {
+    if (hasEquipeSaudeTipoColumnCache !== null) return hasEquipeSaudeTipoColumnCache;
+    const [rows] = await pool.query(`
+        SELECT COUNT(*) as cnt
+        FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE()
+          AND TABLE_NAME = 'jovens'
+          AND COLUMN_NAME = 'equipe_saude_tipo'
+    `);
+    hasEquipeSaudeTipoColumnCache = !!(rows && rows[0] && rows[0].cnt > 0);
+    return hasEquipeSaudeTipoColumnCache;
+}
+
+async function ensureEquipeSaudeTipoColumn() {
+    const existe = await hasEquipeSaudeTipoColumn();
+    if (existe) return;
+    try {
+        await pool.query("ALTER TABLE jovens ADD COLUMN equipe_saude_tipo VARCHAR(60) NULL AFTER equipe_saude");
+    } catch (err) {
+        if (!err || err.code !== 'ER_DUP_FIELDNAME') throw err;
+    }
+    hasEquipeSaudeTipoColumnCache = true;
+}
+
 async function hasColumn(tableName, columnName) {
     const [rows] = await pool.query(`
         SELECT COUNT(*) as cnt
@@ -2176,6 +2201,7 @@ router.post('/', async (req, res) => {
         await ensureApelidoColumn();
         await ensureEnderecoColumns();
         await ensureEquipeSaudeColumn();
+        await ensureEquipeSaudeTipoColumn();
         await ensureNaoServeEjcColumns();
         const {
             nome_completo, apelido, telefone, cpf, email, data_nascimento, numero_ejc_fez, instagram, estado_civil, data_casamento,
@@ -2255,6 +2281,7 @@ router.post('/', async (req, res) => {
             'restricao_alimentar',
             'detalhes_restricao',
             'equipe_saude',
+            'equipe_saude_tipo',
             'endereco_rua',
             'endereco_numero',
             'endereco_bairro',
@@ -2291,6 +2318,7 @@ router.post('/', async (req, res) => {
             restricao_alimentar ? 1 : 0,
             encryptListaMestreSensitiveText(detalhesRestricaoNormalizados, 'detalhes-restricao'),
             equipe_saude ? 1 : 0,
+            equipe_saude ? (String(req.body.equipe_saude_tipo || '').trim() || null) : null,
             enderecoRuaNormalizado,
             endereco_numero ? String(endereco_numero).trim() : null,
             enderecoBairroNormalizado,
@@ -2368,6 +2396,7 @@ router.put('/:id', async (req, res) => {
         await ensureApelidoColumn();
         await ensureEnderecoColumns();
         await ensureEquipeSaudeColumn();
+        await ensureEquipeSaudeTipoColumn();
         await ensureNaoServeEjcColumns();
         const [rows] = await pool.query('SELECT * FROM jovens WHERE id = ? AND tenant_id = ?', [id, tenantId]);
         if (rows.length === 0) return res.status(404).json({ error: 'Jovem não encontrado' });
@@ -2413,6 +2442,7 @@ router.put('/:id', async (req, res) => {
             conjuge_ecc_numero: req.body.conjuge_ecc_numero !== undefined ? req.body.conjuge_ecc_numero : atual.conjuge_ecc_numero,
             eh_musico: req.body.eh_musico !== undefined ? (req.body.eh_musico ? 1 : 0) : (atual.eh_musico ? 1 : 0),
             equipe_saude: req.body.equipe_saude !== undefined ? (req.body.equipe_saude ? 1 : 0) : (atual.equipe_saude ? 1 : 0),
+            equipe_saude_tipo: req.body.equipe_saude_tipo !== undefined ? req.body.equipe_saude_tipo : (atual.equipe_saude_tipo || null),
             instrumentos_musicais: req.body.instrumentos_musicais !== undefined ? req.body.instrumentos_musicais : atual.instrumentos_musicais,
             observacoes_extras: req.body.observacoes_extras !== undefined ? req.body.observacoes_extras : atual.observacoes_extras,
             nao_serve_ejc: req.body.nao_serve_ejc !== undefined ? (req.body.nao_serve_ejc ? 1 : 0) : (atual.nao_serve_ejc ? 1 : 0),
@@ -2571,6 +2601,7 @@ router.put('/:id', async (req, res) => {
         if (hasConjugeEccNumero) updateData.conjuge_ecc_numero = merged.conjuge_ecc_numero || null;
         if (hasEhMusico) updateData.eh_musico = merged.eh_musico ? 1 : 0;
         if (await hasEquipeSaudeColumn()) updateData.equipe_saude = merged.equipe_saude ? 1 : 0;
+        if (await hasEquipeSaudeTipoColumn()) updateData.equipe_saude_tipo = merged.equipe_saude ? (String(merged.equipe_saude_tipo || '').trim() || null) : null;
         if (hasInstrumentosMusicais) updateData.instrumentos_musicais = serializarInstrumentos(merged.instrumentos_musicais, merged.eh_musico);
 
         const novoCasalId = merged.tio_casal_id ? Number(merged.tio_casal_id) : null;
@@ -2961,6 +2992,7 @@ router.post('/importacao', async (req, res) => {
         await ensureApelidoColumn();
         await ensureEnderecoColumns();
         await ensureEquipeSaudeColumn();
+        await ensureEquipeSaudeTipoColumn();
         await ensureNaoServeEjcColumns();
         const hasHistorico = await hasTable('historico_equipes');
         const comMontagemEjcId = await hasColumn('jovens', 'montagem_ejc_id');

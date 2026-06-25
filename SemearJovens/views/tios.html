@@ -2,6 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EJC - Tios</title>
     <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
     <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
@@ -666,6 +667,18 @@
             .tios-profile-rail {
                 width: 280px;
                 max-width: 100%;
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            /* Centrar foto e campos da ficha na ficha */
+            .ficha-aside-list.tios-profile-summary {
+                text-align: center;
+            }
+
+            .ficha-aside-list.tios-profile-summary label,
+            .ficha-aside-item label {
+                text-align: center;
             }
         }
 
@@ -682,6 +695,194 @@
             .ficha-aside-list.tios-profile-summary {
                 grid-template-columns: 1fr;
             }
+        }
+
+        /* ── Accordion mobile ── */
+        .lista-mestre-mobile-expand-col {
+            display: none;
+            width: 3.2rem;
+            text-align: center;
+        }
+        .lista-mestre-mobile-toggle {
+            width: 2.15rem;
+            height: 2.15rem;
+            border: 1px solid rgba(191, 161, 111, 0.35);
+            border-radius: 999px;
+            background: #fff8ee;
+            color: #8f6a24;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            box-shadow: none;
+            transition: all 0.18s ease;
+        }
+        .lista-mestre-mobile-toggle:hover { background: #f4ead8; color: #6f511d; }
+        .lista-mestre-mobile-toggle:focus { box-shadow: 0 0 0 0.2rem rgba(191,161,111,0.2); }
+        .lista-mestre-mobile-detail-row {
+            display: none;
+            background: linear-gradient(180deg, #fffdf9 0%, #fdf7ee 100%);
+        }
+        .lista-mestre-mobile-detail-row.is-open { display: table-row; }
+        .lista-mestre-mobile-detail-cell { padding: 0 !important; border-top: 0 !important; }
+        .lista-mestre-mobile-detail-grid { display: grid; gap: 0.85rem; padding: 1rem 1.1rem; }
+        .lista-mestre-mobile-detail-item {
+            border: 1px solid rgba(34,55,80,0.08);
+            border-radius: 14px;
+            background: #fff;
+            padding: 0.75rem 0.85rem;
+        }
+        .lista-mestre-mobile-detail-label {
+            display: block;
+            margin-bottom: 0.25rem;
+            color: #8b6d41;
+            font-size: 0.77rem;
+            font-weight: 700;
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+        .lista-mestre-mobile-detail-value { color: #3d4451; font-size: 0.92rem; word-break: break-word; }
+        .lista-mestre-mobile-action { display: flex; justify-content: flex-start; padding-top: 0.2rem; }
+
+        @media (max-width: 1199.98px) {
+            .card > .table-responsive { overflow-x: auto; }
+            .lista-mestre-grid {
+                table-layout: auto !important;
+                width: 100%;
+            }
+            .lista-mestre-mobile-expand-col {
+                display: table-cell;
+                vertical-align: middle;
+                width: 3.4rem;
+                min-width: 3.4rem;
+                max-width: 3.4rem;
+            }
+            .lista-mestre-mobile-hidden { display: none; }
+            .lista-mestre-mobile-toggle {
+                width: 3rem !important;
+                height: 3rem !important;
+                min-width: 3rem !important;
+                min-height: 3rem !important;
+                font-size: 1.1rem !important;
+            }
+            .lista-mestre-grid .nome-clicavel {
+                font-size: 1.15rem !important;
+                font-weight: 700 !important;
+                white-space: nowrap;
+            }
+            .lista-mestre-grid tbody tr:not(.lista-mestre-mobile-detail-row) td {
+                padding-top: 1.1rem !important;
+                padding-bottom: 1.1rem !important;
+            }
+            .tios-page-btn, .tios-page-ellipsis {
+                min-width: 3rem !important;
+                height: 3rem !important;
+                font-size: 1.05rem !important;
+            }
+            .tios-total-info { font-size: 1.05rem !important; font-weight: 600 !important; }
+        }
+        @media (min-width: 1200px) {
+            .lista-mestre-mobile-detail-row,
+            .lista-mestre-mobile-expand-col { display: none !important; }
+            .lista-mestre-th-acoes { width: 180px; }
+        }
+        /* ---- Multiselect Restrição Alimentar ---- */
+        .restricao-multiselect { display: flex; flex-direction: column; gap: 0.4rem; }
+        .restricao-options-list {
+            max-height: 140px; overflow-y: auto;
+            border: 1px solid #e5d5bb; border-radius: 6px;
+            padding: 4px 2px; background: #fff;
+        }
+        .restricao-option-item {
+            display: flex; align-items: center; gap: 0.4rem;
+            padding: 3px 8px; cursor: pointer; border-radius: 4px;
+            font-size: 0.875rem; user-select: none; transition: background 0.12s;
+        }
+        .restricao-option-item:hover { background: #fff8ee; }
+        .restricao-option-item.selecionada { background: #f4ede1; font-weight: 600; color: #6e5430; }
+        .restricao-option-check { width: 14px; height: 14px; accent-color: #d9a650; flex-shrink: 0; }
+        .restricao-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+        .restricao-chip {
+            display: inline-flex; align-items: center; gap: 4px;
+            background: #d9a650; color: #fff; border-radius: 999px;
+            font-size: 0.78rem; padding: 2px 8px 2px 10px; font-weight: 600;
+            box-shadow: 0 2px 6px rgba(217,166,80,0.28);
+        }
+        .restricao-chip-remove { background: none; border: none; padding: 0; line-height: 1; font-size: 0.85rem; color: rgba(255,255,255,0.8); cursor: pointer; }
+        .restricao-chip-remove:hover { color: #fff; }
+
+        /* ── Melhorias UX mobile Tios (max-width: 768px) ── */
+        @media (max-width: 768px) {
+            /* 2. Mostrar texto curto nos botões da toolbar */
+            .tios-toolbar-buttons .btn-ejc-text {
+                display: inline !important;
+                font-size: 0.75rem;
+            }
+            .tios-toolbar-buttons {
+                flex-wrap: wrap;
+                gap: 0.4rem;
+                justify-content: flex-start;
+            }
+
+            /* 3. Oculta o cabeçalho cinza vazio da tabela no mobile */
+            .lista-mestre-grid thead { display: none; }
+
+            /* 5. Área de toque: padding natural, sem altura fixa que corta conteúdo */
+            .lista-mestre-grid tbody tr:not(.lista-mestre-mobile-detail-row) td {
+                height: auto;
+                padding-top: 1.1rem !important;
+                padding-bottom: 1.1rem !important;
+            }
+
+            /* Tamanho de fonte dos nomes: 13px no mobile */
+            .lista-mestre-grid .nome-clicavel {
+                font-size: 13px !important;
+            }
+
+            /* 1. Telefones abaixo dos nomes */
+            .tios-mobile-phones {
+                display: block;
+                font-size: 11px;
+                color: #8b9aaa;
+                margin-top: 0.25rem;
+                line-height: 1.4;
+            }
+
+            /* 2. Badge de movimento de origem */
+            .tios-mobile-origem-tag {
+                display: inline-block;
+                margin-top: 0.3rem;
+                padding: 1px 8px;
+                font-size: 11px;
+                font-weight: 700;
+                letter-spacing: 0.03em;
+                background: #fdf3e3;
+                color: #9b7a2e;
+                border: 1px solid rgba(155, 122, 46, 0.22);
+                border-radius: 6px;
+                max-width: 18ch;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+                vertical-align: middle;
+            }
+
+            /* 4. Área de toque mínima de 44px para botão Editar no accordion */
+            .lista-mestre-mobile-action .btn-edit-standard {
+                min-height: 44px !important;
+                min-width: 90px !important;
+                font-size: 0.95rem;
+            }
+
+            /* Chevron do botão de expansão */
+            .lista-mestre-mobile-toggle {
+                font-size: 1rem !important;
+            }
+        }
+
+        /* Oculta os extras de mobile no desktop */
+        @media (min-width: 769px) {
+            .tios-mobile-extras { display: none; }
         }
     </style>
 </head>
@@ -733,7 +934,7 @@
                             title="Filtros avançados"
                             aria-label="Filtros avançados">
                             <span class="btn-ejc-icon"><i class="fa-solid fa-sliders icon-accent"></i></span>
-                            <span class="btn-ejc-text">Filtros avançados</span>
+                            <span class="btn-ejc-text">Filtros</span>
                         </button>
                         </div>
                     </div>
@@ -814,15 +1015,27 @@
                     <table class="table table-hover align-middle mb-0 lista-mestre-grid" ref="casaisTabela">
                         <thead class="table-light">
                             <tr>
+                                <th class="lista-mestre-mobile-expand-col"><span class="visually-hidden">Expandir linha</span></th>
                                 <th v-if="colunasVisiveisCasais.Casal">Casal</th>
-                                <th v-if="colunasVisiveisCasais.Telefones">Telefones</th>
-                                <th v-if="colunasVisiveisCasais.Encontro">Movimento de origem</th>
-                                <th v-if="colunasVisiveisCasais.TermosUso">Termos de uso</th>
-                                <th style="width: 180px;">Ações</th>
+                                <th v-if="colunasVisiveisCasais.Telefones" class="lista-mestre-mobile-hidden">Telefones</th>
+                                <th v-if="colunasVisiveisCasais.Encontro" class="lista-mestre-mobile-hidden">Movimento de origem</th>
+                                <th v-if="colunasVisiveisCasais.TermosUso" class="lista-mestre-mobile-hidden">Termos de uso</th>
+                                <th class="lista-mestre-mobile-hidden lista-mestre-th-acoes">Ações</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr v-for="(c, index) in casaisPaginados" :key="c.id" :class="{ 'lista-mestre-row-striped': index % 2 === 1 }">
+                            <template v-for="(c, index) in casaisPaginados" :key="c.id">
+                            <tr :class="{ 'lista-mestre-row-striped': index % 2 === 1 }">
+                                <td class="lista-mestre-mobile-expand-col">
+                                    <button type="button"
+                                        class="lista-mestre-mobile-toggle"
+                                        :aria-expanded="String(!!linhasExpandidasTios[c.id])"
+                                        :title="linhasExpandidasTios[c.id] ? 'Recolher linha' : 'Expandir linha'"
+                                        aria-label="Expandir linha"
+                                        @click="toggleLinhaTios(c.id)">
+                                        <i class="fa-solid" :class="linhasExpandidasTios[c.id] ? 'fa-chevron-up' : 'fa-chevron-right'"></i>
+                                    </button>
+                                </td>
                                 <td v-if="colunasVisiveisCasais.Casal">
                                     <div>
                                         <strong class="nome-clicavel" @click="abrirEditarCasal(c)">{{ c.nome_tio }}</strong>
@@ -830,19 +1043,37 @@
                                     <div>
                                         <strong class="nome-clicavel" @click="abrirEditarCasal(c)">{{ c.nome_tia }}</strong>
                                     </div>
+                                    <div class="tios-mobile-extras">
+                                        <span v-if="c.telefone_tio || c.telefone_tia" class="tios-mobile-phones">{{ [c.telefone_tio, c.telefone_tia].filter(Boolean).join(' · ') }}</span>
+                                        <span v-if="movimentoOrigemCasal(c) && movimentoOrigemCasal(c) !== '-'" class="tios-mobile-origem-tag">{{ movimentoOrigemCasal(c) }}</span>
+                                    </div>
                                 </td>
-                                <td v-if="colunasVisiveisCasais.Telefones">
+                                <td v-if="colunasVisiveisCasais.Telefones" class="lista-mestre-mobile-hidden">
                                     <div>{{ c.telefone_tio || '-' }}</div>
                                     <div class="text-muted">{{ c.telefone_tia || '-' }}</div>
                                 </td>
-                                <td v-if="colunasVisiveisCasais.Encontro">{{ movimentoOrigemCasal(c) }}</td>
-                                <td v-if="colunasVisiveisCasais.TermosUso">{{ c.termos_aceitos_em ? 'Aceito' : 'Não' }}</td>
-                                <td>
+                                <td v-if="colunasVisiveisCasais.Encontro" class="lista-mestre-mobile-hidden">{{ movimentoOrigemCasal(c) }}</td>
+                                <td v-if="colunasVisiveisCasais.TermosUso" class="lista-mestre-mobile-hidden">{{ c.termos_aceitos_em ? 'Aceito' : 'Não' }}</td>
+                                <td class="lista-mestre-mobile-hidden">
                                     <button class="btn btn-edit-standard btn-sm" @click="abrirEditarCasal(c)">Editar</button>
                                 </td>
                             </tr>
+                            <tr class="lista-mestre-mobile-detail-row" :class="{ 'is-open': !!linhasExpandidasTios[c.id] }">
+                                <td class="lista-mestre-mobile-detail-cell" :colspan="getTiosColspan()">
+                                    <div class="lista-mestre-mobile-detail-grid">
+                                        <div v-for="item in getTiosDetalhes(c)" :key="`${c.id}-${item.label}`" class="lista-mestre-mobile-detail-item">
+                                            <span class="lista-mestre-mobile-detail-label">{{ item.label }}</span>
+                                            <div class="lista-mestre-mobile-detail-value">{{ item.value }}</div>
+                                        </div>
+                                        <div class="lista-mestre-mobile-action">
+                                            <button class="btn btn-edit-standard btn-sm" @click="abrirEditarCasal(c)">Editar</button>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                            </template>
                             <tr v-if="loadingCasais">
-                                <td :colspan="totalColunasVisiveisCasais" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Carregando...</td>
+                                <td :colspan="totalColunasVisiveisCasais" class="text-center py-4"><div class="spinner-border spinner-border-sm text-warning me-2"></div>Carregando...</td>
                             </tr>
                             <tr v-else-if="!casaisFiltrados.length">
                                 <td :colspan="totalColunasVisiveisCasais" class="text-center text-muted py-4">Nenhum casal encontrado.</td>
@@ -968,7 +1199,7 @@ preencha outro_ejc_paroquia</div>
                             <i v-if="importandoTios" class="fa-solid fa-circle-notch fa-spin me-1"></i>{{ mensagemImportacaoTios }}
                         </div>
                         <button type="button" class="btn btn-soft-secondary" data-bs-dismiss="modal" :disabled="importandoTios">Cancelar</button>
-                        <button type="button" class="btn btn-success" @click="confirmarImportacaoTios" :disabled="importandoTios">
+                        <button type="button" class="btn btn-primary" @click="confirmarImportacaoTios" :disabled="importandoTios">
                             <i v-if="importandoTios" class="fa-solid fa-circle-notch fa-spin me-1"></i>{{ importandoTios ? 'Importando...' : 'Importar' }}
                         </button>
                     </div>
@@ -1293,7 +1524,7 @@ preencha outro_ejc_paroquia</div>
                                                             <option value="">Subfunção...</option>
                                                             <option v-for="f in subfuncoesServicoCasalDisponiveis()" :key="`subfuncao-casal-add-${f.id}`" :value="f.nome">{{ f.nome }}</option>
                                                         </select>
-                                                        <button type="button" class="btn btn-success btn-sm" @click="adicionarServicoCasal" :disabled="!novoServicoCasal.equipe_id || !novoServicoCasal.ejc_id" title="Adicionar equipe"><i class="fa-solid fa-plus icon-accent"></i></button>
+                                                        <button type="button" class="btn btn-primary btn-sm" @click="adicionarServicoCasal" :disabled="!novoServicoCasal.equipe_id || !novoServicoCasal.ejc_id" title="Adicionar equipe"><i class="fa-solid fa-plus icon-accent"></i></button>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1332,7 +1563,7 @@ preencha outro_ejc_paroquia</div>
                                                                 <div class="fw-semibold">{{ item.nome_exibicao }}</div>
                                                                 <div class="small text-muted">{{ item.descricao || '-' }}<span v-if="item.sobrenomes_iguais && item.sobrenomes_iguais.length"> • Sobrenomes iguais: {{ item.sobrenomes_iguais.join(', ') }}</span></div>
                                                             </div>
-                                                            <button type="button" class="btn btn-outline-primary btn-sm" @click="buscaFamiliaCasal = item.nome_exibicao; adicionarRelacaoFamiliarCasal(item)">Vincular</button>
+                                                            <button type="button" class="btn btn-ejc-outline btn-sm" @click="buscaFamiliaCasal = item.nome_exibicao; adicionarRelacaoFamiliarCasal(item)">Vincular</button>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -1377,19 +1608,37 @@ preencha outro_ejc_paroquia</div>
                                             </div>
                                         </div>
                                         <div class="col-md-12">
-                                            <label class="form-label d-block">O tio possui restrição alimentar?</label>
+                                            <label class="form-label d-block">Restrições alimentares e alergias do tio?</label>
                                             <div class="d-flex gap-2 align-items-center flex-wrap">
                                                 <div class="form-check mb-0">
-                                                    <input class="form-check-input" type="checkbox" id="checkRestricaoTio" v-model="formCasal.restricao_alimentar_tio" :true-value="1" :false-value="0">
+                                                    <input class="form-check-input" type="checkbox" id="checkRestricaoTio" v-model="formCasal.restricao_alimentar_tio" :true-value="1" :false-value="0"
+                                                    @change="if (!formCasal.restricao_alimentar_tio) { formCasal.detalhes_restricao_tio = ''; buscaRestricaoTio = ''; }">
                                                     <label class="form-check-label" for="checkRestricaoTio">Sim</label>
                                                 </div>
                                                 <div v-if="formCasal.restricao_alimentar_tio" class="flex-grow-1" style="min-width: 280px;">
-                                                    <label class="form-label text-muted small mb-1">Qual restrição alimentar do tio?</label>
-                                                    <select class="form-select" v-model="formCasal.detalhes_restricao_tio">
-                                                        <option disabled value="">Selecione uma restrição...</option>
-                                                        <option v-for="opcao in opcoesRestricaoAlimentar" :key="'restr-tio-'+opcao" :value="opcao">{{ opcao }}</option>
-                                                        <option v-if="formCasal.detalhes_restricao_tio && !opcoesRestricaoAlimentar.includes(formCasal.detalhes_restricao_tio)" :value="formCasal.detalhes_restricao_tio">{{ formCasal.detalhes_restricao_tio }}</option>
-                                                    </select>
+                                                    <label class="form-label text-muted small mb-1">Quais restrições do tio?</label>
+                                                    <div class="restricao-multiselect">
+                                                        <input type="text" v-model="buscaRestricaoTio" class="form-control form-control-sm" placeholder="Buscar restrição...">
+                                                        <div class="restricao-options-list">
+                                                            <label v-for="opcao in restricoesFiltradas(buscaRestricaoTio)" :key="opcao" class="restricao-option-item"
+                                                                :class="{ selecionada: normalizarRestricoes(formCasal.detalhes_restricao_tio).includes(opcao) }">
+                                                                <input type="checkbox" class="restricao-option-check"
+                                                                    :checked="normalizarRestricoes(formCasal.detalhes_restricao_tio).includes(opcao)"
+                                                                    @change="toggleRestricaoTio(opcao)">
+                                                                {{ opcao }}
+                                                            </label>
+                                                            <div v-if="!restricoesFiltradas(buscaRestricaoTio).length" class="px-2 py-1 text-muted small">Nenhuma opção encontrada</div>
+                                                        </div>
+                                                        <div v-if="normalizarRestricoes(formCasal.detalhes_restricao_tio).length" class="restricao-chips">
+                                                            <span v-for="item in normalizarRestricoes(formCasal.detalhes_restricao_tio)" :key="item" class="restricao-chip">
+                                                                {{ item }}
+                                                                <button type="button" class="restricao-chip-remove" @click="toggleRestricaoTio(item)">×</button>
+                                                            </span>
+                                                        </div>
+                                                        <div v-if="normalizarRestricoes(formCasal.detalhes_restricao_tio).includes('Outros')" class="mt-1">
+                                                            <input type="text" class="form-control form-control-sm" v-model.trim="outroTextoTio" maxlength="220" placeholder="Descreva a restrição do tio">
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -1412,19 +1661,37 @@ preencha outro_ejc_paroquia</div>
                                             </div>
                                         </div>
                                         <div class="col-md-12">
-                                            <label class="form-label d-block">A tia possui restrição alimentar?</label>
+                                            <label class="form-label d-block">Restrições alimentares e alergias da tia?</label>
                                             <div class="d-flex gap-2 align-items-center flex-wrap">
                                                 <div class="form-check mb-0">
-                                                    <input class="form-check-input" type="checkbox" id="checkRestricaoTia" v-model="formCasal.restricao_alimentar_tia" :true-value="1" :false-value="0">
+                                                    <input class="form-check-input" type="checkbox" id="checkRestricaoTia" v-model="formCasal.restricao_alimentar_tia" :true-value="1" :false-value="0"
+                                                    @change="if (!formCasal.restricao_alimentar_tia) { formCasal.detalhes_restricao_tia = ''; buscaRestricaoTia = ''; }">
                                                     <label class="form-check-label" for="checkRestricaoTia">Sim</label>
                                                 </div>
                                                 <div v-if="formCasal.restricao_alimentar_tia" class="flex-grow-1" style="min-width: 280px;">
-                                                    <label class="form-label text-muted small mb-1">Qual restrição alimentar da tia?</label>
-                                                    <select class="form-select" v-model="formCasal.detalhes_restricao_tia">
-                                                        <option disabled value="">Selecione uma restrição...</option>
-                                                        <option v-for="opcao in opcoesRestricaoAlimentar" :key="'restr-tia-'+opcao" :value="opcao">{{ opcao }}</option>
-                                                        <option v-if="formCasal.detalhes_restricao_tia && !opcoesRestricaoAlimentar.includes(formCasal.detalhes_restricao_tia)" :value="formCasal.detalhes_restricao_tia">{{ formCasal.detalhes_restricao_tia }}</option>
-                                                    </select>
+                                                    <label class="form-label text-muted small mb-1">Quais restrições da tia?</label>
+                                                    <div class="restricao-multiselect">
+                                                        <input type="text" v-model="buscaRestricaoTia" class="form-control form-control-sm" placeholder="Buscar restrição...">
+                                                        <div class="restricao-options-list">
+                                                            <label v-for="opcao in restricoesFiltradas(buscaRestricaoTia)" :key="opcao" class="restricao-option-item"
+                                                                :class="{ selecionada: normalizarRestricoes(formCasal.detalhes_restricao_tia).includes(opcao) }">
+                                                                <input type="checkbox" class="restricao-option-check"
+                                                                    :checked="normalizarRestricoes(formCasal.detalhes_restricao_tia).includes(opcao)"
+                                                                    @change="toggleRestricaoTia(opcao)">
+                                                                {{ opcao }}
+                                                            </label>
+                                                            <div v-if="!restricoesFiltradas(buscaRestricaoTia).length" class="px-2 py-1 text-muted small">Nenhuma opção encontrada</div>
+                                                        </div>
+                                                        <div v-if="normalizarRestricoes(formCasal.detalhes_restricao_tia).length" class="restricao-chips">
+                                                            <span v-for="item in normalizarRestricoes(formCasal.detalhes_restricao_tia)" :key="item" class="restricao-chip">
+                                                                {{ item }}
+                                                                <button type="button" class="restricao-chip-remove" @click="toggleRestricaoTia(item)">×</button>
+                                                            </span>
+                                                        </div>
+                                                        <div v-if="normalizarRestricoes(formCasal.detalhes_restricao_tia).includes('Outros')" class="mt-1">
+                                                            <input type="text" class="form-control form-control-sm" v-model.trim="outroTextoTia" maxlength="220" placeholder="Descreva a restrição da tia">
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -1444,7 +1711,7 @@ preencha outro_ejc_paroquia</div>
                                         <div v-for="com in comissoesCasal" :key="com.id" class="list-group-item">
                                             <div class="d-flex justify-content-between align-items-start">
                                                 <div>
-                                                    <h6 class="mb-1 text-primary" v-html="formatarTipoComissaoCasal(com.tipo)"></h6>
+                                                    <h6 class="mb-1" style="color:#b88732;" v-html="formatarTipoComissaoCasal(com.tipo)"></h6>
                                                     <p class="mb-1 small text-muted">
                                                         <span v-if="com.tipo === 'COORDENACAO'">
                                                             Coordenação: <strong>{{ com.coordenacao_pasta_caminho || com.coordenacao_pasta_nome || com.coordenacao_nome || '-' }}</strong>
@@ -1508,7 +1775,7 @@ preencha outro_ejc_paroquia</div>
                                             <label class="form-label small text-muted">A observação ficará salva como uma anotação de histórico na linha do tempo.</label>
                                             <textarea class="form-control mb-2" rows="3" v-model.trim="novaObservacaoCasal" placeholder="Digite aqui a informação especial..."></textarea>
                                             <div class="text-end">
-                                                <button class="btn btn-success btn-sm" @click="adicionarObservacaoCasalExtra" :disabled="!formCasal.id || !novaObservacaoCasal.trim()"><i class="fa-solid fa-plus icon-accent"></i> Adicionar ao Histórico</button>
+                                                <button class="btn btn-primary btn-sm" @click="adicionarObservacaoCasalExtra" :disabled="!formCasal.id || !novaObservacaoCasal.trim()"><i class="fa-solid fa-plus icon-accent"></i> Adicionar ao Histórico</button>
                                             </div>
                                             <div class="small text-muted mt-2" v-if="!formCasal.id">Salve o casal antes de adicionar observações extras.</div>
                                         </div>
@@ -1558,7 +1825,7 @@ preencha outro_ejc_paroquia</div>
                         </button>
                         <button v-if="isEditingCasal" class="btn btn-soft-secondary" @click="cancelarEdicaoCasal">Cancelar</button>
                         <button v-else class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
-                        <button v-if="isEditingCasal" class="btn btn-success" @click="salvarCasal"><i class="fa-solid fa-floppy-disk icon-accent"></i> {{ formCasal.id ? 'Salvar Alterações' : 'Criar Casal' }}</button>
+                        <button v-if="isEditingCasal" class="btn btn-primary" @click="salvarCasal"><i class="fa-solid fa-floppy-disk icon-accent"></i> {{ formCasal.id ? 'Salvar Alterações' : 'Criar Casal' }}</button>
                     </div>
                 </div>
             </div>
@@ -1605,7 +1872,7 @@ preencha outro_ejc_paroquia</div>
                     </div>
                     <div class="modal-footer">
                         <button class="btn btn-soft-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button class="btn btn-success" @click="salvarEcc">Salvar</button>
+                        <button class="btn btn-primary" @click="salvarEcc">Salvar</button>
                     </div>
                 </div>
             </div>
@@ -1654,17 +1921,44 @@ preencha outro_ejc_paroquia</div>
                     abaMembrosOutro: 'jovens',
                     opcoesRestricaoAlimentar: [
                         'Alergia a amendoim',
-                        'Alergia a castanhas',
-                        'Alergia a frutos do mar',
-                        'APLV (Alergia à proteína do leite de vaca)',
+                        'Alergia a castanhas (nozes, castanha-do-pará, amêndoa, avelã, pistache, caju)',
+                        'Alergia a frutos do mar (camarão, caranguejo, lagosta, mariscos)',
+                        'Alergia a peixes',
+                        'Alergia a ovos',
+                        'Alergia a soja',
+                        'Alergia a trigo',
+                        'Alergia a gergelim',
+                        'APLV — Alergia à Proteína do Leite de Vaca',
+                        'Mamão',
+                        'Berinjela',
                         'Intolerante à lactose',
-                        'Intolerante a glúten (Celíaco)',
+                        'Intolerante a glúten (Doença Celíaca)',
+                        'Intolerante a frutose',
+                        'Intolerante a histamina',
                         'Não come carne vermelha',
                         'Não come carne de porco',
-                        'Vegetariano',
-                        'Vegano',
-                        'Outras'
+                        'Não come frutos do mar',
+                        'Não come peixe',
+                        'Vegetariano (não come carnes)',
+                        'Vegano (não come nenhum produto animal)',
+                        'Ovolactovegetariano',
+                        'Dieta Kosher (restrições religiosas judaicas)',
+                        'Dieta Halal (restrições religiosas islâmicas)',
+                        'Produtos de limpeza',
+                        'Diabético (restrição de açúcar)',
+                        'Hipertenso (restrição de sódio/sal)',
+                        'Fenilcetonúria (PKU)',
+                        'Doença de Crohn',
+                        'Síndrome do intestino irritável',
+                        'Refluxo gastroesofágico',
+                        'Restrição de gordura (colesterol alto)',
+                        'Outros'
                     ],
+                    buscaRestricaoTio: '',
+                    buscaRestricaoTia: '',
+                    outroTextoTio: '',
+                    outroTextoTia: '',
+                    linhasExpandidasTios: {},
                     loadingCasais: false,
                     loadingEcc: false,
                     loadingJovensOutroEjc: false,
@@ -1997,6 +2291,54 @@ preencha outro_ejc_paroquia</div>
                 window.removeEventListener('resize', this.onResizeTios);
             },
             methods: {
+                normalizarRestricoes(valor) {
+                    if (Array.isArray(valor)) return valor.filter(Boolean).map(v => String(v).trim()).filter(Boolean);
+                    if (!valor) return [];
+                    const txt = String(valor).trim();
+                    if (!txt) return [];
+                    try { const p = JSON.parse(txt); if (Array.isArray(p)) return p.filter(Boolean).map(v => String(v).trim()).filter(Boolean); } catch (e) {}
+                    return [txt];
+                },
+                restricoesFiltradas(busca) {
+                    const q = (busca || '').toLowerCase().trim();
+                    if (!q) return this.opcoesRestricaoAlimentar;
+                    return this.opcoesRestricaoAlimentar.filter(o => o.toLowerCase().includes(q));
+                },
+                toggleRestricaoTio(opcao) {
+                    const arr = this.normalizarRestricoes(this.formCasal.detalhes_restricao_tio);
+                    const idx = arr.indexOf(opcao);
+                    if (idx === -1) arr.push(opcao); else arr.splice(idx, 1);
+                    this.formCasal.detalhes_restricao_tio = arr.length ? JSON.stringify(arr) : '';
+                    this.formCasal.restricao_alimentar_tio = arr.length ? 1 : 0;
+                },
+                toggleRestricaoTia(opcao) {
+                    const arr = this.normalizarRestricoes(this.formCasal.detalhes_restricao_tia);
+                    const idx = arr.indexOf(opcao);
+                    if (idx === -1) arr.push(opcao); else arr.splice(idx, 1);
+                    this.formCasal.detalhes_restricao_tia = arr.length ? JSON.stringify(arr) : '';
+                    this.formCasal.restricao_alimentar_tia = arr.length ? 1 : 0;
+                },
+                toggleLinhaTios(id) {
+                    this.linhasExpandidasTios = {
+                        ...this.linhasExpandidasTios,
+                        [id]: !this.linhasExpandidasTios[id]
+                    };
+                },
+                getTiosColspan() {
+                    return Object.values(this.colunasVisiveisCasais).filter(Boolean).length + 2;
+                },
+                getTiosDetalhes(c) {
+                    const detalhes = [];
+                    const add = (ativo, label, value) => {
+                        if (!ativo) return;
+                        detalhes.push({ label, value: value === undefined || value === null || value === '' ? '-' : value });
+                    };
+                    add(this.colunasVisiveisCasais.Telefones, 'Tel. Tio', c.telefone_tio);
+                    add(this.colunasVisiveisCasais.Telefones, 'Tel. Tia', c.telefone_tia);
+                    add(this.colunasVisiveisCasais.Encontro, 'Mov. de origem', this.movimentoOrigemCasal(c));
+                    add(this.colunasVisiveisCasais.TermosUso, 'Termos de uso', c.termos_aceitos_em ? 'Aceito' : 'Não');
+                    return detalhes;
+                },
                 movimentoOrigemCasal(casal) {
                     if (String(casal && casal.origem_tipo || 'EJC').toUpperCase() === 'OUTRO_EJC') {
                         return `${casal.outro_ejc_paroquia || '-'}${casal.outro_ejc_nome ? ` - ${casal.outro_ejc_nome}` : ''}`;
@@ -2615,7 +2957,7 @@ preencha outro_ejc_paroquia</div>
                         TelefoneTio: c.telefone_tio || '',
                         DataNascimentoTio: c.data_nascimento_tio ? String(c.data_nascimento_tio).split('T')[0] : '',
                         RestricaoAlimentarTio: c.restricao_alimentar_tio ? 'Sim' : 'Nao',
-                        DetalhesRestricaoTio: c.detalhes_restricao_tio || '',
+                        DetalhesRestricaoTio: this.normalizarRestricoes(c.detalhes_restricao_tio).join(', '),
                         DeficienciaTio: c.deficiencia_tio ? 'Sim' : 'Nao',
                         QualDeficienciaTio: c.qual_deficiencia_tio || '',
                         PossuiCarroTio: c.possui_carro_tio ? 'Sim' : 'Nao',
@@ -2623,7 +2965,7 @@ preencha outro_ejc_paroquia</div>
                         TelefoneTia: c.telefone_tia || '',
                         DataNascimentoTia: c.data_nascimento_tia ? String(c.data_nascimento_tia).split('T')[0] : '',
                         RestricaoAlimentarTia: c.restricao_alimentar_tia ? 'Sim' : 'Nao',
-                        DetalhesRestricaoTia: c.detalhes_restricao_tia || '',
+                        DetalhesRestricaoTia: this.normalizarRestricoes(c.detalhes_restricao_tia).join(', '),
                         DeficienciaTia: c.deficiencia_tia ? 'Sim' : 'Nao',
                         QualDeficienciaTia: c.qual_deficiencia_tia || '',
                         PossuiCarroTia: c.possui_carro_tia ? 'Sim' : 'Nao',
@@ -3436,9 +3778,25 @@ preencha outro_ejc_paroquia</div>
                 },
                 normalizarCamposSaudeCasal() {
                     if (!this.formCasal.deficiencia_tio) this.formCasal.qual_deficiencia_tio = '';
-                    if (!this.formCasal.restricao_alimentar_tio) this.formCasal.detalhes_restricao_tio = '';
+                    if (!this.formCasal.restricao_alimentar_tio) {
+                        this.formCasal.detalhes_restricao_tio = '';
+                    } else {
+                        const arrTio = this.normalizarRestricoes(this.formCasal.detalhes_restricao_tio);
+                        const idxTio = arrTio.indexOf('Outros');
+                        if (idxTio !== -1 && this.outroTextoTio.trim()) arrTio.splice(idxTio, 1, this.outroTextoTio.trim());
+                        this.formCasal.detalhes_restricao_tio = arrTio.length ? JSON.stringify(arrTio) : '';
+                        this.formCasal.restricao_alimentar_tio = arrTio.length ? 1 : 0;
+                    }
                     if (!this.formCasal.deficiencia_tia) this.formCasal.qual_deficiencia_tia = '';
-                    if (!this.formCasal.restricao_alimentar_tia) this.formCasal.detalhes_restricao_tia = '';
+                    if (!this.formCasal.restricao_alimentar_tia) {
+                        this.formCasal.detalhes_restricao_tia = '';
+                    } else {
+                        const arrTia = this.normalizarRestricoes(this.formCasal.detalhes_restricao_tia);
+                        const idxTia = arrTia.indexOf('Outros');
+                        if (idxTia !== -1 && this.outroTextoTia.trim()) arrTia.splice(idxTia, 1, this.outroTextoTia.trim());
+                        this.formCasal.detalhes_restricao_tia = arrTia.length ? JSON.stringify(arrTia) : '';
+                        this.formCasal.restricao_alimentar_tia = arrTia.length ? 1 : 0;
+                    }
                     this.formCasal.deficiencia = !!(this.formCasal.deficiencia_tio || this.formCasal.deficiencia_tia);
                     this.formCasal.restricao_alimentar = !!(this.formCasal.restricao_alimentar_tio || this.formCasal.restricao_alimentar_tia);
                 },
@@ -3624,6 +3982,8 @@ preencha outro_ejc_paroquia</div>
                     this.subAbaCasalDados = 'cadastro';
                     this.isEditingCasal = true;
                     this.formCasalBackup = null;
+                    this.outroTextoTio = '';
+                    this.outroTextoTia = '';
                     this.jovensCasal = [];
                     this.searchJovemQuery = '';
                     this.searchJovemResults = [];
@@ -3699,6 +4059,8 @@ preencha outro_ejc_paroquia</div>
                     this.abaCasal = 'dados';
                     this.subAbaCasalDados = 'cadastro';
                     this.isEditingCasal = false;
+                    this.outroTextoTio = '';
+                    this.outroTextoTia = '';
                     this.formCasalBackup = this.clonarFormCasal(this.formCasal);
                     this.jovensCasal = [];
                     this.searchJovemQuery = '';

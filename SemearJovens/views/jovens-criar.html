@@ -144,7 +144,7 @@
                                 <input class="form-control" v-model.trim="form.qual_deficiencia" maxlength="200">
                             </div>
                             <div class="col-md-4">
-                                <label class="form-label">Restrição alimentar?</label>
+                                <label class="form-label">Restrições alimentares e alergias?</label>
                                 <select class="form-select" v-model="form.restricao_alimentar">
                                     <option :value="false">Não</option>
                                     <option :value="true">Sim</option>
@@ -434,7 +434,7 @@
                         return;
                     }
                     if (this.form.restricao_alimentar && !this.form.detalhes_restricao) {
-                        alert('Informe a restrição alimentar.');
+                        alert('Informe as restrições alimentares e alergias.');
                         return;
                     }
                     this.enviando = true;

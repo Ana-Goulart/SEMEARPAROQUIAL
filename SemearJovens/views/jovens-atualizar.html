@@ -156,7 +156,7 @@
                             </div>
 
                             <div class="col-md-4">
-                                <label class="form-label">Possui restrição alimentar?</label>
+                                <label class="form-label">Restrições alimentares e alergias?</label>
                                 <select class="form-select" v-model="form.restricao_alimentar" :disabled="!cadastroValidado">
                                     <option :value="false">Não</option>
                                     <option :value="true">Sim</option>
@@ -283,15 +283,37 @@
                     aceiteTermos: false,
                     restricoesDisponiveis: [
                         'Alergia a amendoim',
-                        'Alergia a castanhas',
-                        'Alergia a frutos do mar',
-                        'APLV (Alergia à proteína do leite de vaca)',
+                        'Alergia a castanhas (nozes, castanha-do-pará, amêndoa, avelã, pistache, caju)',
+                        'Alergia a frutos do mar (camarão, caranguejo, lagosta, mariscos)',
+                        'Alergia a peixes',
+                        'Alergia a ovos',
+                        'Alergia a soja',
+                        'Alergia a trigo',
+                        'Alergia a gergelim',
+                        'APLV — Alergia à Proteína do Leite de Vaca',
+                        'Mamão',
+                        'Berinjela',
                         'Intolerante à lactose',
-                        'Intolerante a glúten (Celíaco)',
+                        'Intolerante a glúten (Doença Celíaca)',
+                        'Intolerante a frutose',
+                        'Intolerante a histamina',
                         'Não come carne vermelha',
                         'Não come carne de porco',
-                        'Vegetariano',
-                        'Vegano'
+                        'Não come frutos do mar',
+                        'Não come peixe',
+                        'Vegetariano (não come carnes)',
+                        'Vegano (não come nenhum produto animal)',
+                        'Ovolactovegetariano',
+                        'Dieta Kosher (restrições religiosas judaicas)',
+                        'Dieta Halal (restrições religiosas islâmicas)',
+                        'Produtos de limpeza',
+                        'Diabético (restrição de açúcar)',
+                        'Hipertenso (restrição de sódio/sal)',
+                        'Fenilcetonúria (PKU)',
+                        'Doença de Crohn',
+                        'Síndrome do intestino irritável',
+                        'Refluxo gastroesofágico',
+                        'Restrição de gordura (colesterol alto)'
                     ],
                     instrumentosDisponiveis: [
                         'Voz',

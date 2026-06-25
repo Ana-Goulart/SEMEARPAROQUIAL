@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EJC - Lista Mestre</title>
     <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
     <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
@@ -302,6 +303,7 @@
             background: transparent;
         }
 
+
         .circulo-color-picker-wrap {
             display: flex;
             align-items: center;
@@ -580,11 +582,61 @@
             }
         }
 
-        @media (max-width: 767.98px) {
-            .lista-mestre-grid.table > :not(caption) > * > * {
-                padding: 0.72rem 0.65rem !important;
+        /* ── Tamanhos mobile (< 1200px) ── */
+        @media (max-width: 1199.98px) {
+
+            /* Nome do jovem */
+            .lista-mestre-grid .nome-clicavel {
+                font-size: 1.15rem !important;
+                font-weight: 700 !important;
             }
 
+            /* Linhas mais altas */
+            .lista-mestre-grid tbody tr:not(.lista-mestre-mobile-detail-row) td {
+                padding-top: 1.1rem !important;
+                padding-bottom: 1.1rem !important;
+            }
+
+            /* Botão +/− */
+            .lista-mestre-mobile-toggle {
+                width: 3rem !important;
+                height: 3rem !important;
+                min-width: 3rem !important;
+                min-height: 3rem !important;
+                font-size: 1.1rem !important;
+            }
+
+            /* Abas */
+            .nav-tabs .nav-link {
+                padding: 0.75rem 1rem !important;
+                font-size: 1rem !important;
+            }
+
+            /* Campo de pesquisa */
+            .lista-mestre-toolbar-search .form-control,
+            .lista-mestre-toolbar-search .btn,
+            .lista-mestre-toolbar-search .input-group-text {
+                min-height: 50px !important;
+                font-size: 1rem !important;
+            }
+
+            /* Paginação */
+            .lista-mestre-page-btn,
+            .lista-mestre-page-ellipsis {
+                min-width: 3rem !important;
+                height: 3rem !important;
+                font-size: 1.05rem !important;
+            }
+
+            /* Total */
+            .lista-mestre-total-info {
+                font-size: 1.05rem !important;
+                font-weight: 600 !important;
+            }
+        }
+
+        /* Modal edição — manter no breakpoint original */
+        @media (max-width: 767.98px) {
             #modalEditar .modal-dialog {
                 max-width: calc(100vw - 1rem);
                 margin: 0.5rem auto;
@@ -597,6 +649,17 @@
             .lista-mestre-profile-rail {
                 width: 280px;
                 max-width: 100%;
+                margin-left: auto;
+                margin-right: auto;
+            }
+
+            /* Centrar foto e campos da ficha no mobile */
+            .lista-mestre-profile-summary {
+                text-align: center;
+            }
+
+            .lista-mestre-profile-summary label {
+                text-align: center;
             }
 
             .lista-mestre-mobile-detail-grid {
@@ -756,6 +819,157 @@
             padding: 1.15rem 1.4rem;
         }
 
+        /* ---- Multiselect Restrição Alimentar ---- */
+        .restricao-multiselect { display: flex; flex-direction: column; gap: 0.4rem; }
+        .restricao-options-list {
+            max-height: 140px;
+            overflow-y: auto;
+            border: 1px solid #e5d5bb;
+            border-radius: 6px;
+            padding: 4px 2px;
+            background: #fff;
+        }
+        .restricao-option-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 3px 8px;
+            cursor: pointer;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            user-select: none;
+            transition: background 0.12s;
+        }
+        .restricao-option-item:hover { background: #fff8ee; }
+        .restricao-option-item.selecionada { background: #f4ede1; font-weight: 600; color: #6e5430; }
+        .restricao-option-check {
+            width: 14px; height: 14px;
+            accent-color: #d9a650;
+            flex-shrink: 0;
+        }
+        .restricao-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+        .restricao-chip {
+            display: inline-flex; align-items: center; gap: 4px;
+            background: #d9a650; color: #fff;
+            border-radius: 999px; font-size: 0.78rem;
+            padding: 2px 8px 2px 10px; font-weight: 600;
+            box-shadow: 0 2px 6px rgba(217, 166, 80, 0.28);
+        }
+        .restricao-chip-remove {
+            background: none; border: none; padding: 0; line-height: 1;
+            font-size: 0.85rem; color: rgba(255,255,255,0.8); cursor: pointer;
+        }
+        .restricao-chip-remove:hover { color: #fff; }
+
+        /* ── Mobile UX — Lista Mestre (max-width: 768px) ── */
+
+        /* Card de pessoa: bloco nome + contato */
+        .lista-mestre-mobile-name-block {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            gap: 0.08rem;
+        }
+
+        .lista-mestre-mobile-name-row {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            flex-wrap: wrap;
+        }
+
+        /* Linha de contato: oculta no desktop, visível no mobile */
+        .lista-mestre-mobile-contact-info {
+            display: none;
+            font-size: 0.81rem;
+            color: #64748b;
+            font-weight: 400;
+            line-height: 1.3;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* Botão de ordenação substituindo o cabeçalho da tabela no mobile */
+        .lista-mestre-mobile-sort-bar {
+            display: none;
+            margin-bottom: 0.5rem;
+        }
+
+        .lista-mestre-mobile-sort-btn {
+            font-size: 0.85rem;
+            color: #5b6677;
+            border: 1px solid rgba(191, 161, 111, 0.45);
+            background: #fffdf9;
+            padding: 0.35rem 0.8rem;
+            border-radius: 10px;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s ease;
+        }
+
+        .lista-mestre-mobile-sort-btn:hover {
+            background: #fff4e0;
+        }
+
+        @media (max-width: 767.98px) {
+            /* Header compacto ~48px: sem wrap, título reduzido */
+            .lista-mestre-page-header-row {
+                flex-wrap: nowrap !important;
+                align-items: center !important;
+                min-height: 48px;
+                margin-bottom: 0.6rem !important;
+                gap: 0.4rem !important;
+            }
+            .lista-mestre-page-header-row .lista-mestre-page-title {
+                font-size: 1.05rem !important;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                min-width: 0;
+                line-height: 1.25;
+            }
+            .lista-mestre-page-header-row .lista-mestre-toolbar-actions {
+                width: auto !important;
+                flex: 0 0 auto;
+            }
+            .lista-mestre-page-header-row .lista-mestre-toolbar-buttons {
+                flex-wrap: nowrap;
+                gap: 0.3rem;
+            }
+
+            /* Tamanho de fonte dos nomes: 13px no mobile */
+            .lista-mestre-grid .nome-clicavel {
+                font-size: 13px !important;
+            }
+
+            /* Mostrar info de contato abaixo do nome */
+            .lista-mestre-mobile-contact-info {
+                display: block;
+                font-size: 11px;
+            }
+
+            /* Esconder thead — substituído pelo botão de ordenação */
+            .lista-mestre-grid thead {
+                display: none;
+            }
+
+            /* Mostrar botão de ordenação */
+            .lista-mestre-mobile-sort-bar {
+                display: flex;
+                align-items: center;
+            }
+
+            /* Garantir área de toque mínima de 56px */
+            .lista-mestre-grid tbody tr:not(.lista-mestre-mobile-detail-row) td {
+                padding-top: 1.25rem !important;
+                padding-bottom: 1.25rem !important;
+            }
+        }
+
     </style>
 </head>
 
@@ -765,7 +979,7 @@
 
 
         <main class="container-fluid">
-            <div class="d-flex flex-wrap justify-content-between align-items-start mb-4 gap-3">
+            <div class="lista-mestre-page-header-row d-flex flex-wrap justify-content-between align-items-start mb-4 gap-3">
                 <h3 class="lista-mestre-page-title">Lista Mestre - EJC {{ nomeMeuEJC }}</h3>
                 <div class="lista-mestre-toolbar-actions">
                     <div class="lista-mestre-toolbar-buttons">
@@ -915,7 +1129,7 @@
                             <option :value="false">Não</option>
                         </select>
                     </div>
-                    <div class="col-md-2"><label>Restrição Alimentar</label>
+                    <div class="col-md-2"><label>Restrições alimentares e alergias</label>
                         <select v-model="filtros.restricaoAlimentar" class="form-select">
                             <option value="">Todos</option>
                             <option :value="true">Sim</option>
@@ -946,7 +1160,14 @@
                 </div>
             </div>
 
-            <div class="card shadow-sm border-0" ref="listaMestreCard">
+            <!-- Ordenação mobile: substitui cabeçalho da tabela em smartphones -->
+            <div class="lista-mestre-mobile-sort-bar">
+                <button type="button" class="lista-mestre-mobile-sort-btn" @click="ordenarPor('nome_completo')">
+                    Ordenar: Nome <span class="sort-indicator">{{ iconeOrdenacao('nome_completo') }}</span>
+                </button>
+            </div>
+
+            <div class="card shadow-sm border-0 lista-mestre-card-wrap" ref="listaMestreCard">
                 <table class="table table-hover mb-0 align-middle lista-mestre-grid table-no-mobile-expand" ref="listaMestreTabela">
                     <thead class="table-light">
                         <tr>
@@ -989,13 +1210,21 @@
                                         :title="linhasExpandidasListaMestre[jovem.id] ? 'Recolher linha' : 'Expandir linha'"
                                         aria-label="Expandir linha"
                                         @click="toggleLinhaListaMestre(jovem.id)">
-                                        <i class="fa-solid" :class="linhasExpandidasListaMestre[jovem.id] ? 'fa-minus' : 'fa-plus'"></i>
+                                        <i class="fa-solid" :class="linhasExpandidasListaMestre[jovem.id] ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
                                     </button>
                                 </td>
                                 <td v-if="colunasVisiveis.Nome" class="lista-mestre-mobile-name-cell">
                                     <div class="lista-mestre-mobile-name-wrap">
-                                        <strong class="nome-clicavel" @click="verDetalhes(jovem)">{{ jovem.nome_completo }}</strong>
-                                        <span v-if="jovem.transferencia_outro_ejc" class="badge bg-soft-warning text-warning">Transferência</span>
+                                        <div class="lista-mestre-mobile-name-block">
+                                            <div class="lista-mestre-mobile-name-row">
+                                                <strong class="nome-clicavel" @click="verDetalhes(jovem)">{{ jovem.nome_completo }}</strong>
+                                                <span v-if="jovem.transferencia_outro_ejc" class="badge bg-soft-warning text-warning">Transferência</span>
+                                            </div>
+                                            <div class="lista-mestre-mobile-contact-info">
+                                                <span v-if="jovem.telefone">{{ jovem.telefone }}</span>
+                                                <span v-else-if="jovem.email">{{ jovem.email }}</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </td>
                                 <td v-if="colunasVisiveis.Telefone" class="lista-mestre-mobile-hidden">{{ jovem.telefone }}</td>
@@ -1107,7 +1336,13 @@
                             </ul>
 
                             <!-- Editar Dados Button now on the same line as Tabs -->
-                            <div v-show="tabEdicao === 'dados'" class="pb-1 align-self-end">
+                            <div v-show="tabEdicao === 'dados'" class="pb-1 align-self-end d-flex gap-2">
+                                <button type="button"
+                                    class="btn btn-edit-standard btn-sm"
+                                    @click="abrirModalLinkAtualizacao(jovemEditando)"
+                                    title="Link de atualização cadastral">
+                                    <i class="fa-solid fa-link"></i> Formulário
+                                </button>
                                 <button type="button"
                                     class="btn btn-edit-standard btn-sm"
                                     @click="toggleEditing" v-if="!isEditing">Editar</button>
@@ -1367,7 +1602,8 @@
                                     <div class="col-md-12" v-show="subAbaDados === 'saude'">
                                         <label class="text-muted small mb-0">Equipe de saúde</label>
                                         <div v-if="!isEditing" class="py-2 px-2 bg-light border rounded">
-                                            <strong>É enfermeiro ou médico:</strong> {{ jovemEditando.equipe_saude ? 'Sim' : 'Não' }}
+                                            <strong>Equipe de saúde:</strong>
+                                            {{ jovemEditando.equipe_saude ? 'Sim' + (jovemEditando.equipe_saude_tipo ? ' — ' + jovemEditando.equipe_saude_tipo : '') : 'Não' }}
                                         </div>
                                         <div v-else class="border rounded p-3">
                                             <div class="form-check mb-0">
@@ -1376,6 +1612,15 @@
                                                 <label class="form-check-label fw-semibold" for="equipeSaude">
                                                     Faz parte da equipe de saúde
                                                 </label>
+                                            </div>
+                                            <div v-if="jovemEditando.equipe_saude" class="mt-2">
+                                                <label class="text-muted small mb-1">Área na equipe de saúde</label>
+                                                <select class="form-select form-select-sm" v-model="jovemEditando.equipe_saude_tipo">
+                                                    <option value="">Selecione...</option>
+                                                    <option value="Enfermeiro(a)">Enfermeiro(a)</option>
+                                                    <option value="Médico(a)">Médico(a)</option>
+                                                    <option value="Fisioterapeuta">Fisioterapeuta</option>
+                                                </select>
                                             </div>
                                         </div>
                                     </div>
@@ -1441,7 +1686,7 @@
                                                 <div v-if="jovemConjuge.telefone"><strong>Telefone:</strong> {{
                                                     jovemConjuge.telefone }}</div>
                                                 <div v-if="jovemConjuge.paroquia_ejc || jovemConjuge.numero_ejc"><strong
-                                                        class="text-primary">EJC:</strong> {{ jovemConjuge.paroquia_ejc
+                                                        style="color:#b88732;">EJC:</strong> {{ jovemConjuge.paroquia_ejc
                                                     || 'Inconfidentes' }} <span v-if="jovemConjuge.numero_ejc">({{
                                                         jovemConjuge.numero_ejc }})</span></div>
                                                 <div v-if="jovemConjuge.ecc_tipo" class="small text-muted mt-1">
@@ -1645,7 +1890,7 @@
                                                                 </span>
                                                             </div>
                                                         </div>
-                                                        <button type="button" class="btn btn-outline-primary btn-sm"
+                                                        <button type="button" class="btn btn-ejc-outline btn-sm"
                                                             @click="buscaFamiliaJovem = item.nome_exibicao; adicionarRelacaoFamiliarJovem(item)">
                                                             Vincular
                                                         </button>
@@ -1709,44 +1954,59 @@
 
                                     <!-- RESTRIÇÃO ALIMENTAR -->
                                     <div class="col-md-12" v-show="subAbaDados === 'saude'">
-                                        <label class="text-muted small mb-0">Possui Restrição Alimentar?</label>
+                                        <label class="text-muted small mb-0">Restrições alimentares e alergias?</label>
                                         <div v-if="!isEditing" class="py-1 px-2 bg-light border rounded">
-                                            {{ jovemEditando.restricao_alimentar ? 'Sim - ' +
-                                            (jovemEditando.detalhes_restricao || 'Não especificada') : 'Não' }}
+                                            <template v-if="jovemEditando.restricao_alimentar">
+                                                Sim
+                                                <span v-if="normalizarRestricoes(jovemEditando.detalhes_restricao).length">
+                                                    — {{ normalizarRestricoes(jovemEditando.detalhes_restricao).join(', ') }}
+                                                </span>
+                                                <span v-else class="text-muted"> (não especificada)</span>
+                                            </template>
+                                            <template v-else>Não</template>
                                         </div>
                                         <div v-else class="d-flex gap-2 align-items-center">
                                             <div class="form-check me-2 mb-0">
                                                 <input class="form-check-input" type="checkbox" id="checkRestricao"
                                                     v-model="jovemEditando.restricao_alimentar" :true-value="1"
-                                                    :false-value="0">
+                                                    :false-value="0"
+                                                    @change="if (!jovemEditando.restricao_alimentar) { jovemEditando.detalhes_restricao = ''; buscaRestricaoEdit = ''; }">
                                                 <label class="form-check-label" for="checkRestricao">Sim</label>
                                             </div>
                                             <div v-if="jovemEditando.restricao_alimentar" class="w-100 flex-grow-1">
-                                                <select v-model="jovemEditando.detalhes_restricao"
-                                                    class="form-select form-select-sm">
-                                                    <option disabled value="">Selecione uma restrição...</option>
-                                                    <option value="Alergia a amendoim">Alergia a amendoim</option>
-                                                    <option value="Alergia a castanhas">Alergia a castanhas</option>
-                                                    <option value="Alergia a frutos do mar">Alergia a frutos do mar
-                                                    </option>
-                                                    <option value="APLV (Alergia à proteína do leite de vaca)">APLV
-                                                        (Alergia à proteína do leite de vaca)</option>
-                                                    <option value="Intolerante à lactose">Intolerante à lactose</option>
-                                                    <option value="Intolerante a glúten (Celíaco)">Intolerante a glúten
-                                                        (Celíaco)</option>
-                                                    <option value="Não come carne vermelha">Não come carne vermelha
-                                                    </option>
-                                                    <option value="Não come carne de porco">Não come carne de porco
-                                                    </option>
-                                                    <option value="Vegetariano">Vegetariano</option>
-                                                    <option value="Vegano">Vegano</option>
-                                                    <option value="Outras">Outras (Especifique nas observações)</option>
-                                                    <!-- Keep existing custom value if any -->
-                                                    <option
-                                                        v-if="jovemEditando.detalhes_restricao && !['Alergia a amendoim', 'Alergia a castanhas', 'Alergia a frutos do mar', 'APLV (Alergia à proteína do leite de vaca)', 'Intolerante à lactose', 'Intolerante a glúten (Celíaco)', 'Não come carne vermelha', 'Não come carne de porco', 'Vegetariano', 'Vegano', 'Outras'].includes(jovemEditando.detalhes_restricao)"
-                                                        :value="jovemEditando.detalhes_restricao">{{
-                                                        jovemEditando.detalhes_restricao }}</option>
-                                                </select>
+                                                <div class="restricao-multiselect">
+                                                    <input type="text" v-model="buscaRestricaoEdit"
+                                                        class="form-control form-control-sm"
+                                                        placeholder="Buscar restrição...">
+                                                    <div class="restricao-options-list">
+                                                        <label v-for="opcao in restricoesFiltradas(buscaRestricaoEdit)"
+                                                            :key="opcao" class="restricao-option-item"
+                                                            :class="{ selecionada: normalizarRestricoes(jovemEditando.detalhes_restricao).includes(opcao) }">
+                                                            <input type="checkbox" class="restricao-option-check"
+                                                                :checked="normalizarRestricoes(jovemEditando.detalhes_restricao).includes(opcao)"
+                                                                @change="toggleRestricaoEdit(opcao)">
+                                                            {{ opcao }}
+                                                        </label>
+                                                        <div v-if="!restricoesFiltradas(buscaRestricaoEdit).length"
+                                                            class="px-2 py-1 text-muted small">Nenhuma opção encontrada</div>
+                                                        <label class="restricao-option-item" :class="{ selecionada: outrosRestricaoMarcadoEdit }">
+                                                            <input type="checkbox" class="restricao-option-check" v-model="outrosRestricaoMarcadoEdit">
+                                                            Outros
+                                                        </label>
+                                                    </div>
+                                                    <div v-if="outrosRestricaoMarcadoEdit" class="d-flex gap-2 mt-1">
+                                                        <input type="text" v-model="outrosRestricaoTextoEdit" class="form-control form-control-sm"
+                                                            placeholder="Especifique a restrição..." @keyup.enter="adicionarOutrosRestricaoEdit">
+                                                        <button type="button" class="btn btn-sm btn-success" @click="adicionarOutrosRestricaoEdit"
+                                                            :disabled="!String(outrosRestricaoTextoEdit || '').trim()">Adicionar</button>
+                                                    </div>
+                                                    <div v-if="normalizarRestricoes(jovemEditando.detalhes_restricao).length" class="restricao-chips">
+                                                        <span v-for="item in normalizarRestricoes(jovemEditando.detalhes_restricao)" :key="item" class="restricao-chip">
+                                                            {{ item }}
+                                                            <button type="button" class="restricao-chip-remove" @click="toggleRestricaoEdit(item)">×</button>
+                                                        </span>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -1849,7 +2109,7 @@
                                                         {{ f.nome }}
                                                     </option>
                                                 </select>
-                                                <button class="btn btn-success btn-ejc-action btn-sm" @click="adicionarEquipeHistorico"
+                                                <button class="btn btn-primary btn-ejc-action btn-sm" @click="adicionarEquipeHistorico"
                                                     :disabled="!novaEquipeHistorico.equipe_id || !novaEquipeHistorico.ejc_id"
                                                     title="Adicionar"
                                                     aria-label="Adicionar">
@@ -1869,7 +2129,7 @@
                                 <div v-if="isEditing" class="ms-auto">
                                     <button type="button" class="btn btn-soft-secondary me-2"
                                         @click="cancelarEdicao">Cancelar</button>
-                                    <button type="button" class="btn btn-success" @click="salvarJovem"><i class="fa-solid fa-floppy-disk icon-accent"></i> Salvar
+                                    <button type="button" class="btn btn-primary" @click="salvarJovem"><i class="fa-solid fa-floppy-disk icon-accent"></i> Salvar
                                         Alterações</button>
                                 </div>
                                 <button v-else type="button" class="btn btn-soft-secondary ms-auto"
@@ -1897,7 +2157,7 @@
                                             <div class="d-flex justify-content-between align-items-start mb-1">
                                                 <small class="text-muted"><i class="far fa-clock"></i> {{
                                                     formatarDataHora(obs.created_at) }}</small>
-                                                <button v-if="isObservacaoRecusa(obs)" class="btn btn-sm btn-outline-warning"
+                                                <button v-if="isObservacaoRecusa(obs)" class="btn btn-sm btn-ejc-outline"
                                                     @click="removerObservacaoRecusa(obs)">
                                                     Excluir recusa
                                                 </button>
@@ -1920,7 +2180,7 @@
                                             <textarea v-model="novaObservacaoExtra" class="form-control mb-2" rows="3"
                                                 placeholder="Digite aqui a informação especial..."></textarea>
                                             <div class="text-end">
-                                                <button class="btn btn-success btn-sm" @click="adicionarObservacaoExtra"
+                                                <button class="btn btn-primary btn-sm" @click="adicionarObservacaoExtra"
                                                     :disabled="!novaObservacaoExtra.trim()"><i class="fa-solid fa-plus icon-accent"></i> Adicionar ao
                                                     Histórico</button>
                                             </div>
@@ -1948,7 +2208,7 @@
                                         <div v-for="com in comissoes" :key="com.id" class="list-group-item">
                                             <div class="d-flex justify-content-between align-items-start">
                                                 <div>
-                                                    <h6 class="mb-1 text-primary" v-html="formatarTipoComissao(com.tipo)"></h6>
+                                                    <h6 class="mb-1" style="color:#b88732;" v-html="formatarTipoComissao(com.tipo)"></h6>
                                                     <p class="mb-1 small text-muted">
                                                         <span v-if="com.tipo === 'COORDENACAO'">
                                                             Coordenação: <strong>{{ com.coordenacao_pasta_caminho || com.coordenacao_pasta_nome || com.coordenacao_nome || '-' }}</strong>
@@ -2011,7 +2271,7 @@
                                 <!-- AÇÃO DE ADIÇÃO -->
                                 <div class="col-12">
                                     <div class="text-end">
-                                        <button class="btn btn-success" @click="abrirModalMissaoExterna">
+                                        <button class="btn btn-primary" @click="abrirModalMissaoExterna">
                                             <i class="fa-solid fa-compass icon-accent"></i> Missão externa
                                         </button>
                                         <button class="btn btn-primary ms-2" @click="abrirModalCoordenacaoFicha">
@@ -2184,6 +2444,15 @@
                                                 <option :value="true">Sim</option>
                                             </select>
                                         </div>
+                                        <div v-if="novoJovem.equipe_saude" class="col-lg-4">
+                                            <label class="text-muted small">Área na equipe de saúde</label>
+                                            <select v-model="novoJovem.equipe_saude_tipo" class="form-select">
+                                                <option value="">Selecione...</option>
+                                                <option value="Enfermeiro(a)">Enfermeiro(a)</option>
+                                                <option value="Médico(a)">Médico(a)</option>
+                                                <option value="Fisioterapeuta">Fisioterapeuta</option>
+                                            </select>
+                                        </div>
                                         <div v-if="novoJovem.eh_musico" class="col-12">
                                             <label class="text-muted small">Instrumentos que toca</label>
                                             <div class="border rounded p-3 bg-light d-flex flex-wrap gap-2">
@@ -2219,28 +2488,48 @@
                                             <input type="text" v-model="novoJovem.qual_deficiencia" class="form-control" placeholder="Descreva a deficiência">
                                         </div>
                                         <div class="col-lg-6">
-                                            <label class="text-muted small">Restrição Alimentar</label>
-                                            <select v-model="novoJovem.restricao_alimentar" class="form-select">
+                                            <label class="text-muted small">Restrições alimentares e alergias</label>
+                                            <select v-model="novoJovem.restricao_alimentar" class="form-select"
+                                                @change="if (!novoJovem.restricao_alimentar) { novoJovem.detalhes_restricao = ''; buscaRestricaoNovo = ''; }">
                                                 <option :value="false">Não</option>
                                                 <option :value="true">Sim</option>
                                             </select>
                                         </div>
                                         <div v-if="novoJovem.restricao_alimentar" class="col-12">
                                             <label class="text-muted small">Qual Restrição</label>
-                                            <select v-model="novoJovem.detalhes_restricao" class="form-select">
-                                                <option disabled value="">Selecione uma restrição...</option>
-                                                <option value="Alergia a amendoim">Alergia a amendoim</option>
-                                                <option value="Alergia a castanhas">Alergia a castanhas</option>
-                                                <option value="Alergia a frutos do mar">Alergia a frutos do mar</option>
-                                                <option value="APLV (Alergia à proteína do leite de vaca)">APLV (Alergia à proteína do leite de vaca)</option>
-                                                <option value="Intolerante à lactose">Intolerante à lactose</option>
-                                                <option value="Intolerante a glúten (Celíaco)">Intolerante a glúten (Celíaco)</option>
-                                                <option value="Não come carne vermelha">Não come carne vermelha</option>
-                                                <option value="Não come carne de porco">Não come carne de porco</option>
-                                                <option value="Vegetariano">Vegetariano</option>
-                                                <option value="Vegano">Vegano</option>
-                                                <option value="Outras">Outras (Especifique nas observações)</option>
-                                            </select>
+                                            <div class="restricao-multiselect">
+                                                <input type="text" v-model="buscaRestricaoNovo"
+                                                    class="form-control form-control-sm"
+                                                    placeholder="Buscar restrição...">
+                                                <div class="restricao-options-list">
+                                                    <label v-for="opcao in restricoesFiltradas(buscaRestricaoNovo)"
+                                                        :key="opcao" class="restricao-option-item"
+                                                        :class="{ selecionada: normalizarRestricoes(novoJovem.detalhes_restricao).includes(opcao) }">
+                                                        <input type="checkbox" class="restricao-option-check"
+                                                            :checked="normalizarRestricoes(novoJovem.detalhes_restricao).includes(opcao)"
+                                                            @change="toggleRestricaoNovo(opcao)">
+                                                        {{ opcao }}
+                                                    </label>
+                                                    <div v-if="!restricoesFiltradas(buscaRestricaoNovo).length"
+                                                        class="px-2 py-1 text-muted small">Nenhuma opção encontrada</div>
+                                                    <label class="restricao-option-item" :class="{ selecionada: outrosRestricaoMarcadoNovo }">
+                                                        <input type="checkbox" class="restricao-option-check" v-model="outrosRestricaoMarcadoNovo">
+                                                        Outros
+                                                    </label>
+                                                </div>
+                                                <div v-if="outrosRestricaoMarcadoNovo" class="d-flex gap-2 mt-1">
+                                                    <input type="text" v-model="outrosRestricaoTextoNovo" class="form-control form-control-sm"
+                                                        placeholder="Especifique a restrição..." @keyup.enter="adicionarOutrosRestricaoNovo">
+                                                    <button type="button" class="btn btn-sm btn-success" @click="adicionarOutrosRestricaoNovo"
+                                                        :disabled="!String(outrosRestricaoTextoNovo || '').trim()">Adicionar</button>
+                                                </div>
+                                                <div v-if="normalizarRestricoes(novoJovem.detalhes_restricao).length" class="restricao-chips">
+                                                    <span v-for="item in normalizarRestricoes(novoJovem.detalhes_restricao)" :key="item" class="restricao-chip">
+                                                        {{ item }}
+                                                        <button type="button" class="restricao-chip-remove" @click="toggleRestricaoNovo(item)">×</button>
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -2308,7 +2597,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-soft-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-success" @click="salvarNovoJovem"><i class="fa-solid fa-plus icon-accent"></i> Criar Jovem</button>
+                        <button type="button" class="btn btn-primary" @click="salvarNovoJovem"><i class="fa-solid fa-plus icon-accent"></i> Criar Jovem</button>
                     </div>
                 </div>
             </div>
@@ -2359,7 +2648,7 @@
                             <div v-else>
                                 <div class="d-flex justify-content-between align-items-center mb-2 px-1">
                                     <span class="small text-muted">Total de jovens</span>
-                                    <span class="badge bg-soft-primary text-primary">{{ jovensCirculoCadastro.length }}</span>
+                                    <span class="badge bg-soft-warning text-warning">{{ jovensCirculoCadastro.length }}</span>
                                 </div>
                                 <div class="list-group">
                                     <div v-for="jovem in jovensCirculoCadastro" :key="`circulo-jovem-lista-mestre-${jovem.id}`" class="list-group-item d-flex justify-content-between align-items-center">
@@ -2477,10 +2766,10 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                         <p class="text-muted small mt-2 mb-2">Também aceitamos aliases antigos, como `Nome`, `Phone`, `BirthDate`, `EJCNumber`, `numero_ejc` e `Team_XIEJC`.</p>
                         <p class="text-muted small mt-0 mb-2">Importante: use arquivo Excel (.xlsx) ou CSV (.csv).</p>
                         <div class="mb-3 d-flex flex-wrap gap-2">
-                            <button type="button" class="btn btn-outline-primary" @click="baixarModeloImportacaoExcel" :disabled="importandoDados">
+                            <button type="button" class="btn btn-ejc-outline" @click="baixarModeloImportacaoExcel" :disabled="importandoDados">
                                 Baixar modelo Excel
                             </button>
-                            <button type="button" class="btn btn-outline-primary" @click="baixarModeloImportacaoCSV" :disabled="importandoDados">
+                            <button type="button" class="btn btn-ejc-outline" @click="baixarModeloImportacaoCSV" :disabled="importandoDados">
                                 Baixar modelo CSV
                             </button>
                         </div>
@@ -2536,7 +2825,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                             </select>
                         </div>
                         <div class="mb-2">
-                            <label class="form-label">Função no Moita *</label>
+                            <label class="form-label">Função no Moita</label>
                             <select v-model="formMoita.funcao_moita" class="form-select">
                                 <option value="">Selecione...</option>
                                 <option v-for="f in funcoesMoita" :key="f.id" :value="f.nome">{{ f.nome }}</option>
@@ -2546,7 +2835,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-success" @click="salvarMoitaHistorico">Salvar</button>
+                        <button type="button" class="btn btn-primary" @click="salvarMoitaHistorico">Salvar</button>
                     </div>
                 </div>
             </div>
@@ -2555,7 +2844,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
         <div class="modal fade" id="modalCoordenacaoFicha" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content border-0 shadow">
-                    <div class="modal-header text-white" style="background-color: #2d5f85;">
+                    <div class="modal-header text-white" style="background: linear-gradient(120deg, #6b4f20 0%, #8a6726 100%);">
                         <h5 class="modal-title"><i class="fa-solid fa-sitemap icon-accent"></i> Adicionar em coordenação</h5>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
@@ -2565,7 +2854,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                             <div class="small text-muted">{{ jovemEditando.telefone || 'Telefone não informado' }}</div>
                         </div>
                         <div v-if="carregandoCoordenacoesFicha" class="text-center py-3">
-                            <div class="spinner-border text-primary" role="status" aria-hidden="true"></div>
+                            <div class="spinner-border text-warning" role="status" aria-hidden="true"></div>
                         </div>
                         <template v-else>
                             <div class="mb-3">
@@ -2584,7 +2873,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-soft-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-success" @click="salvarCoordenacaoFicha"
+                        <button type="button" class="btn btn-primary" @click="salvarCoordenacaoFicha"
                             :disabled="carregandoCoordenacoesFicha || salvandoCoordenacaoFicha || !formCoordenacaoFicha.coordenacao_id">
                             <span v-if="salvandoCoordenacaoFicha" class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
                             Salvar
@@ -2644,7 +2933,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                             <div class="small text-muted">{{ jovemEditando.telefone || 'Telefone não informado' }}</div>
                         </div>
                         <div v-if="carregandoEquipesGarcomExternas" class="text-center py-3">
-                            <div class="spinner-border text-primary" role="status" aria-hidden="true"></div>
+                            <div class="spinner-border text-warning" role="status" aria-hidden="true"></div>
                         </div>
                         <div v-else-if="!equipesGarcomExternas.length" class="alert alert-warning mb-0">
                             Cadastre uma equipe de garçom antes de adicionar este jovem.
@@ -2670,7 +2959,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-soft-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-success" @click="salvarGarcomMissaoExterna" :disabled="carregandoEquipesGarcomExternas || !equipesGarcomExternas.length">
+                        <button type="button" class="btn btn-primary" @click="salvarGarcomMissaoExterna" :disabled="carregandoEquipesGarcomExternas || !equipesGarcomExternas.length">
                             Salvar
                         </button>
                     </div>
@@ -2711,7 +3000,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                                 <label class="form-label">Adicionar jovem da Lista Mestre</label>
                                 <div class="d-flex gap-2">
                                     <input type="text" class="form-control" v-model.trim="pastoralBusca" placeholder="Buscar por nome">
-                                    <button class="btn btn-outline-primary" @click="buscarJovensPastoralFicha" :disabled="!pastoralBusca">Buscar</button>
+                                    <button class="btn btn-ejc-outline" @click="buscarJovensPastoralFicha" :disabled="!pastoralBusca">Buscar</button>
                                 </div>
                                 <div v-if="pastoralResultados.length" class="mt-2">
                                     <select class="form-select" v-model="pastoralSelecionado">
@@ -2719,7 +3008,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                                         <option v-for="j in pastoralResultados" :key="`pastoral-ficha-j-${j.id}`" :value="j.id">{{ j.nome_completo }}</option>
                                     </select>
                                     <div class="text-end mt-2">
-                                        <button class="btn btn-success btn-sm" @click="adicionarJovemPastoralFicha" :disabled="!pastoralSelecionado">Adicionar</button>
+                                        <button class="btn btn-primary btn-sm" @click="adicionarJovemPastoralFicha" :disabled="!pastoralSelecionado">Adicionar</button>
                                     </div>
                                 </div>
                                 <div v-else-if="pastoralBusca" class="text-muted small mt-2">Nenhum jovem encontrado.</div>
@@ -2727,7 +3016,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
 
                             <div class="border rounded p-2 bg-white">
                                 <div v-if="pastoralJovensLoading" class="text-center py-3">
-                                    <div class="spinner-border spinner-border-sm text-primary me-2"></div>Carregando...
+                                    <div class="spinner-border spinner-border-sm text-warning me-2"></div>Carregando...
                                 </div>
                                 <ul v-else-if="pastoralJovens.length" class="list-group list-group-flush">
                                     <li v-for="j in pastoralJovens" :key="`pfj-${j.id}`" class="list-group-item d-flex justify-content-between align-items-center">
@@ -2745,6 +3034,47 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                     <div class="modal-footer">
                         <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Fechar</button>
                         <button class="btn btn-primary" @click="salvarPastoralNaFicha">Salvar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- Modal Link de Atualização Cadastral -->
+        <div class="modal fade" id="modalLinkAtualizacao" tabindex="-1" aria-hidden="true" style="z-index: 1070;">
+            <div class="modal-dialog modal-dialog-centered" style="max-width: 480px;">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header border-bottom" style="background: #f7f2e8;">
+                        <h5 class="modal-title d-flex align-items-center gap-2" style="color: #172033; font-size: 1rem; font-weight: 700;">
+                            <i class="fa-solid fa-link" style="color: #c99a3d;"></i>
+                            Formulário de Atualização Cadastral
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body py-4">
+                        <div v-if="linkAtualizacaoCarregando" class="text-center py-3">
+                            <div class="spinner-border spinner-border-sm me-2" style="color: #c99a3d;"></div>
+                            <span class="text-muted">Gerando link...</span>
+                        </div>
+                        <div v-else-if="linkAtualizacaoErro" class="alert alert-danger py-2 mb-0">
+                            {{ linkAtualizacaoErro }}
+                        </div>
+                        <div v-else>
+                            <p class="text-muted mb-3" style="font-size: .9rem;">
+                                Link individual de <strong>{{ linkAtualizacaoNome }}</strong> para atualização dos dados. Envie no privado do jovem.
+                            </p>
+                            <div class="input-group mb-4">
+                                <input type="text" class="form-control form-control-sm bg-light" :value="linkAtualizacaoUrl" readonly style="font-size: .82rem; color: #555;">
+                            </div>
+                            <div class="d-flex flex-column gap-2">
+                                <button type="button" class="btn btn-edit-standard w-100 d-flex align-items-center justify-content-center gap-2"
+                                    @click="copiarLinkAtualizacao">
+                                    <i class="fa-solid fa-copy"></i>
+                                    <span>{{ linkAtualizacaoCopiado ? 'Link copiado!' : 'Copiar link' }}</span>
+                                </button>
+                                <a :href="linkAtualizacaoUrl" target="_blank" class="btn w-100 d-flex align-items-center justify-content-center gap-2 btn-outline-secondary">
+                                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Abrir formulário
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -2810,6 +3140,11 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                     pastoralBusca: '',
                     pastoralResultados: [],
                     pastoralSelecionado: '',
+                    linkAtualizacaoCarregando: false,
+                    linkAtualizacaoErro: '',
+                    linkAtualizacaoUrl: '',
+                    linkAtualizacaoNome: '',
+                    linkAtualizacaoCopiado: false,
                     tiosCasais: [],
                     familiaresJovem: [],
                     familiaresJovemRequestSeq: 0,
@@ -2872,6 +3207,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                         detalhes_restricao: '',
                         eh_musico: false,
                         equipe_saude: false,
+                        equipe_saude_tipo: '',
                         instrumentos_musicais: [],
                         transferencia_outro_ejc: 0,
                         ja_foi_moita_inconfidentes: 0,
@@ -2879,6 +3215,13 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                         moita_funcao: ''
                     },
                     meses: ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'],
+                    restricoesOpcoes: ['Alergia a amendoim', 'Alergia a castanhas (nozes, castanha-do-pará, amêndoa, avelã, pistache, caju)', 'Alergia a frutos do mar (camarão, caranguejo, lagosta, mariscos)', 'Alergia a peixes', 'Alergia a ovos', 'Alergia a soja', 'Alergia a trigo', 'Alergia a gergelim', 'APLV — Alergia à Proteína do Leite de Vaca', 'Mamão', 'Berinjela', 'Intolerante à lactose', 'Intolerante a glúten (Doença Celíaca)', 'Intolerante a frutose', 'Intolerante a histamina', 'Não come carne vermelha', 'Não come carne de porco', 'Não come frutos do mar', 'Não come peixe', 'Vegetariano (não come carnes)', 'Vegano (não come nenhum produto animal)', 'Ovolactovegetariano', 'Dieta Kosher (restrições religiosas judaicas)', 'Dieta Halal (restrições religiosas islâmicas)', 'Produtos de limpeza', 'Diabético (restrição de açúcar)', 'Hipertenso (restrição de sódio/sal)', 'Fenilcetonúria (PKU)', 'Doença de Crohn', 'Síndrome do intestino irritável', 'Refluxo gastroesofágico', 'Restrição de gordura (colesterol alto)'],
+                    buscaRestricaoEdit: '',
+                    buscaRestricaoNovo: '',
+                    outrosRestricaoMarcadoEdit: false,
+                    outrosRestricaoTextoEdit: '',
+                    outrosRestricaoMarcadoNovo: false,
+                    outrosRestricaoTextoNovo: '',
                     cores: [],
                     colunasVisiveis: {
                         Nome: true,
@@ -3445,7 +3788,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                         jovem.deficiencia ? 'deficiencia sim' : 'deficiencia nao',
                         jovem.qual_deficiencia,
                         jovem.restricao_alimentar ? 'restricao alimentar sim' : 'restricao alimentar nao',
-                        jovem.detalhes_restricao,
+                        this.normalizarRestricoes(jovem.detalhes_restricao).join(', '),
                         jovem.origem_ejc_tipo === 'OUTRO_EJC' ? 'outro ejc' : `ejc ${this.nomeMeuEJC}`,
                         jovem.transferencia_outro_ejc ? 'transferencia' : '',
                         jovem.outro_ejc_nome,
@@ -3519,7 +3862,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                     addDetalhe(this.colunasVisiveis.EstadoCivil, 'Estado civil', jovem.estado_civil);
                     addDetalhe(this.colunasVisiveis.EquipeSaude, 'Equipe de saúde', jovem.equipe_saude ? 'Sim' : 'Não');
                     addDetalhe(this.colunasVisiveis.Deficiencia, 'Deficiência', jovem.deficiencia ? 'Sim' : 'Não');
-                    addDetalhe(this.colunasVisiveis.RestricaoAlimentar, 'Restrição alimentar', jovem.restricao_alimentar ? 'Sim' : 'Não');
+                    addDetalhe(this.colunasVisiveis.RestricaoAlimentar, 'Restrições alimentares e alergias', jovem.restricao_alimentar ? 'Sim' : 'Não');
 
                     return detalhes;
                 },
@@ -4111,6 +4454,35 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                 csvEscape(v) {
                     return `"${String(v === null || v === undefined ? '' : v).replace(/"/g, '""')}"`;
                 },
+                async abrirModalLinkAtualizacao(jovem) {
+                    this.linkAtualizacaoCarregando = true;
+                    this.linkAtualizacaoErro = '';
+                    this.linkAtualizacaoUrl = '';
+                    this.linkAtualizacaoCopiado = false;
+                    this.linkAtualizacaoNome = jovem.nome_completo || '';
+                    const modal = new bootstrap.Modal(document.getElementById('modalLinkAtualizacao'));
+                    modal.show();
+                    try {
+                        const res = await fetch(`/api/atualizacoes-cadastro/jovem-link?jovem_id=${jovem.id}`);
+                        const data = await res.json().catch(() => ({}));
+                        if (!res.ok) throw new Error(data.error || 'Erro ao gerar link.');
+                        this.linkAtualizacaoUrl = data.link || '';
+                    } catch (e) {
+                        this.linkAtualizacaoErro = e.message || 'Erro ao gerar link.';
+                    } finally {
+                        this.linkAtualizacaoCarregando = false;
+                    }
+                },
+                async copiarLinkAtualizacao() {
+                    if (!this.linkAtualizacaoUrl) return;
+                    try {
+                        await navigator.clipboard.writeText(this.linkAtualizacaoUrl);
+                        this.linkAtualizacaoCopiado = true;
+                        setTimeout(() => { this.linkAtualizacaoCopiado = false; }, 2500);
+                    } catch (_) {
+                        this.linkAtualizacaoErro = 'Não foi possível copiar. Selecione e copie manualmente.';
+                    }
+                },
                 abrirModalExportacao() {
                     if (!this.modalExportacao) this.modalExportacao = new bootstrap.Modal(document.getElementById('modalExportacaoDados'));
                     this.modalExportacao.show();
@@ -4336,7 +4708,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                             { key: 'EstadoCivil', label: 'Estado civil', getter: (j) => j.estado_civil || '' },
                             { key: 'EquipeSaude', label: 'Equipe de saúde', getter: (j) => j.equipe_saude ? 'Sim' : 'Não' },
                             { key: 'Deficiencia', label: 'Deficiência', getter: (j) => j.deficiencia ? 'Sim' : 'Não' },
-                            { key: 'RestricaoAlimentar', label: 'Restrição alimentar', getter: (j) => j.restricao_alimentar ? 'Sim' : 'Não' }
+                            { key: 'RestricaoAlimentar', label: 'Restrições alimentares e alergias', getter: (j) => j.restricao_alimentar ? 'Sim' : 'Não' }
                         ].filter((coluna) => this.colunasVisiveis[coluna.key]);
                         const colunasHistorico = op.historicoEquipes
                             ? ejcsOrdenados.map((ejc) => ({
@@ -4361,7 +4733,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                             'Nome completo', 'Telefone', 'CPF', 'Apelido', 'E-mail', 'Termos aceitos em', 'Termos aceitos e-mail',
                             'Sexo', 'Data de nascimento', 'Idade', 'Estado civil', 'Data do casamento', 'Círculo',
                             'Número do EJC', 'Instagram', 'Serve no EJC', 'Habilidades Musicais', 'Instrumentos musicais',
-                            'Equipe de saúde', 'Deficiência', 'Qual deficiência', 'Restrição alimentar',
+                            'Equipe de saúde', 'Deficiência', 'Qual deficiência', 'Restrições alimentares e alergias',
                             'Detalhes da restrição', 'Endereço (rua)', 'Endereço (número)', 'Endereço (bairro)',
                             'Endereço (cidade)', 'Endereço (estado)', 'Endereço (CEP)', 'Cônjuge', 'Pastorais',
                             ...ejcsOrdenados.map((ejc) => `${this.numeroParaRomano(ejc.numero)} EJC`)
@@ -4391,7 +4763,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                             j.deficiencia ? 'Sim' : 'Não',
                             j.qual_deficiencia || '',
                             j.restricao_alimentar ? 'Sim' : 'Não',
-                            j.detalhes_restricao || '',
+                            this.normalizarRestricoes(j.detalhes_restricao).join(', '),
                             j.endereco_rua || '',
                             j.endereco_numero || '',
                             j.endereco_bairro || '',
@@ -5087,6 +5459,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                             detalhes_restricao: this.novoJovem.detalhes_restricao || null,
                             eh_musico: this.novoJovem.eh_musico ? 1 : 0,
                             equipe_saude: this.novoJovem.equipe_saude ? 1 : 0,
+                            equipe_saude_tipo: this.novoJovem.equipe_saude ? (String(this.novoJovem.equipe_saude_tipo || '').trim() || null) : null,
                             instrumentos_musicais: this.novoJovem.eh_musico ? this.normalizarInstrumentos(this.novoJovem.instrumentos_musicais) : [],
                             ja_foi_moita_inconfidentes: (this.novoJovem.origem_ejc_tipo === 'OUTRO_EJC' && this.novoJovem.ja_foi_moita_inconfidentes) ? 1 : 0,
                             moita_ejc_id: (this.novoJovem.origem_ejc_tipo === 'OUTRO_EJC' && this.novoJovem.ja_foi_moita_inconfidentes) ? (this.novoJovem.moita_ejc_id || null) : null,
@@ -5187,6 +5560,7 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                             endereco_cep: this.jovemEditando.endereco_cep || null,
                             eh_musico: this.jovemEditando.eh_musico ? 1 : 0,
                             equipe_saude: this.jovemEditando.equipe_saude ? 1 : 0,
+                            equipe_saude_tipo: this.jovemEditando.equipe_saude ? (String(this.jovemEditando.equipe_saude_tipo || '').trim() || null) : null,
                             instrumentos_musicais: this.jovemEditando.eh_musico ? this.normalizarInstrumentos(this.jovemEditando.instrumentos_musicais) : [],
                             tio_casal_id: this.jovemEditando.tio_casal_id || null,
                             nao_serve_ejc: this.jovemEditando.nao_serve_ejc ? 1 : 0,
@@ -5518,6 +5892,56 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                     }
                     return [];
                 },
+                normalizarRestricoes(valor) {
+                    if (Array.isArray(valor)) return valor.filter(Boolean).map(v => String(v).trim()).filter(Boolean);
+                    if (!valor) return [];
+                    const txt = String(valor).trim();
+                    if (!txt) return [];
+                    try {
+                        const parsed = JSON.parse(txt);
+                        if (Array.isArray(parsed)) return parsed.filter(Boolean).map(v => String(v).trim()).filter(Boolean);
+                    } catch (e) {}
+                    return [txt];
+                },
+                restricoesFiltradas(busca) {
+                    const q = (busca || '').toLowerCase().trim();
+                    if (!q) return this.restricoesOpcoes;
+                    return this.restricoesOpcoes.filter(o => o.toLowerCase().includes(q));
+                },
+                toggleRestricaoEdit(opcao) {
+                    const arr = this.normalizarRestricoes(this.jovemEditando.detalhes_restricao);
+                    const idx = arr.indexOf(opcao);
+                    if (idx === -1) arr.push(opcao); else arr.splice(idx, 1);
+                    this.jovemEditando.detalhes_restricao = arr.length ? JSON.stringify(arr) : '';
+                    this.jovemEditando.restricao_alimentar = arr.length ? 1 : 0;
+                },
+                toggleRestricaoNovo(opcao) {
+                    const arr = this.normalizarRestricoes(this.novoJovem.detalhes_restricao);
+                    const idx = arr.indexOf(opcao);
+                    if (idx === -1) arr.push(opcao); else arr.splice(idx, 1);
+                    this.novoJovem.detalhes_restricao = arr.length ? JSON.stringify(arr) : '';
+                    this.novoJovem.restricao_alimentar = arr.length > 0;
+                },
+                adicionarOutrosRestricaoEdit() {
+                    const texto = String(this.outrosRestricaoTextoEdit || '').trim();
+                    if (!texto) return;
+                    const arr = this.normalizarRestricoes(this.jovemEditando.detalhes_restricao);
+                    if (!arr.includes(texto)) arr.push(texto);
+                    this.jovemEditando.detalhes_restricao = JSON.stringify(arr);
+                    this.jovemEditando.restricao_alimentar = 1;
+                    this.outrosRestricaoTextoEdit = '';
+                    this.outrosRestricaoMarcadoEdit = false;
+                },
+                adicionarOutrosRestricaoNovo() {
+                    const texto = String(this.outrosRestricaoTextoNovo || '').trim();
+                    if (!texto) return;
+                    const arr = this.normalizarRestricoes(this.novoJovem.detalhes_restricao);
+                    if (!arr.includes(texto)) arr.push(texto);
+                    this.novoJovem.detalhes_restricao = JSON.stringify(arr);
+                    this.novoJovem.restricao_alimentar = true;
+                    this.outrosRestricaoTextoNovo = '';
+                    this.outrosRestricaoMarcadoNovo = false;
+                },
                 humanizarCampo(chave) {
                     if (!chave) return '';
                     return String(chave)
@@ -5613,8 +6037,8 @@ Campo estado_civil fora do padrão: "Solteira". Padrão normal: Solteiro, Noivo,
                 },
                 async salvarMoitaHistorico() {
                     if (!this.jovemEditando || !this.jovemEditando.id) return;
-                    if (!this.formMoita.ejc_numero || !this.formMoita.outro_ejc_id || !String(this.formMoita.funcao_moita || '').trim()) {
-                        alert('Preencha número do EJC, outro EJC e função no moita.');
+                    if (!this.formMoita.ejc_numero || !this.formMoita.outro_ejc_id) {
+                        alert('Preencha número do EJC e outro EJC.');
                         return;
                     }
                     const dataInicio = this.normalizarDataMoita(this.formMoita.data_inicio);

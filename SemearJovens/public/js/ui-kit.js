@@ -181,7 +181,21 @@
         { key: 'configurar', tests: ['colunas', 'config', 'configurar', 'preferencias'], icon: 'fa-solid fa-gear', label: 'Configurar' },
         { key: 'acessar', tests: ['entrar', 'acessar', 'login'], icon: 'fa-solid fa-right-to-bracket', label: 'Entrar' },
         { key: 'resultado', tests: ['resultado', 'ranking'], icon: 'fa-solid fa-trophy', label: 'Resultado' },
-        { key: 'movimentacao', tests: ['emprestimo', 'empréstimo', 'doacao', 'doação', 'movimentacao', 'movimentação'], icon: 'fa-solid fa-right-left', label: 'Movimentação' }
+        { key: 'movimentacao', tests: ['emprestimo', 'empréstimo', 'doacao', 'doação', 'movimentacao', 'movimentação'], icon: 'fa-solid fa-right-left', label: 'Movimentação' },
+        { key: 'sair', tests: ['sair', 'logout', 'desconectar'], icon: 'fa-solid fa-right-from-bracket', label: 'Sair' },
+        { key: 'confirmar', tests: ['confirmar', 'concluir', 'marcar', 'aprovar', 'ok'], icon: 'fa-solid fa-check', label: 'Confirmar' },
+        { key: 'rejeitar', tests: ['rejeitar', 'reprovar', 'pendente'], icon: 'fa-solid fa-ban', label: 'Rejeitar' },
+        { key: 'copiar', tests: ['copiar', 'copia', 'copy'], icon: 'fa-solid fa-copy', label: 'Copiar' },
+        { key: 'limpar', tests: ['limpar', 'zerar', 'restaurar', 'padrao', 'resetar'], icon: 'fa-solid fa-eraser', label: 'Limpar' },
+        { key: 'vincular', tests: ['vincular', 'linkar', 'associar'], icon: 'fa-solid fa-link', label: 'Vincular' },
+        { key: 'habilitar', tests: ['habilitar', 'ativar'], icon: 'fa-solid fa-toggle-on', label: 'Habilitar' },
+        { key: 'desabilitar', tests: ['desabilitar', 'desativar'], icon: 'fa-solid fa-toggle-off', label: 'Desabilitar' },
+        { key: 'selecionar', tests: ['selecionar', 'escolher', 'selecionar todas'], icon: 'fa-solid fa-check-double', label: 'Selecionar' },
+        { key: 'gerar', tests: ['gerar', 'pdf', 'qr', 'qrcode', 'abrir link'], icon: 'fa-solid fa-file-export', label: 'Gerar' },
+        { key: 'titular', tests: ['titular', 'puxar reserva', 'tornar titular'], icon: 'fa-solid fa-star', label: 'Titular' },
+        { key: 'retirar', tests: ['retirar', 'desistencia', 'desistência'], icon: 'fa-solid fa-user-minus', label: 'Retirar' },
+        { key: 'distribuir', tests: ['distribuir', 'finalizar'], icon: 'fa-solid fa-people-arrows', label: 'Distribuir' },
+        { key: 'informacao', tests: ['informacao', 'informações', 'ler mais', 'saiba mais'], icon: 'fa-solid fa-circle-info', label: 'Info' }
     ];
 
     const normalize = (value) => String(value || '')

@@ -8,6 +8,7 @@ const MENU_BY_PREFIX = [
     ['/api/auth/tenant', 'Dashboard']
 ];
 
+
 function getMenuLabel(pathname) {
     const found = MENU_BY_PREFIX.find(([prefix]) => pathname.startsWith(prefix));
     return found ? found[1] : 'Dashboard';

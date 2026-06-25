@@ -6,6 +6,8 @@ const MENU_BY_PREFIX = [
     ['/api/admin/tenants', 'Paróquias'],
     ['/api/admin/admin-users', 'Usuários do sistema'],
     ['/api/admin/support-messages', 'Mensagens'],
+    ['/api/admin/qa-releases', 'Change Log — Histórico'],
+    ['/api/admin/qa-menus', 'Change Log — Menus'],
     ['/api/admin/tenants/', 'Paróquias']
 ];
 

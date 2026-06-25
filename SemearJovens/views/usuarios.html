@@ -59,6 +59,98 @@
         [v-cloak] {
             display: none;
         }
+
+        /* ── Mobile: oculta tabela e exibe cards ── */
+        @media (max-width: 768px) {
+            .usuarios-table-wrapper {
+                display: none;
+            }
+
+            .usuarios-cards {
+                display: block;
+            }
+        }
+
+        @media (min-width: 769px) {
+            .usuarios-cards {
+                display: none;
+            }
+        }
+
+        .usuario-card {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+        }
+
+        .usuario-card:last-child {
+            border-bottom: none;
+        }
+
+        .usuario-card-info {
+            flex: 1;
+            min-width: 0;
+        }
+
+        .usuario-card-nome {
+            font-size: 13px;
+            font-weight: 600;
+            color: #2d3148;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .usuario-card-username {
+            font-size: 11px;
+            color: #888;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 1px;
+        }
+
+        .usuario-card-acoes {
+            display: flex;
+            gap: 0.4rem;
+            flex-shrink: 0;
+            margin-left: 0.75rem;
+        }
+
+        .usuario-card-acoes .btn-card-edit {
+            width: 2rem;
+            height: 2rem;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            background: #d9a650;
+            border: none;
+            color: #fff;
+            font-size: 0.8rem;
+        }
+
+        .usuario-card-acoes .btn-card-delete {
+            width: 2rem;
+            height: 2rem;
+            padding: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+            background: transparent;
+            border: 1px solid #8b1a1a;
+            color: #8b1a1a;
+            font-size: 0.8rem;
+        }
+
+        .usuario-card-acoes .btn-card-delete:disabled,
+        .usuario-card-acoes .btn-card-edit:disabled {
+            opacity: 0.45;
+        }
     </style>
 </head>
 
@@ -92,43 +184,78 @@
                         O usuário principal criado no <strong>admin.semearparoquial</strong> aparece aqui apenas para consulta.
                         A edição e a exclusão desse acesso devem ser feitas somente no painel da paróquia.
                     </div>
-                    <table class="table table-hover mb-0">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Nome Completo</th>
-                                <th>Usuário</th>
-                                <th>Grupo</th>
-                                <th class="text-end">Ações</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr v-if="usuarios.length === 0">
-                                <td colspan="4" class="text-center py-4 text-muted">Nenhum usuário cadastrado.</td>
-                            </tr>
-                            <tr v-for="user in usuarios" :key="user.id">
-                                <td>{{ user.nome_completo }}</td>
-                                <td>
+
+                    <!-- Tabela desktop -->
+                    <div class="usuarios-table-wrapper">
+                        <table class="table table-hover mb-0 table-no-mobile-expand">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Nome Completo</th>
+                                    <th>Usuário</th>
+                                    <th>Grupo</th>
+                                    <th class="text-end">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr v-if="usuarios.length === 0">
+                                    <td colspan="4" class="text-center py-4 text-muted">Nenhum usuário cadastrado.</td>
+                                </tr>
+                                <tr v-for="user in usuarios" :key="user.id">
+                                    <td>{{ user.nome_completo }}</td>
+                                    <td>
+                                        {{ user.username }}
+                                        <span v-if="user.managed_by_parish_admin" class="badge text-bg-secondary ms-2">
+                                            Gerenciado no admin
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge badge-group" :class="getBadgeClass(user.grupo)">{{ user.grupo }}</span>
+                                    </td>
+                                    <td class="text-end">
+                                        <button class="btn btn-edit-standard btn-sm me-1"
+                                            :disabled="isReadOnlyUser(user)"
+                                            :title="isReadOnlyUser(user) ? 'Edite este usuário em admin.semearparoquial.com.br' : 'Editar usuário'"
+                                            @click="editarUsuario(user)">Editar</button>
+                                        <button class="btn btn-sm btn-outline-danger"
+                                            :disabled="isReadOnlyUser(user)"
+                                            :title="isReadOnlyUser(user) ? 'Exclusão disponível apenas no admin.semearparoquial.com.br' : 'Excluir usuário'"
+                                            @click="deletarUsuario(user)"><i class="fa-solid fa-trash icon-accent"></i></button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Cards mobile -->
+                    <div class="usuarios-cards">
+                        <div v-if="usuarios.length === 0" class="text-center py-4 text-muted px-3">
+                            Nenhum usuário cadastrado.
+                        </div>
+                        <div v-for="user in usuarios" :key="'card-' + user.id" class="usuario-card">
+                            <div class="usuario-card-info">
+                                <div class="usuario-card-nome">{{ user.nome_completo }}</div>
+                                <div class="usuario-card-username">
                                     {{ user.username }}
-                                    <span v-if="user.managed_by_parish_admin" class="badge text-bg-secondary ms-2">
-                                        Gerenciado no admin
-                                    </span>
-                                </td>
-                                <td>
-                                    <span class="badge badge-group" :class="getBadgeClass(user.grupo)">{{ user.grupo }}</span>
-                                </td>
-                                <td class="text-end">
-                                    <button class="btn btn-edit-standard btn-sm me-1"
-                                        :disabled="isReadOnlyUser(user)"
-                                        :title="isReadOnlyUser(user) ? 'Edite este usuário em admin.semearparoquial.com.br' : 'Editar usuário'"
-                                        @click="editarUsuario(user)">Editar</button>
-                                    <button class="btn btn-sm btn-outline-danger"
-                                        :disabled="isReadOnlyUser(user)"
-                                        :title="isReadOnlyUser(user) ? 'Exclusão disponível apenas no admin.semearparoquial.com.br' : 'Excluir usuário'"
-                                        @click="deletarUsuario(user)"><i class="fa-solid fa-trash icon-accent"></i></button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                                    <span v-if="user.managed_by_parish_admin" class="badge text-bg-secondary ms-1" style="font-size:9px;">admin</span>
+                                </div>
+                            </div>
+                            <div class="usuario-card-acoes">
+                                <button class="btn-card-edit"
+                                    :disabled="isReadOnlyUser(user)"
+                                    :title="isReadOnlyUser(user) ? 'Edite este usuário em admin.semearparoquial.com.br' : 'Editar usuário'"
+                                    @click="editarUsuario(user)">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                                <button class="btn-card-delete"
+                                    :disabled="isReadOnlyUser(user)"
+                                    :title="isReadOnlyUser(user) ? 'Exclusão disponível apenas no admin.semearparoquial.com.br' : 'Excluir usuário'"
+                                    @click="deletarUsuario(user)">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 

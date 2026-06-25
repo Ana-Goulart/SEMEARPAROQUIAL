@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EJC - Montar Encontro</title>
     <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
     <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
@@ -455,6 +456,76 @@
                 width: 220px;
             }
         }
+        /* ---- Multiselect Restrição Alimentar ---- */
+        .restricao-multiselect { display: flex; flex-direction: column; gap: 0.4rem; }
+        .restricao-options-list {
+            max-height: 140px; overflow-y: auto;
+            border: 1px solid #e5d5bb; border-radius: 6px;
+            padding: 4px 2px; background: #fff;
+        }
+        .restricao-option-item {
+            display: flex; align-items: center; gap: 0.4rem;
+            padding: 3px 8px; cursor: pointer; border-radius: 4px;
+            font-size: 0.875rem; user-select: none; transition: background 0.12s;
+        }
+        .restricao-option-item:hover { background: #fff8ee; }
+        .restricao-option-item.selecionada { background: #f4ede1; font-weight: 600; color: #6e5430; }
+        .restricao-option-check { width: 14px; height: 14px; accent-color: #d9a650; flex-shrink: 0; }
+        .restricao-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+        .restricao-chip {
+            display: inline-flex; align-items: center; gap: 4px;
+            background: #d9a650; color: #fff; border-radius: 999px;
+            font-size: 0.78rem; padding: 2px 8px 2px 10px; font-weight: 600;
+            box-shadow: 0 2px 6px rgba(217,166,80,0.28);
+        }
+        .restricao-chip-remove { background: none; border: none; padding: 0; line-height: 1; font-size: 0.85rem; color: rgba(255,255,255,0.8); cursor: pointer; }
+        .restricao-chip-remove:hover { color: #fff; }
+
+        /* ── Mobile UX: toolbar topo, estatísticas, grid (max-width: 768px) ── */
+
+        /* Toolbar mobile: 3 botões com ícone + texto empilhados */
+        .montar-mob-btn {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 0.22rem;
+            padding: 0.5rem 0.3rem;
+            border: 1px solid rgba(191, 161, 111, 0.4);
+            border-radius: 12px;
+            background: #fffdf9;
+            color: #5a4424;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.15s ease;
+        }
+        .montar-mob-btn i { font-size: 1.1rem; color: #8f6a24; }
+        .montar-mob-btn > span { font-size: 11px; font-weight: 600; line-height: 1; white-space: nowrap; }
+        .montar-mob-btn:hover { background: #fff4e0; }
+
+        /* Estatísticas do card: controle de quebra */
+        .equipe-stat-group { display: inline; }
+        .equipe-stat-sep-inter { display: inline; }
+
+        @media (max-width: 767.98px) {
+            /* Stats: separar em 2 linhas fixas */
+            .equipe-stat-group { display: block; }
+            .equipe-stat-sep-inter { display: none; }
+
+            /* Cards: header compacto e texto sem quebra estranha */
+            .equipe-header {
+                font-size: 0.88rem;
+                padding: 10px 12px;
+                word-break: break-word;
+            }
+            .equipe-header .badge {
+                display: block;
+                margin-top: 0.2rem;
+                margin-left: 0 !important;
+            }
+            .equipe-section { margin-bottom: 0; }
+        }
     </style>
 </head>
 
@@ -503,16 +574,31 @@
             <div v-else-if="estado === 'EDICAO'">
                 <div class="d-flex flex-column flex-xl-row justify-content-between mb-2 gap-2 align-items-start pb-1">
                     <div>
-                        <button class="btn btn-sm btn-soft-secondary mb-2" @click="voltarDaMontagem">
+                        <button class="btn btn-sm btn-soft-secondary mb-2 d-none d-md-inline-flex" @click="voltarDaMontagem">
                             {{ origemAcesso === 'edicoes-ejc' ? 'Voltar para edições do EJC' : 'Voltar para listagem' }}
                         </button>
                         <h3 class="mb-0"><i class="fa-solid fa-gear icon-accent"></i> Montando <span class="text-primary">{{
                                 numeroParaRomano(montagemAtiva.numero_ejc) }} EJC — {{ nomeMeuEJC }}</span></h3>
                     </div>
-                    <div class="d-flex gap-2 flex-wrap">
+                    <div class="d-none d-md-flex gap-2 flex-wrap">
                         <button class="btn btn-primary" @click="exportarDadosEquipesExcel"><i class="fas fa-file-excel"></i> Exportar dados (em Excel)</button>
                         <button class="btn btn-success" @click="finalizarMontagem">Finalizar encontro</button>
                     </div>
+                </div>
+                <!-- Toolbar mobile: Voltar / Exportar / Finalizar com ícone + texto -->
+                <div class="d-flex d-md-none gap-2 mb-3">
+                    <button class="montar-mob-btn" @click="voltarDaMontagem">
+                        <i class="fas fa-arrow-left"></i>
+                        <span>Voltar</span>
+                    </button>
+                    <button class="montar-mob-btn" @click="exportarDadosEquipesExcel">
+                        <i class="fas fa-file-excel"></i>
+                        <span>Exportar</span>
+                    </button>
+                    <button class="montar-mob-btn" @click="finalizarMontagem">
+                        <i class="fas fa-check"></i>
+                        <span>Finalizar</span>
+                    </button>
                 </div>
 
                 <div class="ejc-summary-bar">
@@ -583,7 +669,7 @@
                         </ul>
 
                         <div v-if="abaMontagem === 'equipes'" class="row">
-                            <div v-for="equipe in estrutura" :key="equipe.id" class="col-md-6 mb-3">
+                            <div v-for="equipe in estrutura" :key="equipe.id" class="col-6 col-md-6 mb-3">
                                 <div class="equipe-section">
                                     <div class="equipe-header" @click="abrirEquipePagina(equipe)">
                                         <span>
@@ -593,13 +679,7 @@
                                         <i class="fas fa-arrow-right"></i>
                                     </div>
                                     <div class="p-3 small text-muted">
-                                        Funções cadastradas: {{ equipe.funcoes.length }}
-                                        <span class="mx-1">•</span>
-                                        Membros: {{ totalMembrosDaEquipe(equipe) }}
-                                        <span class="mx-1">•</span>
-                                        Masculino: {{ totalMasculinoDaEquipe(equipe) }}
-                                        <span class="mx-1">•</span>
-                                        Feminino: {{ totalFemininoDaEquipe(equipe) }}
+                                        <span class="equipe-stat-group">Funções cadastradas: {{ equipe.funcoes.length }}<span class="mx-1">•</span>Membros: {{ totalMembrosDaEquipe(equipe) }}</span><span class="equipe-stat-sep-inter mx-1"> • </span><span class="equipe-stat-group">Masculino: {{ totalMasculinoDaEquipe(equipe) }}<span class="mx-1">•</span>Feminino: {{ totalFemininoDaEquipe(equipe) }}</span>
                                     </div>
                                 </div>
                             </div>
@@ -1604,6 +1684,15 @@
                                                 <option :value="true">Sim</option>
                                             </select>
                                         </div>
+                                        <div class="col-12 col-md-4" v-if="encontristaEditando.equipe_saude">
+                                            <label class="form-label small text-muted mb-1">Área na equipe de saúde</label>
+                                            <select class="form-select" v-model="encontristaEditando.equipe_saude_tipo">
+                                                <option value="">Selecione...</option>
+                                                <option value="Enfermeiro(a)">Enfermeiro(a)</option>
+                                                <option value="Médico(a)">Médico(a)</option>
+                                                <option value="Fisioterapeuta">Fisioterapeuta</option>
+                                            </select>
+                                        </div>
                                         <div class="col-12 col-md-4">
                                             <label class="form-label small text-muted mb-1">Pessoa com Deficiência(PcD)?</label>
                                             <select class="form-select" v-model="encontristaEditando.deficiencia">
@@ -1616,18 +1705,44 @@
                                             <input class="form-control" v-model="encontristaEditando.qual_deficiencia">
                                         </div>
                                         <div class="col-12 col-md-4">
-                                            <label class="form-label small text-muted mb-1">Restrição alimentar?</label>
-                                            <select class="form-select" v-model="encontristaEditando.restricao_alimentar">
+                                            <label class="form-label small text-muted mb-1">Restrições alimentares e alergias?</label>
+                                            <select class="form-select" v-model="encontristaEditando.restricao_alimentar"
+                                                @change="if (!encontristaEditando.restricao_alimentar) { encontristaEditando.detalhes_restricao = ''; buscaRestricaoEdit = ''; }">
                                                 <option :value="false">Não</option>
                                                 <option :value="true">Sim</option>
                                             </select>
                                         </div>
                                         <div class="col-12 col-md-8" v-if="encontristaEditando.restricao_alimentar">
                                             <label class="form-label small text-muted mb-1">Qual restrição</label>
-                                            <select class="form-select" v-model="encontristaEditando.detalhes_restricao">
-                                                <option value="">Selecione...</option>
-                                                <option v-for="item in restricoesAlimentaresListaMestre" :key="`restr-enc-${item}`" :value="item">{{ item }}</option>
-                                            </select>
+                                            <div class="restricao-multiselect">
+                                                <input type="text" v-model="buscaRestricaoEdit" class="form-control form-control-sm" placeholder="Buscar restrição...">
+                                                <div class="restricao-options-list">
+                                                    <label v-for="opcao in restricoesFiltradas(buscaRestricaoEdit)" :key="opcao" class="restricao-option-item"
+                                                        :class="{ selecionada: normalizarRestricoes(encontristaEditando.detalhes_restricao).includes(opcao) }">
+                                                        <input type="checkbox" class="restricao-option-check"
+                                                            :checked="normalizarRestricoes(encontristaEditando.detalhes_restricao).includes(opcao)"
+                                                            @change="toggleRestricaoEdit(opcao)">
+                                                        {{ opcao }}
+                                                    </label>
+                                                    <div v-if="!restricoesFiltradas(buscaRestricaoEdit).length" class="px-2 py-1 text-muted small">Nenhuma opção encontrada</div>
+                                                    <label class="restricao-option-item" :class="{ selecionada: outrosRestricaoMarcadoEdit }">
+                                                        <input type="checkbox" class="restricao-option-check" v-model="outrosRestricaoMarcadoEdit">
+                                                        Outros
+                                                    </label>
+                                                </div>
+                                                <div v-if="outrosRestricaoMarcadoEdit" class="d-flex gap-2 mt-1">
+                                                    <input type="text" v-model="outrosRestricaoTextoEdit" class="form-control form-control-sm"
+                                                        placeholder="Especifique a restrição..." @keyup.enter="adicionarOutrosRestricaoEdit">
+                                                    <button type="button" class="btn btn-sm btn-success" @click="adicionarOutrosRestricaoEdit"
+                                                        :disabled="!String(outrosRestricaoTextoEdit || '').trim()">Adicionar</button>
+                                                </div>
+                                                <div v-if="normalizarRestricoes(encontristaEditando.detalhes_restricao).length" class="restricao-chips">
+                                                    <span v-for="item in normalizarRestricoes(encontristaEditando.detalhes_restricao)" :key="item" class="restricao-chip">
+                                                        {{ item }}
+                                                        <button type="button" class="restricao-chip-remove" @click="toggleRestricaoEdit(item)">×</button>
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1792,17 +1907,60 @@
                             </div>
 
                             <div class="col-md-3">
-                                <label class="form-label">Restrição alimentar?</label>
-                                <select class="form-select" v-model="novoEncontristaMontagem.restricao_alimentar">
+                                <label class="form-label">Restrições alimentares e alergias?</label>
+                                <select class="form-select" v-model="novoEncontristaMontagem.restricao_alimentar"
+                                    @change="if (!novoEncontristaMontagem.restricao_alimentar) { novoEncontristaMontagem.detalhes_restricao = ''; buscaRestricaoNovo = ''; }">
                                     <option :value="false">Não</option>
                                     <option :value="true">Sim</option>
                                 </select>
                             </div>
                             <div class="col-md-9" v-if="novoEncontristaMontagem.restricao_alimentar">
                                 <label class="form-label">Detalhes da restrição</label>
-                                <select class="form-select" v-model="novoEncontristaMontagem.detalhes_restricao">
+                                <div class="restricao-multiselect">
+                                    <input type="text" v-model="buscaRestricaoNovo" class="form-control form-control-sm" placeholder="Buscar restrição...">
+                                    <div class="restricao-options-list">
+                                        <label v-for="opcao in restricoesFiltradas(buscaRestricaoNovo)" :key="opcao" class="restricao-option-item"
+                                            :class="{ selecionada: normalizarRestricoes(novoEncontristaMontagem.detalhes_restricao).includes(opcao) }">
+                                            <input type="checkbox" class="restricao-option-check"
+                                                :checked="normalizarRestricoes(novoEncontristaMontagem.detalhes_restricao).includes(opcao)"
+                                                @change="toggleRestricaoNovo(opcao)">
+                                            {{ opcao }}
+                                        </label>
+                                        <div v-if="!restricoesFiltradas(buscaRestricaoNovo).length" class="px-2 py-1 text-muted small">Nenhuma opção encontrada</div>
+                                        <label class="restricao-option-item" :class="{ selecionada: outrosRestricaoMarcadoNovo }">
+                                            <input type="checkbox" class="restricao-option-check" v-model="outrosRestricaoMarcadoNovo">
+                                            Outros
+                                        </label>
+                                    </div>
+                                    <div v-if="outrosRestricaoMarcadoNovo" class="d-flex gap-2 mt-1">
+                                        <input type="text" v-model="outrosRestricaoTextoNovo" class="form-control form-control-sm"
+                                            placeholder="Especifique a restrição..." @keyup.enter="adicionarOutrosRestricaoNovo">
+                                        <button type="button" class="btn btn-sm btn-success" @click="adicionarOutrosRestricaoNovo"
+                                            :disabled="!String(outrosRestricaoTextoNovo || '').trim()">Adicionar</button>
+                                    </div>
+                                    <div v-if="normalizarRestricoes(novoEncontristaMontagem.detalhes_restricao).length" class="restricao-chips">
+                                        <span v-for="item in normalizarRestricoes(novoEncontristaMontagem.detalhes_restricao)" :key="item" class="restricao-chip">
+                                            {{ item }}
+                                            <button type="button" class="restricao-chip-remove" @click="toggleRestricaoNovo(item)">×</button>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-3">
+                                <label class="form-label">Equipe de saúde?</label>
+                                <select class="form-select" v-model="novoEncontristaMontagem.equipe_saude">
+                                    <option :value="false">Não</option>
+                                    <option :value="true">Sim</option>
+                                </select>
+                            </div>
+                            <div class="col-md-9" v-if="novoEncontristaMontagem.equipe_saude">
+                                <label class="form-label">Área na equipe de saúde</label>
+                                <select class="form-select" v-model="novoEncontristaMontagem.equipe_saude_tipo">
                                     <option value="">Selecione...</option>
-                                    <option v-for="item in restricoesAlimentaresListaMestre" :key="`restr-mont-${item}`" :value="item">{{ item }}</option>
+                                    <option value="Enfermeiro(a)">Enfermeiro(a)</option>
+                                    <option value="Médico(a)">Médico(a)</option>
+                                    <option value="Fisioterapeuta">Fisioterapeuta</option>
                                 </select>
                             </div>
 
@@ -2469,17 +2627,44 @@
                     ],
                     restricoesAlimentaresListaMestre: [
                         'Alergia a amendoim',
-                        'Alergia a castanhas',
-                        'Alergia a frutos do mar',
-                        'APLV (Alergia à proteína do leite de vaca)',
+                        'Alergia a castanhas (nozes, castanha-do-pará, amêndoa, avelã, pistache, caju)',
+                        'Alergia a frutos do mar (camarão, caranguejo, lagosta, mariscos)',
+                        'Alergia a peixes',
+                        'Alergia a ovos',
+                        'Alergia a soja',
+                        'Alergia a trigo',
+                        'Alergia a gergelim',
+                        'APLV — Alergia à Proteína do Leite de Vaca',
+                        'Mamão',
+                        'Berinjela',
                         'Intolerante à lactose',
-                        'Intolerante a glúten (Celíaco)',
+                        'Intolerante a glúten (Doença Celíaca)',
+                        'Intolerante a frutose',
+                        'Intolerante a histamina',
                         'Não come carne vermelha',
                         'Não come carne de porco',
-                        'Vegetariano',
-                        'Vegano',
-                        'Outras'
+                        'Não come frutos do mar',
+                        'Não come peixe',
+                        'Vegetariano (não come carnes)',
+                        'Vegano (não come nenhum produto animal)',
+                        'Ovolactovegetariano',
+                        'Dieta Kosher (restrições religiosas judaicas)',
+                        'Dieta Halal (restrições religiosas islâmicas)',
+                        'Produtos de limpeza',
+                        'Diabético (restrição de açúcar)',
+                        'Hipertenso (restrição de sódio/sal)',
+                        'Fenilcetonúria (PKU)',
+                        'Doença de Crohn',
+                        'Síndrome do intestino irritável',
+                        'Refluxo gastroesofágico',
+                        'Restrição de gordura (colesterol alto)'
                     ],
+                    buscaRestricaoEdit: '',
+                    buscaRestricaoNovo: '',
+                    outrosRestricaoMarcadoEdit: false,
+                    outrosRestricaoTextoEdit: '',
+                    outrosRestricaoMarcadoNovo: false,
+                    outrosRestricaoTextoNovo: '',
                     novoEncontristaMontagem: {
                         nome_completo: '',
                         apelido: '',
@@ -3507,6 +3692,53 @@
                     if (!valor) return [];
                     return Array.from(new Set(String(valor).split(/[;,]/).map((item) => item.trim()).filter(Boolean)));
                 },
+                normalizarRestricoes(valor) {
+                    if (Array.isArray(valor)) return valor.filter(Boolean).map(v => String(v).trim()).filter(Boolean);
+                    if (!valor) return [];
+                    const txt = String(valor).trim();
+                    if (!txt) return [];
+                    try { const p = JSON.parse(txt); if (Array.isArray(p)) return p.filter(Boolean).map(v => String(v).trim()).filter(Boolean); } catch (e) {}
+                    return [txt];
+                },
+                restricoesFiltradas(busca) {
+                    const q = (busca || '').toLowerCase().trim();
+                    if (!q) return this.restricoesAlimentaresListaMestre;
+                    return this.restricoesAlimentaresListaMestre.filter(o => o.toLowerCase().includes(q));
+                },
+                toggleRestricaoEdit(opcao) {
+                    const arr = this.normalizarRestricoes(this.encontristaEditando.detalhes_restricao);
+                    const idx = arr.indexOf(opcao);
+                    if (idx === -1) arr.push(opcao); else arr.splice(idx, 1);
+                    this.encontristaEditando.detalhes_restricao = arr.length ? JSON.stringify(arr) : '';
+                    this.encontristaEditando.restricao_alimentar = arr.length > 0;
+                },
+                toggleRestricaoNovo(opcao) {
+                    const arr = this.normalizarRestricoes(this.novoEncontristaMontagem.detalhes_restricao);
+                    const idx = arr.indexOf(opcao);
+                    if (idx === -1) arr.push(opcao); else arr.splice(idx, 1);
+                    this.novoEncontristaMontagem.detalhes_restricao = arr.length ? JSON.stringify(arr) : '';
+                    this.novoEncontristaMontagem.restricao_alimentar = arr.length > 0;
+                },
+                adicionarOutrosRestricaoEdit() {
+                    const texto = String(this.outrosRestricaoTextoEdit || '').trim();
+                    if (!texto) return;
+                    const arr = this.normalizarRestricoes(this.encontristaEditando.detalhes_restricao);
+                    if (!arr.includes(texto)) arr.push(texto);
+                    this.encontristaEditando.detalhes_restricao = JSON.stringify(arr);
+                    this.encontristaEditando.restricao_alimentar = true;
+                    this.outrosRestricaoTextoEdit = '';
+                    this.outrosRestricaoMarcadoEdit = false;
+                },
+                adicionarOutrosRestricaoNovo() {
+                    const texto = String(this.outrosRestricaoTextoNovo || '').trim();
+                    if (!texto) return;
+                    const arr = this.normalizarRestricoes(this.novoEncontristaMontagem.detalhes_restricao);
+                    if (!arr.includes(texto)) arr.push(texto);
+                    this.novoEncontristaMontagem.detalhes_restricao = JSON.stringify(arr);
+                    this.novoEncontristaMontagem.restricao_alimentar = true;
+                    this.outrosRestricaoTextoNovo = '';
+                    this.outrosRestricaoMarcadoNovo = false;
+                },
                 resetNovoEncontristaMontagem() {
                     this.novoEncontristaMontagem = {
                         nome_completo: '',
@@ -3529,6 +3761,8 @@
                         detalhes_restricao: '',
                         eh_musico: false,
                         instrumentos_musicais: [],
+                        equipe_saude: false,
+                        equipe_saude_tipo: '',
                         pastorais: [],
                         tio_casal_id: null,
                         conjuge_nome: '',
@@ -3539,6 +3773,8 @@
                         conjuge_ecc_numero: '',
                         observacoes_extras: ''
                     };
+                    this.outrosRestricaoMarcadoNovo = false;
+                    this.outrosRestricaoTextoNovo = '';
                 },
                 resetImportacaoEncontristasExcel() {
                     this.arquivoImportacaoEncontristasExcel = null;
@@ -4021,6 +4257,8 @@
                             detalhes_restricao: String(jovem.detalhes_restricao || '').trim() || null,
                             eh_musico: !!jovem.eh_musico,
                             instrumentos_musicais: this.normalizarInstrumentosListaMestre(jovem.instrumentos_musicais),
+                            equipe_saude: !!jovem.equipe_saude,
+                            equipe_saude_tipo: jovem.equipe_saude ? (String(jovem.equipe_saude_tipo || '').trim() || null) : null,
                             endereco_rua: String(jovem.endereco_rua || '').trim() || null,
                             endereco_numero: String(jovem.endereco_numero || '').trim() || null,
                             endereco_bairro: String(jovem.endereco_bairro || '').trim() || null,
@@ -4499,6 +4737,7 @@
                         eh_musico: !!(fichaListaMestre && fichaListaMestre.eh_musico),
                         instrumentos_musicais: this.normalizarInstrumentosListaMestre(fichaListaMestre && fichaListaMestre.instrumentos_musicais),
                         equipe_saude: !!(fichaListaMestre && fichaListaMestre.equipe_saude),
+                        equipe_saude_tipo: String((fichaListaMestre && fichaListaMestre.equipe_saude_tipo) || '').trim(),
                         nao_serve_ejc: !!(fichaListaMestre && fichaListaMestre.nao_serve_ejc),
                         motivo_nao_serve_ejc: String((fichaListaMestre && fichaListaMestre.motivo_nao_serve_ejc) || '').trim(),
                         observacoes_extras: String((fichaListaMestre && fichaListaMestre.observacoes_extras) || '').trim(),
@@ -4642,6 +4881,7 @@
                         eh_musico: !!form.eh_musico,
                         instrumentos_musicais: form.eh_musico ? this.normalizarInstrumentosListaMestre(form.instrumentos_musicais) : [],
                         equipe_saude: !!form.equipe_saude,
+                        equipe_saude_tipo: form.equipe_saude ? (String(form.equipe_saude_tipo || '').trim() || null) : null,
                         nao_serve_ejc: !!form.nao_serve_ejc,
                         motivo_nao_serve_ejc: form.nao_serve_ejc ? (String(form.motivo_nao_serve_ejc || '').trim() || null) : null,
                         observacoes_extras: String(form.observacoes_extras || '').trim() || null,

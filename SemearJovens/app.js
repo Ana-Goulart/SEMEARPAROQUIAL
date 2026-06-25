@@ -170,6 +170,8 @@ app.use(sensitivePhoneResponseMiddleware);
 app.use(personNameResponseMiddleware);
 app.use(attachUserFromSession);
 app.use(attachAdminFromSession);
+app.use('/css', (_req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });
+app.use('/js', (_req, res, next) => { res.set('Cache-Control', 'no-store'); next(); });
 app.use(express.static(path.join(__dirname, 'public'))); // Serve arquivos estáticos
 app.use('/api', globalLimiter);
 app.get('/favicon.ico', (_req, res) => res.redirect('/assets/logo-oficial.png'));

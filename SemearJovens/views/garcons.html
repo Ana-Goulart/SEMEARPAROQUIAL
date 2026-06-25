@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EJC - Garçons</title>
     <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
     <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
@@ -328,6 +329,29 @@
             .garcons-resumo-topo {
                 margin-bottom: 0.8rem;
             }
+        }
+
+        /* ── Melhorias UX mobile Garçons (max-width: 767.98px) ── */
+        @media (max-width: 767.98px) {
+            /* 1. Botões topo: lado a lado com texto visível */
+            .garcons-toolbar-buttons {
+                flex-wrap: nowrap;
+            }
+            .garcons-toolbar-buttons .btn {
+                flex: 1 1 0;
+                min-width: 0;
+                white-space: normal;
+                line-height: 1.25;
+                padding: 0.55rem 0.5rem;
+            }
+            .garcons-toolbar-buttons .btn-ejc-text {
+                display: inline !important;
+                font-size: 0.82rem;
+            }
+            .garcons-toolbar-buttons .btn-ejc-icon { font-size: 0.9rem; }
+
+            /* Tamanho de fonte dos nomes na tabela de histórico */
+            .garcom-table tbody td:first-child { font-size: 13px; }
         }
     </style>
 </head>

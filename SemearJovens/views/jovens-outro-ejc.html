@@ -2,6 +2,7 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EJC - Outras Paróquias</title>
     <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
     <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
@@ -207,6 +208,9 @@
             .lista-mestre-grid.table > :not(caption) > * > * {
                 padding: 0.72rem 0.65rem !important;
             }
+            /* Tamanho de fonte dos nomes: 13px no mobile */
+            .lista-mestre-grid .nome-clicavel { font-size: 13px !important; }
+            .nome-clicavel { font-size: 13px !important; }
         }
 
         .lista-mestre-tabs-bar {
@@ -869,6 +873,30 @@
                 flex-shrink: 0;
             }
         }
+        /* ---- Multiselect Restrição Alimentar ---- */
+        .restricao-multiselect { display: flex; flex-direction: column; gap: 0.4rem; }
+        .restricao-options-list {
+            max-height: 140px; overflow-y: auto;
+            border: 1px solid #e5d5bb; border-radius: 6px;
+            padding: 4px 2px; background: #fff;
+        }
+        .restricao-option-item {
+            display: flex; align-items: center; gap: 0.4rem;
+            padding: 3px 8px; cursor: pointer; border-radius: 4px;
+            font-size: 0.875rem; user-select: none; transition: background 0.12s;
+        }
+        .restricao-option-item:hover { background: #fff8ee; }
+        .restricao-option-item.selecionada { background: #f4ede1; font-weight: 600; color: #6e5430; }
+        .restricao-option-check { width: 14px; height: 14px; accent-color: #d9a650; flex-shrink: 0; }
+        .restricao-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+        .restricao-chip {
+            display: inline-flex; align-items: center; gap: 4px;
+            background: #d9a650; color: #fff; border-radius: 999px;
+            font-size: 0.78rem; padding: 2px 8px 2px 10px; font-weight: 600;
+            box-shadow: 0 2px 6px rgba(217,166,80,0.28);
+        }
+        .restricao-chip-remove { background: none; border: none; padding: 0; line-height: 1; font-size: 0.85rem; color: rgba(255,255,255,0.8); cursor: pointer; }
+        .restricao-chip-remove:hover { color: #fff; }
     </style>
 </head>
 <body>
@@ -1068,7 +1096,7 @@
                                 </select>
                             </div>
                             <div class="col-6 col-md-3">
-                                <label class="form-label small text-muted">Restrição alimentar</label>
+                                <label class="form-label small text-muted">Restrições alimentares e alergias</label>
                                 <select v-model="filtroRestricaoAlimentar" class="form-select">
                                     <option value="">Todos</option>
                                     <option value="sim">Sim</option>
@@ -1153,7 +1181,7 @@
                                     <th v-if="colunasVisiveisJovens.Sexo"><span class="sort-button">Sexo</span></th>
                                     <th v-if="colunasVisiveisJovens.Moita"><span class="sort-button">Moita</span></th>
                                     <th v-if="colunasVisiveisJovens.Pcd"><span class="sort-button">PcD</span></th>
-                                    <th v-if="colunasVisiveisJovens.RestricaoAlimentar"><span class="sort-button">Restrição alimentar</span></th>
+                                    <th v-if="colunasVisiveisJovens.RestricaoAlimentar"><span class="sort-button">Restrições alimentares e alergias</span></th>
                                     <th style="width: 120px;"><span class="sort-button">Ações</span></th>
                                 </tr>
                             </thead>
@@ -1486,18 +1514,37 @@
                                             <input class="form-control" v-model.trim="novo.qual_deficiencia" maxlength="220">
                                         </div>
                                         <div class="col-lg-4">
-                                            <label class="text-muted small">Restrição alimentar?</label>
-                                            <select class="form-select" v-model="novo.restricao_alimentar">
+                                            <label class="text-muted small">Restrições alimentares e alergias?</label>
+                                            <select class="form-select" v-model="novo.restricao_alimentar"
+                                                @change="if (!novo.restricao_alimentar) { novo.detalhes_restricao = ''; buscaRestricaoNovo = ''; }">
                                                 <option :value="false">Não</option>
                                                 <option :value="true">Sim</option>
                                             </select>
                                         </div>
                                         <div class="col-lg-8" v-if="novo.restricao_alimentar">
-                                            <label class="text-muted small">Qual restrição alimentar?</label>
-                                            <select class="form-select" v-model="novo.detalhes_restricao">
-                                                <option disabled value="">Selecione...</option>
-                                                <option v-for="item in opcoesRestricaoAlimentar" :key="`rest-novo-${item}`" :value="item">{{ item }}</option>
-                                            </select>
+                                            <label class="text-muted small">Quais restrições alimentares e alergias?</label>
+                                            <div class="restricao-multiselect">
+                                                <input type="text" v-model="buscaRestricaoNovo" class="form-control form-control-sm" placeholder="Buscar restrição...">
+                                                <div class="restricao-options-list">
+                                                    <label v-for="opcao in restricoesFiltradas(buscaRestricaoNovo)" :key="opcao" class="restricao-option-item"
+                                                        :class="{ selecionada: normalizarRestricoes(novo.detalhes_restricao).includes(opcao) }">
+                                                        <input type="checkbox" class="restricao-option-check"
+                                                            :checked="normalizarRestricoes(novo.detalhes_restricao).includes(opcao)"
+                                                            @change="toggleRestricaoNovo(opcao)">
+                                                        {{ opcao }}
+                                                    </label>
+                                                    <div v-if="!restricoesFiltradas(buscaRestricaoNovo).length" class="px-2 py-1 text-muted small">Nenhuma opção encontrada</div>
+                                                </div>
+                                                <div v-if="normalizarRestricoes(novo.detalhes_restricao).length" class="restricao-chips">
+                                                    <span v-for="item in normalizarRestricoes(novo.detalhes_restricao)" :key="item" class="restricao-chip">
+                                                        {{ item }}
+                                                        <button type="button" class="restricao-chip-remove" @click="toggleRestricaoNovo(item)">×</button>
+                                                    </span>
+                                                </div>
+                                                <div v-if="normalizarRestricoes(novo.detalhes_restricao).includes('Outros')" class="mt-1">
+                                                    <input type="text" class="form-control form-control-sm" v-model.trim="outroTextoNovo" maxlength="220" placeholder="Descreva a restrição">
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -1884,17 +1931,41 @@
                                                 </div>
                                             </div>
                                             <div class="col-md-8">
-                                                <label class="text-muted small mb-0">Restrição alimentar</label>
-                                                <div v-if="!isEditingOutroFicha" class="py-1 px-2 bg-light border rounded">{{ jovemOutroFicha.restricao_alimentar ? (jovemOutroFicha.detalhes_restricao || 'Sim') : 'Não' }}</div>
+                                                <label class="text-muted small mb-0">Restrições alimentares e alergias</label>
+                                                <div v-if="!isEditingOutroFicha" class="py-1 px-2 bg-light border rounded">
+                                                    <template v-if="jovemOutroFicha.restricao_alimentar">
+                                                        Sim<span v-if="normalizarRestricoes(jovemOutroFicha.detalhes_restricao).length"> — {{ normalizarRestricoes(jovemOutroFicha.detalhes_restricao).join(', ') }}</span>
+                                                    </template>
+                                                    <template v-else>Não</template>
+                                                </div>
                                                 <div v-else>
-                                                    <select class="form-select mb-2" v-model="jovemOutroFicha.restricao_alimentar">
+                                                    <select class="form-select mb-2" v-model="jovemOutroFicha.restricao_alimentar"
+                                                        @change="if (!jovemOutroFicha.restricao_alimentar) { jovemOutroFicha.detalhes_restricao = ''; buscaRestricaoFicha = ''; }">
                                                         <option :value="false">Não</option>
                                                         <option :value="true">Sim</option>
                                                     </select>
-                                                    <select v-if="jovemOutroFicha.restricao_alimentar" class="form-select" v-model="jovemOutroFicha.detalhes_restricao">
-                                                        <option disabled value="">Selecione...</option>
-                                                        <option v-for="item in opcoesRestricaoAlimentar" :key="`ficha-rest-${item}`" :value="item">{{ item }}</option>
-                                                    </select>
+                                                    <div v-if="jovemOutroFicha.restricao_alimentar" class="restricao-multiselect">
+                                                        <input type="text" v-model="buscaRestricaoFicha" class="form-control form-control-sm" placeholder="Buscar restrição...">
+                                                        <div class="restricao-options-list">
+                                                            <label v-for="opcao in restricoesFiltradas(buscaRestricaoFicha)" :key="opcao" class="restricao-option-item"
+                                                                :class="{ selecionada: normalizarRestricoes(jovemOutroFicha.detalhes_restricao).includes(opcao) }">
+                                                                <input type="checkbox" class="restricao-option-check"
+                                                                    :checked="normalizarRestricoes(jovemOutroFicha.detalhes_restricao).includes(opcao)"
+                                                                    @change="toggleRestricaoFicha(opcao)">
+                                                                {{ opcao }}
+                                                            </label>
+                                                            <div v-if="!restricoesFiltradas(buscaRestricaoFicha).length" class="px-2 py-1 text-muted small">Nenhuma opção encontrada</div>
+                                                        </div>
+                                                        <div v-if="normalizarRestricoes(jovemOutroFicha.detalhes_restricao).length" class="restricao-chips">
+                                                            <span v-for="item in normalizarRestricoes(jovemOutroFicha.detalhes_restricao)" :key="item" class="restricao-chip">
+                                                                {{ item }}
+                                                                <button type="button" class="restricao-chip-remove" @click="toggleRestricaoFicha(item)">×</button>
+                                                            </span>
+                                                        </div>
+                                                        <div v-if="normalizarRestricoes(jovemOutroFicha.detalhes_restricao).includes('Outros')" class="mt-1">
+                                                            <input type="text" class="form-control form-control-sm" v-model.trim="outroTextoFicha" maxlength="220" placeholder="Descreva a restrição">
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </template>
@@ -2402,19 +2473,37 @@
                                                     </div>
                                                 </div>
                                                 <div class="col-md-12">
-                                                    <label class="form-label d-block">O tio possui restrição alimentar?</label>
+                                                    <label class="form-label d-block">Restrições alimentares e alergias do tio?</label>
                                                     <div class="d-flex gap-2 align-items-center flex-wrap">
                                                         <div class="form-check mb-0">
-                                                            <input class="form-check-input" type="checkbox" id="checkRestricaoTioOutro" v-model="formCasal.restricao_alimentar_tio" :true-value="1" :false-value="0">
+                                                            <input class="form-check-input" type="checkbox" id="checkRestricaoTioOutro" v-model="formCasal.restricao_alimentar_tio" :true-value="1" :false-value="0"
+                                                                @change="if (!formCasal.restricao_alimentar_tio) { formCasal.detalhes_restricao_tio = ''; buscaRestricaoTioOutro = ''; }">
                                                             <label class="form-check-label" for="checkRestricaoTioOutro">Sim</label>
                                                         </div>
                                                         <div v-if="formCasal.restricao_alimentar_tio" class="flex-grow-1" style="min-width: 280px;">
-                                                            <label class="form-label text-muted small mb-1">Qual restrição alimentar do tio?</label>
-                                                            <select class="form-select" v-model="formCasal.detalhes_restricao_tio">
-                                                                <option disabled value="">Selecione uma restrição...</option>
-                                                                <option v-for="opcao in opcoesRestricaoAlimentar" :key="'restr-tio-'+opcao" :value="opcao">{{ opcao }}</option>
-                                                                <option v-if="formCasal.detalhes_restricao_tio && !opcoesRestricaoAlimentar.includes(formCasal.detalhes_restricao_tio)" :value="formCasal.detalhes_restricao_tio">{{ formCasal.detalhes_restricao_tio }}</option>
-                                                            </select>
+                                                            <label class="form-label text-muted small mb-1">Quais restrições do tio?</label>
+                                                            <div class="restricao-multiselect">
+                                                                <input type="text" v-model="buscaRestricaoTioOutro" class="form-control form-control-sm" placeholder="Buscar restrição...">
+                                                                <div class="restricao-options-list">
+                                                                    <label v-for="opcao in restricoesFiltradas(buscaRestricaoTioOutro)" :key="opcao" class="restricao-option-item"
+                                                                        :class="{ selecionada: normalizarRestricoes(formCasal.detalhes_restricao_tio).includes(opcao) }">
+                                                                        <input type="checkbox" class="restricao-option-check"
+                                                                            :checked="normalizarRestricoes(formCasal.detalhes_restricao_tio).includes(opcao)"
+                                                                            @change="toggleRestricaoTioOutro(opcao)">
+                                                                        {{ opcao }}
+                                                                    </label>
+                                                                    <div v-if="!restricoesFiltradas(buscaRestricaoTioOutro).length" class="px-2 py-1 text-muted small">Nenhuma opção encontrada</div>
+                                                                </div>
+                                                                <div v-if="normalizarRestricoes(formCasal.detalhes_restricao_tio).length" class="restricao-chips">
+                                                                    <span v-for="item in normalizarRestricoes(formCasal.detalhes_restricao_tio)" :key="item" class="restricao-chip">
+                                                                        {{ item }}
+                                                                        <button type="button" class="restricao-chip-remove" @click="toggleRestricaoTioOutro(item)">×</button>
+                                                                    </span>
+                                                                </div>
+                                                                <div v-if="normalizarRestricoes(formCasal.detalhes_restricao_tio).includes('Outros')" class="mt-1">
+                                                                    <input type="text" class="form-control form-control-sm" v-model.trim="outroTextoTioOutro" maxlength="220" placeholder="Descreva a restrição do tio">
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -2430,19 +2519,37 @@
                                                     </div>
                                                 </div>
                                                 <div class="col-md-12">
-                                                    <label class="form-label d-block">A tia possui restrição alimentar?</label>
+                                                    <label class="form-label d-block">Restrições alimentares e alergias da tia?</label>
                                                     <div class="d-flex gap-2 align-items-center flex-wrap">
                                                         <div class="form-check mb-0">
-                                                            <input class="form-check-input" type="checkbox" id="checkRestricaoTiaOutro" v-model="formCasal.restricao_alimentar_tia" :true-value="1" :false-value="0">
+                                                            <input class="form-check-input" type="checkbox" id="checkRestricaoTiaOutro" v-model="formCasal.restricao_alimentar_tia" :true-value="1" :false-value="0"
+                                                                @change="if (!formCasal.restricao_alimentar_tia) { formCasal.detalhes_restricao_tia = ''; buscaRestricaoTiaOutro = ''; }">
                                                             <label class="form-check-label" for="checkRestricaoTiaOutro">Sim</label>
                                                         </div>
                                                         <div v-if="formCasal.restricao_alimentar_tia" class="flex-grow-1" style="min-width: 280px;">
-                                                            <label class="form-label text-muted small mb-1">Qual restrição alimentar da tia?</label>
-                                                            <select class="form-select" v-model="formCasal.detalhes_restricao_tia">
-                                                                <option disabled value="">Selecione uma restrição...</option>
-                                                                <option v-for="opcao in opcoesRestricaoAlimentar" :key="'restr-tia-'+opcao" :value="opcao">{{ opcao }}</option>
-                                                                <option v-if="formCasal.detalhes_restricao_tia && !opcoesRestricaoAlimentar.includes(formCasal.detalhes_restricao_tia)" :value="formCasal.detalhes_restricao_tia">{{ formCasal.detalhes_restricao_tia }}</option>
-                                                            </select>
+                                                            <label class="form-label text-muted small mb-1">Quais restrições da tia?</label>
+                                                            <div class="restricao-multiselect">
+                                                                <input type="text" v-model="buscaRestricaoTiaOutro" class="form-control form-control-sm" placeholder="Buscar restrição...">
+                                                                <div class="restricao-options-list">
+                                                                    <label v-for="opcao in restricoesFiltradas(buscaRestricaoTiaOutro)" :key="opcao" class="restricao-option-item"
+                                                                        :class="{ selecionada: normalizarRestricoes(formCasal.detalhes_restricao_tia).includes(opcao) }">
+                                                                        <input type="checkbox" class="restricao-option-check"
+                                                                            :checked="normalizarRestricoes(formCasal.detalhes_restricao_tia).includes(opcao)"
+                                                                            @change="toggleRestricaoTiaOutro(opcao)">
+                                                                        {{ opcao }}
+                                                                    </label>
+                                                                    <div v-if="!restricoesFiltradas(buscaRestricaoTiaOutro).length" class="px-2 py-1 text-muted small">Nenhuma opção encontrada</div>
+                                                                </div>
+                                                                <div v-if="normalizarRestricoes(formCasal.detalhes_restricao_tia).length" class="restricao-chips">
+                                                                    <span v-for="item in normalizarRestricoes(formCasal.detalhes_restricao_tia)" :key="item" class="restricao-chip">
+                                                                        {{ item }}
+                                                                        <button type="button" class="restricao-chip-remove" @click="toggleRestricaoTiaOutro(item)">×</button>
+                                                                    </span>
+                                                                </div>
+                                                                <div v-if="normalizarRestricoes(formCasal.detalhes_restricao_tia).includes('Outros')" class="mt-1">
+                                                                    <input type="text" class="form-control form-control-sm" v-model.trim="outroTextoTiaOutro" maxlength="220" placeholder="Descreva a restrição da tia">
+                                                                </div>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -2780,7 +2887,15 @@ Liturgia (Coordenador - Música)</div>
                     ejcs: [],
                     outrosEjcs: [],
                     instrumentosDisponiveis: ['Voz', 'Violao', 'Guitarra', 'Baixo', 'Teclado', 'Bateria', 'Percussao', 'Flauta', 'Saxofone', 'Violino', 'Cajon', 'Ukulele'],
-                    opcoesRestricaoAlimentar: ['Alergia a amendoim', 'Alergia a castanhas', 'Alergia a frutos do mar', 'APLV (Alergia à proteína do leite de vaca)', 'Intolerante à lactose', 'Intolerante a glúten (Celíaco)', 'Não come carne vermelha', 'Não come carne de porco', 'Vegetariano', 'Vegano', 'Outras'],
+                    opcoesRestricaoAlimentar: ['Alergia a amendoim', 'Alergia a castanhas (nozes, castanha-do-pará, amêndoa, avelã, pistache, caju)', 'Alergia a frutos do mar (camarão, caranguejo, lagosta, mariscos)', 'Alergia a peixes', 'Alergia a ovos', 'Alergia a soja', 'Alergia a trigo', 'Alergia a gergelim', 'APLV — Alergia à Proteína do Leite de Vaca', 'Mamão', 'Berinjela', 'Intolerante à lactose', 'Intolerante a glúten (Doença Celíaca)', 'Intolerante a frutose', 'Intolerante a histamina', 'Não come carne vermelha', 'Não come carne de porco', 'Não come frutos do mar', 'Não come peixe', 'Vegetariano (não come carnes)', 'Vegano (não come nenhum produto animal)', 'Ovolactovegetariano', 'Dieta Kosher (restrições religiosas judaicas)', 'Dieta Halal (restrições religiosas islâmicas)', 'Produtos de limpeza', 'Diabético (restrição de açúcar)', 'Hipertenso (restrição de sódio/sal)', 'Fenilcetonúria (PKU)', 'Doença de Crohn', 'Síndrome do intestino irritável', 'Refluxo gastroesofágico', 'Restrição de gordura (colesterol alto)', 'Outros'],
+                    buscaRestricaoNovo: '',
+                    buscaRestricaoFicha: '',
+                    outroTextoNovo: '',
+                    outroTextoFicha: '',
+                    outroTextoTioOutro: '',
+                    outroTextoTiaOutro: '',
+                    buscaRestricaoTioOutro: '',
+                    buscaRestricaoTiaOutro: '',
                     cores: ['Rosa', 'Azul', 'Vermelho', 'Verde', 'Amarelo', 'Marrom'],
                     editandoJovemOutro: false,
                     novo: {
@@ -3078,6 +3193,47 @@ Liturgia (Coordenador - Música)</div>
                 }
             },
             methods: {
+                normalizarRestricoes(valor) {
+                    if (Array.isArray(valor)) return valor.filter(Boolean).map(v => String(v).trim()).filter(Boolean);
+                    if (!valor) return [];
+                    const txt = String(valor).trim();
+                    if (!txt) return [];
+                    try { const p = JSON.parse(txt); if (Array.isArray(p)) return p.filter(Boolean).map(v => String(v).trim()).filter(Boolean); } catch (e) {}
+                    return [txt];
+                },
+                restricoesFiltradas(busca) {
+                    const q = (busca || '').toLowerCase().trim();
+                    if (!q) return this.opcoesRestricaoAlimentar;
+                    return this.opcoesRestricaoAlimentar.filter(o => o.toLowerCase().includes(q));
+                },
+                toggleRestricaoNovo(opcao) {
+                    const arr = this.normalizarRestricoes(this.novo.detalhes_restricao);
+                    const idx = arr.indexOf(opcao);
+                    if (idx === -1) arr.push(opcao); else arr.splice(idx, 1);
+                    this.novo.detalhes_restricao = arr.length ? JSON.stringify(arr) : '';
+                    this.novo.restricao_alimentar = arr.length > 0;
+                },
+                toggleRestricaoFicha(opcao) {
+                    const arr = this.normalizarRestricoes(this.jovemOutroFicha.detalhes_restricao);
+                    const idx = arr.indexOf(opcao);
+                    if (idx === -1) arr.push(opcao); else arr.splice(idx, 1);
+                    this.jovemOutroFicha.detalhes_restricao = arr.length ? JSON.stringify(arr) : '';
+                    this.jovemOutroFicha.restricao_alimentar = arr.length > 0;
+                },
+                toggleRestricaoTioOutro(opcao) {
+                    const arr = this.normalizarRestricoes(this.formCasal.detalhes_restricao_tio);
+                    const idx = arr.indexOf(opcao);
+                    if (idx === -1) arr.push(opcao); else arr.splice(idx, 1);
+                    this.formCasal.detalhes_restricao_tio = arr.length ? JSON.stringify(arr) : '';
+                    this.formCasal.restricao_alimentar_tio = arr.length ? 1 : 0;
+                },
+                toggleRestricaoTiaOutro(opcao) {
+                    const arr = this.normalizarRestricoes(this.formCasal.detalhes_restricao_tia);
+                    const idx = arr.indexOf(opcao);
+                    if (idx === -1) arr.push(opcao); else arr.splice(idx, 1);
+                    this.formCasal.detalhes_restricao_tia = arr.length ? JSON.stringify(arr) : '';
+                    this.formCasal.restricao_alimentar_tia = arr.length ? 1 : 0;
+                },
                 normalizarAba(valor) {
                     const base = this.normalizarTextoBusca(valor).replace(/\s+/g, '');
                     if (base === 'membros' || base === 'membro' || base === 'jovens' || base === 'jovem') return 'membros';
@@ -3530,7 +3686,7 @@ Liturgia (Coordenador - Música)</div>
                         Sexo: 'Sexo',
                         Moita: 'Moita',
                         Pcd: 'PcD',
-                        RestricaoAlimentar: 'Restrição alimentar',
+                        RestricaoAlimentar: 'Restrições alimentares e alergias',
                         Casal: 'Casal',
                         Telefones: 'Telefones'
                     };
@@ -3686,9 +3842,25 @@ Liturgia (Coordenador - Música)</div>
                 },
                 normalizarCamposSaudeCasal() {
                     if (!this.formCasal.deficiencia_tio) this.formCasal.qual_deficiencia_tio = '';
-                    if (!this.formCasal.restricao_alimentar_tio) this.formCasal.detalhes_restricao_tio = '';
+                    if (!this.formCasal.restricao_alimentar_tio) {
+                        this.formCasal.detalhes_restricao_tio = '';
+                    } else {
+                        const arrTio = this.normalizarRestricoes(this.formCasal.detalhes_restricao_tio);
+                        const idxTio = arrTio.indexOf('Outros');
+                        if (idxTio !== -1 && this.outroTextoTioOutro.trim()) arrTio.splice(idxTio, 1, this.outroTextoTioOutro.trim());
+                        this.formCasal.detalhes_restricao_tio = arrTio.length ? JSON.stringify(arrTio) : '';
+                        this.formCasal.restricao_alimentar_tio = arrTio.length ? 1 : 0;
+                    }
                     if (!this.formCasal.deficiencia_tia) this.formCasal.qual_deficiencia_tia = '';
-                    if (!this.formCasal.restricao_alimentar_tia) this.formCasal.detalhes_restricao_tia = '';
+                    if (!this.formCasal.restricao_alimentar_tia) {
+                        this.formCasal.detalhes_restricao_tia = '';
+                    } else {
+                        const arrTia = this.normalizarRestricoes(this.formCasal.detalhes_restricao_tia);
+                        const idxTia = arrTia.indexOf('Outros');
+                        if (idxTia !== -1 && this.outroTextoTiaOutro.trim()) arrTia.splice(idxTia, 1, this.outroTextoTiaOutro.trim());
+                        this.formCasal.detalhes_restricao_tia = arrTia.length ? JSON.stringify(arrTia) : '';
+                        this.formCasal.restricao_alimentar_tia = arrTia.length ? 1 : 0;
+                    }
                     this.formCasal.possui_carro = !!this.formCasal.possui_carro;
                     this.formCasal.possui_carro_tio = this.formCasal.possui_carro;
                     this.formCasal.possui_carro_tia = this.formCasal.possui_carro;
@@ -4827,7 +4999,7 @@ Liturgia (Coordenador - Música)</div>
                         deficiencia: this.jovemOutroFicha.deficiencia ? 1 : 0,
                         qual_deficiencia: this.jovemOutroFicha.qual_deficiencia || null,
                         restricao_alimentar: this.jovemOutroFicha.restricao_alimentar ? 1 : 0,
-                        detalhes_restricao: this.jovemOutroFicha.detalhes_restricao || null,
+                        detalhes_restricao: (() => { const a = this.normalizarRestricoes(this.jovemOutroFicha.detalhes_restricao); const i = a.indexOf('Outros'); if (i !== -1 && this.outroTextoFicha.trim()) a.splice(i, 1, this.outroTextoFicha.trim()); return a.length ? JSON.stringify(a) : null; })(),
                         eh_musico: this.jovemOutroFicha.eh_musico ? 1 : 0,
                         equipe_saude: this.jovemOutroFicha.equipe_saude ? 1 : 0,
                         instrumentos_musicais: this.jovemOutroFicha.eh_musico ? this.normalizarInstrumentosOutro(this.jovemOutroFicha.instrumentos_musicais) : [],
@@ -5149,7 +5321,7 @@ Liturgia (Coordenador - Música)</div>
                         deficiencia: this.novo.deficiencia ? 1 : 0,
                         qual_deficiencia: this.novo.qual_deficiencia || null,
                         restricao_alimentar: this.novo.restricao_alimentar ? 1 : 0,
-                        detalhes_restricao: this.novo.detalhes_restricao || null,
+                        detalhes_restricao: (() => { const a = this.normalizarRestricoes(this.novo.detalhes_restricao); const i = a.indexOf('Outros'); if (i !== -1 && this.outroTextoNovo.trim()) a.splice(i, 1, this.outroTextoNovo.trim()); return a.length ? JSON.stringify(a) : null; })(),
                         eh_musico: this.novo.eh_musico ? 1 : 0,
                         equipe_saude: 0,
                         instrumentos_musicais: [],

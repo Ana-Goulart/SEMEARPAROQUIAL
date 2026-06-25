@@ -3,6 +3,7 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EJC - Financeiro</title>
     <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
     <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
@@ -85,6 +86,34 @@
             border-color: rgba(210, 184, 136, 0.14);
             background: linear-gradient(180deg, rgba(36, 29, 21, 0.98), rgba(29, 24, 18, 0.96));
         }
+
+        /* ── Mobile financeiro (max-width: 768px) ── */
+        .fin-mob-btns { display: none; }
+        .fin-cards-wrap { display: none; }
+
+        .fin-card {
+            background: #fff;
+            border: 1px solid #e6ecf5;
+            border-radius: 12px;
+            padding: 12px 14px;
+        }
+        .fin-card-data { font-size: 11px; color: #94a3b8; margin-bottom: 4px; }
+        .fin-card-mid { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap; }
+        .fin-card-desc { font-size: 0.9rem; color: #223750; font-weight: 500; min-width: 0; }
+        .fin-card-lancado { font-size: 11px; color: #94a3b8; margin-bottom: 6px; }
+        .fin-card-valor { font-size: 1rem; font-weight: 700; text-align: right; }
+        .fin-badge-entrada { background-color: #fdf4e3 !important; color: #78450b !important; }
+        .fin-badge-saida { background-color: #8f6a24 !important; color: #fff !important; }
+        .fin-valor-entrada { color: #8f6a24; }
+        .fin-valor-saida { color: #7f1d1d; }
+
+        @media (max-width: 767.98px) {
+            .fin-desk-btns { display: none !important; }
+            .fin-mob-btns { display: flex !important; }
+            .fin-registrar-row .btn { flex: 1; font-size: 0.85rem; }
+            .fin-table-wrap { display: none !important; }
+            .fin-cards-wrap { display: block !important; }
+        }
     </style>
 </head>
 
@@ -96,7 +125,7 @@
                     <h3><i class="fa-solid fa-sack-dollar icon-accent me-2"></i>Financeiro</h3>
                     <p class="text-muted mb-0">Controle de entradas, saídas e saldo do EJC.</p>
                 </div>
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 fin-desk-btns">
                     <button class="btn btn-soft-primary" @click="exportarHistoricoExcel">
                         <i class="fa-solid fa-file-excel me-1"></i> Exportar Excel
                     </button>
@@ -105,6 +134,12 @@
                         <i class="fas fa-sync-alt"></i> Atualizar
                     </button>
                 </div>
+            </div>
+
+            <div class="fin-mob-btns gap-2 mb-3">
+                <button class="btn btn-soft-primary btn-sm flex-fill" @click="exportarHistoricoExcel">Exportar</button>
+                <button class="btn btn-outline-danger btn-sm flex-fill" @click="zerarSaldo">Zerar</button>
+                <button class="btn btn-soft-primary btn-sm flex-fill" @click="carregarTudo">Atualizar</button>
             </div>
 
             <div class="saldo-card mb-4">
@@ -123,7 +158,7 @@
                 </div>
             </div>
 
-            <div class="d-flex gap-2 mb-4">
+            <div class="d-flex gap-2 mb-4 fin-registrar-row">
                 <button class="btn btn-success" @click="abrirModal('ENTRADA')"><i class="fa-solid fa-plus icon-accent"></i> Registrar Entrada</button>
                 <button class="btn btn-danger" @click="abrirModal('SAIDA')"><i class="fa-solid fa-minus icon-accent"></i> Registrar Saída</button>
             </div>
@@ -133,7 +168,7 @@
                     <h6 class="mb-0">Histórico Financeiro</h6>
                     <small class="text-muted">{{ movimentacoes.length }} movimentações</small>
                 </div>
-                <div class="table-responsive">
+                <div class="table-responsive fin-table-wrap">
                     <table class="table table-hover align-middle mb-0">
                         <thead class="table-light">
                             <tr>
@@ -163,6 +198,23 @@
                             </tr>
                         </tbody>
                     </table>
+                </div>
+
+                <div class="fin-cards-wrap p-3">
+                    <div v-if="!movimentacoes.length" class="text-center text-muted py-4">Nenhuma movimentação registrada.</div>
+                    <div v-for="mov in movimentacoes" :key="`card-${mov.id}`" class="fin-card mb-2">
+                        <div class="fin-card-data">{{ formatarDataHora(mov.created_at) }}</div>
+                        <div class="fin-card-mid">
+                            <span class="badge" :class="mov.tipo === 'ENTRADA' ? 'fin-badge-entrada' : 'fin-badge-saida'">
+                                {{ mov.tipo === 'ENTRADA' ? 'Entrada' : 'Saída' }}
+                            </span>
+                            <span class="fin-card-desc">{{ mov.descricao }}</span>
+                        </div>
+                        <div class="fin-card-lancado">Lançado por: {{ mov.usuario_nome || 'Não identificado' }}</div>
+                        <div class="fin-card-valor" :class="mov.tipo === 'ENTRADA' ? 'fin-valor-entrada' : 'fin-valor-saida'">
+                            {{ mov.tipo === 'ENTRADA' ? '+' : '−' }} {{ formatarMoeda(mov.valor) }}
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
