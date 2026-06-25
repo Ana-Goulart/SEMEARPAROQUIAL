@@ -50,10 +50,17 @@
                     </div>
 
                     <form class="row g-3" @submit.prevent="enviar">
-                        <div class="col-12"><div class="section-title">Dados do tio</div></div>
-                        <div class="col-md-6"><label class="form-label">Nome completo *</label><input class="form-control" v-model.trim="form.nome_tio" required></div>
-                        <div class="col-md-3"><label class="form-label">Telefone *</label><input class="form-control" v-model="form.telefone_tio" @input="form.telefone_tio = formatarTelefone(form.telefone_tio)" required maxlength="14"></div>
-                        <div class="col-md-3"><label class="form-label">CPF *</label><input class="form-control" v-model="form.cpf_tio" @input="form.cpf_tio = formatarCpf(form.cpf_tio)" required maxlength="14"></div>
+                        <div class="col-12">
+                            <div class="section-title">Dados do tio</div>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" id="check_tio_viuvo" v-model="form.tio_viuvo">
+                                <label class="form-check-label" for="check_tio_viuvo">É viúvo?</label>
+                            </div>
+                            <div v-if="form.tia_viuva" class="small text-muted mt-1">Os campos do tio são opcionais pois a tia está marcada como viúva.</div>
+                        </div>
+                        <div class="col-md-6"><label class="form-label">Nome completo <span v-if="!form.tia_viuva">*</span></label><input class="form-control" v-model.trim="form.nome_tio" :required="!form.tia_viuva"></div>
+                        <div class="col-md-3"><label class="form-label">Telefone <span v-if="!form.tia_viuva">*</span></label><input class="form-control" v-model="form.telefone_tio" @input="form.telefone_tio = formatarTelefone(form.telefone_tio)" :required="!form.tia_viuva" maxlength="14"></div>
+                        <div class="col-md-3"><label class="form-label">CPF <span v-if="!form.tia_viuva">*</span></label><input class="form-control" v-model="form.cpf_tio" @input="form.cpf_tio = formatarCpf(form.cpf_tio)" :required="!form.tia_viuva" maxlength="14"></div>
                         <div class="col-md-4"><label class="form-label">Data de nascimento</label><input class="form-control" type="date" v-model="form.data_nascimento_tio"></div>
                         <div class="col-md-4"><label class="form-label">Tem deficiência?</label><select class="form-select" v-model="form.deficiencia_tio"><option :value="false">Não</option><option :value="true">Sim</option></select></div>
                         <div class="col-md-4" v-if="form.deficiencia_tio"><label class="form-label">Qual?</label><input class="form-control" v-model.trim="form.qual_deficiencia_tio"></div>
@@ -85,10 +92,17 @@
                             </div>
                         </div>
 
-                        <div class="col-12 pt-2"><div class="section-title">Dados da tia</div></div>
-                        <div class="col-md-6"><label class="form-label">Nome completo *</label><input class="form-control" v-model.trim="form.nome_tia" required></div>
-                        <div class="col-md-3"><label class="form-label">Telefone *</label><input class="form-control" v-model="form.telefone_tia" @input="form.telefone_tia = formatarTelefone(form.telefone_tia)" required maxlength="14"></div>
-                        <div class="col-md-3"><label class="form-label">CPF *</label><input class="form-control" v-model="form.cpf_tia" @input="form.cpf_tia = formatarCpf(form.cpf_tia)" required maxlength="14"></div>
+                        <div class="col-12 pt-2">
+                            <div class="section-title">Dados da tia</div>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="checkbox" id="check_tia_viuva" v-model="form.tia_viuva">
+                                <label class="form-check-label" for="check_tia_viuva">É viúva?</label>
+                            </div>
+                            <div v-if="form.tio_viuvo" class="small text-muted mt-1">Os campos da tia são opcionais pois o tio está marcado como viúvo.</div>
+                        </div>
+                        <div class="col-md-6"><label class="form-label">Nome completo <span v-if="!form.tio_viuvo">*</span></label><input class="form-control" v-model.trim="form.nome_tia" :required="!form.tio_viuvo"></div>
+                        <div class="col-md-3"><label class="form-label">Telefone <span v-if="!form.tio_viuvo">*</span></label><input class="form-control" v-model="form.telefone_tia" @input="form.telefone_tia = formatarTelefone(form.telefone_tia)" :required="!form.tio_viuvo" maxlength="14"></div>
+                        <div class="col-md-3"><label class="form-label">CPF <span v-if="!form.tio_viuvo">*</span></label><input class="form-control" v-model="form.cpf_tia" @input="form.cpf_tia = formatarCpf(form.cpf_tia)" :required="!form.tio_viuvo" maxlength="14"></div>
                         <div class="col-md-4"><label class="form-label">Data de nascimento</label><input class="form-control" type="date" v-model="form.data_nascimento_tia"></div>
                         <div class="col-md-4"><label class="form-label">Tem deficiência?</label><select class="form-select" v-model="form.deficiencia_tia"><option :value="false">Não</option><option :value="true">Sim</option></select></div>
                         <div class="col-md-4" v-if="form.deficiencia_tia"><label class="form-label">Qual?</label><input class="form-control" v-model.trim="form.qual_deficiencia_tia"></div>
@@ -277,7 +291,8 @@
                     finally { this.loading = false; }
                 },
                 async enviar() {
-                    if (this.digits(this.form.cpf_tio).length !== 11 || this.digits(this.form.cpf_tia).length !== 11) { alert('Informe CPF com 11 dígitos para tio e tia.'); return; }
+                    if (!this.form.tia_viuva && this.digits(this.form.cpf_tio).length !== 11) { alert('Informe CPF com 11 dígitos para o tio.'); return; }
+                    if (!this.form.tio_viuvo && this.digits(this.form.cpf_tia).length !== 11) { alert('Informe CPF com 11 dígitos para a tia.'); return; }
                     this.enviando = true;
                     try {
                         const payload = {

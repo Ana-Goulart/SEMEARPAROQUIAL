@@ -170,8 +170,8 @@ async function obterOuCriarTokenTiosAtualizacao({ tenantId, casalId, montagemId 
 async function getTiosTokenContext(token) {
     const [rows] = await pool.query(
         `SELECT tok.*, c.origem_tipo, c.outro_ejc_id, c.encontro_tipo,
-                c.nome_tio, c.telefone_tio, c.cpf_tio, c.data_nascimento_tio,
-                c.nome_tia, c.telefone_tia, c.cpf_tia, c.data_nascimento_tia,
+                c.nome_tio, c.telefone_tio, c.cpf_tio, c.data_nascimento_tio, c.tio_viuvo,
+                c.nome_tia, c.telefone_tia, c.cpf_tia, c.data_nascimento_tia, c.tia_viuva,
                 c.deficiencia_tio, c.qual_deficiencia_tio, c.restricao_alimentar_tio, c.detalhes_restricao_tio, c.possui_carro_tio,
                 c.deficiencia_tia, c.qual_deficiencia_tia, c.restricao_alimentar_tia, c.detalhes_restricao_tia, c.possui_carro_tia
          FROM tios_atualizacao_tokens tok
@@ -437,6 +437,7 @@ router.get('/tios/:token', async (req, res) => {
                 telefone_tio: decryptTioPhone(ctx.telefone_tio) || '',
                 cpf_tio: decryptTioCpf(ctx.cpf_tio) || '',
                 data_nascimento_tio: dateToInput(ctx.data_nascimento_tio),
+                tio_viuvo: Number(ctx.tio_viuvo || 0) === 1,
                 deficiencia_tio: Number(ctx.deficiencia_tio || 0) === 1,
                 qual_deficiencia_tio: decryptValue(ctx.qual_deficiencia_tio, 'tios:qual-deficiencia-tio') || ctx.qual_deficiencia_tio || '',
                 restricao_alimentar_tio: Number(ctx.restricao_alimentar_tio || 0) === 1,
@@ -446,6 +447,7 @@ router.get('/tios/:token', async (req, res) => {
                 telefone_tia: decryptTioPhone(ctx.telefone_tia) || '',
                 cpf_tia: decryptTioCpf(ctx.cpf_tia) || '',
                 data_nascimento_tia: dateToInput(ctx.data_nascimento_tia),
+                tia_viuva: Number(ctx.tia_viuva || 0) === 1,
                 deficiencia_tia: Number(ctx.deficiencia_tia || 0) === 1,
                 qual_deficiencia_tia: decryptValue(ctx.qual_deficiencia_tia, 'tios:qual-deficiencia-tia') || ctx.qual_deficiencia_tia || '',
                 restricao_alimentar_tia: Number(ctx.restricao_alimentar_tia || 0) === 1,
@@ -474,8 +476,15 @@ router.post('/tios/:token', express.json(), async (req, res) => {
         const origemTipo = String(ctx.origem_tipo || 'EJC').trim().toUpperCase() === 'OUTRO_EJC' ? 'OUTRO_EJC' : 'EJC';
         const outroEjcId = origemTipo === 'OUTRO_EJC' ? Number(req.body.outro_ejc_id || 0) : null;
 
-        if (!nomeTio || !nomeTia || !telefoneTio || !telefoneTia || normalizeCpfDigits(cpfTio).length !== 11 || normalizeCpfDigits(cpfTia).length !== 11) {
-            return res.status(400).json({ error: 'Preencha nome, telefone e CPF do tio e da tia.' });
+        const tioViuvo = boolValue(req.body.tio_viuvo);
+        const tiaViuva = boolValue(req.body.tia_viuva);
+        // Quando tio é viúvo, sua esposa (tia) é falecida → campos da tia opcionais
+        // Quando tia é viúva, seu marido (tio) é falecido → campos do tio opcionais
+        if (!tiaViuva && (!nomeTio || !telefoneTio || normalizeCpfDigits(cpfTio).length !== 11)) {
+            return res.status(400).json({ error: 'Preencha nome, telefone e CPF do tio.' });
+        }
+        if (!tioViuvo && (!nomeTia || !telefoneTia || normalizeCpfDigits(cpfTia).length !== 11)) {
+            return res.status(400).json({ error: 'Preencha nome, telefone e CPF da tia.' });
         }
         if (origemTipo === 'EJC' && !['ECC', 'ECNA'].includes(encontroTipo)) {
             return res.status(400).json({ error: 'Selecione ECC ou ECNA.' });
@@ -493,17 +502,17 @@ router.post('/tios/:token', express.json(), async (req, res) => {
         const carroTia = boolValue(req.body.possui_carro_tia);
         await pool.query(
             `UPDATE tios_casais
-             SET nome_tio = ?, telefone_tio = ?, telefone_tio_hash = ?, cpf_tio = ?, cpf_tio_hash = ?, data_nascimento_tio = ?,
+             SET nome_tio = ?, telefone_tio = ?, telefone_tio_hash = ?, cpf_tio = ?, cpf_tio_hash = ?, data_nascimento_tio = ?, tio_viuvo = ?,
                  deficiencia_tio = ?, qual_deficiencia_tio = ?, restricao_alimentar_tio = ?, detalhes_restricao_tio = ?, possui_carro_tio = ?,
-                 nome_tia = ?, telefone_tia = ?, telefone_tia_hash = ?, cpf_tia = ?, cpf_tia_hash = ?, data_nascimento_tia = ?,
+                 nome_tia = ?, telefone_tia = ?, telefone_tia_hash = ?, cpf_tia = ?, cpf_tia_hash = ?, data_nascimento_tia = ?, tia_viuva = ?,
                  deficiencia_tia = ?, qual_deficiencia_tia = ?, restricao_alimentar_tia = ?, detalhes_restricao_tia = ?, possui_carro_tia = ?,
                  deficiencia = ?, restricao_alimentar = ?, encontro_tipo = ?, outro_ejc_id = ?, termos_aceitos_em = CURRENT_TIMESTAMP
              WHERE id = ? AND tenant_id = ?`,
             [
-                nomeTio, encryptTioPhone(telefoneTio), tioPhoneHash(telefoneTio), encryptTioCpf(cpfTio), tioCpfHash(cpfTio), normalizeDate(req.body.data_nascimento_tio),
+                nomeTio, encryptTioPhone(telefoneTio), tioPhoneHash(telefoneTio), encryptTioCpf(cpfTio), tioCpfHash(cpfTio), normalizeDate(req.body.data_nascimento_tio), tioViuvo ? 1 : 0,
                 defTio ? 1 : 0, defTio ? encryptTioSensitiveText(req.body.qual_deficiencia_tio, 'qual-deficiencia-tio') : null,
                 restTio ? 1 : 0, restTio ? encryptTioSensitiveText(req.body.detalhes_restricao_tio, 'detalhes-restricao-tio') : null, carroTio ? 1 : 0,
-                nomeTia, encryptTioPhone(telefoneTia), tioPhoneHash(telefoneTia), encryptTioCpf(cpfTia), tioCpfHash(cpfTia), normalizeDate(req.body.data_nascimento_tia),
+                nomeTia, encryptTioPhone(telefoneTia), tioPhoneHash(telefoneTia), encryptTioCpf(cpfTia), tioCpfHash(cpfTia), normalizeDate(req.body.data_nascimento_tia), tiaViuva ? 1 : 0,
                 defTia ? 1 : 0, defTia ? encryptTioSensitiveText(req.body.qual_deficiencia_tia, 'qual-deficiencia-tia') : null,
                 restTia ? 1 : 0, restTia ? encryptTioSensitiveText(req.body.detalhes_restricao_tia, 'detalhes-restricao-tia') : null, carroTia ? 1 : 0,
                 (defTio || defTia) ? 1 : 0, (restTio || restTia) ? 1 : 0,
