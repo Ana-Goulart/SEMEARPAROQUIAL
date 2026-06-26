@@ -116,6 +116,7 @@ async function obterOuCriarTokenAtualizacao({ tenantId, jovemId, ejcId = null, m
            AND (ejc_id <=> ?)
            AND (montagem_id <=> ?)
            AND (equipe_id <=> ?)
+         ORDER BY atualizado DESC, id ASC
          LIMIT 1`,
         [tenantId, jovemId, ejcId, montagemId, equipeId]
     );
@@ -257,7 +258,18 @@ router.get('/equipe-links', async (req, res) => {
 
         const baseUrl = publicBaseUrl(req);
         const membros = [];
+
+        // Deduplicar por jovem_id: preferir linha com atualizado=1, senão menor id
+        const jovensMap = new Map();
         for (const row of rows || []) {
+            const key = Number(row.jovem_id);
+            const existing = jovensMap.get(key);
+            if (!existing || (!existing.atualizado && row.atualizado) || (existing.atualizado === row.atualizado && Number(row.id) < Number(existing.id))) {
+                jovensMap.set(key, row);
+            }
+        }
+
+        for (const row of jovensMap.values()) {
             // eslint-disable-next-line no-await-in-loop
             const tokenRow = row.token ? row : await obterOuCriarTokenAtualizacao({
                 tenantId,

@@ -155,6 +155,7 @@ async function obterOuCriarTokenAtualizacao({ tenantId, jovemId, ejcId = null, m
            AND (ejc_id <=> ?)
            AND (montagem_id <=> ?)
            AND (equipe_id <=> ?)
+         ORDER BY atualizado DESC, id ASC
          LIMIT 1`,
         [tenantId, jovemId, ejcId, montagemId, equipeId]
     );
@@ -177,6 +178,7 @@ async function obterOuCriarTokenTiosAtualizacao({ tenantId, casalId, montagemId 
            AND casal_id = ?
            AND (montagem_id <=> ?)
            AND (equipe_id <=> ?)
+         ORDER BY atualizado DESC, id ASC
          LIMIT 1`,
         [tenantId, casalId, montagemId, equipeId]
     );
@@ -276,7 +278,18 @@ async function listarMembrosEquipe(ctx, req) {
 
     const baseUrl = publicBaseUrl(req);
     const membros = [];
+
+    // Deduplicar por jovem_id: preferir linha com atualizado=1, senão menor id
+    const jovensMap = new Map();
     for (const row of rows || []) {
+        const key = Number(row.jovem_id);
+        const existing = jovensMap.get(key);
+        if (!existing || (!existing.atualizado && row.atualizado) || (existing.atualizado === row.atualizado && Number(row.id) < Number(existing.id))) {
+            jovensMap.set(key, row);
+        }
+    }
+
+    for (const row of jovensMap.values()) {
         // eslint-disable-next-line no-await-in-loop
         const tokenRow = row.token ? row : await obterOuCriarTokenAtualizacao({
             tenantId,
@@ -316,7 +329,17 @@ async function listarMembrosEquipe(ctx, req) {
              ORDER BY tc.nome_tio ASC, tc.nome_tia ASC`,
             [tenantId, montagemId, equipeId]
         );
+        // Deduplicar por casal_id: preferir linha com atualizado=1, senão menor id
+        const tiosMap = new Map();
         for (const row of tiosRows || []) {
+            const key = Number(row.casal_id);
+            const existing = tiosMap.get(key);
+            if (!existing || (!existing.atualizado && row.atualizado) || (existing.atualizado === row.atualizado && Number(row.id) < Number(existing.id))) {
+                tiosMap.set(key, row);
+            }
+        }
+
+        for (const row of tiosMap.values()) {
             // eslint-disable-next-line no-await-in-loop
             const tokenRow = row.token ? row : await obterOuCriarTokenTiosAtualizacao({
                 tenantId,
