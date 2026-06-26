@@ -593,7 +593,7 @@ router.post('/tios/:token', (req, res) => {
             );
             await pool.query(
                 `UPDATE tios_atualizacao_tokens
-                 SET atualizado = 1, usado_em = CURRENT_TIMESTAMP
+                 SET atualizado = 1, usado_em = CURRENT_TIMESTAMP, invalidado_em = CURRENT_TIMESTAMP
                  WHERE id = ?`,
                 [ctx.id]
             );
@@ -804,7 +804,7 @@ router.post('/:token', upload.single('foto'), async (req, res) => {
 
         await connection.query(
             `UPDATE jovens_atualizacao_tokens
-             SET atualizado = 1, usado_em = CURRENT_TIMESTAMP
+             SET atualizado = 1, usado_em = CURRENT_TIMESTAMP, invalidado_em = CURRENT_TIMESTAMP
              WHERE id = ?`,
             [ctx.id]
         );
