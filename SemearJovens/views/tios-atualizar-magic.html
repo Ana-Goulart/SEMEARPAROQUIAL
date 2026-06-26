@@ -151,6 +151,29 @@
                                 <option value="ECNA">ECNA</option>
                             </select>
                         </div>
+                        <div class="col-12 pt-2">
+                            <div class="section-title">Foto do casal</div>
+                            <div class="d-flex align-items-center gap-3 mt-2">
+                                <div class="position-relative flex-shrink-0">
+                                    <img :src="fotoPreview || form.foto_url || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(((form.nome_tio || 'Tio') + ' e ' + (form.nome_tia || 'Tia')).trim()) + '&background=e9ecef&color=6c757d&size=120')"
+                                        alt="Foto do casal"
+                                        class="rounded border shadow-sm object-fit-cover"
+                                        style="width: 90px; height: 90px;">
+                                    <label class="position-absolute bottom-0 end-0 rounded-circle d-flex justify-content-center align-items-center shadow"
+                                        style="width: 28px; height: 28px; cursor: pointer; transform: translate(15%, 15%); background: #d9a650; border: 1px solid #d9a650;"
+                                        title="Selecionar foto">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="#8a5a14"><path d="M12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7zm7-13h-1.83l-1.5-2H8.33l-1.5 2H5C3.35 2.5 2 3.85 2 5.5v13C2 20.15 3.35 21.5 5 21.5h14c1.65 0 3-1.35 3-3v-13c0-1.65-1.35-3-3-3zm-7 15a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z"/></svg>
+                                        <input type="file" class="d-none" accept=".jpeg,.jpg,.png,.webp" @change="onFotoChange">
+                                    </label>
+                                </div>
+                                <div class="small">
+                                    <div v-if="!fotoFile && !form.foto_url" class="mb-1" style="color: #8a6a36;">⚠ A foto do casal é obrigatória.</div>
+                                    <div v-else-if="fotoFile" class="text-success mb-1">✓ Foto selecionada.</div>
+                                    <div v-else class="text-success mb-1">✓ Foto atual mantida.</div>
+                                    <div class="text-muted">Clique no ícone de câmera para selecionar.<br>Formatos: JPG, PNG, WEBP (máx. 5MB).</div>
+                                </div>
+                            </div>
+                        </div>
                         <div class="col-12">
                             <div class="p-3 border rounded bg-light">
                                 <div class="form-check">
@@ -217,7 +240,9 @@
                         'Restrição de gordura (colesterol alto)'
                     ],
                     token: window.location.pathname.split('/').filter(Boolean).pop() || '',
-                    form: { aceite_termos: false }
+                    form: { aceite_termos: false },
+                    fotoFile: null,
+                    fotoPreview: ''
                 };
             },
             methods: {
@@ -271,6 +296,18 @@
                 digits(v) { return String(v || '').replace(/\D/g, ''); },
                 formatarCpf(v) { const d = this.digits(v).slice(0, 11); if (d.length <= 3) return d; if (d.length <= 6) return `${d.slice(0,3)}.${d.slice(3)}`; if (d.length <= 9) return `${d.slice(0,3)}.${d.slice(3,6)}.${d.slice(6)}`; return `${d.slice(0,3)}.${d.slice(3,6)}.${d.slice(6,9)}-${d.slice(9)}`; },
                 formatarTelefone(v) { const d = this.digits(v).slice(0, 11); if (d.length <= 2) return d ? `(${d}` : ''; if (d.length <= 7) return `(${d.slice(0,2)})${d.slice(2)}`; return `(${d.slice(0,2)})${d.slice(2,7)}-${d.slice(7)}`; },
+                onFotoChange(e) {
+                    const file = e.target.files && e.target.files[0] ? e.target.files[0] : null;
+                    if (file && file.size > 5 * 1024 * 1024) {
+                        alert('A foto é muito grande. Envie uma imagem com até 5 MB.');
+                        e.target.value = '';
+                        this.fotoFile = null;
+                        this.fotoPreview = '';
+                        return;
+                    }
+                    this.fotoFile = file;
+                    this.fotoPreview = file ? URL.createObjectURL(file) : '';
+                },
                 async carregar() {
                     try {
                         const res = await fetch(`/api/atualizacoes-cadastro-public/tios/${encodeURIComponent(this.token)}`);
@@ -293,16 +330,22 @@
                 async enviar() {
                     if (!this.form.tia_viuva && this.digits(this.form.cpf_tio).length !== 11) { alert('Informe CPF com 11 dígitos para o tio.'); return; }
                     if (!this.form.tio_viuvo && this.digits(this.form.cpf_tia).length !== 11) { alert('Informe CPF com 11 dígitos para a tia.'); return; }
+                    if (!this.fotoFile && !this.form.foto_url) { alert('A foto do casal é obrigatória.'); return; }
                     this.enviando = true;
                     try {
-                        const payload = {
+                        const fd = new FormData();
+                        const campos = {
                             ...this.form,
                             possui_carro_tio: this.form.possui_carro ? 1 : 0,
                             possui_carro_tia: this.form.possui_carro ? 1 : 0,
                             detalhes_restricao_tio: JSON.stringify(this.normalizarRestricoes(this.form.detalhes_restricao_tio)),
                             detalhes_restricao_tia: JSON.stringify(this.normalizarRestricoes(this.form.detalhes_restricao_tia))
                         };
-                        const res = await fetch(`/api/atualizacoes-cadastro-public/tios/${encodeURIComponent(this.token)}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                        for (const [k, v] of Object.entries(campos)) {
+                            if (v !== null && v !== undefined) fd.append(k, v);
+                        }
+                        if (this.fotoFile) fd.append('foto', this.fotoFile);
+                        const res = await fetch(`/api/atualizacoes-cadastro-public/tios/${encodeURIComponent(this.token)}`, { method: 'POST', body: fd });
                         const data = await res.json().catch(() => ({}));
                         if (!res.ok) throw new Error(data.error || 'Erro ao salvar.');
                         this.sucesso = true;

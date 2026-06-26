@@ -1340,6 +1340,28 @@ preencha outro_ejc_paroquia</div>
                                             </div>
                                         </div>
                                         <div class="col-12">
+                                            <label class="text-muted small">Foto do casal <span class="text-danger">*</span></label>
+                                            <div class="d-flex align-items-center gap-3 mt-1">
+                                                <div class="position-relative flex-shrink-0">
+                                                    <img :src="novaFotoCasalPreview || ('https://ui-avatars.com/api/?name=' + encodeURIComponent(((formCasal.nome_tio || 'Tio') + ' e ' + (formCasal.nome_tia || 'Tia')).trim()) + '&background=e9ecef&color=6c757d&size=120')"
+                                                        alt="Foto do casal"
+                                                        class="rounded border shadow-sm object-fit-cover"
+                                                        style="width: 90px; height: 90px;">
+                                                    <label class="position-absolute bottom-0 end-0 rounded-circle d-flex justify-content-center align-items-center shadow"
+                                                        style="width: 28px; height: 28px; cursor: pointer; transform: translate(15%, 15%); background: #d9a650; border: 1px solid #d9a650;"
+                                                        title="Selecionar foto">
+                                                        <i class="fa-solid fa-camera" style="font-size: 12px; color: #8a5a14;"></i>
+                                                        <input type="file" class="d-none" accept=".jpeg,.jpg,.png,.webp" @change="selecionarFotoCasalNovo">
+                                                    </label>
+                                                </div>
+                                                <div class="small">
+                                                    <div v-if="!novaFotoCasalFile" class="text-danger mb-1"><i class="fa-solid fa-triangle-exclamation me-1"></i>A foto do casal é obrigatória.</div>
+                                                    <div v-else class="text-success mb-1"><i class="fa-solid fa-check me-1"></i>Foto selecionada.</div>
+                                                    <div class="text-muted">Clique no ícone de câmera para selecionar.<br>Formatos: JPG, PNG, WEBP (máx. 5MB).</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-12">
                                             <label class="text-muted small">Observações iniciais</label>
                                             <textarea class="form-control" rows="3" v-model.trim="formCasal.observacoes" placeholder="Se precisar, deixe aqui uma observação inicial do casal."></textarea>
                                         </div>
@@ -2070,6 +2092,8 @@ preencha outro_ejc_paroquia</div>
                         observacoes: '',
                         termos_aceitos_em: null
                     },
+                    novaFotoCasalFile: null,
+                    novaFotoCasalPreview: null,
                     observacoesExtrasCasal: [],
                     novaObservacaoCasal: '',
                     papeisEquipeDisponiveis: [
@@ -3990,6 +4014,8 @@ preencha outro_ejc_paroquia</div>
                     this.familiaresCasal = [];
                     this.buscaFamiliaCasal = '';
                     this.resultadosBuscaFamiliaCasal = [];
+                    this.novaFotoCasalFile = null;
+                    this.novaFotoCasalPreview = null;
                     if (!this.modalCasal) this.modalCasal = new bootstrap.Modal(document.getElementById('modalCasal'));
                     this.modalCasal.show();
                 },
@@ -4104,6 +4130,27 @@ preencha outro_ejc_paroquia</div>
                     if (!this.isEditingCasal) return;
                     this.formCasal.servicos.splice(idx, 1);
                 },
+                selecionarFotoCasalNovo(event) {
+                    const file = event && event.target && event.target.files ? event.target.files[0] : null;
+                    if (!file) return;
+                    const tiposPermitidos = ['image/jpeg', 'image/png', 'image/webp'];
+                    const extensoesPermitidas = ['jpeg', 'jpg', 'png', 'webp'];
+                    const extensao = String(file.name || '').split('.').pop().toLowerCase();
+                    if (!tiposPermitidos.includes(file.type) || !extensoesPermitidas.includes(extensao)) {
+                        alert('Envie apenas imagens JPG, JPEG, PNG ou WEBP.');
+                        event.target.value = '';
+                        return;
+                    }
+                    if (file.size > 5 * 1024 * 1024) {
+                        alert('A imagem deve ter no máximo 5MB.');
+                        event.target.value = '';
+                        return;
+                    }
+                    this.novaFotoCasalFile = file;
+                    const reader = new FileReader();
+                    reader.onload = (e) => { this.novaFotoCasalPreview = e.target.result; };
+                    reader.readAsDataURL(file);
+                },
                 async uploadFotoCasal(event) {
                     const file = event && event.target && event.target.files ? event.target.files[0] : null;
                     event.target.value = '';
@@ -4154,6 +4201,10 @@ preencha outro_ejc_paroquia</div>
                         alert('Selecione a paróquia do outro EJC.');
                         return;
                     }
+                    if (!this.formCasal.id && !this.novaFotoCasalFile) {
+                        alert('A foto do casal é obrigatória. Por favor, selecione uma foto.');
+                        return;
+                    }
                     const duplicidadeLocal = this.validarDuplicidadeTelefonesCasal(this.formCasal, this.formCasal.id);
                     if (duplicidadeLocal) {
                         alert(duplicidadeLocal.error);
@@ -4196,6 +4247,19 @@ preencha outro_ejc_paroquia</div>
                             return;
                         }
                         this.formCasal.id = data.id || this.formCasal.id;
+                        if (!isEdit && this.novaFotoCasalFile) {
+                            try {
+                                const formDataFoto = new FormData();
+                                formDataFoto.append('foto', this.novaFotoCasalFile);
+                                const fotoRes = await fetch(`/api/tios/casais/${this.formCasal.id}/foto`, { method: 'POST', body: formDataFoto });
+                                const fotoData = await fotoRes.json().catch(() => ({}));
+                                if (fotoRes.ok) this.formCasal.foto_url = fotoData.foto_url || '';
+                            } catch (err) {
+                                console.error('Erro ao enviar foto do casal:', err);
+                            }
+                            this.novaFotoCasalFile = null;
+                            this.novaFotoCasalPreview = null;
+                        }
                         this.formCasalBackup = this.clonarFormCasal(this.formCasal);
                         this.isEditingCasal = false;
                         await this.carregarFamiliaresCasal();

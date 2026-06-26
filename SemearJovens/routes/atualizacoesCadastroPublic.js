@@ -36,6 +36,30 @@ const upload = multer({
     }
 });
 
+const uploadDirTiosAbs = path.join(__dirname, '..', 'public', 'uploads', 'fotos_tios');
+const uploadTios = multer({
+    storage: multer.diskStorage({
+        destination: (_req, _file, cb) => {
+            fs.mkdirSync(uploadDirTiosAbs, { recursive: true });
+            cb(null, uploadDirTiosAbs);
+        },
+        filename: (_req, file, cb) => {
+            const ext = path.extname(String(file.originalname || '')).toLowerCase();
+            cb(null, `atualizacao-${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`);
+        }
+    }),
+    limits: { fileSize: 5 * 1024 * 1024 },
+    fileFilter: (_req, file, cb) => {
+        const allowed = new Set(['image/jpeg', 'image/png', 'image/webp']);
+        if (!allowed.has(String(file.mimetype || '').toLowerCase())) {
+            const err = new multer.MulterError('LIMIT_UNEXPECTED_FILE', file.fieldname);
+            err.message = 'Envie apenas imagens JPG, PNG ou WEBP.';
+            return cb(err);
+        }
+        return cb(null, true);
+    }
+});
+
 function boolValue(value) {
     return value === true || value === 1 || value === '1' || value === 'true' || value === 'Sim';
 }
@@ -173,7 +197,8 @@ async function getTiosTokenContext(token) {
                 c.nome_tio, c.telefone_tio, c.cpf_tio, c.data_nascimento_tio, c.tio_viuvo,
                 c.nome_tia, c.telefone_tia, c.cpf_tia, c.data_nascimento_tia, c.tia_viuva,
                 c.deficiencia_tio, c.qual_deficiencia_tio, c.restricao_alimentar_tio, c.detalhes_restricao_tio, c.possui_carro_tio,
-                c.deficiencia_tia, c.qual_deficiencia_tia, c.restricao_alimentar_tia, c.detalhes_restricao_tia, c.possui_carro_tia
+                c.deficiencia_tia, c.qual_deficiencia_tia, c.restricao_alimentar_tia, c.detalhes_restricao_tia, c.possui_carro_tia,
+                c.foto_url
          FROM tios_atualizacao_tokens tok
          JOIN tios_casais c ON c.id = tok.casal_id AND c.tenant_id = tok.tenant_id
          WHERE tok.token = ?
@@ -452,7 +477,8 @@ router.get('/tios/:token', async (req, res) => {
                 qual_deficiencia_tia: decryptValue(ctx.qual_deficiencia_tia, 'tios:qual-deficiencia-tia') || ctx.qual_deficiencia_tia || '',
                 restricao_alimentar_tia: Number(ctx.restricao_alimentar_tia || 0) === 1,
                 detalhes_restricao_tia: decryptValue(ctx.detalhes_restricao_tia, 'tios:detalhes-restricao-tia') || ctx.detalhes_restricao_tia || '',
-                possui_carro_tia: Number(ctx.possui_carro_tia || 0) === 1
+                possui_carro_tia: Number(ctx.possui_carro_tia || 0) === 1,
+                foto_url: ctx.foto_url || ''
             },
             outros_ejcs: outrosEjcs || []
         });
@@ -462,75 +488,99 @@ router.get('/tios/:token', async (req, res) => {
     }
 });
 
-router.post('/tios/:token', express.json(), async (req, res) => {
-    try {
-        const ctx = await getTiosTokenContext(String(req.params.token || '').trim());
-        if (!ctx) return res.status(404).json({ error: 'Link inválido ou já utilizado.' });
-        const nomeTio = normalizeUpperText(req.body.nome_tio);
-        const nomeTia = normalizeUpperText(req.body.nome_tia);
-        const telefoneTio = String(req.body.telefone_tio || '').trim();
-        const telefoneTia = String(req.body.telefone_tia || '').trim();
-        const cpfTio = String(req.body.cpf_tio || '').trim();
-        const cpfTia = String(req.body.cpf_tia || '').trim();
-        const encontroTipo = String(req.body.encontro_tipo || '').trim().toUpperCase();
-        const origemTipo = String(ctx.origem_tipo || 'EJC').trim().toUpperCase() === 'OUTRO_EJC' ? 'OUTRO_EJC' : 'EJC';
-        const outroEjcId = origemTipo === 'OUTRO_EJC' ? Number(req.body.outro_ejc_id || 0) : null;
+router.post('/tios/:token', (req, res) => {
+    uploadTios.single('foto')(req, res, async (uploadErr) => {
+        if (uploadErr) {
+            if (uploadErr instanceof multer.MulterError) {
+                if (uploadErr.code === 'LIMIT_FILE_SIZE') return res.status(413).json({ error: 'A foto é muito grande. Envie uma imagem com até 5 MB.' });
+                return res.status(400).json({ error: uploadErr.message || 'Erro no upload da foto.' });
+            }
+            return res.status(400).json({ error: uploadErr.message || 'Não foi possível receber a foto.' });
+        }
+        try {
+            const ctx = await getTiosTokenContext(String(req.params.token || '').trim());
+            if (!ctx) { removerUploadTemporario(req.file); return res.status(404).json({ error: 'Link inválido ou já utilizado.' }); }
+            const fotoAtualUrl = ctx.foto_url || '';
+            if (!req.file && !fotoAtualUrl) {
+                return res.status(400).json({ error: 'A foto do casal é obrigatória.' });
+            }
+            const nomeTio = normalizeUpperText(req.body.nome_tio);
+            const nomeTia = normalizeUpperText(req.body.nome_tia);
+            const telefoneTio = String(req.body.telefone_tio || '').trim();
+            const telefoneTia = String(req.body.telefone_tia || '').trim();
+            const cpfTio = String(req.body.cpf_tio || '').trim();
+            const cpfTia = String(req.body.cpf_tia || '').trim();
+            const encontroTipo = String(req.body.encontro_tipo || '').trim().toUpperCase();
+            const origemTipo = String(ctx.origem_tipo || 'EJC').trim().toUpperCase() === 'OUTRO_EJC' ? 'OUTRO_EJC' : 'EJC';
+            const outroEjcId = origemTipo === 'OUTRO_EJC' ? Number(req.body.outro_ejc_id || 0) : null;
 
-        const tioViuvo = boolValue(req.body.tio_viuvo);
-        const tiaViuva = boolValue(req.body.tia_viuva);
-        // Quando tio é viúvo, sua esposa (tia) é falecida → campos da tia opcionais
-        // Quando tia é viúva, seu marido (tio) é falecido → campos do tio opcionais
-        if (!tiaViuva && (!nomeTio || !telefoneTio || normalizeCpfDigits(cpfTio).length !== 11)) {
-            return res.status(400).json({ error: 'Preencha nome, telefone e CPF do tio.' });
-        }
-        if (!tioViuvo && (!nomeTia || !telefoneTia || normalizeCpfDigits(cpfTia).length !== 11)) {
-            return res.status(400).json({ error: 'Preencha nome, telefone e CPF da tia.' });
-        }
-        if (origemTipo === 'EJC' && !['ECC', 'ECNA'].includes(encontroTipo)) {
-            return res.status(400).json({ error: 'Selecione ECC ou ECNA.' });
-        }
-        if (origemTipo === 'OUTRO_EJC') {
-            const [rows] = await pool.query('SELECT id FROM outros_ejcs WHERE id = ? AND tenant_id = ? LIMIT 1', [outroEjcId, ctx.tenant_id]);
-            if (!rows.length) return res.status(400).json({ error: 'Selecione o EJC de origem.' });
-        }
+            const tioViuvo = boolValue(req.body.tio_viuvo);
+            const tiaViuva = boolValue(req.body.tia_viuva);
+            if (!tiaViuva && (!nomeTio || !telefoneTio || normalizeCpfDigits(cpfTio).length !== 11)) {
+                removerUploadTemporario(req.file);
+                return res.status(400).json({ error: 'Preencha nome, telefone e CPF do tio.' });
+            }
+            if (!tioViuvo && (!nomeTia || !telefoneTia || normalizeCpfDigits(cpfTia).length !== 11)) {
+                removerUploadTemporario(req.file);
+                return res.status(400).json({ error: 'Preencha nome, telefone e CPF da tia.' });
+            }
+            if (origemTipo === 'EJC' && !['ECC', 'ECNA'].includes(encontroTipo)) {
+                removerUploadTemporario(req.file);
+                return res.status(400).json({ error: 'Selecione ECC ou ECNA.' });
+            }
+            if (origemTipo === 'OUTRO_EJC') {
+                const [rows] = await pool.query('SELECT id FROM outros_ejcs WHERE id = ? AND tenant_id = ? LIMIT 1', [outroEjcId, ctx.tenant_id]);
+                if (!rows.length) { removerUploadTemporario(req.file); return res.status(400).json({ error: 'Selecione o EJC de origem.' }); }
+            }
 
-        const defTio = boolValue(req.body.deficiencia_tio);
-        const restTio = boolValue(req.body.restricao_alimentar_tio);
-        const carroTio = boolValue(req.body.possui_carro_tio);
-        const defTia = boolValue(req.body.deficiencia_tia);
-        const restTia = boolValue(req.body.restricao_alimentar_tia);
-        const carroTia = boolValue(req.body.possui_carro_tia);
-        await pool.query(
-            `UPDATE tios_casais
-             SET nome_tio = ?, telefone_tio = ?, telefone_tio_hash = ?, cpf_tio = ?, cpf_tio_hash = ?, data_nascimento_tio = ?, tio_viuvo = ?,
-                 deficiencia_tio = ?, qual_deficiencia_tio = ?, restricao_alimentar_tio = ?, detalhes_restricao_tio = ?, possui_carro_tio = ?,
-                 nome_tia = ?, telefone_tia = ?, telefone_tia_hash = ?, cpf_tia = ?, cpf_tia_hash = ?, data_nascimento_tia = ?, tia_viuva = ?,
-                 deficiencia_tia = ?, qual_deficiencia_tia = ?, restricao_alimentar_tia = ?, detalhes_restricao_tia = ?, possui_carro_tia = ?,
-                 deficiencia = ?, restricao_alimentar = ?, encontro_tipo = ?, outro_ejc_id = ?, termos_aceitos_em = CURRENT_TIMESTAMP
-             WHERE id = ? AND tenant_id = ?`,
-            [
-                nomeTio, encryptTioPhone(telefoneTio), tioPhoneHash(telefoneTio), encryptTioCpf(cpfTio), tioCpfHash(cpfTio), normalizeDate(req.body.data_nascimento_tio), tioViuvo ? 1 : 0,
-                defTio ? 1 : 0, defTio ? encryptTioSensitiveText(req.body.qual_deficiencia_tio, 'qual-deficiencia-tio') : null,
-                restTio ? 1 : 0, restTio ? encryptTioSensitiveText(req.body.detalhes_restricao_tio, 'detalhes-restricao-tio') : null, carroTio ? 1 : 0,
-                nomeTia, encryptTioPhone(telefoneTia), tioPhoneHash(telefoneTia), encryptTioCpf(cpfTia), tioCpfHash(cpfTia), normalizeDate(req.body.data_nascimento_tia), tiaViuva ? 1 : 0,
-                defTia ? 1 : 0, defTia ? encryptTioSensitiveText(req.body.qual_deficiencia_tia, 'qual-deficiencia-tia') : null,
-                restTia ? 1 : 0, restTia ? encryptTioSensitiveText(req.body.detalhes_restricao_tia, 'detalhes-restricao-tia') : null, carroTia ? 1 : 0,
-                (defTio || defTia) ? 1 : 0, (restTio || restTia) ? 1 : 0,
-                origemTipo === 'EJC' ? encontroTipo : null, origemTipo === 'OUTRO_EJC' ? outroEjcId : null,
-                ctx.casal_id, ctx.tenant_id
-            ]
-        );
-        await pool.query(
-            `UPDATE tios_atualizacao_tokens
-             SET atualizado = 1, usado_em = CURRENT_TIMESTAMP
-             WHERE id = ?`,
-            [ctx.id]
-        );
-        return res.json({ message: 'Cadastro atualizado com sucesso.' });
-    } catch (err) {
-        console.error('Erro ao salvar atualização de tios:', err);
-        return res.status(500).json({ error: 'Erro ao salvar atualização.' });
-    }
+            const novaFotoUrl = req.file ? `/uploads/fotos_tios/${req.file.filename}` : null;
+            if (novaFotoUrl && fotoAtualUrl) {
+                const relAnterior = String(fotoAtualUrl).replace(/^\/+/, '');
+                const absAnterior = path.join(__dirname, '..', 'public', relAnterior);
+                fs.unlink(absAnterior, () => {});
+            }
+
+            const defTio = boolValue(req.body.deficiencia_tio);
+            const restTio = boolValue(req.body.restricao_alimentar_tio);
+            const carroTio = boolValue(req.body.possui_carro_tio);
+            const defTia = boolValue(req.body.deficiencia_tia);
+            const restTia = boolValue(req.body.restricao_alimentar_tia);
+            const carroTia = boolValue(req.body.possui_carro_tia);
+            await pool.query(
+                `UPDATE tios_casais
+                 SET nome_tio = ?, telefone_tio = ?, telefone_tio_hash = ?, cpf_tio = ?, cpf_tio_hash = ?, data_nascimento_tio = ?, tio_viuvo = ?,
+                     deficiencia_tio = ?, qual_deficiencia_tio = ?, restricao_alimentar_tio = ?, detalhes_restricao_tio = ?, possui_carro_tio = ?,
+                     nome_tia = ?, telefone_tia = ?, telefone_tia_hash = ?, cpf_tia = ?, cpf_tia_hash = ?, data_nascimento_tia = ?, tia_viuva = ?,
+                     deficiencia_tia = ?, qual_deficiencia_tia = ?, restricao_alimentar_tia = ?, detalhes_restricao_tia = ?, possui_carro_tia = ?,
+                     deficiencia = ?, restricao_alimentar = ?, encontro_tipo = ?, outro_ejc_id = ?,
+                     foto_url = COALESCE(?, foto_url), termos_aceitos_em = CURRENT_TIMESTAMP
+                 WHERE id = ? AND tenant_id = ?`,
+                [
+                    nomeTio, encryptTioPhone(telefoneTio), tioPhoneHash(telefoneTio), encryptTioCpf(cpfTio), tioCpfHash(cpfTio), normalizeDate(req.body.data_nascimento_tio), tioViuvo ? 1 : 0,
+                    defTio ? 1 : 0, defTio ? encryptTioSensitiveText(req.body.qual_deficiencia_tio, 'qual-deficiencia-tio') : null,
+                    restTio ? 1 : 0, restTio ? encryptTioSensitiveText(req.body.detalhes_restricao_tio, 'detalhes-restricao-tio') : null, carroTio ? 1 : 0,
+                    nomeTia, encryptTioPhone(telefoneTia), tioPhoneHash(telefoneTia), encryptTioCpf(cpfTia), tioCpfHash(cpfTia), normalizeDate(req.body.data_nascimento_tia), tiaViuva ? 1 : 0,
+                    defTia ? 1 : 0, defTia ? encryptTioSensitiveText(req.body.qual_deficiencia_tia, 'qual-deficiencia-tia') : null,
+                    restTia ? 1 : 0, restTia ? encryptTioSensitiveText(req.body.detalhes_restricao_tia, 'detalhes-restricao-tia') : null, carroTia ? 1 : 0,
+                    (defTio || defTia) ? 1 : 0, (restTio || restTia) ? 1 : 0,
+                    origemTipo === 'EJC' ? encontroTipo : null, origemTipo === 'OUTRO_EJC' ? outroEjcId : null,
+                    novaFotoUrl,
+                    ctx.casal_id, ctx.tenant_id
+                ]
+            );
+            await pool.query(
+                `UPDATE tios_atualizacao_tokens
+                 SET atualizado = 1, usado_em = CURRENT_TIMESTAMP
+                 WHERE id = ?`,
+                [ctx.id]
+            );
+            return res.json({ message: 'Cadastro atualizado com sucesso.' });
+        } catch (err) {
+            removerUploadTemporario(req.file);
+            console.error('Erro ao salvar atualização de tios:', err);
+            return res.status(500).json({ error: 'Erro ao salvar atualização.' });
+        }
+    });
 });
 
 router.get('/equipe/:token', async (req, res) => {
