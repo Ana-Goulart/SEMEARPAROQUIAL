@@ -11,6 +11,7 @@ const rotasAdminSistema = require('./routes/adminSistema');
 const rotasLogs = require('./routes/logs');
 const rotasQaMenus = require('./routes/qaMenus');
 const rotasQaReleases = require('./routes/qaReleases');
+const rotasFinanceiro = require('./routes/financeiro');
 const { pool } = require('./database');
 const { ensureTenantStructure } = require('./lib/tenantSetup');
 const { activityLoggerMiddleware } = require('./lib/activityLogs');
@@ -107,6 +108,7 @@ app.use('/api/admin', activityLoggerMiddleware);
 app.use('/api/admin/logs', rotasLogs);
 app.use('/api/admin/qa-menus', rotasQaMenus);
 app.use('/api/admin/qa-releases', rotasQaReleases);
+app.use('/api/admin/financeiro', rotasFinanceiro);
 app.use('/api/admin', rotasAdminSistema);
 
 app.listen(Number(process.env.PORT || 3000), () => {
