@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EJC - Diretrizes Nacionais</title>
+    <link rel="icon" type="image/png" href="/assets/logo-oficial.png">
+    <link rel="apple-touch-icon" href="/assets/logo-oficial.png">
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/velzon-theme.css">
+    <link rel="stylesheet" href="/css/style.css">
+    <script src="/js/ui-kit.js"></script>
+    <script src="/js/menu.js"></script>
+    <style>
+        .doc-hero {
+            border: 1px solid rgba(184, 135, 50, 0.18);
+            border-radius: 16px;
+            background: linear-gradient(135deg, rgba(184, 135, 50, 0.08), rgba(255, 253, 248, 0.95));
+            padding: 1.4rem 1.6rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .doc-hero-title {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: #2f2417;
+            margin-bottom: 0.25rem;
+        }
+
+        .doc-hero-sub {
+            font-size: 0.88rem;
+            color: #7a6a4d;
+        }
+
+        .progress-label {
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #61492a;
+            margin-bottom: 0.3rem;
+        }
+
+        .progress-bar-doc {
+            height: 10px;
+            border-radius: 999px;
+            background: rgba(184, 135, 50, 0.15);
+            overflow: hidden;
+        }
+
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #b88732, #e2a84b);
+            border-radius: 999px;
+            transition: width 0.5s ease;
+        }
+
+        .progress-count {
+            font-size: 0.8rem;
+            color: #8d6a37;
+            margin-top: 0.3rem;
+        }
+
+        .capitulo-card {
+            border: 1px solid rgba(184, 135, 50, 0.16);
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 0.75rem;
+            background: #fff;
+        }
+
+        .capitulo-header {
+            display: flex;
+            align-items: center;
+            padding: 0.85rem 1.1rem;
+            cursor: pointer;
+            user-select: none;
+            background: rgba(255, 253, 248, 0.9);
+            transition: background 0.15s;
+            gap: 0.75rem;
+        }
+
+        .capitulo-header:hover {
+            background: rgba(184, 135, 50, 0.07);
+        }
+
+        .capitulo-chevron {
+            color: #b88732;
+            font-size: 0.8rem;
+            transition: transform 0.2s;
+            flex-shrink: 0;
+        }
+
+        .capitulo-chevron.aberto {
+            transform: rotate(90deg);
+        }
+
+        .capitulo-numero {
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            color: #b88732;
+            text-transform: uppercase;
+            flex-shrink: 0;
+        }
+
+        .capitulo-titulo {
+            font-weight: 600;
+            color: #2f2417;
+            font-size: 0.97rem;
+        }
+
+        .capitulo-body {
+            border-top: 1px solid rgba(184, 135, 50, 0.1);
+            padding: 0.5rem 0;
+        }
+
+        .secao-item {
+            margin: 0.3rem 1rem 0.3rem 1.5rem;
+        }
+
+        .secao-header {
+            display: flex;
+            align-items: center;
+            padding: 0.55rem 0.75rem;
+            cursor: pointer;
+            border-radius: 8px;
+            gap: 0.6rem;
+            transition: background 0.15s;
+            user-select: none;
+        }
+
+        .secao-header:hover {
+            background: rgba(184, 135, 50, 0.06);
+        }
+
+        .secao-chevron {
+            color: #b88732;
+            font-size: 0.7rem;
+            transition: transform 0.2s;
+            flex-shrink: 0;
+        }
+
+        .secao-chevron.aberto {
+            transform: rotate(90deg);
+        }
+
+        .secao-titulo {
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: #4a3520;
+        }
+
+        .secao-body {
+            margin: 0.1rem 0 0.5rem 2rem;
+        }
+
+        .topico-item {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.45rem 0.75rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .topico-item:hover {
+            background: rgba(184, 135, 50, 0.08);
+        }
+
+        .status-icon {
+            font-size: 1rem;
+            flex-shrink: 0;
+            width: 1.4rem;
+            text-align: center;
+        }
+
+        .topico-titulo {
+            font-size: 0.87rem;
+            color: #2f2417;
+            flex: 1;
+        }
+
+        .topico-titulo.lido {
+            color: #5a7a5a;
+        }
+
+        .topico-titulo.lendo {
+            color: #2563eb;
+            font-weight: 600;
+        }
+
+        .subtopico-item {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.35rem 0.75rem 0.35rem 2rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .subtopico-item:hover {
+            background: rgba(184, 135, 50, 0.06);
+        }
+
+        .subtopico-titulo {
+            font-size: 0.83rem;
+            color: #4a4030;
+        }
+
+        .subtopico-titulo.lido { color: #5a7a5a; }
+        .subtopico-titulo.lendo { color: #2563eb; font-weight: 600; }
+
+        .doc-empty {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: #9a8060;
+        }
+
+        .topico-cabecalho-item {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.45rem 0.75rem;
+            border-radius: 8px;
+        }
+
+        .topico-cabecalho-item .topico-titulo {
+            font-weight: 600;
+            color: #4a3520;
+            font-size: 0.87rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <main class="container-fluid">
+
+            <div v-if="loading" class="text-center py-5">
+                <div class="spinner-border text-warning" role="status">
+                    <span class="visually-hidden">Carregando...</span>
+                </div>
+            </div>
+
+            <div v-else-if="erro" class="alert alert-danger">{{ erro }}</div>
+
+            <div v-else>
+                <!-- Hero com progresso -->
+                <div class="doc-hero">
+                    <div class="row align-items-center g-3">
+                        <div class="col-12 col-md-6">
+                            <div class="doc-hero-title">
+                                <i class="fa-solid fa-book-open me-2" style="color:#b88732"></i>
+                                {{ documento ? documento.titulo : 'Diretrizes Nacionais EJC' }}
+                            </div>
+                            <div class="doc-hero-sub" v-if="documento && documento.descricao">{{ documento.descricao }}</div>
+                        </div>
+                        <div class="col-12 col-md-6">
+                            <div class="progress-label">
+                                Seu progresso: {{ porcentagem }}%
+                            </div>
+                            <div class="progress-bar-doc">
+                                <div class="progress-bar-fill" :style="{ width: porcentagem + '%' }"></div>
+                            </div>
+                            <div class="progress-count">
+                                {{ totalLidos }} de {{ totalItens }} tópicos concluídos
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Lista de capítulos -->
+                <div v-if="!capitulos.length" class="doc-empty">
+                    <i class="fa-solid fa-book-open fa-3x mb-3" style="color:#d4b278;"></i>
+                    <p class="mb-0">Nenhum conteúdo disponível ainda.</p>
+                    <small>O administrador ainda não cadastrou os capítulos.</small>
+                </div>
+
+                <div v-for="cap in capitulos" :key="cap.id" class="capitulo-card">
+                    <div class="capitulo-header" @click="toggleCapitulo(cap)">
+                        <i class="fa-solid fa-chevron-right capitulo-chevron"
+                            :class="{ aberto: capitulosAbertos[cap.id] }"></i>
+                        <span class="capitulo-numero">Capítulo {{ cap.numero }}</span>
+                        <span class="capitulo-titulo">{{ cap.titulo }}</span>
+                        <span class="ms-auto">
+                            <small class="text-muted" v-if="progressoCapitulo(cap.id) !== null">
+                                {{ progressoCapitulo(cap.id) }}%
+                            </small>
+                        </span>
+                    </div>
+
+                    <div class="capitulo-body" v-if="capitulosAbertos[cap.id]">
+                        <div v-if="carregandoSecoes[cap.id]" class="text-center py-3">
+                            <div class="spinner-border spinner-border-sm text-warning"></div>
+                        </div>
+                        <div v-else-if="!secoesPorCapitulo[cap.id] || !secoesPorCapitulo[cap.id].length"
+                            class="text-muted px-4 py-2 small">Nenhuma seção cadastrada.</div>
+
+                        <div v-else v-for="sec in secoesPorCapitulo[cap.id]" :key="sec.id" class="secao-item">
+                            <div class="secao-header" @click="toggleSecao(cap.id, sec)">
+                                <i class="fa-solid fa-chevron-right secao-chevron"
+                                    :class="{ aberto: secoesAbertas[sec.id] }"></i>
+                                <span class="secao-titulo">{{ sec.titulo }}</span>
+                            </div>
+
+                            <div class="secao-body" v-if="secoesAbertas[sec.id]">
+                                <div v-if="carregandoTopicos[sec.id]" class="text-center py-2">
+                                    <div class="spinner-border spinner-border-sm text-warning"></div>
+                                </div>
+                                <div v-else-if="!topicosPorSecao[sec.id] || !topicosPorSecao[sec.id].length"
+                                    class="text-muted ps-2 py-1 small">Nenhum tópico cadastrado.</div>
+
+                                <template v-else v-for="top in topicosPorSecao[sec.id]" :key="top.id">
+                                    <!-- Tópico sem subtópicos: clicável -->
+                                    <div v-if="!top.tem_subtopicos || !top.subtopicos.length"
+                                        class="topico-item" @click="abrirTopico(top.id)">
+                                        <span class="status-icon">{{ iconStatus(statusTopico(top.id)) }}</span>
+                                        <span class="topico-titulo" :class="statusTopico(top.id)">{{ top.titulo }}</span>
+                                    </div>
+
+                                    <!-- Tópico com subtópicos: cabeçalho não clicável + lista de subtópicos -->
+                                    <template v-else>
+                                        <div class="topico-cabecalho-item">
+                                            <span class="status-icon" style="color:#b88732">
+                                                <i class="fa-solid fa-list-ul fa-xs"></i>
+                                            </span>
+                                            <span class="topico-titulo">{{ top.titulo }}</span>
+                                        </div>
+                                        <div v-for="sub in top.subtopicos" :key="'sub-'+sub.id"
+                                            class="subtopico-item" @click="abrirSubtopico(top.id, sub.id)">
+                                            <span class="status-icon">{{ iconStatus(statusSubtopico(sub.id)) }}</span>
+                                            <span class="subtopico-titulo" :class="statusSubtopico(sub.id)">{{ sub.titulo }}</span>
+                                        </div>
+                                    </template>
+                                </template>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            injetarMenu('#app');
+            ativarMenu('/documentos');
+        });
+
+        const { createApp, ref, reactive, computed, onMounted } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    loading: true,
+                    erro: null,
+                    documento: null,
+                    capitulos: [],
+                    secoesPorCapitulo: {},
+                    topicosPorSecao: {},
+                    capitulosAbertos: {},
+                    secoesAbertas: {},
+                    carregandoSecoes: {},
+                    carregandoTopicos: {},
+                    progresso: [],
+                    navCompleta: []
+                };
+            },
+            computed: {
+                totalItens() {
+                    let total = 0;
+                    this.navCompleta.forEach(item => {
+                        if (item.tipo === 'topico' || item.tipo === 'subtopico') total++;
+                    });
+                    return total;
+                },
+                totalLidos() {
+                    return this.progresso.filter(p => p.status === 'lido').length;
+                },
+                porcentagem() {
+                    if (!this.totalItens) return 0;
+                    return Math.round((this.totalLidos / this.totalItens) * 100);
+                }
+            },
+            methods: {
+                iconStatus(status) {
+                    if (status === 'lido') return '✅';
+                    if (status === 'lendo') return '🔵';
+                    return '⬜';
+                },
+                statusTopico(topicoId) {
+                    const p = this.progresso.find(x => x.topico_id === topicoId && !x.subtopico_id);
+                    return p ? p.status : 'nao_lido';
+                },
+                statusSubtopico(subtopId) {
+                    const p = this.progresso.find(x => x.subtopico_id === subtopId);
+                    return p ? p.status : 'nao_lido';
+                },
+                progressoCapitulo(capId) {
+                    const secoes = this.secoesPorCapitulo[capId] || [];
+                    if (!secoes.length) return null;
+                    let total = 0, lidos = 0;
+                    secoes.forEach(sec => {
+                        const tops = this.topicosPorSecao[sec.id] || [];
+                        tops.forEach(top => {
+                            if (!top.tem_subtopicos || !top.subtopicos.length) {
+                                total++;
+                                if (this.statusTopico(top.id) === 'lido') lidos++;
+                            } else {
+                                top.subtopicos.forEach(sub => {
+                                    total++;
+                                    if (this.statusSubtopico(sub.id) === 'lido') lidos++;
+                                });
+                            }
+                        });
+                    });
+                    if (!total) return null;
+                    return Math.round((lidos / total) * 100);
+                },
+                async toggleCapitulo(cap) {
+                    const aberto = !!this.capitulosAbertos[cap.id];
+                    this.capitulosAbertos[cap.id] = !aberto;
+                    if (!aberto && !this.secoesPorCapitulo[cap.id]) {
+                        await this.carregarSecoes(cap);
+                    }
+                },
+                async toggleSecao(capId, sec) {
+                    const aberto = !!this.secoesAbertas[sec.id];
+                    this.secoesAbertas[sec.id] = !aberto;
+                    if (!aberto && !this.topicosPorSecao[sec.id]) {
+                        await this.carregarTopicos(sec);
+                    }
+                },
+                async carregarSecoes(cap) {
+                    if (this.carregandoSecoes[cap.id]) return;
+                    this.carregandoSecoes[cap.id] = true;
+                    try {
+                        const res = await fetch(`/api/documentos/${this.documento.id}/capitulos/${cap.id}/secoes`);
+                        const data = await res.json().catch(() => []);
+                        this.secoesPorCapitulo[cap.id] = Array.isArray(data) ? data : [];
+                    } catch (_) {
+                        this.secoesPorCapitulo[cap.id] = [];
+                    } finally {
+                        this.carregandoSecoes[cap.id] = false;
+                    }
+                },
+                async carregarTopicos(sec) {
+                    if (this.carregandoTopicos[sec.id]) return;
+                    this.carregandoTopicos[sec.id] = true;
+                    try {
+                        const res = await fetch(`/api/documentos/secoes/${sec.id}/topicos`);
+                        const data = await res.json().catch(() => []);
+                        this.topicosPorSecao[sec.id] = Array.isArray(data) ? data : [];
+                    } catch (_) {
+                        this.topicosPorSecao[sec.id] = [];
+                    } finally {
+                        this.carregandoTopicos[sec.id] = false;
+                    }
+                },
+                abrirTopico(topicoId) {
+                    if (!this.documento) return;
+                    sessionStorage.setItem('doc_nav_docId', this.documento.id);
+                    sessionStorage.setItem('doc_nav_items', JSON.stringify(this.navCompleta));
+                    window.location.href = `/documentos/leitura?topico=${topicoId}`;
+                },
+                abrirSubtopico(topicoId, subtopId) {
+                    if (!this.documento) return;
+                    sessionStorage.setItem('doc_nav_docId', this.documento.id);
+                    sessionStorage.setItem('doc_nav_items', JSON.stringify(this.navCompleta));
+                    window.location.href = `/documentos/leitura?topico=${topicoId}&subtopico=${subtopId}`;
+                },
+                async carregarTudo() {
+                    this.loading = true;
+                    this.erro = null;
+                    try {
+                        const [resDoc, resProgresso] = await Promise.all([
+                            fetch('/api/documentos'),
+                            fetch('/api/documentos/progresso')
+                        ]);
+
+                        const docs = await resDoc.json().catch(() => []);
+                        if (!Array.isArray(docs) || !docs.length) {
+                            this.erro = null;
+                            this.loading = false;
+                            return;
+                        }
+
+                        this.documento = docs[0];
+                        const progressoData = await resProgresso.json().catch(() => []);
+                        this.progresso = Array.isArray(progressoData) ? progressoData : [];
+
+                        const resCapitulos = await fetch(`/api/documentos/${this.documento.id}/capitulos`);
+                        const capsData = await resCapitulos.json().catch(() => []);
+                        this.capitulos = Array.isArray(capsData) ? capsData : [];
+
+                        const resNav = await fetch(`/api/documentos/${this.documento.id}/navegacao`);
+                        const navData = await resNav.json().catch(() => []);
+                        this.navCompleta = Array.isArray(navData) ? navData : [];
+
+                    } catch (err) {
+                        this.erro = 'Erro ao carregar o documento. Tente recarregar a página.';
+                        console.error(err);
+                    } finally {
+                        this.loading = false;
+                    }
+                }
+            },
+            async mounted() {
+                await this.carregarTudo();
+            }
+        }).mount('#app');
+    </script>
+</body>
+
+</html>

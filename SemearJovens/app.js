@@ -48,6 +48,7 @@ const rotasDashboard = require('./routes/dashboard');
 const rotasAjuda = require('./routes/ajuda');
 const rotasRelacoesFamiliares = require('./routes/relacoesFamiliares');
 const rotasLogs = require('./routes/logs');
+const rotasDocumentos = require('./routes/documentos');
 const { activityLoggerMiddleware } = require('./lib/activityLogs');
 const { personNameResponseMiddleware } = require('./lib/personNameFormatting');
 const { decryptValue } = require('./lib/fieldEncryption');
@@ -414,6 +415,9 @@ app.get('/administrativo/almoxarifado', acessoMinhaIgreja, (req, res) => res.sen
 app.get('/administrativo/ajuda', requireLoginView, (req, res) => res.sendFile(path.join(__dirname, 'views', 'ajuda.html')));
 app.get('/administrativo/logs', requireLoginView, (req, res) => res.sendFile(path.join(__dirname, 'views', 'logs.html')));
 
+app.get('/documentos', requireLoginView, (req, res) => res.sendFile(path.join(__dirname, 'views', 'documentos.html')));
+app.get('/documentos/leitura', requireLoginView, (req, res) => res.sendFile(path.join(__dirname, 'views', 'documentos-leitura.html')));
+
 app.get('/configuracoes/usuarios', requireLoginView, (req, res) => res.sendFile(path.join(__dirname, 'views', 'usuarios.html')));
 app.get('/configuracoes/coordenacoes', acessoGerencia, (req, res) => res.sendFile(path.join(__dirname, 'views', 'coordenadores.html')));
 app.get('/configuracoes/funcoes-dirigencia', requireLoginView, (req, res) => res.sendFile(path.join(__dirname, 'views', 'funcoes-dirigencia.html')));
@@ -463,6 +467,7 @@ app.use('/api/dashboard', rotasDashboard);
 app.use('/api/ajuda', rotasAjuda);
 app.use('/api/relacoes-familiares', rotasRelacoesFamiliares);
 app.use('/api/logs', rotasLogs);
+app.use('/api/documentos', rotasDocumentos);
 
 // --- ROTAS ANTIGAS / COMPATIBILIDADE ---
 // Algumas rotas frontend chamavam URLs específicas que agora estão dentro dos módulos.

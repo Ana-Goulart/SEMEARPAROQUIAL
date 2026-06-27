@@ -127,6 +127,18 @@ const menuTemplate = `
                 </div>
             </div>
 
+            <div class="menu-group" data-group="documentos">
+                <button type="button" class="menu-group-toggle" data-group-toggle="documentos">
+                    <span class="group-title"><span class="menu-group-icon"><i class="fa-solid fa-book-open"></i></span><span>DOCUMENTOS</span></span>
+                    <span class="menu-chevron">▸</span>
+                </button>
+                <div class="menu-group-links" data-group-links="documentos">
+                    <a href="/documentos" class="nav-link" title="Diretrizes Nacionais EJC">
+                        <span class="menu-link-icon"><i class="fa-solid fa-file-lines"></i></span><span class="link-text">Diretrizes Nacionais EJC</span>
+                    </a>
+                </div>
+            </div>
+
             <div class="menu-group" data-group="sistema">
                 <button type="button" class="menu-group-toggle" data-group-toggle="sistema">
                     <span class="group-title"><span class="menu-group-icon"><i class="fa-solid fa-gear"></i></span><span>SISTEMA</span></span>
@@ -350,7 +362,8 @@ const MENU_ACCESS_ROUTE_PREFIXES = [
     { key: 'planejamento', prefixes: ['/planejamento/calendario', '/calendario', '/planejamento/eventos', '/eventos', '/planejamento/inscricoes', '/inscricoes'] },
     { key: 'secretaria', prefixes: ['/planejamento/atasdereuniao', '/ata-reunioes'] },
     { key: 'financeiro', prefixes: ['/administrativo/financeiro', '/financeiro'] },
-    { key: 'minha-igreja', prefixes: ['/administrativo/contatos', '/contatos', '/planejamento/espacos', '/administrativo/almoxarifado'] }
+    { key: 'minha-igreja', prefixes: ['/administrativo/contatos', '/contatos', '/planejamento/espacos', '/administrativo/almoxarifado'] },
+    { key: 'documentos', prefixes: ['/documentos'] }
 ];
 
 const MENU_VIEW_ONLY_MUTATING_TERMS = [
@@ -983,7 +996,8 @@ const MENU_ROUTE_ALIASES = {
     '/coordenadores': '/configuracoes/coordenacoes',
     '/funcoes-dirigencia': '/configuracoes/funcoes-dirigencia',
     '/meu-ejc': '/configuracoes/meuejc',
-    '/circulos': '/configuracoes/circulos'
+    '/circulos': '/configuracoes/circulos',
+    '/documentos/leitura': '/documentos'
 };
 
 const MENU_TITLE_TERMS = {
@@ -1009,7 +1023,8 @@ const MENU_TITLE_TERMS = {
     '/configuracoes/coordenacoes': ['coordenacoes'],
     '/configuracoes/funcoes-dirigencia': ['funcoes', 'funcoes da dirigencia'],
     '/configuracoes/meuejc': ['info', 'meu ejc'],
-    '/configuracoes/circulos': ['circulos']
+    '/configuracoes/circulos': ['circulos'],
+    '/documentos': ['diretrizes', 'diretrizes nacionais ejc', 'documentos']
 };
 
 function canonicalizarRotaMenu(valor) {
