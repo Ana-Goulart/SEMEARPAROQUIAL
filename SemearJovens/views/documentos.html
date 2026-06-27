@@ -63,6 +63,112 @@
             margin-top: 0.3rem;
         }
 
+        /* Tabs */
+        .doc-tabs {
+            display: flex;
+            gap: 0;
+            margin-bottom: 1.25rem;
+            border-bottom: 2px solid rgba(184, 135, 50, 0.15);
+        }
+
+        .doc-tab {
+            background: none;
+            border: none;
+            padding: 0.55rem 1.2rem;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #9a8060;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            transition: color 0.15s, border-color 0.15s;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .doc-tab:hover { color: #b88732; }
+
+        .doc-tab.active {
+            color: #b88732;
+            border-bottom-color: #b88732;
+        }
+
+        .fav-badge {
+            background: #b88732;
+            color: white;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 0.1rem 0.45rem;
+        }
+
+        /* Botão estrela */
+        .btn-fav {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.1rem 0.25rem;
+            color: #d4c0a0;
+            font-size: 0.85rem;
+            line-height: 1;
+            transition: color 0.15s, transform 0.1s;
+            flex-shrink: 0;
+        }
+
+        .btn-fav:hover { color: #f0b429; transform: scale(1.2); }
+        .btn-fav.favoritado { color: #f0b429; }
+
+        /* Cards de favorito */
+        .fav-card {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.85rem 1rem;
+            border: 1px solid rgba(184, 135, 50, 0.16);
+            border-radius: 10px;
+            margin-bottom: 0.6rem;
+            background: #fff;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .fav-card:hover { background: rgba(184, 135, 50, 0.05); }
+
+        .fav-tipo-badge {
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 0.2rem 0.55rem;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            flex-shrink: 0;
+            white-space: nowrap;
+        }
+
+        .fav-tipo-capitulo { background: rgba(184, 135, 50, 0.15); color: #7a5a1a; }
+        .fav-tipo-secao { background: rgba(100, 150, 200, 0.15); color: #2a5a8a; }
+        .fav-tipo-topico { background: rgba(80, 160, 80, 0.15); color: #2a6a2a; }
+        .fav-tipo-subtopico { background: rgba(160, 80, 160, 0.15); color: #6a2a6a; }
+
+        .fav-info { flex: 1; min-width: 0; }
+
+        .fav-titulo {
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #2f2417;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .fav-contexto {
+            font-size: 0.78rem;
+            color: #9a8060;
+            margin-top: 0.1rem;
+        }
+
+        /* Capítulos */
         .capitulo-card {
             border: 1px solid rgba(184, 135, 50, 0.16);
             border-radius: 12px;
@@ -210,6 +316,7 @@
         .subtopico-titulo {
             font-size: 0.83rem;
             color: #4a4030;
+            flex: 1;
         }
 
         .subtopico-titulo.lido { color: #5a7a5a; }
@@ -274,71 +381,124 @@
                     </div>
                 </div>
 
-                <!-- Lista de capítulos -->
-                <div v-if="!capitulos.length" class="doc-empty">
-                    <i class="fa-solid fa-book-open fa-3x mb-3" style="color:#d4b278;"></i>
-                    <p class="mb-0">Nenhum conteúdo disponível ainda.</p>
-                    <small>O administrador ainda não cadastrou os capítulos.</small>
+                <!-- Navegação em abas -->
+                <div class="doc-tabs">
+                    <button class="doc-tab" :class="{active: aba==='capitulos'}" @click="aba='capitulos'">
+                        <i class="fa-solid fa-book me-1"></i>Capítulos
+                    </button>
+                    <button class="doc-tab" :class="{active: aba==='favoritos'}" @click="aba='favoritos'">
+                        <i class="fa-solid fa-star me-1"></i>Favoritos
+                        <span v-if="favoritos.length" class="fav-badge">{{ favoritos.length }}</span>
+                    </button>
                 </div>
 
-                <div v-for="cap in capitulos" :key="cap.id" class="capitulo-card">
-                    <div class="capitulo-header" @click="toggleCapitulo(cap)">
-                        <i class="fa-solid fa-chevron-right capitulo-chevron"
-                            :class="{ aberto: capitulosAbertos[cap.id] }"></i>
-                        <span class="capitulo-numero">Capítulo {{ cap.numero }}</span>
-                        <span class="capitulo-titulo">{{ cap.titulo }}</span>
-                        <span class="ms-auto">
-                            <small class="text-muted" v-if="progressoCapitulo(cap.id) !== null">
-                                {{ progressoCapitulo(cap.id) }}%
-                            </small>
-                        </span>
+                <!-- Aba: Capítulos -->
+                <div v-show="aba === 'capitulos'">
+                    <div v-if="!capitulos.length" class="doc-empty">
+                        <i class="fa-solid fa-book-open fa-3x mb-3" style="color:#d4b278;"></i>
+                        <p class="mb-0">Nenhum conteúdo disponível ainda.</p>
+                        <small>O administrador ainda não cadastrou os capítulos.</small>
                     </div>
 
-                    <div class="capitulo-body" v-if="capitulosAbertos[cap.id]">
-                        <div v-if="carregandoSecoes[cap.id]" class="text-center py-3">
-                            <div class="spinner-border spinner-border-sm text-warning"></div>
+                    <div v-for="cap in capitulos" :key="cap.id" class="capitulo-card">
+                        <div class="capitulo-header" @click="toggleCapitulo(cap)">
+                            <i class="fa-solid fa-chevron-right capitulo-chevron"
+                                :class="{ aberto: capitulosAbertos[cap.id] }"></i>
+                            <span class="capitulo-numero">Capítulo {{ cap.numero }}</span>
+                            <span class="capitulo-titulo">{{ cap.titulo }}</span>
+                            <span class="ms-auto d-flex align-items-center gap-2">
+                                <small class="text-muted" v-if="progressoCapitulo(cap.id) !== null">
+                                    {{ progressoCapitulo(cap.id) }}%
+                                </small>
+                                <button class="btn-fav" :class="{favoritado: estaFavoritado('capitulo', cap.id)}"
+                                    @click.stop="toggleFavorito('capitulo', cap.id, cap.titulo, 'Capítulo '+cap.numero, cap.id, null, null, null)">
+                                    <i :class="estaFavoritado('capitulo', cap.id) ? 'fa-solid fa-star' : 'fa-regular fa-star'"></i>
+                                </button>
+                            </span>
                         </div>
-                        <div v-else-if="!secoesPorCapitulo[cap.id] || !secoesPorCapitulo[cap.id].length"
-                            class="text-muted px-4 py-2 small">Nenhuma seção cadastrada.</div>
 
-                        <div v-else v-for="sec in secoesPorCapitulo[cap.id]" :key="sec.id" class="secao-item">
-                            <div class="secao-header" @click="toggleSecao(cap.id, sec)">
-                                <i class="fa-solid fa-chevron-right secao-chevron"
-                                    :class="{ aberto: secoesAbertas[sec.id] }"></i>
-                                <span class="secao-titulo">{{ sec.titulo }}</span>
+                        <div class="capitulo-body" v-if="capitulosAbertos[cap.id]">
+                            <div v-if="carregandoSecoes[cap.id]" class="text-center py-3">
+                                <div class="spinner-border spinner-border-sm text-warning"></div>
                             </div>
+                            <div v-else-if="!secoesPorCapitulo[cap.id] || !secoesPorCapitulo[cap.id].length"
+                                class="text-muted px-4 py-2 small">Nenhuma seção cadastrada.</div>
 
-                            <div class="secao-body" v-if="secoesAbertas[sec.id]">
-                                <div v-if="carregandoTopicos[sec.id]" class="text-center py-2">
-                                    <div class="spinner-border spinner-border-sm text-warning"></div>
+                            <div v-else v-for="sec in secoesPorCapitulo[cap.id]" :key="sec.id" class="secao-item">
+                                <div class="secao-header" @click="toggleSecao(cap.id, sec)">
+                                    <i class="fa-solid fa-chevron-right secao-chevron"
+                                        :class="{ aberto: secoesAbertas[sec.id] }"></i>
+                                    <span class="secao-titulo">{{ sec.titulo }}</span>
+                                    <button class="btn-fav ms-auto" :class="{favoritado: estaFavoritado('secao', sec.id)}"
+                                        @click.stop="toggleFavorito('secao', sec.id, sec.titulo, 'Cap. '+cap.numero+' › '+cap.titulo, cap.id, sec.id, null, null)">
+                                        <i :class="estaFavoritado('secao', sec.id) ? 'fa-solid fa-star' : 'fa-regular fa-star'"></i>
+                                    </button>
                                 </div>
-                                <div v-else-if="!topicosPorSecao[sec.id] || !topicosPorSecao[sec.id].length"
-                                    class="text-muted ps-2 py-1 small">Nenhum tópico cadastrado.</div>
 
-                                <template v-else v-for="top in topicosPorSecao[sec.id]" :key="top.id">
-                                    <!-- Tópico sem subtópicos: clicável -->
-                                    <div v-if="!top.tem_subtopicos || !top.subtopicos.length"
-                                        class="topico-item" @click="abrirTopico(top.id)">
-                                        <span class="status-icon">{{ iconStatus(statusTopico(top.id)) }}</span>
-                                        <span class="topico-titulo" :class="statusTopico(top.id)">{{ top.titulo }}</span>
+                                <div class="secao-body" v-if="secoesAbertas[sec.id]">
+                                    <div v-if="carregandoTopicos[sec.id]" class="text-center py-2">
+                                        <div class="spinner-border spinner-border-sm text-warning"></div>
                                     </div>
+                                    <div v-else-if="!topicosPorSecao[sec.id] || !topicosPorSecao[sec.id].length"
+                                        class="text-muted ps-2 py-1 small">Nenhum tópico cadastrado.</div>
 
-                                    <!-- Tópico com subtópicos: cabeçalho não clicável + lista de subtópicos -->
-                                    <template v-else>
-                                        <div class="topico-cabecalho-item">
-                                            <span class="status-icon" style="color:#b88732">
-                                                <i class="fa-solid fa-list-ul fa-xs"></i>
-                                            </span>
-                                            <span class="topico-titulo">{{ top.titulo }}</span>
+                                    <template v-else v-for="top in topicosPorSecao[sec.id]" :key="top.id">
+                                        <!-- Tópico sem subtópicos: clicável -->
+                                        <div v-if="!top.tem_subtopicos || !top.subtopicos.length"
+                                            class="topico-item" @click="abrirTopico(top.id)">
+                                            <span class="status-icon">{{ iconStatus(statusTopico(top.id)) }}</span>
+                                            <span class="topico-titulo" :class="statusTopico(top.id)">{{ top.titulo }}</span>
+                                            <button class="btn-fav" :class="{favoritado: estaFavoritado('topico', top.id)}"
+                                                @click.stop="toggleFavorito('topico', top.id, top.titulo, 'Cap. '+cap.numero+' › '+sec.titulo, cap.id, sec.id, top.id, null)">
+                                                <i :class="estaFavoritado('topico', top.id) ? 'fa-solid fa-star' : 'fa-regular fa-star'"></i>
+                                            </button>
                                         </div>
-                                        <div v-for="sub in top.subtopicos" :key="'sub-'+sub.id"
-                                            class="subtopico-item" @click="abrirSubtopico(top.id, sub.id)">
-                                            <span class="status-icon">{{ iconStatus(statusSubtopico(sub.id)) }}</span>
-                                            <span class="subtopico-titulo" :class="statusSubtopico(sub.id)">{{ sub.titulo }}</span>
-                                        </div>
+
+                                        <!-- Tópico com subtópicos: cabeçalho + lista de subtópicos -->
+                                        <template v-else>
+                                            <div class="topico-cabecalho-item">
+                                                <span class="status-icon" style="color:#b88732">
+                                                    <i class="fa-solid fa-list-ul fa-xs"></i>
+                                                </span>
+                                                <span class="topico-titulo">{{ top.titulo }}</span>
+                                            </div>
+                                            <div v-for="sub in top.subtopicos" :key="'sub-'+sub.id"
+                                                class="subtopico-item" @click="abrirSubtopico(top.id, sub.id)">
+                                                <span class="status-icon">{{ iconStatus(statusSubtopico(sub.id)) }}</span>
+                                                <span class="subtopico-titulo" :class="statusSubtopico(sub.id)">{{ sub.titulo }}</span>
+                                                <button class="btn-fav" :class="{favoritado: estaFavoritado('subtopico', sub.id)}"
+                                                    @click.stop="toggleFavorito('subtopico', sub.id, sub.titulo, 'Cap. '+cap.numero+' › '+sec.titulo+' › '+top.titulo, cap.id, sec.id, top.id, sub.id)">
+                                                    <i :class="estaFavoritado('subtopico', sub.id) ? 'fa-solid fa-star' : 'fa-regular fa-star'"></i>
+                                                </button>
+                                            </div>
+                                        </template>
                                     </template>
-                                </template>
+                                </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Aba: Favoritos -->
+                <div v-show="aba === 'favoritos'">
+                    <div v-if="!favoritos.length" class="doc-empty">
+                        <i class="fa-regular fa-star fa-3x mb-3" style="color:#d4b278;"></i>
+                        <p class="mb-0">Nenhum favorito ainda.</p>
+                        <small>Clique na estrela ☆ em qualquer capítulo, seção ou tópico para salvar aqui.</small>
+                    </div>
+                    <div v-else>
+                        <div v-for="fav in favoritos" :key="fav.id" class="fav-card" @click="abrirFavorito(fav)">
+                            <span class="fav-tipo-badge" :class="'fav-tipo-'+fav.tipo">
+                                {{ tipoLabel(fav.tipo) }}
+                            </span>
+                            <div class="fav-info">
+                                <div class="fav-titulo">{{ fav.titulo }}</div>
+                                <div class="fav-contexto" v-if="fav.contexto">{{ fav.contexto }}</div>
+                            </div>
+                            <button class="btn-fav favoritado"
+                                @click.stop="toggleFavorito(fav.tipo, fav.ref_id, fav.titulo, fav.contexto, fav.capitulo_id, fav.secao_id, fav.topico_id, fav.subtopico_id)">
+                                <i class="fa-solid fa-star"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -369,7 +529,9 @@
                     carregandoSecoes: {},
                     carregandoTopicos: {},
                     progresso: [],
-                    navCompleta: []
+                    navCompleta: [],
+                    favoritos: [],
+                    aba: 'capitulos'
                 };
             },
             computed: {
@@ -422,6 +584,65 @@
                     });
                     if (!total) return null;
                     return Math.round((lidos / total) * 100);
+                },
+                estaFavoritado(tipo, refId) {
+                    return this.favoritos.some(f => f.tipo === tipo && f.ref_id === refId);
+                },
+                async toggleFavorito(tipo, refId, titulo, contexto, capituloId, secaoId, topicoId, subtopId) {
+                    try {
+                        const res = await fetch('/api/documentos/favoritos', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                tipo, ref_id: refId, titulo, contexto,
+                                capitulo_id: capituloId, secao_id: secaoId,
+                                topico_id: topicoId, subtopico_id: subtopId
+                            })
+                        });
+                        const data = await res.json();
+                        if (data.ativo) {
+                            this.favoritos.unshift({
+                                id: data.id, tipo, ref_id: refId, titulo, contexto,
+                                capitulo_id: capituloId, secao_id: secaoId,
+                                topico_id: topicoId, subtopico_id: subtopId
+                            });
+                        } else {
+                            const idx = this.favoritos.findIndex(f => f.tipo === tipo && f.ref_id === refId);
+                            if (idx !== -1) this.favoritos.splice(idx, 1);
+                        }
+                    } catch (err) {
+                        console.error('Erro ao alternar favorito:', err);
+                    }
+                },
+                async abrirFavorito(fav) {
+                    if (fav.tipo === 'topico') {
+                        this.abrirTopico(fav.ref_id);
+                    } else if (fav.tipo === 'subtopico') {
+                        this.abrirSubtopico(fav.topico_id, fav.ref_id);
+                    } else if (fav.tipo === 'capitulo') {
+                        this.aba = 'capitulos';
+                        await this.$nextTick();
+                        const cap = this.capitulos.find(c => c.id === fav.ref_id);
+                        if (cap && !this.capitulosAbertos[cap.id]) {
+                            await this.toggleCapitulo(cap);
+                        }
+                    } else if (fav.tipo === 'secao') {
+                        this.aba = 'capitulos';
+                        await this.$nextTick();
+                        const cap = this.capitulos.find(c => c.id === fav.capitulo_id);
+                        if (cap) {
+                            if (!this.capitulosAbertos[cap.id]) {
+                                await this.toggleCapitulo(cap);
+                            }
+                            if (!this.secoesAbertas[fav.ref_id]) {
+                                await this.toggleSecao(cap.id, { id: fav.ref_id });
+                            }
+                        }
+                    }
+                },
+                tipoLabel(tipo) {
+                    const l = { capitulo: 'Capítulo', secao: 'Seção', topico: 'Tópico', subtopico: 'Subtópico' };
+                    return l[tipo] || tipo;
                 },
                 async toggleCapitulo(cap) {
                     const aberto = !!this.capitulosAbertos[cap.id];
@@ -479,28 +700,38 @@
                     this.loading = true;
                     this.erro = null;
                     try {
-                        const [resDoc, resProgresso] = await Promise.all([
+                        const [resDoc, resProgresso, resFavoritos] = await Promise.all([
                             fetch('/api/documentos'),
-                            fetch('/api/documentos/progresso')
+                            fetch('/api/documentos/progresso'),
+                            fetch('/api/documentos/favoritos')
                         ]);
 
-                        const docs = await resDoc.json().catch(() => []);
+                        const [docs, progressoData, favoritosData] = await Promise.all([
+                            resDoc.json().catch(() => []),
+                            resProgresso.json().catch(() => []),
+                            resFavoritos.json().catch(() => [])
+                        ]);
+
                         if (!Array.isArray(docs) || !docs.length) {
-                            this.erro = null;
                             this.loading = false;
                             return;
                         }
 
                         this.documento = docs[0];
-                        const progressoData = await resProgresso.json().catch(() => []);
                         this.progresso = Array.isArray(progressoData) ? progressoData : [];
+                        this.favoritos = Array.isArray(favoritosData) ? favoritosData : [];
 
-                        const resCapitulos = await fetch(`/api/documentos/${this.documento.id}/capitulos`);
-                        const capsData = await resCapitulos.json().catch(() => []);
+                        const [resCapitulos, resNav] = await Promise.all([
+                            fetch(`/api/documentos/${this.documento.id}/capitulos`),
+                            fetch(`/api/documentos/${this.documento.id}/navegacao`)
+                        ]);
+
+                        const [capsData, navData] = await Promise.all([
+                            resCapitulos.json().catch(() => []),
+                            resNav.json().catch(() => [])
+                        ]);
+
                         this.capitulos = Array.isArray(capsData) ? capsData : [];
-
-                        const resNav = await fetch(`/api/documentos/${this.documento.id}/navegacao`);
-                        const navData = await resNav.json().catch(() => []);
                         this.navCompleta = Array.isArray(navData) ? navData : [];
 
                     } catch (err) {

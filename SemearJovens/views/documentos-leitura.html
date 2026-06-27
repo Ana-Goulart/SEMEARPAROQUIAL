@@ -21,10 +21,33 @@
             margin: 0 auto;
         }
 
+        .btn-voltar {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.4rem 0.9rem;
+            background: rgba(184, 135, 50, 0.1);
+            border: 1.5px solid rgba(184, 135, 50, 0.3);
+            border-radius: 8px;
+            color: #b88732;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-decoration: none;
+            white-space: nowrap;
+            transition: background 0.15s, border-color 0.15s;
+            flex-shrink: 0;
+        }
+
+        .btn-voltar:hover {
+            background: rgba(184, 135, 50, 0.18);
+            border-color: #b88732;
+            color: #8a6020;
+        }
+
         .leitura-breadcrumb {
             font-size: 0.8rem;
             color: #8d6a37;
-            margin-bottom: 1.2rem;
+            margin-bottom: 0;
             display: flex;
             flex-wrap: wrap;
             align-items: center;
@@ -220,6 +243,33 @@
             text-transform: uppercase;
             margin-bottom: 0.4rem;
         }
+
+        .titulo-fav-row {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.6rem;
+        }
+
+        .titulo-fav-row .leitura-titulo,
+        .titulo-fav-row .leitura-subtitulo {
+            flex: 1;
+        }
+
+        .btn-fav-leitura {
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #d4c0a0;
+            font-size: 1.35rem;
+            line-height: 1;
+            padding: 0.15rem 0.2rem;
+            flex-shrink: 0;
+            margin-top: 0.15rem;
+            transition: color 0.15s, transform 0.12s;
+        }
+
+        .btn-fav-leitura:hover { color: #f0b429; transform: scale(1.18); }
+        .btn-fav-leitura.favoritado { color: #f0b429; }
     </style>
 </head>
 
@@ -235,13 +285,18 @@
                 <div v-else-if="erro" class="alert alert-danger">{{ erro }}</div>
 
                 <div v-else>
-                    <!-- Breadcrumb -->
-                    <div class="leitura-breadcrumb">
-                        <a href="/documentos"><i class="fa-solid fa-book-open"></i> Diretrizes</a>
-                        <span>›</span>
-                        <span>Cap. {{ tituloAtual.capitulo }}</span>
-                        <span>›</span>
-                        <span>{{ tituloAtual.secao }}</span>
+                    <!-- Botão voltar + Breadcrumb -->
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <a href="/documentos" class="btn-voltar">
+                            <i class="fa-solid fa-arrow-left"></i> Voltar
+                        </a>
+                        <div class="leitura-breadcrumb mb-0">
+                            <a href="/documentos"><i class="fa-solid fa-book-open"></i> Diretrizes</a>
+                            <span>›</span>
+                            <span>Cap. {{ tituloAtual.capitulo }}</span>
+                            <span>›</span>
+                            <span>{{ tituloAtual.secao }}</span>
+                        </div>
                     </div>
 
                     <!-- Card de leitura -->
@@ -253,7 +308,13 @@
                                 <i class="fa-solid fa-bookmark"></i> {{ topico.capitulo_titulo }}
                             </div>
                             <h2 class="leitura-titulo">{{ topico.titulo }}</h2>
-                            <h3 class="leitura-subtitulo">{{ subtopico.titulo }}</h3>
+                            <div class="titulo-fav-row">
+                                <h3 class="leitura-subtitulo">{{ subtopico.titulo }}</h3>
+                                <button class="btn-fav-leitura" :class="{favoritado: estaFavoritado}"
+                                    @click="toggleFavorito" :title="estaFavoritado ? 'Remover dos favoritos' : 'Adicionar aos favoritos'">
+                                    <i :class="estaFavoritado ? 'fa-solid fa-star' : 'fa-regular fa-star'"></i>
+                                </button>
+                            </div>
                             <div v-if="subtopico.pagina_ref" class="pagina-ref">
                                 <i class="fa-solid fa-file-lines"></i>
                                 Página {{ subtopico.pagina_ref }} do Diretório Nacional
@@ -268,7 +329,13 @@
                             <div class="secao-badge">
                                 <i class="fa-solid fa-bookmark"></i> {{ topico.capitulo_titulo }}
                             </div>
-                            <h2 class="leitura-titulo">{{ topico.titulo }}</h2>
+                            <div class="titulo-fav-row">
+                                <h2 class="leitura-titulo">{{ topico.titulo }}</h2>
+                                <button class="btn-fav-leitura" :class="{favoritado: estaFavoritado}"
+                                    @click="toggleFavorito" :title="estaFavoritado ? 'Remover dos favoritos' : 'Adicionar aos favoritos'">
+                                    <i :class="estaFavoritado ? 'fa-solid fa-star' : 'fa-regular fa-star'"></i>
+                                </button>
+                            </div>
                             <div v-if="topico.pagina_ref" class="pagina-ref">
                                 <i class="fa-solid fa-file-lines"></i>
                                 Página {{ topico.pagina_ref }} do Diretório Nacional
@@ -412,10 +479,15 @@
                     notaDestaque: '',
                     salvandoDestaque: false,
                     popupDestaque: { visivel: false, x: 0, y: 0 },
-                    modalDestaqueInst: null
+                    modalDestaqueInst: null,
+                    favorito: null,
+                    salvandoFavorito: false
                 };
             },
             computed: {
+                estaFavoritado() {
+                    return !!this.favorito;
+                },
                 statusAtual() {
                     if (!this.progresso) return 'nao_lido';
                     return this.progresso.status || 'nao_lido';
@@ -451,6 +523,56 @@
                 }
             },
             methods: {
+                async toggleFavorito() {
+                    if (!this.topico || this.salvandoFavorito) return;
+                    this.salvandoFavorito = true;
+                    try {
+                        const tipo = this.modoSubtopico ? 'subtopico' : 'topico';
+                        const refId = this.modoSubtopico ? this.subtopId : this.topicoId;
+                        const titulo = this.modoSubtopico ? this.subtopico.titulo : this.topico.titulo;
+                        const contexto = this.modoSubtopico
+                            ? `Cap. ${this.topico.capitulo_numero} › ${this.topico.secao_titulo} › ${this.topico.titulo}`
+                            : `Cap. ${this.topico.capitulo_numero} › ${this.topico.secao_titulo}`;
+                        const res = await fetch('/api/documentos/favoritos', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                tipo, ref_id: refId, titulo, contexto,
+                                capitulo_id: this.topico.capitulo_id,
+                                secao_id: this.topico.secao_id,
+                                topico_id: this.topicoId,
+                                subtopico_id: this.modoSubtopico ? this.subtopId : null
+                            })
+                        });
+                        const data = await res.json();
+                        if (data.ativo) {
+                            this.favorito = { id: data.id, tipo, ref_id: refId };
+                            showFloatingToast('Adicionado aos favoritos!', 'success');
+                        } else {
+                            this.favorito = null;
+                            showFloatingToast('Removido dos favoritos.', 'info');
+                        }
+                    } catch (err) {
+                        showFloatingToast('Erro ao atualizar favorito.', 'danger');
+                        console.error(err);
+                    } finally {
+                        this.salvandoFavorito = false;
+                    }
+                },
+                async carregarFavorito() {
+                    try {
+                        const res = await fetch('/api/documentos/favoritos');
+                        const data = await res.json().catch(() => []);
+                        const lista = Array.isArray(data) ? data : [];
+                        if (this.modoSubtopico && this.subtopId) {
+                            this.favorito = lista.find(f => f.tipo === 'subtopico' && f.ref_id === this.subtopId) || null;
+                        } else {
+                            this.favorito = lista.find(f => f.tipo === 'topico' && f.ref_id === this.topicoId) || null;
+                        }
+                    } catch (_) {
+                        this.favorito = null;
+                    }
+                },
                 conteudoComDestaques(conteudo, id, isSub) {
                     if (!conteudo) return '<span class="text-muted fst-italic">Sem conteúdo cadastrado.</span>';
                     let texto = escaparHtml(conteudo);
@@ -637,7 +759,8 @@
                         await Promise.all([
                             this.carregarDestaques(),
                             this.carregarProgresso(),
-                            this.carregarNavegacao(this.topico.documento_id)
+                            this.carregarNavegacao(this.topico.documento_id),
+                            this.carregarFavorito()
                         ]);
 
                     } catch (err) {

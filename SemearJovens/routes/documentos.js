@@ -13,11 +13,17 @@ async function _doGarantirEstrutura() {
             titulo VARCHAR(255) NOT NULL,
             descricao TEXT,
             ativo BOOLEAN DEFAULT TRUE,
+            is_nacional BOOLEAN NOT NULL DEFAULT TRUE,
             ordem INT DEFAULT 0,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             KEY idx_documentos_tenant (tenant_id)
         )
     `);
+
+    // Migração: garante que a coluna existe em tabelas já criadas
+    await pool.query(`ALTER TABLE documentos ADD COLUMN IF NOT EXISTS is_nacional BOOLEAN NOT NULL DEFAULT TRUE`).catch(() => {});
+    // Garante que todos os documentos existentes são nacionais
+    await pool.query(`UPDATE documentos SET is_nacional = TRUE WHERE is_nacional = FALSE OR is_nacional IS NULL`).catch(() => {});
 
     await pool.query(`
         CREATE TABLE IF NOT EXISTS documento_capitulos (
@@ -95,6 +101,24 @@ async function _doGarantirEstrutura() {
             KEY idx_doc_dest_usuario_tenant (usuario_id, tenant_id)
         )
     `);
+
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS documento_favoritos (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            usuario_id INT NOT NULL,
+            tenant_id INT NOT NULL,
+            tipo ENUM('capitulo','secao','topico','subtopico') NOT NULL,
+            ref_id INT NOT NULL,
+            titulo VARCHAR(500) NOT NULL,
+            contexto VARCHAR(500),
+            capitulo_id INT NULL,
+            secao_id INT NULL,
+            topico_id INT NULL,
+            subtopico_id INT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            KEY idx_doc_fav_usuario_tenant (usuario_id, tenant_id)
+        )
+    `);
 }
 
 async function garantirEstrutura() {
@@ -107,6 +131,72 @@ async function garantirEstrutura() {
     }
     return garantirEstruturaPromise;
 }
+
+// GET /favoritos - favoritos do usuário logado
+router.get('/favoritos', async (req, res) => {
+    const tenantId = getTenantId(req);
+    if (!tenantId) return res.status(401).json({ error: 'Tenant não identificado.' });
+    const usuarioId = req.user && req.user.id;
+    if (!usuarioId) return res.status(401).json({ error: 'Usuário não identificado.' });
+    try {
+        await garantirEstrutura();
+        const [rows] = await pool.query(
+            `SELECT id, tipo, ref_id, titulo, contexto, capitulo_id, secao_id, topico_id, subtopico_id, created_at
+             FROM documento_favoritos
+             WHERE usuario_id = ? AND tenant_id = ?
+             ORDER BY created_at DESC`,
+            [usuarioId, tenantId]
+        );
+        res.json(rows);
+    } catch (err) {
+        console.error('Erro ao listar favoritos:', err);
+        res.status(500).json({ error: 'Erro ao listar favoritos.' });
+    }
+});
+
+// POST /favoritos - toggle (adicionar ou remover favorito)
+router.post('/favoritos', async (req, res) => {
+    const tenantId = getTenantId(req);
+    if (!tenantId) return res.status(401).json({ error: 'Tenant não identificado.' });
+    const usuarioId = req.user && req.user.id;
+    if (!usuarioId) return res.status(401).json({ error: 'Usuário não identificado.' });
+
+    const tipo = String(req.body.tipo || '').trim();
+    const refId = Number(req.body.ref_id);
+    const titulo = String(req.body.titulo || '').trim().substring(0, 500);
+    const contexto = String(req.body.contexto || '').trim().substring(0, 500) || null;
+    const capituloId = req.body.capitulo_id ? Number(req.body.capitulo_id) : null;
+    const secaoId = req.body.secao_id ? Number(req.body.secao_id) : null;
+    const topicoId = req.body.topico_id ? Number(req.body.topico_id) : null;
+    const subtopId = req.body.subtopico_id ? Number(req.body.subtopico_id) : null;
+
+    if (!['capitulo', 'secao', 'topico', 'subtopico'].includes(tipo)) {
+        return res.status(400).json({ error: 'Tipo inválido.' });
+    }
+    if (!refId) return res.status(400).json({ error: 'ref_id é obrigatório.' });
+    if (!titulo) return res.status(400).json({ error: 'titulo é obrigatório.' });
+
+    try {
+        await garantirEstrutura();
+        const [[existing]] = await pool.query(
+            `SELECT id FROM documento_favoritos WHERE usuario_id = ? AND tenant_id = ? AND tipo = ? AND ref_id = ? LIMIT 1`,
+            [usuarioId, tenantId, tipo, refId]
+        );
+        if (existing) {
+            await pool.query(`DELETE FROM documento_favoritos WHERE id = ?`, [existing.id]);
+            return res.json({ ativo: false, message: 'Favorito removido.' });
+        }
+        const [result] = await pool.query(
+            `INSERT INTO documento_favoritos (usuario_id, tenant_id, tipo, ref_id, titulo, contexto, capitulo_id, secao_id, topico_id, subtopico_id)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [usuarioId, tenantId, tipo, refId, titulo, contexto, capituloId, secaoId, topicoId, subtopId]
+        );
+        res.status(201).json({ ativo: true, id: result.insertId, message: 'Favorito adicionado.' });
+    } catch (err) {
+        console.error('Erro ao alternar favorito:', err);
+        res.status(500).json({ error: 'Erro ao alternar favorito.' });
+    }
+});
 
 // GET /progresso - progresso do usuário logado
 router.get('/progresso', async (req, res) => {
@@ -296,7 +386,7 @@ router.get('/secoes/:secaoId/topicos', async (req, res) => {
             FROM documento_secoes ds
             JOIN documento_capitulos dc ON dc.id = ds.capitulo_id
             JOIN documentos d ON d.id = dc.documento_id
-            WHERE ds.id = ? AND d.tenant_id = ? AND d.ativo = TRUE
+            WHERE ds.id = ? AND (d.tenant_id = ? OR d.is_nacional = TRUE) AND d.ativo = TRUE
             LIMIT 1
         `, [secaoId, tenantId]);
         if (!sec) return res.status(404).json({ error: 'Seção não encontrada.' });
@@ -353,7 +443,7 @@ router.get('/topicos/:topicoId', async (req, res) => {
             JOIN documento_secoes ds ON ds.id = dt.secao_id
             JOIN documento_capitulos dc ON dc.id = ds.capitulo_id
             JOIN documentos d ON d.id = dc.documento_id
-            WHERE dt.id = ? AND d.tenant_id = ? AND d.ativo = TRUE
+            WHERE dt.id = ? AND (d.tenant_id = ? OR d.is_nacional = TRUE) AND d.ativo = TRUE
             LIMIT 1
         `, [topicoId, tenantId]);
 
@@ -386,7 +476,7 @@ router.get('/:id/navegacao', async (req, res) => {
         await garantirEstrutura();
 
         const [[doc]] = await pool.query(
-            `SELECT id FROM documentos WHERE id = ? AND tenant_id = ? AND ativo = TRUE LIMIT 1`,
+            `SELECT id FROM documentos WHERE id = ? AND (tenant_id = ? OR is_nacional = TRUE) AND ativo = TRUE LIMIT 1`,
             [id, tenantId]
         );
         if (!doc) return res.status(404).json({ error: 'Documento não encontrado.' });
@@ -448,10 +538,10 @@ router.get('/', async (req, res) => {
     try {
         await garantirEstrutura();
         const [rows] = await pool.query(
-            `SELECT id, titulo, descricao, ordem, created_at
+            `SELECT id, titulo, descricao, ordem, is_nacional, created_at
              FROM documentos
-             WHERE tenant_id = ? AND ativo = TRUE
-             ORDER BY ordem ASC, id ASC`,
+             WHERE (tenant_id = ? OR is_nacional = TRUE) AND ativo = TRUE
+             ORDER BY is_nacional DESC, ordem ASC, id ASC`,
             [tenantId]
         );
         res.json(rows);
@@ -472,7 +562,7 @@ router.get('/:id/capitulos', async (req, res) => {
     try {
         await garantirEstrutura();
         const [[doc]] = await pool.query(
-            `SELECT id FROM documentos WHERE id = ? AND tenant_id = ? AND ativo = TRUE LIMIT 1`,
+            `SELECT id FROM documentos WHERE id = ? AND (tenant_id = ? OR is_nacional = TRUE) AND ativo = TRUE LIMIT 1`,
             [id, tenantId]
         );
         if (!doc) return res.status(404).json({ error: 'Documento não encontrado.' });
@@ -503,7 +593,7 @@ router.get('/:id/capitulos/:capId/secoes', async (req, res) => {
     try {
         await garantirEstrutura();
         const [[doc]] = await pool.query(
-            `SELECT id FROM documentos WHERE id = ? AND tenant_id = ? AND ativo = TRUE LIMIT 1`,
+            `SELECT id FROM documentos WHERE id = ? AND (tenant_id = ? OR is_nacional = TRUE) AND ativo = TRUE LIMIT 1`,
             [id, tenantId]
         );
         if (!doc) return res.status(404).json({ error: 'Documento não encontrado.' });
