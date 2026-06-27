@@ -989,6 +989,62 @@
         .tarefa-checklist-row:last-child { border-bottom:none; }
         .tarefa-status-icon { font-size:1.1rem; flex-shrink:0; width:22px; text-align:center; }
 
+        /* ===== MÓDULO FINANCEIRO ===== */
+        .fin-saldo-card {
+            background: linear-gradient(135deg, rgba(77,116,80,0.1), rgba(255,255,255,0.92));
+            border: 1px solid rgba(77,116,80,0.22);
+            border-radius: 20px;
+            padding: 22px 26px;
+            margin-bottom: 20px;
+        }
+        .fin-saldo-label { font-size:0.8rem; letter-spacing:0.12em; text-transform:uppercase; font-weight:700; color:#4d7450; margin-bottom:6px; }
+        .fin-saldo-valor { font-family:'Libre Baskerville',serif; font-size:2.4rem; font-weight:700; line-height:1.1; }
+        .fin-saldo-valor.positivo { color:#1e4d22; }
+        .fin-saldo-valor.negativo { color:#7f1d1d; }
+        .fin-saldo-valor.zero { color:#6b7280; }
+
+        .fin-resumo-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-bottom:20px; }
+        @media(max-width:700px){ .fin-resumo-grid{ grid-template-columns:repeat(2,1fr); } }
+        .fin-resumo-card { border-radius:14px; padding:16px 18px; border:1px solid rgba(0,0,0,0.07); background:rgba(255,255,255,0.86); }
+        .fin-resumo-label { font-size:0.78rem; color:#6b7280; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; margin-bottom:4px; }
+        .fin-resumo-valor { font-size:1.35rem; font-weight:700; }
+        .fin-resumo-valor.entrada { color:#16a34a; }
+        .fin-resumo-valor.saida { color:#dc2626; }
+        .fin-resumo-valor.neutro { color:var(--navy); }
+
+        .fin-filtros { display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap; margin-bottom:18px; padding:16px; background:rgba(255,255,255,0.7); border-radius:14px; border:1px solid rgba(0,0,0,0.06); }
+        .fin-filtros label { font-size:0.82rem; font-weight:600; color:#374151; display:block; margin-bottom:4px; }
+
+        .fin-table th { font-size:0.8rem; text-transform:uppercase; letter-spacing:0.06em; color:#8a6a36; font-weight:700; padding:10px 14px; border-bottom:2px solid rgba(163,122,44,0.15); }
+        .fin-table td { padding:10px 14px; border-bottom:1px solid rgba(0,0,0,0.05); font-size:0.93rem; vertical-align:middle; }
+        .fin-table tr:last-child td { border-bottom:none; }
+        .fin-table tr:hover td { background:rgba(163,122,44,0.04); }
+
+        .fin-badge-entrada { display:inline-block; padding:3px 10px; border-radius:999px; font-size:0.76rem; font-weight:700; background:rgba(22,163,74,0.12); color:#16a34a; border:1px solid rgba(22,163,74,0.2); }
+        .fin-badge-saida   { display:inline-block; padding:3px 10px; border-radius:999px; font-size:0.76rem; font-weight:700; background:rgba(220,38,38,0.1); color:#dc2626; border:1px solid rgba(220,38,38,0.18); }
+
+        .alerta-card { border-radius:14px; padding:15px 18px; margin-bottom:10px; border:1px solid rgba(0,0,0,0.08); background:rgba(255,255,255,0.88); display:flex; align-items:flex-start; gap:14px; }
+        .alerta-card.atrasado { background:rgba(220,38,38,0.06); border-color:rgba(220,38,38,0.22); }
+        .alerta-card.hoje     { background:rgba(220,38,38,0.1);  border-color:rgba(220,38,38,0.3); }
+        .alerta-card.proximo  { background:rgba(234,179,8,0.07); border-color:rgba(234,179,8,0.22); }
+        .alerta-card.ok       { background:rgba(77,116,80,0.06); border-color:rgba(77,116,80,0.18); }
+        .alerta-icon { font-size:1.45rem; flex-shrink:0; margin-top:2px; }
+        .alerta-body { flex:1; min-width:0; }
+        .alerta-descricao { font-weight:700; color:#1d2f45; margin-bottom:3px; }
+        .alerta-meta { font-size:0.84rem; color:#6b7280; }
+        .alerta-status-badge { font-size:0.72rem; font-weight:700; padding:3px 9px; border-radius:999px; display:inline-block; }
+        .badge-pendente  { background:rgba(234,179,8,0.14); color:#92400e; border:1px solid rgba(234,179,8,0.24); }
+        .badge-atrasado  { background:rgba(220,38,38,0.12); color:#991b1b; border:1px solid rgba(220,38,38,0.22); }
+        .badge-hoje      { background:rgba(220,38,38,0.18); color:#7f1d1d; border:1px solid rgba(220,38,38,0.3); }
+        .badge-pago      { background:rgba(22,163,74,0.12); color:#14532d; border:1px solid rgba(22,163,74,0.2); }
+        .badge-recebido  { background:rgba(59,130,246,0.12); color:#1e3a5f; border:1px solid rgba(59,130,246,0.2); }
+
+        .fin-dashboard-widget { border-radius:20px; border:1px solid rgba(0,0,0,0.08); background:rgba(255,255,255,0.84); padding:22px 26px; margin-top:18px; }
+        .fin-widget-title { font-size:0.8rem; letter-spacing:0.12em; text-transform:uppercase; font-weight:700; color:var(--gold); margin-bottom:14px; display:flex; align-items:center; gap:8px; }
+        .fin-widget-saldo { display:flex; align-items:baseline; gap:8px; margin-bottom:14px; padding-bottom:14px; border-bottom:1px solid rgba(0,0,0,0.07); }
+        .fin-widget-saldo-label { font-size:0.84rem; color:#6b7280; }
+        .fin-widget-saldo-valor { font-family:'Libre Baskerville',serif; font-size:1.5rem; font-weight:700; }
+
     </style>
 </head>
 <body>
@@ -1050,6 +1106,21 @@
                         </button>
                         <button type="button" class="sidebar-sub-btn" :class="{active: aba==='changelog-menus'}" @click="carregarQaMenus()">
                             <span class="sidebar-menu-label"><span class="sidebar-menu-icon">🗂️</span>Menus</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div>
+                    <button type="button" class="sidebar-group-btn" :class="{'group-open': gruposAbertos.financeiro}" @click="toggleGrupo('financeiro')">
+                        <span class="sidebar-menu-label"><span class="sidebar-menu-icon">💰</span>Financeiro</span>
+                        <span class="sidebar-group-chevron" :class="{open: gruposAbertos.financeiro}">›</span>
+                    </button>
+                    <div v-if="gruposAbertos.financeiro" class="sidebar-sub-list">
+                        <button type="button" class="sidebar-sub-btn" :class="{active: aba==='financeiro-fluxo'}" @click="carregarFluxoCaixa()">
+                            <span class="sidebar-menu-label"><span class="sidebar-menu-icon">💸</span>Fluxo de Caixa</span>
+                        </button>
+                        <button type="button" class="sidebar-sub-btn" :class="{active: aba==='financeiro-alertas'}" @click="carregarAlertasFinanceiros()">
+                            <span class="sidebar-menu-label"><span class="sidebar-menu-icon">🔔</span>Lembretes</span>
                         </button>
                     </div>
                 </div>
@@ -1138,6 +1209,39 @@
                             <div class="fw-semibold mb-1">Tudo em um painel só</div>
                             <div class="text-muted">Acompanhe quem está usando cada sistema, mantenha os usuários do `ana` organizados e responda chamados sem sair desta área.</div>
                         </div>
+                    </div>
+
+                    <div v-if="alertasDashboard.length || finSaldoDashboard !== null" class="fin-dashboard-widget">
+                        <div class="fin-widget-title">💰 Financeiro</div>
+                        <div v-if="finSaldoDashboard !== null" class="fin-widget-saldo">
+                            <span class="fin-widget-saldo-label">Saldo atual:</span>
+                            <span class="fin-widget-saldo-valor"
+                                  :style="finSaldoDashboard < 0 ? 'color:#7f1d1d' : finSaldoDashboard > 0 ? 'color:#1e4d22' : 'color:#6b7280'">
+                                {{ finSaldoDashboard < 0 ? '-' : '' }}R$ {{ formatarValor(Math.abs(finSaldoDashboard)) }}
+                            </span>
+                        </div>
+                        <div v-if="alertasDashboard.length">
+                            <div class="alerta-card" v-for="a in alertasDashboard" :key="`da-${a.id}`"
+                                 :class="{ atrasado: a.dias_para_vencer < 0, hoje: a.dias_para_vencer == 0, proximo: a.dias_para_vencer > 0 }">
+                                <div class="alerta-icon">{{ a.dias_para_vencer < 0 ? '🚨' : a.dias_para_vencer == 0 ? '⚠️' : '🔔' }}</div>
+                                <div class="alerta-body">
+                                    <div class="alerta-descricao">{{ a.descricao }}</div>
+                                    <div class="alerta-meta">
+                                        Vence: {{ formatarData(a.data_vencimento) }}
+                                        <span v-if="a.valor"> · R$ {{ formatarValor(a.valor) }}</span>
+                                        ·
+                                        <span v-if="a.dias_para_vencer < 0" style="color:#dc2626;font-weight:700">{{ Math.abs(a.dias_para_vencer) }} dia(s) em atraso</span>
+                                        <span v-else-if="a.dias_para_vencer == 0" style="color:#dc2626;font-weight:700">Vence hoje!</span>
+                                        <span v-else style="color:#92400e;">Vence em {{ a.dias_para_vencer }} dia(s)</span>
+                                    </div>
+                                </div>
+                                <span class="alerta-status-badge"
+                                      :class="a.dias_para_vencer < 0 ? 'badge-atrasado' : a.dias_para_vencer == 0 ? 'badge-hoje' : 'badge-pendente'">
+                                    {{ a.dias_para_vencer < 0 ? 'Atrasado' : a.dias_para_vencer == 0 ? 'Hoje' : 'Pendente' }}
+                                </span>
+                            </div>
+                        </div>
+                        <div v-else class="text-muted" style="font-size:0.9rem;">Nenhum alerta financeiro pendente.</div>
                     </div>
                 </template>
 
@@ -1781,7 +1885,218 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- ===== FLUXO DE CAIXA ===== -->
+                <div v-else-if="aba==='financeiro-fluxo'" class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <div>
+                                <h5 class="mb-1">💸 Fluxo de Caixa</h5>
+                                <p class="text-muted mb-0">Registre e acompanhe todas as entradas e saídas.</p>
+                            </div>
+                            <button class="btn btn-primary" @click="abrirModalMovimentacao(null)">+ Nova Movimentação</button>
+                        </div>
+
+                        <!-- Saldo -->
+                        <div class="fin-saldo-card">
+                            <div class="fin-saldo-label">Saldo Atual</div>
+                            <div class="fin-saldo-valor" :class="saldoAtual > 0 ? 'positivo' : saldoAtual < 0 ? 'negativo' : 'zero'">
+                                {{ saldoAtual < 0 ? '-' : '' }}R$&nbsp;{{ formatarValor(Math.abs(saldoAtual)) }}
+                            </div>
+                        </div>
+
+                        <!-- Resumo -->
+                        <div class="fin-resumo-grid">
+                            <div class="fin-resumo-card">
+                                <div class="fin-resumo-label">Total Entradas</div>
+                                <div class="fin-resumo-valor entrada">+ R$&nbsp;{{ formatarValor(totalEntradasFluxo) }}</div>
+                            </div>
+                            <div class="fin-resumo-card">
+                                <div class="fin-resumo-label">Total Saídas</div>
+                                <div class="fin-resumo-valor saida">- R$&nbsp;{{ formatarValor(totalSaidasFluxo) }}</div>
+                            </div>
+                            <div class="fin-resumo-card">
+                                <div class="fin-resumo-label">Movimentações</div>
+                                <div class="fin-resumo-valor neutro">{{ movimentacoes.length }}</div>
+                            </div>
+                        </div>
+
+                        <!-- Filtros -->
+                        <div class="fin-filtros">
+                            <div>
+                                <label>Data início</label>
+                                <input type="date" class="form-control form-control-sm" v-model="filtroFluxo.dataInicio">
+                            </div>
+                            <div>
+                                <label>Data fim</label>
+                                <input type="date" class="form-control form-control-sm" v-model="filtroFluxo.dataFim">
+                            </div>
+                            <button class="btn btn-sm btn-primary" @click="carregarFluxoCaixa()">Filtrar</button>
+                            <button class="btn btn-sm btn-light border" @click="limparFiltroFluxo()">Limpar</button>
+                            <button class="btn btn-sm btn-outline-secondary ms-auto" @click="exportarFluxoCSV()">⬇ Exportar CSV</button>
+                        </div>
+
+                        <!-- Tabela -->
+                        <div v-if="!movimentacoes.length" class="text-center text-muted py-4">
+                            Nenhuma movimentação encontrada.
+                        </div>
+                        <div v-else class="table-responsive">
+                            <table class="table fin-table mb-0">
+                                <thead>
+                                    <tr>
+                                        <th>Data</th>
+                                        <th>Tipo</th>
+                                        <th>Descrição</th>
+                                        <th>Valor</th>
+                                        <th></th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="m in movimentacoes" :key="`mov-${m.id}`">
+                                        <td>{{ formatarData(m.data) }}</td>
+                                        <td>
+                                            <span v-if="m.tipo==='entrada'" class="fin-badge-entrada">↑ Entrada</span>
+                                            <span v-else class="fin-badge-saida">↓ Saída</span>
+                                        </td>
+                                        <td>{{ m.descricao }}</td>
+                                        <td :style="m.tipo==='entrada' ? 'color:#16a34a;font-weight:700' : 'color:#dc2626;font-weight:700'">
+                                            {{ m.tipo==='entrada' ? '+' : '-' }}&nbsp;R$&nbsp;{{ formatarValor(m.valor) }}
+                                        </td>
+                                        <td>
+                                            <div class="d-flex gap-1">
+                                                <button class="btn btn-sm btn-light border" @click="abrirModalMovimentacao(m)">✏️</button>
+                                                <button class="btn btn-sm btn-light border" @click="excluirMovimentacao(m.id)">🗑</button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ===== LEMBRETES FINANCEIROS ===== -->
+                <div v-else-if="aba==='financeiro-alertas'" class="card border-0 shadow-sm">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <div>
+                                <h5 class="mb-1">🔔 Lembretes Financeiros</h5>
+                                <p class="text-muted mb-0">Agende vencimentos e recebimentos para nunca perder um prazo.</p>
+                            </div>
+                            <button class="btn btn-primary" @click="abrirModalAlerta(null)">+ Novo Lembrete</button>
+                        </div>
+
+                        <div v-if="!alertasFinanceiros.length" class="text-center text-muted py-4">
+                            Nenhum lembrete cadastrado.
+                        </div>
+                        <div v-else>
+                            <div class="alerta-card" v-for="a in alertasFinanceiros" :key="`alerta-${a.id}`"
+                                 :class="classeAlerta(a)">
+                                <div class="alerta-icon">{{ iconeAlerta(a) }}</div>
+                                <div class="alerta-body">
+                                    <div class="alerta-descricao">{{ a.descricao }}</div>
+                                    <div class="alerta-meta">
+                                        Vence: {{ formatarData(a.data_vencimento) }}
+                                        <span v-if="a.valor"> · R$&nbsp;{{ formatarValor(a.valor) }}</span>
+                                        · Aviso {{ a.dias_antecedencia }} dia(s) antes
+                                        ·
+                                        <span :class="'alerta-status-badge ' + classeBadgeStatus(a)">{{ labelStatus(a) }}</span>
+                                    </div>
+                                </div>
+                                <div class="d-flex gap-1 flex-shrink-0">
+                                    <button class="btn btn-sm btn-light border" @click="abrirModalAlerta(a)">✏️</button>
+                                    <button class="btn btn-sm btn-light border" @click="excluirAlerta(a.id)">🗑</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </main>
+        </div>
+
+        <!-- Modal Movimentação Financeira -->
+        <div v-if="modalMovimentacao.aberto" class="overlay">
+            <div class="dialog-card p-4" style="max-width:520px;width:95%">
+                <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                    <div>
+                        <h5 class="mb-1">{{ formMovimentacao.id ? 'Editar Movimentação' : 'Nova Movimentação' }}</h5>
+                        <div class="text-muted small">Registre uma entrada ou saída no fluxo de caixa.</div>
+                    </div>
+                    <button class="btn btn-light border" @click="fecharModalMovimentacao()">✕</button>
+                </div>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">Tipo</label>
+                        <select class="form-select" v-model="formMovimentacao.tipo">
+                            <option value="entrada">↑ Entrada</option>
+                            <option value="saida">↓ Saída</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Data</label>
+                        <input type="date" class="form-control" v-model="formMovimentacao.data">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label">Descrição</label>
+                        <input class="form-control" v-model.trim="formMovimentacao.descricao" placeholder="Ex.: Mensalidade, Compra de materiais...">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Valor (R$)</label>
+                        <input type="number" class="form-control" v-model="formMovimentacao.valor" min="0.01" step="0.01" placeholder="0,00">
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                    <button class="btn btn-light border" @click="fecharModalMovimentacao()">Cancelar</button>
+                    <button class="btn btn-primary" @click="salvarMovimentacao()" :disabled="saving">
+                        {{ saving ? 'Salvando...' : (formMovimentacao.id ? 'Salvar alterações' : 'Registrar') }}
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Lembrete Financeiro -->
+        <div v-if="modalAlerta.aberto" class="overlay">
+            <div class="dialog-card p-4" style="max-width:520px;width:95%">
+                <div class="d-flex justify-content-between align-items-start gap-3 mb-3">
+                    <div>
+                        <h5 class="mb-1">{{ formAlerta.id ? 'Editar Lembrete' : 'Novo Lembrete' }}</h5>
+                        <div class="text-muted small">Configure um alerta para aparecer no dashboard antes do vencimento.</div>
+                    </div>
+                    <button class="btn btn-light border" @click="fecharModalAlerta()">✕</button>
+                </div>
+                <div class="row g-3">
+                    <div class="col-12">
+                        <label class="form-label">Descrição</label>
+                        <input class="form-control" v-model.trim="formAlerta.descricao" placeholder="Ex.: Pagamento SIMPLES, Cobrança aluguel...">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Valor (R$) — opcional</label>
+                        <input type="number" class="form-control" v-model="formAlerta.valor" min="0" step="0.01" placeholder="Deixe em branco se não houver">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Data de Vencimento</label>
+                        <input type="date" class="form-control" v-model="formAlerta.data_vencimento">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Avisar quantos dias antes</label>
+                        <input type="number" class="form-control" v-model.number="formAlerta.dias_antecedencia" min="1" max="60">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" v-model="formAlerta.status">
+                            <option value="pendente">Pendente</option>
+                            <option value="pago">Pago</option>
+                            <option value="recebido">Recebido</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                    <button class="btn btn-light border" @click="fecharModalAlerta()">Cancelar</button>
+                    <button class="btn btn-primary" @click="salvarAlerta()" :disabled="saving">
+                        {{ saving ? 'Salvando...' : (formAlerta.id ? 'Salvar alterações' : 'Cadastrar') }}
+                    </button>
+                </div>
+            </div>
         </div>
 
         <div v-if="dialogExcluir.aberto" class="overlay">
@@ -2062,7 +2377,7 @@
             data() {
                 return {
                     aba: 'dashboard',
-                    gruposAbertos: { paroquias: false, acessos: false, changelog: false },
+                    gruposAbertos: { paroquias: false, acessos: false, changelog: false, financeiro: false },
                     saving: false,
                     editandoId: null,
                     tenants: [],
@@ -2115,7 +2430,20 @@
                     funcionalidadeForm: { id: null, menu_id: null, descricao: '', ordem: 0, ativo: true },
                     modalFuncionalidade: { aberto: false },
                     modalRelatorio: { aberto: false, modo: 'relatorio', dados: null },
-                    relatorioRelease: null
+                    relatorioRelease: null,
+                    // Financeiro
+                    movimentacoes: [],
+                    saldoAtual: 0,
+                    totalEntradasFluxo: 0,
+                    totalSaidasFluxo: 0,
+                    filtroFluxo: { dataInicio: '', dataFim: '' },
+                    formMovimentacao: { id: null, tipo: 'entrada', descricao: '', valor: '', data: '' },
+                    modalMovimentacao: { aberto: false },
+                    alertasFinanceiros: [],
+                    alertasDashboard: [],
+                    finSaldoDashboard: null,
+                    formAlerta: { id: null, descricao: '', valor: '', data_vencimento: '', dias_antecedencia: 3, status: 'pendente' },
+                    modalAlerta: { aberto: false }
                 };
             },
             async mounted() {
@@ -2123,6 +2451,7 @@
                 if (!me.logged) { window.location.href = '/admin/login'; return; }
                 await this.carregarModulos();
                 await this.carregarTenants();
+                await this.carregarAlertasDashboard();
                 this.aba = 'dashboard';
                 this.resetForm();
             },
@@ -2932,6 +3261,205 @@
                 async sair() {
                     await fetch('/api/admin/logout', { method: 'POST' }).catch(() => {});
                     window.location.href = '/admin/login';
+                },
+
+                // ===== FINANCEIRO =====
+                formatarValor(valor) {
+                    return Number(valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                },
+                async carregarFluxoCaixa() {
+                    this.aba = 'financeiro-fluxo';
+                    try {
+                        const params = new URLSearchParams();
+                        if (this.filtroFluxo.dataInicio) params.set('data_inicio', this.filtroFluxo.dataInicio);
+                        if (this.filtroFluxo.dataFim) params.set('data_fim', this.filtroFluxo.dataFim);
+                        const res = await fetch(`/api/admin/financeiro/movimentacoes?${params}`);
+                        const data = await res.json();
+                        if (res.ok) {
+                            this.movimentacoes = data.movimentacoes || [];
+                            this.saldoAtual = Number(data.saldo || 0);
+                            this.totalEntradasFluxo = Number(data.total_entradas || 0);
+                            this.totalSaidasFluxo = Number(data.total_saidas || 0);
+                        } else {
+                            this.erro(data.error || 'Erro ao carregar movimentações.');
+                        }
+                    } catch (_) {
+                        this.erro('Erro ao carregar fluxo de caixa.');
+                    }
+                },
+                limparFiltroFluxo() {
+                    this.filtroFluxo = { dataInicio: '', dataFim: '' };
+                    this.carregarFluxoCaixa();
+                },
+                exportarFluxoCSV() {
+                    const params = new URLSearchParams();
+                    if (this.filtroFluxo.dataInicio) params.set('data_inicio', this.filtroFluxo.dataInicio);
+                    if (this.filtroFluxo.dataFim) params.set('data_fim', this.filtroFluxo.dataFim);
+                    window.open(`/api/admin/financeiro/movimentacoes/exportar?${params}`, '_blank');
+                },
+                abrirModalMovimentacao(item) {
+                    this.limparMensagem();
+                    if (item) {
+                        const d = item.data ? String(item.data).split('T')[0] : '';
+                        this.formMovimentacao = { id: item.id, tipo: item.tipo, descricao: item.descricao, valor: Number(item.valor), data: d };
+                    } else {
+                        const hoje = new Date().toISOString().split('T')[0];
+                        this.formMovimentacao = { id: null, tipo: 'entrada', descricao: '', valor: '', data: hoje };
+                    }
+                    this.modalMovimentacao.aberto = true;
+                },
+                fecharModalMovimentacao() {
+                    this.modalMovimentacao.aberto = false;
+                },
+                async salvarMovimentacao() {
+                    if (this.saving) return;
+                    this.saving = true;
+                    this.limparMensagem();
+                    try {
+                        const method = this.formMovimentacao.id ? 'PUT' : 'POST';
+                        const url = this.formMovimentacao.id
+                            ? `/api/admin/financeiro/movimentacoes/${this.formMovimentacao.id}`
+                            : '/api/admin/financeiro/movimentacoes';
+                        const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(this.formMovimentacao) });
+                        const data = await res.json();
+                        if (res.ok) {
+                            this.fecharModalMovimentacao();
+                            await this.carregarFluxoCaixa();
+                            await this.carregarAlertasDashboard();
+                            this.sucesso(this.formMovimentacao.id ? 'Movimentação atualizada.' : 'Movimentação registrada.');
+                        } else {
+                            this.erro(data.error || 'Erro ao salvar.');
+                        }
+                    } catch (_) {
+                        this.erro('Erro ao salvar movimentação.');
+                    } finally {
+                        this.saving = false;
+                    }
+                },
+                async excluirMovimentacao(id) {
+                    if (!confirm('Excluir esta movimentação?')) return;
+                    try {
+                        const res = await fetch(`/api/admin/financeiro/movimentacoes/${id}`, { method: 'DELETE' });
+                        if (res.ok) {
+                            await this.carregarFluxoCaixa();
+                            await this.carregarAlertasDashboard();
+                            this.sucesso('Movimentação excluída.');
+                        }
+                    } catch (_) {
+                        this.erro('Erro ao excluir.');
+                    }
+                },
+                async carregarAlertasFinanceiros() {
+                    this.aba = 'financeiro-alertas';
+                    try {
+                        const res = await fetch('/api/admin/financeiro/alertas');
+                        const data = await res.json();
+                        if (res.ok) this.alertasFinanceiros = data;
+                        else this.erro(data.error || 'Erro ao carregar lembretes.');
+                    } catch (_) {
+                        this.erro('Erro ao carregar lembretes.');
+                    }
+                },
+                async carregarAlertasDashboard() {
+                    try {
+                        const res = await fetch('/api/admin/financeiro/dashboard');
+                        const data = await res.json();
+                        if (res.ok) {
+                            this.alertasDashboard = data.alertas || [];
+                            this.finSaldoDashboard = Number(data.saldo || 0);
+                        }
+                    } catch (_) {
+                        this.alertasDashboard = [];
+                    }
+                },
+                classeAlerta(a) {
+                    if (a.status !== 'pendente') return 'ok';
+                    const venc = new Date(a.data_vencimento); venc.setHours(0,0,0,0);
+                    const hoje = new Date(); hoje.setHours(0,0,0,0);
+                    const dias = Math.round((venc - hoje) / 86400000);
+                    if (dias < 0) return 'atrasado';
+                    if (dias === 0) return 'hoje';
+                    return 'proximo';
+                },
+                iconeAlerta(a) {
+                    if (a.status === 'pago' || a.status === 'recebido') return '✅';
+                    const venc = new Date(a.data_vencimento); venc.setHours(0,0,0,0);
+                    const hoje = new Date(); hoje.setHours(0,0,0,0);
+                    const dias = Math.round((venc - hoje) / 86400000);
+                    if (dias < 0) return '🚨';
+                    if (dias === 0) return '⚠️';
+                    return '🔔';
+                },
+                classeBadgeStatus(a) {
+                    if (a.status === 'pago') return 'badge-pago';
+                    if (a.status === 'recebido') return 'badge-recebido';
+                    const venc = new Date(a.data_vencimento); venc.setHours(0,0,0,0);
+                    const hoje = new Date(); hoje.setHours(0,0,0,0);
+                    const dias = Math.round((venc - hoje) / 86400000);
+                    if (dias < 0) return 'badge-atrasado';
+                    if (dias === 0) return 'badge-hoje';
+                    return 'badge-pendente';
+                },
+                labelStatus(a) {
+                    if (a.status === 'pago') return 'Pago';
+                    if (a.status === 'recebido') return 'Recebido';
+                    const venc = new Date(a.data_vencimento); venc.setHours(0,0,0,0);
+                    const hoje = new Date(); hoje.setHours(0,0,0,0);
+                    const dias = Math.round((venc - hoje) / 86400000);
+                    if (dias < 0) return 'Atrasado';
+                    if (dias === 0) return 'Hoje';
+                    return 'Pendente';
+                },
+                abrirModalAlerta(item) {
+                    this.limparMensagem();
+                    if (item) {
+                        const d = item.data_vencimento ? String(item.data_vencimento).split('T')[0] : '';
+                        this.formAlerta = { id: item.id, descricao: item.descricao, valor: item.valor ? Number(item.valor) : '', data_vencimento: d, dias_antecedencia: item.dias_antecedencia || 3, status: item.status || 'pendente' };
+                    } else {
+                        this.formAlerta = { id: null, descricao: '', valor: '', data_vencimento: '', dias_antecedencia: 3, status: 'pendente' };
+                    }
+                    this.modalAlerta.aberto = true;
+                },
+                fecharModalAlerta() {
+                    this.modalAlerta.aberto = false;
+                },
+                async salvarAlerta() {
+                    if (this.saving) return;
+                    this.saving = true;
+                    this.limparMensagem();
+                    try {
+                        const method = this.formAlerta.id ? 'PUT' : 'POST';
+                        const url = this.formAlerta.id
+                            ? `/api/admin/financeiro/alertas/${this.formAlerta.id}`
+                            : '/api/admin/financeiro/alertas';
+                        const res = await fetch(url, { method, headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(this.formAlerta) });
+                        const data = await res.json();
+                        if (res.ok) {
+                            this.fecharModalAlerta();
+                            await this.carregarAlertasFinanceiros();
+                            await this.carregarAlertasDashboard();
+                            this.sucesso(this.formAlerta.id ? 'Lembrete atualizado.' : 'Lembrete cadastrado.');
+                        } else {
+                            this.erro(data.error || 'Erro ao salvar.');
+                        }
+                    } catch (_) {
+                        this.erro('Erro ao salvar lembrete.');
+                    } finally {
+                        this.saving = false;
+                    }
+                },
+                async excluirAlerta(id) {
+                    if (!confirm('Excluir este lembrete?')) return;
+                    try {
+                        const res = await fetch(`/api/admin/financeiro/alertas/${id}`, { method: 'DELETE' });
+                        if (res.ok) {
+                            await this.carregarAlertasFinanceiros();
+                            await this.carregarAlertasDashboard();
+                            this.sucesso('Lembrete excluído.');
+                        }
+                    } catch (_) {
+                        this.erro('Erro ao excluir lembrete.');
+                    }
                 }
             },
             computed: {

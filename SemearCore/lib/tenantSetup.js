@@ -326,6 +326,48 @@ async function ensureTenantStructure() {
             await pool.query('ALTER TABLE qa_testes_funcionalidades ADD COLUMN descricao_alteracao TEXT');
         }
 
+        // ===== FINANCEIRO =====
+        if (!await hasTable('financeiro_movimentacoes')) {
+            await pool.query(`
+                CREATE TABLE IF NOT EXISTS financeiro_movimentacoes (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    tipo ENUM('entrada','saida') NOT NULL,
+                    descricao VARCHAR(500) NOT NULL,
+                    valor DECIMAL(12,2) NOT NULL,
+                    data DATE NOT NULL,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    KEY idx_fin_mov_data (data),
+                    KEY idx_fin_mov_tipo (tipo)
+                )
+            `);
+        }
+
+        // Migrations para tabela que pode ter existido com schema antigo
+        if (await hasTable('financeiro_movimentacoes') && !await hasColumn('financeiro_movimentacoes', 'data')) {
+            await pool.query('ALTER TABLE financeiro_movimentacoes ADD COLUMN `data` DATE NULL DEFAULT NULL AFTER valor');
+        }
+        if (await hasTable('financeiro_movimentacoes') && await hasColumn('financeiro_movimentacoes', 'tenant_id')) {
+            await runAlterIgnoreDuplicate('ALTER TABLE financeiro_movimentacoes MODIFY COLUMN tenant_id INT NULL DEFAULT 0');
+        }
+
+        if (!await hasTable('financeiro_alertas')) {
+            await pool.query(`
+                CREATE TABLE IF NOT EXISTS financeiro_alertas (
+                    id INT AUTO_INCREMENT PRIMARY KEY,
+                    descricao VARCHAR(500) NOT NULL,
+                    valor DECIMAL(12,2) NULL,
+                    data_vencimento DATE NOT NULL,
+                    dias_antecedencia INT NOT NULL DEFAULT 3,
+                    status ENUM('pendente','pago','recebido') NOT NULL DEFAULT 'pendente',
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                    KEY idx_fin_alerta_venc (data_vencimento),
+                    KEY idx_fin_alerta_status (status)
+                )
+            `);
+        }
+
         const adminUser = String(process.env.ADMIN_MASTER_USER || 'admin').trim();
         const adminNome = String(process.env.ADMIN_MASTER_NOME || 'Administrador Geral').trim();
         const adminPass = String(process.env.ADMIN_MASTER_PASS || 'admin123').trim();

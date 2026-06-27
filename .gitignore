@@ -8,3 +8,4 @@ temp/
 logs/
 *.log
 public/uploads/
+**/public/uploads/**
