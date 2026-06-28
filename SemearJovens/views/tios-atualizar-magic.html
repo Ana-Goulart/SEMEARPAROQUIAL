@@ -54,9 +54,9 @@
                             <div class="section-title">Dados do tio</div>
                             <div class="form-check mt-2">
                                 <input class="form-check-input" type="checkbox" id="check_tio_viuvo" v-model="form.tio_viuvo">
-                                <label class="form-check-label" for="check_tio_viuvo">É viúvo?</label>
+                                <label class="form-check-label" for="check_tio_viuvo">É viúvo/divorciado?</label>
                             </div>
-                            <div v-if="form.tia_viuva" class="small text-muted mt-1">Os campos do tio são opcionais pois a tia está marcada como viúva.</div>
+                            <div v-if="form.tia_viuva" class="small text-muted mt-1">Os campos do tio são opcionais pois a tia está marcada como viúva/divorciada.</div>
                         </div>
                         <div class="col-md-6"><label class="form-label">Nome completo <span v-if="!form.tia_viuva">*</span></label><input class="form-control" v-model.trim="form.nome_tio" :required="!form.tia_viuva"></div>
                         <div class="col-md-3"><label class="form-label">Telefone <span v-if="!form.tia_viuva">*</span></label><input class="form-control" v-model="form.telefone_tio" @input="form.telefone_tio = formatarTelefone(form.telefone_tio)" :required="!form.tia_viuva" maxlength="14"></div>
@@ -96,9 +96,9 @@
                             <div class="section-title">Dados da tia</div>
                             <div class="form-check mt-2">
                                 <input class="form-check-input" type="checkbox" id="check_tia_viuva" v-model="form.tia_viuva">
-                                <label class="form-check-label" for="check_tia_viuva">É viúva?</label>
+                                <label class="form-check-label" for="check_tia_viuva">É viúva/divorciada?</label>
                             </div>
-                            <div v-if="form.tio_viuvo" class="small text-muted mt-1">Os campos da tia são opcionais pois o tio está marcado como viúvo.</div>
+                            <div v-if="form.tio_viuvo" class="small text-muted mt-1">Os campos da tia são opcionais pois o tio está marcado como viúvo/divorciado.</div>
                         </div>
                         <div class="col-md-6"><label class="form-label">Nome completo <span v-if="!form.tio_viuvo">*</span></label><input class="form-control" v-model.trim="form.nome_tia" :required="!form.tio_viuvo"></div>
                         <div class="col-md-3"><label class="form-label">Telefone <span v-if="!form.tio_viuvo">*</span></label><input class="form-control" v-model="form.telefone_tia" @input="form.telefone_tia = formatarTelefone(form.telefone_tia)" :required="!form.tio_viuvo" maxlength="14"></div>

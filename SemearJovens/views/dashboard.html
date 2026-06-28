@@ -972,36 +972,6 @@
             </div>
         </div>
 
-        <div class="modal fade release-notice-modal" id="modalReleaseNotice" tabindex="-1" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
-            <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
-                <div class="modal-content border-0 shadow">
-                    <div class="modal-header release-notice-header">
-                        <div>
-                            <h5 class="modal-title release-notice-title">🎉 O Semear Paroquial está de cara nova! (Versão 1.3.1)</h5>
-                            <div class="text-muted small mt-1">Atualizações importantes da plataforma</div>
-                        </div>
-                    </div>
-                    <div class="modal-body">
-                        <p>Olá! Preparamos atualizações e melhorias importantes para facilitar a gestão da nossa paróquia e tornar o seu dia a dia mais ágil e seguro. Confira tudo o que mudou na nossa plataforma:</p>
-
-                        <div class="release-notice-list">
-                            <div class="release-notice-item">🔒 Controle de Permissões por Grupo: Agora, nas configurações de funções, você pode definir exatamente quais menus cada usuário terá acesso, permitindo escolher entre o modo de Apenas Visualização ou Apenas Edição.</div>
-                            <div class="release-notice-item">📞 Melhorias no Almoxarifado: Adicionamos uma trava de segurança que bloqueia o empréstimo de itens específicos que não podem sair da paróquia. Além disso, agora é obrigatório preencher o Telefone da pessoa para quem o item está sendo emprestado.</div>
-                            <div class="release-notice-item">📋 Cadastro de Tios/Tias: Adicionamos a opção de marcar o estado civil de Viuvez. Ao selecionar essa opção, o sistema permite avançar e salvar o cadastro deixando os dados do cônjuge em branco, sem travar o formulário.</div>
-                            <div class="release-notice-item">🌲 Missão Externa (Moita): Para um melhor controle cronológico das nossas atividades, adicionamos o campo oficial de Data em todas as missões externas.</div>
-                            <div class="release-notice-item">🔍 Busca Rápida por Pastoral: Encontrar contatos ficou mais simples! Adicionamos um campo de pesquisa por Pastoral diretamente dentro do menu de Contatos.</div>
-                        </div>
-
-                        <p class="release-notice-footer-text mb-0">O sistema já está atualizado e pronto para uso. Caso tenha alguma dúvida, procure a equipe de suporte de TI.</p>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-primary" @click="confirmarReleaseNotice" :disabled="salvandoReleaseNotice">
-                            {{ salvandoReleaseNotice ? 'Confirmando...' : 'Entendi, ir para o Painel' }}
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -1018,8 +988,6 @@
                         limiteGb: 50,
                         nomeMeuEJC: '',
                         modalAniversariantes: null,
-                        modalReleaseNotice: null,
-                        releaseNoticeVersion: '1.3.1',
                         salvandoReleaseNotice: false,
                         carregandoTarefas: false,
                         salvandoTarefaId: null,
@@ -1288,41 +1256,6 @@
                             this.carregandoAtaId = null;
                         }
                     },
-                    async consultarReleaseNotice() {
-                        try {
-                            const res = await fetch('/api/auth/release-notice', { cache: 'no-store' });
-                            const data = await res.json().catch(() => ({}));
-                            if (!res.ok || !data || !data.show) return;
-                            this.releaseNoticeVersion = data.version || this.releaseNoticeVersion;
-                            const el = document.getElementById('modalReleaseNotice');
-                            if (!el) return;
-                            this.modalReleaseNotice = bootstrap.Modal.getOrCreateInstance(el, {
-                                backdrop: 'static',
-                                keyboard: false
-                            });
-                            this.modalReleaseNotice.show();
-                        } catch (err) {
-                            console.error('Erro ao consultar aviso de versão:', err);
-                        }
-                    },
-                    async confirmarReleaseNotice() {
-                        this.salvandoReleaseNotice = true;
-                        try {
-                            const res = await fetch('/api/auth/release-notice/ack', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ version: this.releaseNoticeVersion })
-                            });
-                            const data = await res.json().catch(() => ({}));
-                            if (!res.ok) throw new Error(data.error || 'Não foi possível confirmar o aviso.');
-                            if (this.modalReleaseNotice) this.modalReleaseNotice.hide();
-                        } catch (err) {
-                            console.error(err);
-                            if (window.uiAlert) window.uiAlert(err.message || 'Não foi possível confirmar o aviso.');
-                        } finally {
-                            this.salvandoReleaseNotice = false;
-                        }
-                    },
                     abrirModalAniversariantes() {
                         if (!this.modalAniversariantes) {
                             const el = document.getElementById('modalAniversariantes');
@@ -1389,7 +1322,6 @@
                     this.carregarMeuEjc();
                     this.carregarResumo();
                     this.carregarMinhasTarefas();
-                    this.consultarReleaseNotice();
                 }
             }).mount('#app');
         });
