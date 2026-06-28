@@ -341,6 +341,60 @@
             color: #4a3520;
             font-size: 0.87rem;
         }
+
+        /* Card de Apresentação */
+        .apresentacao-card {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            padding: 0.9rem 1.1rem;
+            border: 1px solid rgba(184, 135, 50, 0.25);
+            border-radius: 12px;
+            background: linear-gradient(135deg, rgba(184, 135, 50, 0.06), rgba(255, 253, 248, 0.98));
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+            transition: background 0.15s, border-color 0.15s;
+            user-select: none;
+        }
+
+        .apresentacao-card:hover {
+            background: linear-gradient(135deg, rgba(184, 135, 50, 0.12), rgba(255, 253, 248, 1));
+            border-color: rgba(184, 135, 50, 0.45);
+        }
+
+        .apresentacao-icon {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 50%;
+            background: rgba(184, 135, 50, 0.12);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #b88732;
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+
+        .apresentacao-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            color: #b88732;
+            text-transform: uppercase;
+        }
+
+        .apresentacao-titulo {
+            font-size: 0.97rem;
+            font-weight: 600;
+            color: #2f2417;
+        }
+
+        .apresentacao-arrow {
+            color: #c9a55a;
+            font-size: 0.8rem;
+            margin-left: auto;
+            flex-shrink: 0;
+        }
     </style>
 </head>
 
@@ -400,7 +454,23 @@
                         <small>O administrador ainda não cadastrou os capítulos.</small>
                     </div>
 
-                    <div v-for="cap in capitulos" :key="cap.id" class="capitulo-card">
+                    <!-- Card de Apresentação (capítulo numero=0) -->
+                    <div v-if="capituloApresentacao" class="apresentacao-card" @click="abrirApresentacao(capituloApresentacao)">
+                        <span class="apresentacao-icon">
+                            <span v-if="carregandoApresentacao" class="spinner-border spinner-border-sm text-warning" style="width:1rem;height:1rem;"></span>
+                            <i v-else class="fa-solid fa-scroll"></i>
+                        </span>
+                        <div>
+                            <div class="apresentacao-label">Apresentação</div>
+                            <div class="apresentacao-titulo">{{ capituloApresentacao.titulo }}</div>
+                        </div>
+                        <i v-if="!carregandoApresentacao" class="fa-solid fa-chevron-right apresentacao-arrow"></i>
+                    </div>
+                    <div v-if="semConteudoApresentacao" class="text-muted small px-1 mb-2" style="margin-top:-0.4rem;">
+                        <i class="fa-solid fa-circle-info me-1" style="color:#c9a55a;"></i>Conteúdo ainda não disponível.
+                    </div>
+
+                    <div v-for="cap in capitulosRegulares" :key="cap.id" class="capitulo-card">
                         <div class="capitulo-header" @click="toggleCapitulo(cap)">
                             <i class="fa-solid fa-chevron-right capitulo-chevron"
                                 :class="{ aberto: capitulosAbertos[cap.id] }"></i>
@@ -531,10 +601,18 @@
                     progresso: [],
                     navCompleta: [],
                     favoritos: [],
-                    aba: 'capitulos'
+                    aba: 'capitulos',
+                    carregandoApresentacao: false,
+                    semConteudoApresentacao: false
                 };
             },
             computed: {
+                capituloApresentacao() {
+                    return this.capitulos.find(c => c.numero === 0) || null;
+                },
+                capitulosRegulares() {
+                    return this.capitulos.filter(c => c.numero !== 0);
+                },
                 totalItens() {
                     let total = 0;
                     this.navCompleta.forEach(item => {
@@ -695,6 +773,32 @@
                     sessionStorage.setItem('doc_nav_docId', this.documento.id);
                     sessionStorage.setItem('doc_nav_items', JSON.stringify(this.navCompleta));
                     window.location.href = `/documentos/leitura?topico=${topicoId}&subtopico=${subtopId}`;
+                },
+                async abrirApresentacao(cap) {
+                    if (!this.documento || this.carregandoApresentacao) return;
+                    this.semConteudoApresentacao = false;
+                    this.carregandoApresentacao = true;
+                    try {
+                        if (!this.secoesPorCapitulo[cap.id]) {
+                            await this.carregarSecoes(cap);
+                        }
+                        const secoes = this.secoesPorCapitulo[cap.id] || [];
+                        if (!secoes.length) { this.semConteudoApresentacao = true; return; }
+                        const sec = secoes[0];
+                        if (!this.topicosPorSecao[sec.id] || !this.topicosPorSecao[sec.id].length) {
+                            await this.carregarTopicos(sec);
+                        }
+                        const topicos = this.topicosPorSecao[sec.id] || [];
+                        if (!topicos.length) { this.semConteudoApresentacao = true; return; }
+                        const top = topicos[0];
+                        if (top.tem_subtopicos && top.subtopicos && top.subtopicos.length) {
+                            this.abrirSubtopico(top.id, top.subtopicos[0].id);
+                        } else {
+                            this.abrirTopico(top.id);
+                        }
+                    } finally {
+                        this.carregandoApresentacao = false;
+                    }
                 },
                 async carregarTudo() {
                     this.loading = true;

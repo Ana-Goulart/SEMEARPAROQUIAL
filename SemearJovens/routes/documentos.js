@@ -20,9 +20,14 @@ async function _doGarantirEstrutura() {
         )
     `);
 
-    // Migração: garante que a coluna existe em tabelas já criadas
-    await pool.query(`ALTER TABLE documentos ADD COLUMN IF NOT EXISTS is_nacional BOOLEAN NOT NULL DEFAULT TRUE`).catch(() => {});
-    // Garante que todos os documentos existentes são nacionais
+    // Migração: garante que a coluna existe em tabelas já criadas (MySQL 8.0 não suporta ADD COLUMN IF NOT EXISTS)
+    const [[colCheck]] = await pool.query(`
+        SELECT COUNT(*) AS cnt FROM information_schema.COLUMNS
+        WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'documentos' AND COLUMN_NAME = 'is_nacional'
+    `);
+    if (!colCheck || !colCheck.cnt) {
+        await pool.query(`ALTER TABLE documentos ADD COLUMN is_nacional BOOLEAN NOT NULL DEFAULT TRUE`);
+    }
     await pool.query(`UPDATE documentos SET is_nacional = TRUE WHERE is_nacional = FALSE OR is_nacional IS NULL`).catch(() => {});
 
     await pool.query(`
