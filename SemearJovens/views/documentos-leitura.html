@@ -113,6 +113,23 @@
             margin-bottom: 1.2rem;
         }
 
+        @media (max-width: 576px) {
+            .leitura-card {
+                padding: 1.2rem 1rem;
+                border-radius: 10px;
+            }
+            .nav-leitura .btn {
+                min-width: 0;
+                flex: 1;
+                font-size: 0.85rem;
+                padding: 0.45rem 0.6rem;
+            }
+            .btn-lendo, .btn-lido {
+                font-size: 0.85rem;
+                padding: 0.45rem 0.75rem;
+            }
+        }
+
         .status-actions {
             display: flex;
             gap: 0.75rem;
@@ -123,26 +140,26 @@
         }
 
         .btn-lendo {
-            background: rgba(37, 99, 235, 0.08);
-            border: 1.5px solid #2563eb;
-            color: #2563eb;
+            background: rgba(184, 135, 50, 0.08);
+            border: 1.5px solid #b88732;
+            color: #7a5a1a;
             font-weight: 600;
         }
 
         .btn-lendo.ativo {
-            background: #2563eb;
+            background: #b88732;
             color: #fff;
         }
 
         .btn-lido {
-            background: rgba(22, 163, 74, 0.08);
-            border: 1.5px solid #16a34a;
-            color: #16a34a;
+            background: rgba(97, 73, 42, 0.08);
+            border: 1.5px solid #61492a;
+            color: #61492a;
             font-weight: 600;
         }
 
         .btn-lido.ativo {
-            background: #16a34a;
+            background: #61492a;
             color: #fff;
         }
 
@@ -222,6 +239,32 @@
             min-width: 130px;
         }
 
+        .btn-nav-anterior {
+            background: none;
+            border: 1.5px solid rgba(184, 135, 50, 0.4);
+            color: #7a5a1a;
+            font-weight: 600;
+        }
+
+        .btn-nav-anterior:hover {
+            background: rgba(184, 135, 50, 0.08);
+            border-color: #b88732;
+            color: #61492a;
+        }
+
+        .btn-nav-proximo {
+            background: #b88732;
+            border: 1.5px solid #b88732;
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .btn-nav-proximo:hover {
+            background: #9a7228;
+            border-color: #9a7228;
+            color: #fff;
+        }
+
         .modal-nota textarea {
             resize: vertical;
             min-height: 80px;
@@ -282,7 +325,13 @@
                     <div class="spinner-border text-warning" role="status"></div>
                 </div>
 
-                <div v-else-if="erro" class="alert alert-danger">{{ erro }}</div>
+                <div v-else-if="erro" style="text-align:center; padding: 3rem 1rem;">
+                    <i class="fa-solid fa-triangle-exclamation fa-2x mb-3" style="color:#b88732;"></i>
+                    <p style="color:#61492a; font-weight:600; margin-bottom:0.5rem;">{{ erro }}</p>
+                    <a href="/documentos" style="display:inline-flex; align-items:center; gap:0.4rem; margin-top:1rem; padding:0.5rem 1.2rem; border:1.5px solid rgba(184,135,50,0.4); border-radius:8px; color:#7a5a1a; font-weight:600; text-decoration:none; font-size:0.9rem;">
+                        <i class="fa-solid fa-arrow-left"></i> Voltar para Diretrizes
+                    </a>
+                </div>
 
                 <div v-else>
                     <!-- Botão voltar + Breadcrumb -->
@@ -349,11 +398,11 @@
                         <div class="status-actions">
                             <button class="btn btn-lendo" :class="{ ativo: statusAtual === 'lendo' }"
                                 @click="marcarStatus('lendo')" :disabled="salvandoStatus">
-                                🔵 Estou lendo
+                                <i class="fa-solid fa-book-open me-1"></i> Estou lendo
                             </button>
                             <button class="btn btn-lido" :class="{ ativo: statusAtual === 'lido' }"
                                 @click="marcarStatus('lido')" :disabled="salvandoStatus">
-                                ✅ Marcar como lido
+                                <i class="fa-solid fa-circle-check me-1"></i> Marcar como lido
                             </button>
                             <span v-if="salvandoStatus" class="text-muted align-self-center small">Salvando...</span>
                         </div>
@@ -378,12 +427,12 @@
 
                     <!-- Navegação anterior / próximo -->
                     <div class="nav-leitura">
-                        <button v-if="anterior" class="btn btn-outline-secondary" @click="irPara(anterior)">
-                            ← Anterior
+                        <button v-if="anterior" class="btn btn-nav-anterior" @click="irPara(anterior)">
+                            <i class="fa-solid fa-arrow-left me-1"></i> Anterior
                         </button>
                         <div v-else></div>
-                        <button v-if="proximo" class="btn btn-primary" @click="irPara(proximo)">
-                            Próximo →
+                        <button v-if="proximo" class="btn btn-nav-proximo" @click="irPara(proximo)">
+                            Próximo <i class="fa-solid fa-arrow-right ms-1"></i>
                         </button>
                         <div v-else></div>
                     </div>
