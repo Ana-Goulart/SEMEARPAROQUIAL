@@ -66,8 +66,8 @@
 
         .equipe-card-actions {
             display: flex;
-            flex-direction: column;
-            gap: 0.75rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
             margin-top: 1rem;
         }
 
@@ -147,17 +147,17 @@
         }
 
         .garcom-btn-danger {
-            border-color: #f0d9d9;
-            background: #fff;
-            color: #e14c4c;
-            box-shadow: 0 8px 18px rgba(225, 76, 76, 0.08);
+            background: #5C0120;
+            border-color: #5C0120;
+            color: #fff;
+            box-shadow: 0 8px 18px rgba(92, 1, 32, 0.22);
         }
 
         .garcom-btn-danger:hover,
         .garcom-btn-danger:focus {
-            background: #fff5f5;
-            border-color: #e9bcbc;
-            color: #ca3c3c;
+            background: #47011a;
+            border-color: #47011a;
+            color: #fff;
         }
 
         .garcom-badge {
@@ -308,12 +308,6 @@
         }
 
         @media (min-width: 768px) {
-            .equipe-card-actions {
-                flex-direction: row;
-                justify-content: space-between;
-                align-items: center;
-            }
-
             .garcons-toolbar-actions {
                 flex-direction: row;
                 align-items: flex-end;
@@ -516,7 +510,7 @@
                 </div>
 
                 <div v-else class="row g-3">
-                    <div class="col-12 col-md-6 col-xl-4" v-for="equipe in equipesFiltradas" :key="equipe.id">
+                    <div class="col-12 col-md-4" v-for="equipe in equipesFiltradas" :key="equipe.id">
                         <article class="equipe-card equipe-card-clickable" @click="abrirModalDetalhesEquipe(equipe)">
                             <div class="equipe-header d-flex justify-content-between align-items-start gap-3">
                                 <div>
@@ -547,9 +541,11 @@
                                         <span class="btn-ejc-icon"><i class="fa-solid fa-user-plus icon-accent"></i></span>
                                         <span class="btn-ejc-text">Adicionar Membro</span>
                                     </button>
-                                    <button class="btn btn-sm garcom-btn-danger btn-ejc-action" @click.stop="removerEquipe(equipe)" title="Excluir" aria-label="Excluir">
-                                        <span class="btn-ejc-icon"><i class="fa-solid fa-trash icon-accent"></i></span>
-                                        <span class="btn-ejc-text">Excluir</span>
+                                    <button class="btn btn-sm garcom-btn-outline" @click.stop="abrirModalEditarEquipe(equipe)" title="Editar" aria-label="Editar" data-ui-skip-standardize="true">
+                                        <i class="fa-solid fa-pen"></i>
+                                    </button>
+                                    <button class="btn btn-sm garcom-btn-danger" @click.stop="removerEquipe(equipe)" title="Excluir" aria-label="Excluir" data-ui-skip-standardize="true">
+                                        <i class="fa-solid fa-trash"></i>
                                     </button>
                                 </div>
                             </div>
@@ -600,7 +596,7 @@
             <div class="modal-dialog">
                 <div class="modal-content border-0 shadow">
                     <div class="modal-header garcom-modal-header">
-                        <h5 class="modal-title">Nova Equipe de Garçom</h5>
+                        <h5 class="modal-title">{{ modoEdicaoEquipe ? 'Editar Equipe de Garçom' : 'Nova Equipe de Garçom' }}</h5>
                         <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
@@ -630,7 +626,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="button" class="btn btn-primary" @click="salvarEquipe">Salvar</button>
+                        <button type="button" class="btn btn-primary" @click="modoEdicaoEquipe ? salvarEdicaoEquipe() : salvarEquipe()">Salvar</button>
                     </div>
                 </div>
             </div>
@@ -706,6 +702,14 @@
                         </template>
                     </div>
                     <div class="modal-footer">
+                        <button type="button" class="btn garcom-btn-soft btn-ejc-action" @click="abrirModalEditarEquipeFromDetalhes(equipeDetalheAtual)">
+                            <span class="btn-ejc-icon"><i class="fa-solid fa-pen icon-accent"></i></span>
+                            <span class="btn-ejc-text">Editar</span>
+                        </button>
+                        <button type="button" class="btn garcom-btn-danger btn-ejc-action" @click="removerEquipe(equipeDetalheAtual)">
+                            <span class="btn-ejc-icon"><i class="fa-solid fa-trash icon-accent"></i></span>
+                            <span class="btn-ejc-text">Excluir Equipe</span>
+                        </button>
                         <button type="button" class="btn btn-soft-secondary ms-auto" data-bs-dismiss="modal">Fechar</button>
                     </div>
                 </div>
@@ -1004,7 +1008,9 @@
                         equipe_id: null,
                         papel: 'MEMBRO'
                     },
-                    salvandoTitularReservaGarcom: false
+                    salvandoTitularReservaGarcom: false,
+                    modoEdicaoEquipe: false,
+                    equipeEditandoId: null
                 };
             },
             computed: {
@@ -1363,9 +1369,64 @@
                     return texto;
                 },
                 abrirModalNovaEquipe() {
+                    this.modoEdicaoEquipe = false;
+                    this.equipeEditandoId = null;
                     this.formEquipe = { ejc_numero: null, outro_ejc_id: null, data_inicio: '', data_fim: '' };
                     if (!this.modalEquipe) this.modalEquipe = new bootstrap.Modal(document.getElementById('modalEquipeGarcom'));
                     this.modalEquipe.show();
+                },
+                formatarDataParaForm(d) {
+                    if (!d) return '';
+                    const match = String(d).match(/^(\d{4})-(\d{2})-(\d{2})/);
+                    if (!match) return '';
+                    return `${match[3]}/${match[2]}/${match[1]}`;
+                },
+                abrirModalEditarEquipe(equipe) {
+                    if (!equipe) return;
+                    this.modoEdicaoEquipe = true;
+                    this.equipeEditandoId = Number(equipe.id);
+                    this.formEquipe = {
+                        ejc_numero: equipe.ejc_numero || null,
+                        outro_ejc_id: equipe.outro_ejc_id || null,
+                        data_inicio: this.formatarDataParaForm(equipe.data_inicio),
+                        data_fim: this.formatarDataParaForm(equipe.data_fim)
+                    };
+                    if (!this.modalEquipe) this.modalEquipe = new bootstrap.Modal(document.getElementById('modalEquipeGarcom'));
+                    this.modalEquipe.show();
+                },
+                abrirModalEditarEquipeFromDetalhes(equipe) {
+                    if (!equipe) return;
+                    if (this.modalDetalhes && document.getElementById('modalDetalhesEquipeGarcom')?.classList.contains('show')) {
+                        this.modalDetalhes.hide();
+                        window.setTimeout(() => this.abrirModalEditarEquipe(equipe), 180);
+                        return;
+                    }
+                    this.abrirModalEditarEquipe(equipe);
+                },
+                async salvarEdicaoEquipe() {
+                    if (!this.formEquipe.ejc_numero || !this.formEquipe.outro_ejc_id) {
+                        alert('Preencha número do EJC e qual EJC.');
+                        return;
+                    }
+                    const payload = {
+                        ...this.formEquipe,
+                        data_inicio: this.normalizarDataEnvio(this.formEquipe.data_inicio),
+                        data_fim: this.normalizarDataEnvio(this.formEquipe.data_fim)
+                    };
+                    const res = await fetch(`/api/garcons/equipes/${this.equipeEditandoId}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (!res.ok) {
+                        const err = await res.json().catch(() => ({}));
+                        alert(err.error || 'Erro ao editar equipe.');
+                        return;
+                    }
+                    this.modalEquipe.hide();
+                    this.modoEdicaoEquipe = false;
+                    this.equipeEditandoId = null;
+                    await this.carregarTudo();
                 },
                 async salvarEquipe() {
                     if (!this.formEquipe.ejc_numero || !this.formEquipe.outro_ejc_id) {

@@ -6,26 +6,31 @@
     <title>SemearAdmin - Painel Paroquial</title>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Source+Sans+3:wght@400;500;600;700&display=swap');
 
         :root {
-            --bg-ivory: #f6f1e7;
-            --bg-soft: #fffaf1;
-            --surface: rgba(255, 255, 255, 0.94);
-            --surface-strong: #ffffff;
-            --line: rgba(126, 96, 43, 0.14);
-            --line-strong: rgba(126, 96, 43, 0.24);
-            --gold: #a37a2c;
-            --gold-deep: #7a5720;
-            --navy: #1d2f45;
-            --navy-soft: #42566f;
-            --green: #4d7450;
-            --danger-soft: #8b4b42;
+            --gold: #C9922A;
+            --gold-deep: #A87520;
+            --gold-light: rgba(201, 146, 42, 0.12);
+            --surface: #FFFFFF;
+            --bg: linear-gradient(180deg, #fbf7ef 0%, #f3ecdf 100%);
+            --navbar-bg: #1d2f45;
+            --text-main: #1d2f45;
+            --text-muted: #6B6B6B;
+            --border: rgba(126, 96, 43, 0.16);
             --shadow: 0 24px 60px rgba(39, 28, 10, 0.10);
             --shadow-soft: 0 14px 34px rgba(39, 28, 10, 0.08);
+            --radius: 16px;
+            --radius-lg: 28px;
+            /* legacy aliases */
+            --line: rgba(126, 96, 43, 0.14);
+            --line-strong: rgba(126, 96, 43, 0.24);
+            --navy: #1d2f45;
+            --navy-soft: #5a4a35;
+            --green: #4d7450;
             --radius-xl: 28px;
-            --radius-lg: 22px;
             --radius-md: 18px;
         }
 
@@ -188,9 +193,9 @@
         }
 
         .identity-chip {
-            background: rgba(163, 122, 44, 0.10);
+            background: var(--gold-light);
             color: var(--gold-deep);
-            border: 1px solid rgba(163, 122, 44, 0.12);
+            border: 1px solid rgba(201, 146, 42, 0.18);
         }
 
         .status-pill {
@@ -237,9 +242,14 @@
         .logout-btn {
             border-radius: 14px;
             padding: 10px 18px;
-            border-color: rgba(29, 47, 69, 0.24);
-            color: var(--navy);
-            background: rgba(255,255,255,0.9);
+            border: 1px solid rgba(126, 96, 43, 0.28);
+            color: #1d2f45;
+            background: rgba(255,255,255,0.82);
+        }
+
+        .logout-btn:hover {
+            background: rgba(255,255,255,1);
+            border-color: var(--gold);
         }
 
         .content-grid {
@@ -252,15 +262,16 @@
         .dashboard-card,
         .panel-card {
             border-radius: var(--radius-xl);
-            padding: 24px;
+            padding: 28px 32px;
         }
 
         .section-kicker {
-            background: rgba(66, 86, 111, 0.08);
-            color: var(--navy-soft);
-            padding: 6px 12px;
+            background: var(--gold-light);
+            color: var(--gold-deep);
+            padding: 6px 14px;
             font-size: 0.78rem;
-            letter-spacing: 0.16em;
+            letter-spacing: 0.08em;
+            font-weight: 600;
             text-transform: uppercase;
         }
 
@@ -272,9 +283,10 @@
         }
 
         .section-copy {
-            color: var(--navy-soft);
-            line-height: 1.55;
+            color: #7a6040;
+            line-height: 1.6;
             margin-bottom: 0;
+            font-size: 1rem;
         }
 
         .modules-grid {
@@ -308,10 +320,10 @@
         }
 
         .module-tag {
-            background: rgba(163, 122, 44, 0.10);
+            background: var(--gold-light);
             color: var(--gold-deep);
-            border: 1px solid rgba(163, 122, 44, 0.14);
-            padding: 6px 12px;
+            border-radius: 20px;
+            padding: 6px 14px;
             font-size: 0.82rem;
         }
 
@@ -337,14 +349,15 @@
 
         .form-grid {
             display: grid;
-            grid-template-columns: repeat(12, minmax(0, 1fr));
-            gap: 14px;
-            margin-top: 18px;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px 24px;
+            margin-top: 24px;
         }
 
-        .field-span-4 { grid-column: span 4; }
-        .field-span-3 { grid-column: span 3; }
-        .field-span-2 { grid-column: span 2; }
+        .field-span-4 { grid-column: span 1; }
+        .field-span-3 { grid-column: span 1; }
+        .field-span-2 { grid-column: span 1; }
+        .field-span-6 { grid-column: 1 / -1; }
 
         .form-label {
             font-weight: 700;
@@ -370,8 +383,8 @@
 
         .field-note {
             margin-top: 8px;
-            color: var(--navy-soft);
-            font-size: 0.92rem;
+            color: #8a6a40;
+            font-size: 0.9rem;
             line-height: 1.45;
         }
 
@@ -387,12 +400,17 @@
 
         .primary-btn {
             border: 0;
-            border-radius: 16px;
+            border-radius: 12px;
             padding: 13px 22px;
-            background: linear-gradient(135deg, #214261 0%, #355b84 100%);
+            background: var(--gold);
             color: #fff;
             font-weight: 700;
-            box-shadow: 0 14px 30px rgba(33, 66, 97, 0.20);
+            box-shadow: 0 14px 30px rgba(201, 146, 42, 0.28);
+            transition: background 0.2s ease;
+        }
+
+        .primary-btn:hover:not(:disabled) {
+            background: var(--gold-deep);
         }
 
         .primary-btn:disabled {
@@ -404,6 +422,25 @@
         .secondary-btn {
             border-radius: 14px;
             padding: 10px 16px;
+        }
+
+        /* Sobrescreve azul do Bootstrap */
+        .btn-outline-primary {
+            border-color: var(--gold);
+            color: var(--gold-deep);
+        }
+
+        .btn-outline-primary:hover,
+        .btn-outline-primary:focus,
+        .btn-outline-primary:active {
+            background-color: var(--gold);
+            border-color: var(--gold);
+            color: #fff;
+            box-shadow: none;
+        }
+
+        .btn-outline-primary:focus-visible {
+            box-shadow: 0 0 0 3px var(--gold-light);
         }
 
         .btn-edit-standard {
@@ -567,14 +604,50 @@
         .app-shell {
             min-height: 100vh;
             display: grid;
-            grid-template-columns: 276px minmax(0, 1fr);
-            background: rgba(247, 241, 228, 0.85);
+            grid-template-columns: auto minmax(0, 1fr);
+            background: var(--bg);
         }
 
         .sidebar-panel {
-            background: rgba(255, 252, 246, 0.92);
-            border-right: 1px solid rgba(163, 122, 44, 0.12);
-            padding: 24px 12px;
+            width: 276px;
+            min-width: 276px;
+            background: #f5ede0;
+            border-right: 1px solid var(--border);
+            padding: 0 12px 24px;
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            overflow-x: hidden;
+            transition: width 0.25s ease, min-width 0.25s ease,
+                        padding 0.25s ease, border-color 0.25s ease;
+        }
+
+        .app-shell.sidebar-fechada .sidebar-panel {
+            width: 0;
+            min-width: 0;
+            padding: 0;
+            border-right-color: transparent;
+        }
+
+        .app-shell.sidebar-fechada .sidebar-panel > * {
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
+
+        .sidebar-panel > * {
+            opacity: 1;
+            transition: opacity 0.2s ease 0.1s;
+        }
+
+        /* Faixa creme no topo da sidebar, alinhada com o topbar */
+        .sidebar-panel::before {
+            content: '';
+            display: block;
+            height: 84px;
+            background: rgba(255, 251, 243, 0.96);
+            border-bottom: 1px solid rgba(184, 135, 50, 0.15);
+            margin: 0 -12px 20px;
         }
 
         .sidebar-panel .sidebar-copy {
@@ -597,28 +670,31 @@
 
         .sidebar-menu-btn {
             width: 100%;
-            border: 1px solid rgba(163, 122, 44, 0.12);
-            background: rgba(255,255,255,0.72);
-            color: #4b5563;
-            border-radius: 18px;
-            padding: 14px 18px;
+            border: none;
+            background: transparent;
+            color: #5a4a35;
+            border-radius: 12px;
+            padding: 12px 14px;
             text-align: left;
-            font-weight: 700;
+            font-weight: 600;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            transition: 0.18s ease;
+            transition: background 0.18s ease;
         }
 
         .sidebar-menu-btn:hover {
-            border-color: rgba(163, 122, 44, 0.24);
-            transform: translateY(-1px);
+            background: rgba(201, 146, 42, 0.10);
+            color: var(--gold-deep);
         }
 
         .sidebar-menu-btn.active {
-            background: linear-gradient(180deg, rgba(255,249,238,0.95), rgba(244,236,220,0.92));
-            color: #1d2f45;
-            box-shadow: inset 3px 0 0 #c79d45, 0 12px 24px rgba(163, 122, 44, 0.08);
+            background: rgba(201, 146, 42, 0.14);
+            color: var(--gold);
+            font-weight: 700;
+            border-radius: 12px;
+            border: none;
+            box-shadow: none;
         }
 
         .sidebar-menu-icon {
@@ -634,7 +710,15 @@
         }
 
         .sidebar-chevron {
-            color: #8a6a36;
+            color: rgba(140, 100, 40, 0.55);
+        }
+
+        .sidebar-menu-btn.active .sidebar-chevron {
+            color: var(--gold);
+        }
+
+        .sidebar-menu-btn.active .sidebar-menu-icon {
+            color: var(--gold);
         }
 
         .workspace {
@@ -644,9 +728,10 @@
         }
 
         .topbar-shell {
-            height: 74px;
-            background: rgba(255,255,255,0.88);
-            border-bottom: 1px solid rgba(163, 122, 44, 0.12);
+            height: 84px;
+            background: rgba(255, 251, 243, 0.96);
+            border-bottom: 1px solid rgba(184, 135, 50, 0.15);
+            backdrop-filter: blur(10px);
             display: flex;
             align-items: center;
             justify-content: space-between;
@@ -654,7 +739,6 @@
             position: sticky;
             top: 0;
             z-index: 10;
-            backdrop-filter: blur(10px);
         }
 
         .topbar-brand {
@@ -668,7 +752,7 @@
             width: 40px;
             height: 40px;
             border-radius: 14px;
-            border: 1px solid rgba(163, 122, 44, 0.22);
+            border: 1px solid rgba(184, 135, 50, 0.22);
             background: rgba(255,255,255,0.72);
             display: inline-flex;
             align-items: center;
@@ -693,7 +777,7 @@
             font-family: 'Libre Baskerville', serif;
             font-size: 1.55rem;
             line-height: 1.1;
-            color: #1f2937;
+            color: #1d2f45;
             letter-spacing: 0.08em;
         }
 
@@ -788,11 +872,11 @@
             display: inline-flex;
             align-items: center;
             gap: 10px;
-            background: rgba(255,255,255,0.86);
-            border: 1px solid rgba(163, 122, 44, 0.16);
+            background: rgba(255,255,255,0.82);
+            border: 1px solid rgba(184, 135, 50, 0.18);
             border-radius: 999px;
             padding: 6px 12px 6px 6px;
-            color: #4b5563;
+            color: #1d2f45;
             font-weight: 700;
         }
 
@@ -915,13 +999,23 @@
         }
 
         .action-button-primary {
-            background: #23476b;
+            background: var(--gold);
+            color: #fff;
+        }
+
+        .action-button-primary:hover {
+            background: var(--gold-deep);
             color: #fff;
         }
 
         .action-button-secondary {
-            background: rgba(244, 236, 220, 0.78);
-            color: #7a5720;
+            background: rgba(201, 146, 42, 0.10);
+            border: 1.5px solid rgba(201, 146, 42, 0.28);
+            color: var(--gold-deep);
+        }
+
+        .action-button-secondary:hover {
+            background: rgba(201, 146, 42, 0.18);
         }
 
         .summary-grid {
@@ -988,14 +1082,14 @@
     </style>
 </head>
 <body>
-    <div id="app" class="app-shell">
+    <div id="app" class="app-shell" :class="{ 'sidebar-fechada': !sidebarAberta }">
         <aside class="sidebar-panel">
             <div class="sidebar-section-title">Navegação</div>
             <div class="sidebar-copy">Acesso rápido aos módulos e áreas administrativas da paróquia.</div>
 
             <nav class="sidebar-nav">
                 <button class="sidebar-menu-btn" :class="{ active: abaAtiva === 'dashboard' }" @click="abaAtiva = 'dashboard'">
-                    <span class="sidebar-menu-label"><span class="sidebar-menu-icon">📊</span>Visão Geral</span>
+                    <span class="sidebar-menu-label"><span class="sidebar-menu-icon"><i class="fa-solid fa-chart-pie"></i></span>Visão Geral</span>
                     <span class="sidebar-chevron">›</span>
                 </button>
             </nav>
@@ -1003,7 +1097,7 @@
             <div class="sidebar-section-title">Administrativo</div>
             <nav class="sidebar-nav">
                 <button class="sidebar-menu-btn" :class="{ active: abaAtiva === 'modulos' }" @click="abaAtiva = 'modulos'">
-                    <span class="sidebar-menu-label"><span class="sidebar-menu-icon">🧩</span>Módulos</span>
+                    <span class="sidebar-menu-label"><span class="sidebar-menu-icon"><i class="fa-solid fa-cubes"></i></span>Módulos</span>
                     <span class="sidebar-chevron">›</span>
                 </button>
             </nav>
@@ -1011,11 +1105,11 @@
             <div class="sidebar-section-title">Sistema</div>
             <nav class="sidebar-nav">
                 <button class="sidebar-menu-btn" :class="{ active: abaAtiva === 'usuarios-sistema' }" @click="abaAtiva = 'usuarios-sistema'">
-                    <span class="sidebar-menu-label"><span class="sidebar-menu-icon">👥</span>Usuários do sistema</span>
+                    <span class="sidebar-menu-label"><span class="sidebar-menu-icon"><i class="fa-solid fa-users"></i></span>Usuários do sistema</span>
                     <span class="sidebar-chevron">›</span>
                 </button>
                 <button class="sidebar-menu-btn" :class="{ active: abaAtiva === 'logs' }" @click="abrirLogs">
-                    <span class="sidebar-menu-label"><span class="sidebar-menu-icon">🕘</span>Log</span>
+                    <span class="sidebar-menu-label"><span class="sidebar-menu-icon"><i class="fa-solid fa-clock-rotate-left"></i></span>Log</span>
                     <span class="sidebar-chevron">›</span>
                 </button>
             </nav>
@@ -1025,14 +1119,14 @@
         <div class="workspace">
             <header class="topbar-shell">
                 <div class="topbar-brand">
-                    <button type="button" class="topbar-square" aria-label="Menu">☰</button>
+                    <button type="button" class="topbar-square" aria-label="Menu" @click="sidebarAberta = !sidebarAberta"><i class="fa-solid fa-bars"></i></button>
                     <div class="topbar-logo-wrap">
                         <img src="/assets/logo-oficial.png" alt="Semear Paroquial" class="topbar-logo-mark">
                         <div class="topbar-logo-text">SEMEAR <small>PAROQUIAL</small></div>
                     </div>
                 </div>
                 <div class="topbar-actions">
-                    <button type="button" class="topbar-icon-btn" aria-label="Notificações">🔔</button>
+                    <button type="button" class="topbar-icon-btn" aria-label="Notificações"><i class="fa-solid fa-bell"></i></button>
                     <div class="user-pill">
                         <span class="user-pill-avatar">{{ adminIniciais }}</span>
                         <span>{{ adminLabel }}</span>
@@ -1044,6 +1138,7 @@
             <main class="page-content">
                 <div v-if="mensagem" class="alert page-alert mb-4" :class="erro ? 'alert-danger' : 'alert-success'">{{ mensagem }}</div>
 
+                <template v-if="abaAtiva === 'dashboard'">
                 <section class="hero-grid">
                     <article class="hero-card">
                         <div class="hero-kicker">Painel Principal</div>
@@ -1051,8 +1146,8 @@
                         <div class="hero-description">{{ descricaoAbaAtual }}</div>
                         <div class="hero-badges">
                             <span class="hero-badge">{{ tenant.paroquia || 'Paróquia' }}</span>
-                            <span class="hero-badge">🧩 {{ enabledModules.length }} módulos contratados</span>
-                            <span class="hero-badge">👥 {{ usuarios.length }} responsáveis ativos</span>
+                            <span class="hero-badge"><i class="fa-solid fa-cubes" style="color:var(--gold);"></i> {{ enabledModules.length }} módulos contratados</span>
+                            <span class="hero-badge"><i class="fa-solid fa-users" style="color:var(--gold);"></i> {{ usuarios.length }} responsáveis ativos</span>
                         </div>
                     </article>
 
@@ -1060,7 +1155,7 @@
                         <div class="action-card-title">Acesso Rápido</div>
                         <div>
                             <strong>{{ tituloAbaAtual }}</strong>
-                            <p>{{ abaAtiva === 'dashboard' ? 'Use os atalhos para ver seus módulos, configurar acessos por módulo e administrar quem entra no painel.' : 'Você está navegando por uma área administrativa da paróquia.' }}</p>
+                            <p>Use os atalhos para ver seus módulos, configurar acessos por módulo e administrar quem entra no painel.</p>
                         </div>
                         <div class="d-grid gap-2 mt-auto">
                             <button class="action-button-primary" @click="abaAtiva = 'modulos'">Abrir módulos</button>
@@ -1068,8 +1163,6 @@
                         </div>
                     </article>
                 </section>
-
-                <template v-if="abaAtiva === 'dashboard'">
                     <section class="summary-grid">
                         <article class="summary-card">
                             <div class="summary-card-label">Módulos</div>
@@ -1375,6 +1468,7 @@
         createApp({
             data() {
                 return {
+                    sidebarAberta: true,
                     saving: false,
                     mensagem: '',
                     erro: false,

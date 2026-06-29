@@ -434,6 +434,65 @@ router.post('/equipes', async (req, res) => {
     }
 });
 
+router.patch('/equipes/:id', async (req, res) => {
+    const tenantId = getTenantId(req);
+    if (!tenantId) return res.status(401).json({ error: 'Tenant não identificado.' });
+
+    const id = Number(req.params.id);
+    if (!id) return res.status(400).json({ error: 'ID inválido.' });
+
+    const ejcNumero = Number(req.body.ejc_numero);
+    const outroEjcId = Number(req.body.outro_ejc_id);
+    const dataInicio = req.body.data_inicio ? String(req.body.data_inicio).trim() : null;
+    const dataFim = req.body.data_fim ? String(req.body.data_fim).trim() : null;
+
+    if (!Number.isInteger(ejcNumero) || ejcNumero <= 0) {
+        return res.status(400).json({ error: 'Número do EJC inválido.' });
+    }
+    if (!Number.isInteger(outroEjcId) || outroEjcId <= 0) {
+        return res.status(400).json({ error: 'Selecione o EJC da lista.' });
+    }
+
+    const connection = await pool.getConnection();
+    try {
+        await garantirEstrutura();
+        await connection.beginTransaction();
+
+        const [outroRows] = await connection.query('SELECT id FROM outros_ejcs WHERE id = ? AND tenant_id = ? LIMIT 1', [outroEjcId, tenantId]);
+        if (!outroRows.length) {
+            await connection.rollback();
+            return res.status(404).json({ error: 'EJC não encontrado na lista.' });
+        }
+
+        const [result] = await connection.query(
+            'UPDATE garcons_equipes SET ejc_numero = ?, outro_ejc_id = ?, data_inicio = ?, data_fim = ? WHERE id = ? AND tenant_id = ?',
+            [ejcNumero, outroEjcId, dataInicio || null, dataFim || null, id, tenantId]
+        );
+        if (!result.affectedRows) {
+            await connection.rollback();
+            return res.status(404).json({ error: 'Equipe não encontrada.' });
+        }
+
+        const [membros] = await connection.query('SELECT comissao_id FROM garcons_membros WHERE equipe_id = ?', [id]);
+        const idsComissao = (membros || []).map(m => m.comissao_id).filter(Boolean);
+        if (idsComissao.length) {
+            await connection.query(
+                'UPDATE jovens_comissoes SET ejc_numero = ?, outro_ejc_id = ?, data_inicio = ?, data_fim = ? WHERE tenant_id = ? AND id IN (?)',
+                [ejcNumero, outroEjcId, dataInicio || null, dataFim || null, tenantId, idsComissao]
+            );
+        }
+
+        await connection.commit();
+        res.json({ message: 'Equipe atualizada com sucesso.' });
+    } catch (err) {
+        await connection.rollback();
+        console.error('Erro ao editar equipe de garçons:', err);
+        res.status(500).json({ error: 'Erro ao editar equipe de garçons.' });
+    } finally {
+        connection.release();
+    }
+});
+
 router.delete('/equipes/:id', async (req, res) => {
     const tenantId = getTenantId(req);
     if (!tenantId) return res.status(401).json({ error: 'Tenant não identificado.' });

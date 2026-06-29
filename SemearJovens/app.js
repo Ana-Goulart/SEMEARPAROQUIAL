@@ -393,6 +393,8 @@ app.get('/gestaodoencontro/moita', acessoGerencia, (req, res) => {
 });
 app.get('/gestaodoencontro/garcons', acessoGerencia, (req, res) => {
     if (String(req.query.embed || '') === '1') {
+        res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+        res.set('Pragma', 'no-cache');
         return res.sendFile(path.join(__dirname, 'views', 'garcons.html'));
     }
     return res.redirect('/gestaodoencontro/missaoexterna?aba=garcons');
